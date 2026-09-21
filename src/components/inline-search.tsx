@@ -106,7 +106,7 @@ export function InlineSearch() {
       </button>
 
       {/* Dropdown Results */}
-      {open && (
+      {open && query.trim().length > 0 && (
         <div className="absolute top-14 right-0 w-80 max-h-[70vh] overflow-hidden bg-bg border border-border shadow-xl rounded-2xl flex flex-col z-50 animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="overflow-y-auto p-2">
             {isLoading && (
@@ -143,12 +143,6 @@ export function InlineSearch() {
                     </div>
                   </button>
                 ))}
-              </div>
-            )}
-            
-            {!isLoading && !query && products && products.length > 0 && (
-              <div className="p-4 text-center text-xs text-muted">
-                Type to start searching...
               </div>
             )}
           </div>
