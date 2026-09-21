@@ -1,0 +1,140 @@
+import { createServerFn } from "@tanstack/react-start";
+import { getSql } from "./db";
+import { authMiddleware } from "./auth/middleware";
+import { verifyAdminRole } from "./admin-fns";
+
+export const getWishlist = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => {
+    const sql = await getSql();
+    const res = await sql`
+      SELECT w.*, p.name, p.price, p.image, p.category, p.in_stock 
+      FROM wishlists w 
+      JOIN products p ON w.product_slug = p.slug 
+      WHERE w.user_id = ${context.userId} 
+      ORDER BY w.created_at DESC
+    `;
+    return res as any[];
+  });
+
+export const toggleWishlist = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator((product_slug: string) => product_slug)
+  .handler(async ({ data: slug, context }) => {
+    const sql = await getSql();
+    const existing = await sql`SELECT id FROM wishlists WHERE user_id = ${context.userId} AND product_slug = ${slug}`;
+    if (existing.length > 0) {
+      await sql`DELETE FROM wishlists WHERE id = ${existing[0].id}`;
+      return { added: false };
+    } else {
+      await sql`INSERT INTO wishlists (user_id, product_slug) VALUES (${context.userId}, ${slug})`;
+      return { added: true };
+    }
+  });
+
+export const getRecentlyViewed = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => {
+    const sql = await getSql();
+    const res = await sql`
+      SELECT r.*, p.name, p.price, p.image 
+      FROM recently_viewed r 
+      JOIN products p ON r.product_slug = p.slug 
+      WHERE r.user_id = ${context.userId} 
+      ORDER BY r.viewed_at DESC 
+      LIMIT 10
+    `;
+    return res as any[];
+  });
+
+export const trackProductView = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator((product_slug: string) => product_slug)
+  .handler(async ({ data: slug, context }) => {
+    const sql = await getSql();
+    await sql`
+      INSERT INTO recently_viewed (user_id, product_slug, viewed_at) 
+      VALUES (${context.userId}, ${slug}, now()) 
+      ON CONFLICT (user_id, product_slug) 
+      DO UPDATE SET viewed_at = now()
+    `;
+    return { success: true };
+  });
+
+export const validateCoupon = createServerFn({ method: "POST" })
+  .validator((code: string) => code)
+  .handler(async ({ data: code }) => {
+    const sql = await getSql();
+    const res = await sql`
+      SELECT * FROM coupons 
+      WHERE code = ${code.toUpperCase()} 
+      AND (expires_at IS NULL OR expires_at > now())
+      AND (max_uses IS NULL OR current_uses < max_uses)
+    `;
+    if (res.length === 0) {
+      throw new Error("Invalid or expired coupon");
+    }
+    return res[0] as { code: string; discount_percent: number };
+  });
+
+export const getCouponsAdmin = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => {
+    const sql = await getSql();
+    // Admin check: verify if the current user is the admin
+    const admin = await verifyAdminRole(context.userId, sql);
+    if (!admin) {
+      throw new Error("Unauthorized");
+    }
+    const res = await sql`SELECT * FROM coupons ORDER BY created_at DESC`;
+    return res as any[];
+  });
+
+export const createCoupon = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator((data: { code: string; discount_percent: number; max_uses?: number }) => data)
+  .handler(async ({ data, context }) => {
+    const sql = await getSql();
+    const admin = await verifyAdminRole(context.userId, sql);
+    if (!admin) {
+      throw new Error("Unauthorized");
+    }
+    await sql`
+      INSERT INTO coupons (code, discount_percent, max_uses)
+      VALUES (${data.code.toUpperCase()}, ${data.discount_percent}, ${data.max_uses || null})
+    `;
+    return { success: true };
+  });
+
+export const deleteCoupon = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator((id: number) => id)
+  .handler(async ({ data: id, context }) => {
+    const sql = await getSql();
+    const admin = await verifyAdminRole(context.userId, sql);
+    if (!admin) {
+      throw new Error("Unauthorized");
+    }
+    await sql`DELETE FROM coupons WHERE id = ${id}`;
+    return { success: true };
+  });
+
+export const getAnalyticsAdmin = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => {
+    const sql = await getSql();
+    const admin = await verifyAdminRole(context.userId, sql);
+    if (!admin) {
+      throw new Error("Unauthorized");
+    }
+
+    const totalRevenueRes = await sql<{ total: string }>`SELECT SUM(total) as total FROM orders WHERE status != 'cancelled'`;
+    const totalOrdersRes = await sql<{ count: string }>`SELECT COUNT(*) as count FROM orders`;
+    const totalUsersRes = await sql<{ count: string }>`SELECT COUNT(*) as count FROM "user"`;
+
+    return {
+      revenue: parseFloat(totalRevenueRes[0]?.total || "0"),
+      ordersCount: parseInt(totalOrdersRes[0]?.count || "0", 10),
+      usersCount: parseInt(totalUsersRes[0]?.count || "0", 10),
+    };
+  });

@@ -1,0 +1,1556 @@
+import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { getAllOrdersAdmin, updateOrderStatus, deleteOrderAdmin } from "@/lib/orders-fns";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { formatINR } from "@/lib/format";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
+import { Package, Box, X, Settings, Image as ImageIcon, BarChart3, Tag, ClipboardList, Shield, UserCog, HelpCircle } from "lucide-react";
+import { getAllProductsAdmin, deleteProduct, updateProduct, createProduct, updateProductInventory } from "@/lib/products-fns";
+import { getSiteSettings, updateSiteSettings } from "@/lib/settings-fns";
+import { getCouponsAdmin, createCoupon, deleteCoupon, getAnalyticsAdmin } from "@/lib/ecommerce-fns";
+import { getAdminTeam, addAdmin, removeAdmin, getAdminProfile, setAdminPin, requestPinResetOTP, resetAdminPinWithOTP } from "@/lib/admin-fns";
+import { getFaqsAdmin, createFaq, updateFaq, deleteFaq, reorderFaqs } from "@/lib/faq-fns";
+import { type Product } from "@/lib/products";
+
+export const Route = createFileRoute("/admin")({
+  component: AdminPage,
+});
+
+function AdminPage() {
+  const [activeTab, setActiveTab] = useState("orders");
+  const queryClient = useQueryClient();
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [deletingOrder, setDeletingOrder] = useState<string | null>(null);
+
+  const { data: orders, isLoading, error } = useQuery({
+    queryKey: ["adminOrders"],
+    queryFn: () => getAllOrdersAdmin(),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ order_number, status }: { order_number: string, status: string }) => {
+      await updateOrderStatus({ data: { order_number, status } });
+    },
+    onMutate: ({ order_number }) => setUpdatingId(order_number),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminOrders"] });
+      toast.success("Order status updated and customer notified!");
+      setUpdatingId(null);
+    },
+    onError: () => {
+      toast.error("Failed to update order status");
+      setUpdatingId(null);
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async ({ order_number, pin }: { order_number: string, pin?: string }) => {
+      await deleteOrderAdmin({ data: { order_number, pin } });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminOrders"] });
+      toast.success("Order permanently deleted.");
+      setDeletingOrder(null);
+    },
+    onError: (err) => {
+      toast.error(err.message || "Failed to delete order");
+    }
+  });
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-24 text-center">
+        <h1 className="font-display text-3xl font-semibold text-danger">Unauthorized</h1>
+        <p className="mt-2 text-muted">RAW ERROR: {error.message}</p>
+      </div>
+    );
+  }
+
+  const navItems = [
+    { id: "analytics", label: "Analytics", icon: BarChart3 },
+    { id: "orders", label: "Orders", icon: Package },
+    { id: "products", label: "Products", icon: Box },
+    { id: "inventory", label: "Inventory", icon: ClipboardList },
+    { id: "coupons", label: "Coupons", icon: Tag },
+    { id: "faqs", label: "FAQs", icon: HelpCircle },
+    { id: "admin-team", label: "Admin Team", icon: Shield },
+    { id: "admin-profile", label: "Admin Profile", icon: UserCog },
+    { id: "settings", label: "Site Settings", icon: Settings },
+  ];
+
+  return (
+    <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-12 flex flex-col md:flex-row gap-8">
+      {/* Sidebar */}
+      <aside className="w-full md:w-64 shrink-0">
+        <h1 className="font-display text-2xl font-semibold tracking-tight mb-6">Admin Panel</h1>
+        <nav className="flex flex-row md:flex-col gap-2 overflow-x-auto pb-4 md:pb-0">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors",
+                  isActive
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted hover:bg-surface-2 hover:text-fg"
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                {item.label}
+              </button>
+            );
+          })}
+        </nav>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 min-w-0">
+        {activeTab === "orders" && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-semibold">Orders</h2>
+                <p className="text-muted mt-1 text-sm">Manage all incoming 3D printing orders.</p>
+              </div>
+              <button
+                onClick={() => {
+                  if (!orders) return;
+                  const csv = [
+                    ["Order Number", "Customer Name", "Customer Email", "Date", "Total", "Status", "Payment Status"],
+                    ...orders.map((o: any) => [
+                      o.order_number,
+                      `"${o.user_name}"`,
+                      o.user_email,
+                      new Date(o.created_at).toLocaleDateString(),
+                      o.total,
+                      o.status,
+                      o.payment_status
+                    ])
+                  ].map(e => e.join(",")).join("\n");
+                  const blob = new Blob([csv], { type: 'text/csv' });
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `orders-${new Date().toISOString().split('T')[0]}.csv`;
+                  a.click();
+                  window.URL.revokeObjectURL(url);
+                }}
+                className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-ink hover:opacity-90"
+              >
+                Export CSV
+              </button>
+            </div>
+
+            <div className="overflow-x-auto rounded-xl border border-border bg-surface">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b border-border bg-surface-2 text-muted">
+                  <tr>
+                    <th className="p-4 font-medium">Order</th>
+                    <th className="p-4 font-medium">Customer</th>
+                    <th className="p-4 font-medium">Date</th>
+                    <th className="p-4 font-medium">Total</th>
+                    <th className="p-4 font-medium">Status</th>
+                    <th className="p-4 font-medium text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-muted">Loading orders...</td>
+                    </tr>
+                  ) : !orders || orders.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-muted">No orders found.</td>
+                    </tr>
+                  ) : (
+                    orders.map((order: any) => (
+                      <tr key={order.id} className="hover:bg-surface-2/50 transition-colors">
+                        <td className="p-4 font-medium">#{order.order_number}</td>
+                        <td className="p-4">
+                          <div>{order.user_name}</div>
+                          <div className="text-xs text-muted">{order.user_email}</div>
+                        </td>
+                        <td className="p-4 text-muted">{new Date(order.created_at).toLocaleDateString()}</td>
+                        <td className="p-4 tabular-nums font-medium">{formatINR(order.total)}</td>
+                        <td className="p-4">
+                          <Badge className={order.status === 'pending' ? 'bg-secondary' : order.status === 'shipped' ? 'bg-primary' : 'bg-transparent border'}>
+                            {order.status}
+                          </Badge>
+                          <div className="text-xs text-muted mt-1">Payment: {order.payment_status}</div>
+                        </td>
+                        <td className="p-4 text-right space-x-2">
+                          <select
+                            className="text-sm rounded border border-border bg-surface p-1 focus:ring-1 focus:ring-accent"
+                            value={order.status}
+                            onChange={(e) => updateMutation.mutate({ order_number: order.order_number, status: e.target.value })}
+                            disabled={updatingId === order.order_number}
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="processing">Processing</option>
+                            <option value="printing">Printing</option>
+                            <option value="shipped">Shipped</option>
+                            <option value="delivered">Delivered</option>
+                            <option value="cancelled">Cancelled</option>
+                          </select>
+                          <button
+                            type="button"
+                            onClick={() => setDeletingOrder(order.order_number)}
+                            className="text-xs px-2 py-1 rounded bg-danger/10 text-danger hover:bg-danger/20 transition-colors border border-danger/20"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        <PinConfirmModal
+          isOpen={!!deletingOrder}
+          onClose={() => setDeletingOrder(null)}
+          onConfirm={(pin) => {
+            if (deletingOrder) {
+              deleteMutation.mutate({ order_number: deletingOrder, pin });
+            }
+          }}
+          isLoading={deleteMutation.isPending}
+        />
+
+        {activeTab === "settings" && <SettingsTab />}
+        {activeTab === "faqs" && <FaqsTab />}
+        {activeTab === "admin-team" && <AdminTeamTab />}
+        {activeTab === "admin-profile" && <AdminProfileTab />}
+
+        {activeTab === "products" && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-semibold">Products</h2>
+                <p className="text-muted mt-1 text-sm">Manage the products available in the shop.</p>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto rounded-xl border border-border bg-surface">
+              <ProductsTable />
+            </div>
+          </div>
+        )}
+
+        {activeTab === "inventory" && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-semibold">Inventory</h2>
+                <p className="text-muted mt-1 text-sm">Manage stock counts and view low-stock warnings.</p>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto rounded-xl border border-border bg-surface">
+              <InventoryTable />
+            </div>
+          </div>
+        )}
+
+        {activeTab === "coupons" && (
+          <CouponsTab />
+        )}
+
+        {activeTab === "analytics" && (
+          <AnalyticsTab />
+        )}
+      </main>
+    </div>
+  );
+}
+
+function PinConfirmModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  isLoading
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: (pin: string) => void;
+  isLoading: boolean;
+}) {
+  const [pin, setPin] = useState("");
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-surface border border-border rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+        <div className="flex items-center justify-between border-b border-border p-4 bg-surface shrink-0">
+          <h2 className="text-lg font-bold">Confirm Deletion</h2>
+          <button onClick={onClose} className="rounded-full p-2 hover:bg-surface-2 transition-colors text-muted hover:text-ink">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="p-6">
+          <p className="text-sm text-muted mb-4">
+            Are you sure you want to permanently delete this order? This action cannot be undone.
+            Please enter your 6-digit Admin PIN to confirm.
+          </p>
+          <input
+            type="password"
+            maxLength={6}
+            placeholder="6-digit PIN"
+            value={pin}
+            onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            className="w-full rounded border border-border bg-surface-2 p-3 text-center text-xl tracking-widest"
+          />
+          <div className="mt-6 flex justify-end gap-3">
+            <button
+              onClick={onClose}
+              disabled={isLoading}
+              className="px-4 py-2 rounded-lg border border-border hover:bg-surface-2 text-sm font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => onConfirm(pin)}
+              disabled={isLoading || pin.length !== 6}
+              className="px-4 py-2 rounded-lg bg-danger text-white hover:opacity-90 text-sm font-medium disabled:opacity-50"
+            >
+              {isLoading ? "Deleting..." : "Delete Permanently"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProductsTable() {
+  const queryClient = useQueryClient();
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const { data: products, isLoading } = useQuery({
+    queryKey: ["adminProducts"],
+    queryFn: () => getAllProductsAdmin(),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (slug: string) => {
+      await deleteProduct({ data: slug });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminProducts"] });
+      toast.success("Product deleted successfully");
+    },
+    onError: () => toast.error("Failed to delete product")
+  });
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-muted">Loading products...</div>;
+  }
+
+  if (!products || products.length === 0) {
+    return <div className="p-8 text-center text-muted">No products found.</div>;
+  }
+
+  return (
+    <div>
+      <div className="flex justify-end p-4 border-b border-border">
+        <button
+          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-ink hover:opacity-90"
+          onClick={() => {
+            setEditingProduct(null);
+            setIsModalOpen(true);
+          }}
+        >
+          Add Product
+        </button>
+      </div>
+      <table className="w-full text-left text-sm">
+        <thead className="border-b border-border bg-surface-2 text-muted">
+          <tr>
+            <th className="p-4 font-medium">Product</th>
+            <th className="p-4 font-medium">Price</th>
+            <th className="p-4 font-medium">Category</th>
+            <th className="p-4 font-medium text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border">
+          {products.map((p) => (
+            <tr key={p.slug} className="hover:bg-surface-2/50 transition-colors">
+              <td className="p-4">
+                <div className="flex items-center gap-3">
+                  <img src={p.image} alt={p.name} className="size-10 rounded-lg object-cover bg-surface-2" />
+                  <div>
+                    <div className="font-medium">{p.name}</div>
+                    <div className="text-xs text-muted truncate max-w-[200px]">{p.blurb}</div>
+                  </div>
+                </div>
+              </td>
+              <td className="p-4 tabular-nums font-medium">{formatINR(p.price)}</td>
+              <td className="p-4 capitalize">{p.category}</td>
+              <td className="p-4 text-right space-x-2">
+                <button
+                  onClick={() => {
+                    setEditingProduct(p);
+                    setIsModalOpen(true);
+                  }}
+                  className="text-xs px-2 py-1 rounded bg-surface hover:bg-surface-2 transition-colors border border-border"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm(`Are you sure you want to delete ${p.name}?`)) {
+                      deleteMutation.mutate(p.slug);
+                    }
+                  }}
+                  className="text-xs px-2 py-1 rounded bg-danger/10 text-danger hover:bg-danger/20 transition-colors border border-danger/20"
+                >
+                  Delete
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <ProductModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        product={editingProduct}
+      />
+    </div>
+  );
+}
+
+function ProductModal({
+  product,
+  isOpen,
+  onClose
+}: {
+  product?: Product | null,
+  isOpen: boolean,
+  onClose: () => void
+}) {
+  const queryClient = useQueryClient();
+  const [busy, setBusy] = useState(false);
+  const [imagePreview, setImagePreview] = useState(product?.image || "");
+
+  // Reset image preview when product changes (e.g. opening different products)
+  useEffect(() => {
+    setImagePreview(product?.image || "");
+  }, [product]);
+
+  const mutation = useMutation({
+    mutationFn: async (data: Product) => {
+      if (product) {
+        await updateProduct({ data });
+      } else {
+        await createProduct({ data });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminProducts"] });
+      toast.success(`Product ${product ? "updated" : "created"}!`);
+      onClose();
+    },
+    onError: (err) => toast.error(err.message),
+    onSettled: () => setBusy(false)
+  });
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-surface border border-border rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between border-b border-border p-6 bg-surface shrink-0">
+          <h2 className="text-xl font-bold">{product ? "Edit Product" : "Add Product"}</h2>
+          <button onClick={onClose} className="rounded-full p-2 hover:bg-surface-2 transition-colors text-muted hover:text-ink">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="p-6 overflow-y-auto">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              setBusy(true);
+              const fd = new FormData(e.currentTarget);
+              const data: Product = {
+                slug: fd.get("slug") as string,
+                name: fd.get("name") as string,
+                price: parseInt(fd.get("price") as string, 10),
+                image: fd.get("image") as string,
+                category: fd.get("category") as any,
+                blurb: fd.get("blurb") as string,
+                description: fd.get("description") as string,
+                colors: (fd.get("colors") as string).split(",").map(s => s.trim()),
+                size: fd.get("size") as string,
+                material: fd.get("material") as string,
+                printTime: fd.get("printTime") as string,
+                featured: fd.get("featured") === "on",
+                badge: (fd.get("badge") as "Favourite" | "New") || undefined,
+                includes: fd.get("includes") as string,
+                care: fd.get("care") as string,
+              };
+              mutation.mutate(data);
+            }}
+            className="space-y-4"
+          >
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Slug (ID)</label>
+                <input name="slug" defaultValue={product?.slug} required readOnly={!!product} className="w-full rounded border border-border bg-surface-2 p-2 text-sm" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Name</label>
+                <input name="name" defaultValue={product?.name} required className="w-full rounded border border-border bg-surface-2 p-2 text-sm" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Price (INR)</label>
+                <input name="price" type="number" defaultValue={product?.price} required className="w-full rounded border border-border bg-surface-2 p-2 text-sm" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Category</label>
+                <select name="category" defaultValue={product?.category || "desk"} required className="w-full rounded border border-border bg-surface-2 p-2 text-sm">
+                  <option value="desk">Desk</option>
+                  <option value="home">Home</option>
+                  <option value="bath">Bath</option>
+                </select>
+              </div>
+              <div className="col-span-2">
+                <label className="block text-sm font-medium mb-1">Image</label>
+                <div className="flex gap-4 items-start">
+                  <div className="w-24 h-24 shrink-0 rounded-lg overflow-hidden bg-surface-2 border border-border">
+                    {imagePreview ? (
+                      <img src={imagePreview} className="w-full h-full object-cover" alt="Preview" />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-muted text-xs">
+                        <ImageIcon className="w-6 h-6 mb-1 opacity-50" />
+                        No Image
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <input type="hidden" name="image" value={imagePreview || ""} />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-medium file:bg-accent/10 file:text-accent hover:file:bg-accent/20 cursor-pointer"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (e) => setImagePreview(e.target?.result as string);
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                    <p className="text-xs text-muted">Upload an image from your device. (JPEG, PNG, WEBP)</p>
+                  </div>
+                </div>
+              </div>
+              <div className="col-span-2">
+                <label className="block text-sm font-medium mb-1">Blurb (Short)</label>
+                <input name="blurb" defaultValue={product?.blurb} required className="w-full rounded border border-border bg-surface-2 p-2 text-sm" />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-sm font-medium mb-1">Description</label>
+                <textarea name="description" defaultValue={product?.description} required rows={3} className="w-full rounded border border-border bg-surface-2 p-2 text-sm" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Colors (comma separated)</label>
+                <input name="colors" defaultValue={product?.colors.join(", ")} required className="w-full rounded border border-border bg-surface-2 p-2 text-sm" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Size</label>
+                <input name="size" defaultValue={product?.size} required className="w-full rounded border border-border bg-surface-2 p-2 text-sm" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Material</label>
+                <input name="material" defaultValue={product?.material} required className="w-full rounded border border-border bg-surface-2 p-2 text-sm" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Print Time</label>
+                <input name="printTime" defaultValue={product?.printTime} required className="w-full rounded border border-border bg-surface-2 p-2 text-sm" />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-sm font-medium mb-1">Includes</label>
+                <input name="includes" defaultValue={product?.includes} required className="w-full rounded border border-border bg-surface-2 p-2 text-sm" />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-sm font-medium mb-1">Care</label>
+                <input name="care" defaultValue={product?.care} required className="w-full rounded border border-border bg-surface-2 p-2 text-sm" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Badge (Optional)</label>
+                <input name="badge" defaultValue={product?.badge} className="w-full rounded border border-border bg-surface-2 p-2 text-sm" />
+              </div>
+              <div className="flex items-center gap-2">
+                <input type="checkbox" name="featured" id="featured" defaultChecked={product?.featured} className="rounded" />
+                <label htmlFor="featured" className="text-sm font-medium">Featured Product</label>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-border">
+              <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg border border-border hover:bg-surface-2 text-sm font-medium">Cancel</button>
+              <button type="submit" disabled={busy} className="px-4 py-2 rounded-lg bg-accent text-ink hover:opacity-90 text-sm font-medium">
+                {busy ? "Saving..." : "Save Product"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SettingsTab() {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  const { data: settings, isLoading, error } = useQuery({
+    queryKey: ["siteSettings"],
+    queryFn: () => getSiteSettings(),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (data: any) => {
+      await updateSiteSettings({ data });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["siteSettings"] });
+      void router.invalidate();
+      toast.success("Site settings updated!");
+    },
+    onError: () => {
+      toast.error("Failed to update site settings");
+    }
+  });
+
+  if (isLoading) return <div className="p-8">Loading settings...</div>;
+  if (error || !settings) return <div className="p-8 text-danger">Failed to load settings</div>;
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const data = {
+      tagline: fd.get("tagline") as string,
+      email: fd.get("email") as string,
+      instagram: fd.get("instagram") as string,
+      copyright: fd.get("copyright") as string,
+      bottom_text: fd.get("bottom_text") as string,
+      hero_tagline: fd.get("hero_tagline") as string,
+      hero_description: fd.get("hero_description") as string,
+      about_story: fd.get("about_story") as string,
+      contact_email: fd.get("contact_email") as string,
+      contact_instagram: fd.get("contact_instagram") as string,
+      contact_address: fd.get("contact_address") as string,
+      contact_phone: fd.get("contact_phone") as string,
+      shipping_policy: fd.get("shipping_policy") as string,
+      returns_policy: fd.get("returns_policy") as string,
+    };
+    updateMutation.mutate(data);
+  };
+
+  return (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <div>
+        <h2 className="text-2xl font-semibold">Site Settings</h2>
+        <p className="text-muted mt-1 text-sm">Update the global content across your site.</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-12 max-w-2xl">
+        {/* HOMEPAGE SECTION */}
+        <section className="space-y-4">
+          <h3 className="text-lg font-semibold border-b border-border pb-2">Homepage</h3>
+          <div>
+            <label className="block text-sm font-medium mb-1">Hero Tagline</label>
+            <input name="hero_tagline" defaultValue={settings.hero_tagline} required className="w-full rounded border border-border bg-surface p-2 text-sm" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Hero Description</label>
+            <textarea name="hero_description" defaultValue={settings.hero_description} required rows={3} className="w-full rounded border border-border bg-surface p-2 text-sm" />
+          </div>
+        </section>
+
+        {/* ABOUT SECTION */}
+        <section className="space-y-4">
+          <h3 className="text-lg font-semibold border-b border-border pb-2">About Us</h3>
+          <div>
+            <label className="block text-sm font-medium mb-1">Our Story (paragraphs separated by blank lines)</label>
+            <textarea name="about_story" defaultValue={settings.about_story} required rows={10} className="w-full rounded border border-border bg-surface p-2 text-sm" />
+          </div>
+        </section>
+
+        {/* CONTACT SECTION */}
+        <section className="space-y-4">
+          <h3 className="text-lg font-semibold border-b border-border pb-2">Contact Page</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Support Email</label>
+              <input type="email" name="contact_email" defaultValue={settings.contact_email} className="w-full rounded border border-border bg-surface p-2 text-sm" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Instagram Handle</label>
+              <input name="contact_instagram" defaultValue={settings.contact_instagram} className="w-full rounded border border-border bg-surface p-2 text-sm" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Phone Number</label>
+              <input name="contact_phone" defaultValue={settings.contact_phone} className="w-full rounded border border-border bg-surface p-2 text-sm" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Physical Address</label>
+              <input name="contact_address" defaultValue={settings.contact_address} className="w-full rounded border border-border bg-surface p-2 text-sm" />
+            </div>
+          </div>
+        </section>
+
+        {/* POLICIES SECTION */}
+        <section className="space-y-4">
+          <h3 className="text-lg font-semibold border-b border-border pb-2">Policies</h3>
+          <div>
+            <label className="block text-sm font-medium mb-1">Shipping Policy</label>
+            <textarea name="shipping_policy" defaultValue={settings.shipping_policy} required rows={4} className="w-full rounded border border-border bg-surface p-2 text-sm" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Returns Policy</label>
+            <textarea name="returns_policy" defaultValue={settings.returns_policy} required rows={4} className="w-full rounded border border-border bg-surface p-2 text-sm" />
+          </div>
+        </section>
+
+        {/* FOOTER SECTION */}
+        <section className="space-y-4">
+          <h3 className="text-lg font-semibold border-b border-border pb-2">Global Footer</h3>
+          <div>
+            <label className="block text-sm font-medium mb-1">Footer Tagline</label>
+            <input name="tagline" defaultValue={settings.tagline} required className="w-full rounded border border-border bg-surface p-2 text-sm" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Footer Email</label>
+              <input type="email" name="email" defaultValue={settings.email} required className="w-full rounded border border-border bg-surface p-2 text-sm" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Footer Instagram</label>
+              <input name="instagram" defaultValue={settings.instagram} required className="w-full rounded border border-border bg-surface p-2 text-sm" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Copyright Text</label>
+              <input name="copyright" defaultValue={settings.copyright} required className="w-full rounded border border-border bg-surface p-2 text-sm" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Bottom Text</label>
+              <input name="bottom_text" defaultValue={settings.bottom_text} required className="w-full rounded border border-border bg-surface p-2 text-sm" />
+            </div>
+          </div>
+        </section>
+
+        <div className="pt-6 border-t border-border">
+          <button type="submit" disabled={updateMutation.isPending} className="px-6 py-3 rounded-lg bg-accent text-ink hover:opacity-90 text-sm font-medium">
+            {updateMutation.isPending ? "Saving..." : "Save All Settings"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function AnalyticsTab() {
+  const { data: analytics, isLoading, error } = useQuery({
+    queryKey: ["adminAnalytics"],
+    queryFn: () => getAnalyticsAdmin(),
+  });
+
+  if (isLoading) return <div className="p-8 text-center text-muted">Loading analytics...</div>;
+  if (error || !analytics) return <div className="p-8 text-danger">Failed to load analytics</div>;
+
+  return (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <div>
+        <h2 className="text-2xl font-semibold">Analytics Overview</h2>
+        <p className="text-muted mt-1 text-sm">At-a-glance metrics for your store.</p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+        <div className="rounded-xl border border-border bg-surface p-6">
+          <div className="text-sm font-medium text-muted">Total Revenue</div>
+          <div className="mt-2 text-3xl font-bold">{formatINR(analytics.revenue)}</div>
+        </div>
+        <div className="rounded-xl border border-border bg-surface p-6">
+          <div className="text-sm font-medium text-muted">Total Orders</div>
+          <div className="mt-2 text-3xl font-bold">{analytics.ordersCount}</div>
+        </div>
+        <div className="rounded-xl border border-border bg-surface p-6">
+          <div className="text-sm font-medium text-muted">Total Users</div>
+          <div className="mt-2 text-3xl font-bold">{analytics.usersCount}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CouponsTab() {
+  const queryClient = useQueryClient();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const { data: coupons, isLoading } = useQuery({
+    queryKey: ["adminCoupons"],
+    queryFn: () => getCouponsAdmin(),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await deleteCoupon({ data: id });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminCoupons"] });
+      toast.success("Coupon deleted successfully");
+    },
+    onError: () => toast.error("Failed to delete coupon")
+  });
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-muted">Loading coupons...</div>;
+  }
+
+  return (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-semibold">Coupons</h2>
+          <p className="text-muted mt-1 text-sm">Manage discount codes for the store.</p>
+        </div>
+        <button
+          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-ink hover:opacity-90"
+          onClick={() => setIsModalOpen(true)}
+        >
+          Add Coupon
+        </button>
+      </div>
+
+      <div className="overflow-x-auto rounded-xl border border-border bg-surface">
+        <table className="w-full text-left text-sm">
+          <thead className="border-b border-border bg-surface-2 text-muted">
+            <tr>
+              <th className="p-4 font-medium">Code</th>
+              <th className="p-4 font-medium">Discount</th>
+              <th className="p-4 font-medium">Uses</th>
+              <th className="p-4 font-medium">Created</th>
+              <th className="p-4 font-medium text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {!coupons || coupons.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="p-8 text-center text-muted">No coupons found.</td>
+              </tr>
+            ) : (
+              coupons.map((c: any) => (
+                <tr key={c.id} className="hover:bg-surface-2/50 transition-colors">
+                  <td className="p-4 font-medium text-accent">{c.code}</td>
+                  <td className="p-4">{c.discount_percent}% OFF</td>
+                  <td className="p-4">{c.current_uses} / {c.max_uses ? c.max_uses : "∞"}</td>
+                  <td className="p-4 text-muted">{new Date(c.created_at).toLocaleDateString()}</td>
+                  <td className="p-4 text-right">
+                    <button
+                      onClick={() => {
+                        if (confirm(`Are you sure you want to delete coupon ${c.code}?`)) {
+                          deleteMutation.mutate(c.id);
+                        }
+                      }}
+                      className="text-xs px-2 py-1 rounded bg-danger/10 text-danger hover:bg-danger/20 transition-colors border border-danger/20"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <CouponModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+    </div>
+  );
+}
+
+function CouponModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const [busy, setBusy] = useState(false);
+
+  const mutation = useMutation({
+    mutationFn: async (data: { code: string; discount_percent: number; max_uses?: number }) => {
+      await createCoupon({ data });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminCoupons"] });
+      toast.success("Coupon created!");
+      onClose();
+    },
+    onError: (err) => toast.error(err.message),
+    onSettled: () => setBusy(false)
+  });
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-surface border border-border rounded-xl shadow-xl w-full max-w-md flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between border-b border-border p-6 bg-surface shrink-0">
+          <h2 className="text-xl font-bold">Add Coupon</h2>
+          <button onClick={onClose} className="rounded-full p-2 hover:bg-surface-2 transition-colors text-muted hover:text-ink">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="p-6 overflow-y-auto">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              setBusy(true);
+              const fd = new FormData(e.currentTarget);
+              mutation.mutate({
+                code: fd.get("code") as string,
+                discount_percent: parseInt(fd.get("discount_percent") as string, 10),
+                max_uses: fd.get("max_uses") ? parseInt(fd.get("max_uses") as string, 10) : undefined,
+              });
+            }}
+            className="space-y-4"
+          >
+            <div>
+              <label className="block text-sm font-medium mb-1">Coupon Code</label>
+              <input name="code" required className="w-full rounded border border-border bg-surface-2 p-2 text-sm uppercase" placeholder="e.g. SUMMER10" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Discount Percent (%)</label>
+              <input name="discount_percent" type="number" min="1" max="100" required className="w-full rounded border border-border bg-surface-2 p-2 text-sm" placeholder="e.g. 10" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Max Uses (Optional)</label>
+              <input name="max_uses" type="number" min="1" className="w-full rounded border border-border bg-surface-2 p-2 text-sm" placeholder="Leave empty for unlimited" />
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-border">
+              <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg border border-border hover:bg-surface-2 text-sm font-medium">Cancel</button>
+              <button type="submit" disabled={busy} className="px-4 py-2 rounded-lg bg-accent text-ink hover:opacity-90 text-sm font-medium">
+                {busy ? "Saving..." : "Create Coupon"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InventoryTable() {
+  const queryClient = useQueryClient();
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  const { data: products, isLoading } = useQuery({
+    queryKey: ["adminProducts"],
+    queryFn: () => getAllProductsAdmin(),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ slug, stockCount }: { slug: string, stockCount: number }) => {
+      await updateProductInventory({ data: { slug, stockCount } });
+    },
+    onMutate: ({ slug }) => setUpdatingId(slug),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminProducts"] });
+      toast.success("Inventory updated");
+      setUpdatingId(null);
+    },
+    onError: () => {
+      toast.error("Failed to update inventory");
+      setUpdatingId(null);
+    }
+  });
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-muted">Loading inventory...</div>;
+  }
+
+  if (!products || products.length === 0) {
+    return <div className="p-8 text-center text-muted">No products found.</div>;
+  }
+
+  return (
+    <table className="w-full text-left text-sm">
+      <thead className="border-b border-border bg-surface-2 text-muted">
+        <tr>
+          <th className="p-4 font-medium">Product</th>
+          <th className="p-4 font-medium text-center">Status</th>
+          <th className="p-4 font-medium text-right">Stock Count</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-border">
+        {products.map((p) => {
+          const stockCount = p.stockCount ?? -1;
+          const isLowStock = stockCount !== -1 && stockCount <= 5;
+          const isOutOfStock = stockCount === 0 || !p.inStock;
+          
+          return (
+            <tr key={p.slug} className="hover:bg-surface-2/50 transition-colors">
+              <td className="p-4">
+                <div className="flex items-center gap-3">
+                  <img src={p.image} alt={p.name} className="size-10 rounded-lg object-cover bg-surface-2" />
+                  <div>
+                    <div className="font-medium">{p.name}</div>
+                    <div className="text-xs text-muted">{p.category}</div>
+                  </div>
+                </div>
+              </td>
+              <td className="p-4 text-center">
+                {isOutOfStock ? (
+                  <Badge className="bg-danger text-white">Out of Stock</Badge>
+                ) : isLowStock ? (
+                  <Badge className="bg-warning text-black">Low Stock</Badge>
+                ) : (
+                  <Badge className="bg-success text-white">In Stock</Badge>
+                )}
+              </td>
+              <td className="p-4 text-right">
+                <input
+                  type="number"
+                  disabled={updatingId === p.slug}
+                  className="w-24 rounded border border-border bg-surface p-1 text-right text-sm focus:ring-1 focus:ring-accent"
+                  defaultValue={stockCount}
+                  onBlur={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    if (!isNaN(val) && val !== stockCount) {
+                      updateMutation.mutate({ slug: p.slug, stockCount: val });
+                    }
+                  }}
+                />
+                <div className="text-[10px] text-muted mt-1">(-1 for infinite)</div>
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
+function AdminTeamTab() {
+  const queryClient = useQueryClient();
+  const [newEmail, setNewEmail] = useState("");
+
+  const { data: team, isLoading, error } = useQuery({
+    queryKey: ["adminTeam"],
+    queryFn: () => getAdminTeam(),
+  });
+
+  const addMutation = useMutation({
+    mutationFn: async (email: string) => {
+      await addAdmin({ data: { email } });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminTeam"] });
+      toast.success("Admin added successfully");
+      setNewEmail("");
+    },
+    onError: (err) => toast.error(err.message)
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: async (email: string) => {
+      await removeAdmin({ data: { email } });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminTeam"] });
+      toast.success("Admin removed");
+    },
+    onError: (err) => toast.error(err.message)
+  });
+
+  if (isLoading) return <div className="p-8 text-center text-muted">Loading team...</div>;
+  if (error) return <div className="p-8 text-danger">{error.message || "Unauthorized. Super Admin only."}</div>;
+
+  return (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <div>
+        <h2 className="text-2xl font-semibold">Admin Team</h2>
+        <p className="text-muted mt-1 text-sm">Manage who has access to this dashboard.</p>
+      </div>
+
+      <div className="bg-surface border border-border rounded-xl p-6">
+        <h3 className="text-lg font-medium mb-4">Add New Admin</h3>
+        <form 
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (newEmail) addMutation.mutate(newEmail);
+          }}
+          className="flex gap-4 max-w-md"
+        >
+          <input
+            type="email"
+            value={newEmail}
+            onChange={(e) => setNewEmail(e.target.value)}
+            placeholder="admin@example.com"
+            required
+            className="flex-1 rounded border border-border bg-surface-2 p-2 text-sm"
+          />
+          <button
+            type="submit"
+            disabled={addMutation.isPending}
+            className="px-4 py-2 rounded-lg bg-accent text-ink hover:opacity-90 text-sm font-medium whitespace-nowrap"
+          >
+            {addMutation.isPending ? "Adding..." : "Add Admin"}
+          </button>
+        </form>
+      </div>
+
+      <div className="overflow-x-auto rounded-xl border border-border bg-surface">
+        <table className="w-full text-left text-sm">
+          <thead className="border-b border-border bg-surface-2 text-muted">
+            <tr>
+              <th className="p-4 font-medium">Email</th>
+              <th className="p-4 font-medium">Role</th>
+              <th className="p-4 font-medium">Added On</th>
+              <th className="p-4 font-medium text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {team?.map((admin: any) => (
+              <tr key={admin.email} className="hover:bg-surface-2/50 transition-colors">
+                <td className="p-4 font-medium">{admin.email}</td>
+                <td className="p-4 capitalize">
+                  <Badge className={admin.role === 'super_admin' ? 'bg-primary' : 'bg-secondary'}>
+                    {admin.role.replace('_', ' ')}
+                  </Badge>
+                </td>
+                <td className="p-4 text-muted">{new Date(admin.created_at).toLocaleDateString()}</td>
+                <td className="p-4 text-right">
+                  {admin.role !== 'super_admin' && (
+                    <button
+                      onClick={() => {
+                        if (confirm(`Remove ${admin.email} from admin team?`)) {
+                          removeMutation.mutate(admin.email);
+                        }
+                      }}
+                      className="text-xs px-3 py-1.5 rounded bg-danger/10 text-danger hover:bg-danger/20 transition-colors border border-danger/20"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function AdminProfileTab() {
+  const queryClient = useQueryClient();
+  const [pin, setPin] = useState("");
+  const [step, setStep] = useState<"view" | "create" | "reset_otp" | "reset_new">("view");
+  const [otp, setOtp] = useState("");
+  const [newPin, setNewPin] = useState("");
+
+  const { data: profile, isLoading } = useQuery({
+    queryKey: ["adminProfile"],
+    queryFn: () => getAdminProfile(),
+  });
+
+  const setPinMutation = useMutation({
+    mutationFn: async (newPin: string) => {
+      await setAdminPin({ data: { pin: newPin } });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminProfile"] });
+      toast.success("PIN set successfully!");
+      setStep("view");
+      setPin("");
+    },
+    onError: (err) => toast.error(err.message)
+  });
+
+  const requestOtpMutation = useMutation({
+    mutationFn: async () => {
+      await requestPinResetOTP();
+    },
+    onSuccess: () => {
+      toast.success("OTP sent to your email!");
+      setStep("reset_otp");
+    },
+    onError: (err) => toast.error(err.message)
+  });
+
+  const resetPinMutation = useMutation({
+    mutationFn: async () => {
+      await resetAdminPinWithOTP({ data: { otp, newPin } });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminProfile"] });
+      toast.success("PIN reset successfully!");
+      setStep("view");
+      setOtp("");
+      setNewPin("");
+    },
+    onError: (err) => toast.error(err.message)
+  });
+
+  if (isLoading) return <div className="p-8 text-center text-muted">Loading profile...</div>;
+  if (!profile) return null;
+
+  return (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300 max-w-2xl">
+      <div>
+        <h2 className="text-2xl font-semibold">Admin Profile</h2>
+        <p className="text-muted mt-1 text-sm">Manage your personal admin security settings.</p>
+      </div>
+
+      <div className="bg-surface border border-border rounded-xl p-6 space-y-6">
+        <div>
+          <h3 className="text-sm font-medium text-muted">Email</h3>
+          <p className="text-lg font-medium">{profile.email}</p>
+        </div>
+        <div>
+          <h3 className="text-sm font-medium text-muted">Role</h3>
+          <Badge className="mt-1">{profile.role.replace('_', ' ')}</Badge>
+        </div>
+
+        <div className="pt-6 border-t border-border">
+          <h3 className="text-lg font-medium mb-4">Security PIN</h3>
+          
+          {step === "view" && (
+            <div>
+              {profile.hasPin ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-primary">
+                    <Shield className="w-5 h-5" />
+                    <span className="font-medium">6-Digit PIN is active</span>
+                  </div>
+                  <p className="text-sm text-muted">Your PIN is required for sensitive actions like deleting orders.</p>
+                  <button
+                    onClick={() => requestOtpMutation.mutate()}
+                    disabled={requestOtpMutation.isPending}
+                    className="px-4 py-2 rounded-lg border border-border hover:bg-surface-2 text-sm font-medium"
+                  >
+                    {requestOtpMutation.isPending ? "Requesting..." : "Reset PIN"}
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-danger">
+                    <Shield className="w-5 h-5" />
+                    <span className="font-medium">No PIN set</span>
+                  </div>
+                  <p className="text-sm text-muted">We strongly recommend setting a 6-digit PIN to protect sensitive actions.</p>
+                  <button
+                    onClick={() => setStep("create")}
+                    className="px-4 py-2 rounded-lg bg-accent text-ink hover:opacity-90 text-sm font-medium"
+                  >
+                    Create PIN
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {step === "create" && (
+            <div className="space-y-4 max-w-sm animate-in fade-in slide-in-from-bottom-2">
+              <label className="block text-sm font-medium">Enter 6-Digit PIN</label>
+              <input
+                type="password"
+                maxLength={6}
+                value={pin}
+                onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                className="w-full rounded border border-border bg-surface-2 p-3 text-center text-xl tracking-widest"
+                placeholder="••••••"
+              />
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { setStep("view"); setPin(""); }}
+                  className="flex-1 px-4 py-2 rounded-lg border border-border hover:bg-surface-2 text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => setPinMutation.mutate(pin)}
+                  disabled={pin.length !== 6 || setPinMutation.isPending}
+                  className="flex-1 px-4 py-2 rounded-lg bg-accent text-ink hover:opacity-90 text-sm font-medium disabled:opacity-50"
+                >
+                  {setPinMutation.isPending ? "Saving..." : "Save PIN"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {step === "reset_otp" && (
+            <div className="space-y-4 max-w-sm animate-in fade-in slide-in-from-bottom-2">
+              <p className="text-sm text-muted">An OTP has been sent to {profile.email}.</p>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">Enter OTP</label>
+                <input
+                  type="text"
+                  maxLength={6}
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  className="w-full rounded border border-border bg-surface-2 p-3 text-center text-xl tracking-widest"
+                  placeholder="123456"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">New 6-Digit PIN</label>
+                <input
+                  type="password"
+                  maxLength={6}
+                  value={newPin}
+                  onChange={(e) => setNewPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  className="w-full rounded border border-border bg-surface-2 p-3 text-center text-xl tracking-widest"
+                  placeholder="••••••"
+                />
+              </div>
+
+              <div className="flex gap-3 mt-4">
+                <button
+                  onClick={() => { setStep("view"); setOtp(""); setNewPin(""); }}
+                  className="flex-1 px-4 py-2 rounded-lg border border-border hover:bg-surface-2 text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => resetPinMutation.mutate()}
+                  disabled={otp.length !== 6 || newPin.length !== 6 || resetPinMutation.isPending}
+                  className="flex-1 px-4 py-2 rounded-lg bg-accent text-ink hover:opacity-90 text-sm font-medium disabled:opacity-50"
+                >
+                  {resetPinMutation.isPending ? "Resetting..." : "Reset PIN"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+function FaqsTab() {
+  const queryClient = useQueryClient();
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
+  const [isAdding, setIsAdding] = useState(false);
+
+  const { data: faqs = [], isLoading } = useQuery({
+    queryKey: ["faqsAdmin"],
+    queryFn: () => getFaqsAdmin(),
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: { question: string; answer: string }) => {
+      await createFaq({ data });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["faqsAdmin"] });
+      queryClient.invalidateQueries({ queryKey: ["faqs"] });
+      toast.success("FAQ created");
+      setIsAdding(false);
+      setQuestion("");
+      setAnswer("");
+    },
+    onError: (err) => toast.error(err.message)
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (data: { id: number; question: string; answer: string }) => {
+      await updateFaq({ data });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["faqsAdmin"] });
+      queryClient.invalidateQueries({ queryKey: ["faqs"] });
+      toast.success("FAQ updated");
+      setEditingId(null);
+      setQuestion("");
+      setAnswer("");
+    },
+    onError: (err) => toast.error(err.message)
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await deleteFaq({ data: { id } });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["faqsAdmin"] });
+      queryClient.invalidateQueries({ queryKey: ["faqs"] });
+      toast.success("FAQ deleted");
+    },
+    onError: (err) => toast.error(err.message)
+  });
+
+  const reorderMutation = useMutation({
+    mutationFn: async (orderedIds: number[]) => {
+      await reorderFaqs({ data: { orderedIds } });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["faqsAdmin"] });
+      queryClient.invalidateQueries({ queryKey: ["faqs"] });
+    }
+  });
+
+  const moveFaq = (index: number, direction: 'up' | 'down') => {
+    if (
+      (direction === 'up' && index === 0) || 
+      (direction === 'down' && index === faqs.length - 1)
+    ) return;
+    
+    const newFaqs = [...faqs];
+    const swapIndex = direction === 'up' ? index - 1 : index + 1;
+    const temp = newFaqs[index];
+    newFaqs[index] = newFaqs[swapIndex];
+    newFaqs[swapIndex] = temp;
+    
+    reorderMutation.mutate(newFaqs.map(f => f.id));
+  };
+
+  const startEdit = (faq: any) => {
+    setEditingId(faq.id);
+    setQuestion(faq.question);
+    setAnswer(faq.answer);
+    setIsAdding(false);
+  };
+
+  if (isLoading) return <div className="p-8 text-center text-muted">Loading FAQs...</div>;
+
+  return (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300 max-w-4xl">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold">FAQs</h2>
+          <p className="text-muted mt-1 text-sm">Manage the Frequently Asked Questions displayed on the site.</p>
+        </div>
+        {!isAdding && editingId === null && (
+          <button
+            onClick={() => { setIsAdding(true); setQuestion(""); setAnswer(""); }}
+            className="px-4 py-2 rounded-lg bg-ink text-bg hover:opacity-90 text-sm font-medium"
+          >
+            Add New FAQ
+          </button>
+        )}
+      </div>
+
+      {(isAdding || editingId !== null) && (
+        <div className="bg-surface border border-border rounded-xl p-6 mb-6">
+          <h3 className="text-lg font-medium mb-4">{isAdding ? "Add FAQ" : "Edit FAQ"}</h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Question</label>
+              <input
+                type="text"
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                className="w-full rounded border border-border bg-surface-2 p-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Answer</label>
+              <textarea
+                value={answer}
+                onChange={(e) => setAnswer(e.target.value)}
+                rows={4}
+                className="w-full rounded border border-border bg-surface-2 p-2 text-sm resize-y"
+              />
+            </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                onClick={() => { setIsAdding(false); setEditingId(null); }}
+                className="px-4 py-2 rounded-lg border border-border hover:bg-surface-2 text-sm font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (isAdding) {
+                    createMutation.mutate({ question, answer });
+                  } else if (editingId !== null) {
+                    updateMutation.mutate({ id: editingId, question, answer });
+                  }
+                }}
+                disabled={!question || !answer || createMutation.isPending || updateMutation.isPending}
+                className="px-4 py-2 rounded-lg bg-accent text-ink hover:opacity-90 text-sm font-medium disabled:opacity-50"
+              >
+                {createMutation.isPending || updateMutation.isPending ? "Saving..." : "Save FAQ"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-3">
+        {faqs.map((faq: any, index: number) => (
+          <div key={faq.id} className="bg-surface border border-border rounded-xl p-4 flex gap-4 items-start group transition-colors hover:bg-surface-2/30">
+            <div className="flex flex-col gap-1 shrink-0 pt-1">
+              <button 
+                onClick={() => moveFaq(index, 'up')}
+                disabled={index === 0 || reorderMutation.isPending}
+                className="text-muted hover:text-ink disabled:opacity-30 disabled:hover:text-muted transition-colors"
+              >
+                ↑
+              </button>
+              <button 
+                onClick={() => moveFaq(index, 'down')}
+                disabled={index === faqs.length - 1 || reorderMutation.isPending}
+                className="text-muted hover:text-ink disabled:opacity-30 disabled:hover:text-muted transition-colors"
+              >
+                ↓
+              </button>
+            </div>
+            
+            <div className="flex-1 min-w-0">
+              <h4 className="font-medium text-lg mb-1">{faq.question}</h4>
+              <p className="text-sm text-muted">{faq.answer}</p>
+            </div>
+            
+            <div className="flex items-center gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={() => startEdit(faq)}
+                className="px-3 py-1.5 rounded-lg border border-border hover:bg-surface-2 text-sm font-medium"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => {
+                  if (confirm("Are you sure you want to delete this FAQ?")) {
+                    deleteMutation.mutate(faq.id);
+                  }
+                }}
+                className="px-3 py-1.5 rounded-lg border border-danger/20 text-danger hover:bg-danger/10 text-sm font-medium"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        ))}
+        {faqs.length === 0 && !isLoading && (
+          <div className="text-center p-8 text-muted border border-dashed border-border rounded-xl">
+            No FAQs found. Create one to get started!
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+

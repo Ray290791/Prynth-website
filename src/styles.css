@@ -1,0 +1,151 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Poppins", ui-sans-serif, system-ui, sans-serif;
+
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-ink: var(--ink);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --color-danger: var(--danger);
+
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
+
+  --shadow-border: var(--shadow-border);
+  --shadow-border-hover: var(--shadow-border-hover);
+  --shadow-lift: var(--shadow-lift);
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:root {
+  color-scheme: light;
+  --bg: #f6f5f2;
+  --surface: #fffefb;
+  --surface-2: #eceae5;
+  --fg: #1e2124;
+  --muted: #5e646b;
+  --subtle: #8b9198;
+  --accent: #00b8a9;
+  --accent-hover: #00a396;
+  --accent-soft: color-mix(in oklab, #00b8a9 14%, #fffefb);
+  --ink: #1e2124;
+  --border: color-mix(in oklab, #1e2124 10%, transparent);
+  --ring: #00b8a9;
+  --danger: #c45c4a;
+  --shadow-border:
+    0 0 0 1px rgba(30, 33, 36, 0.06), 0 1px 2px -1px rgba(30, 33, 36, 0.06),
+    0 2px 4px 0 rgba(30, 33, 36, 0.04);
+  --shadow-border-hover:
+    0 0 0 1px rgba(30, 33, 36, 0.1), 0 1px 2px -1px rgba(30, 33, 36, 0.08),
+    0 8px 20px -8px rgba(30, 33, 36, 0.12);
+  --shadow-lift: 0 16px 40px -20px rgba(30, 33, 36, 0.22);
+}
+
+.dark {
+  color-scheme: dark;
+  --bg: #1e2124;
+  --surface: #262a2e;
+  --surface-2: #2f3439;
+  --fg: #f3f1ec;
+  --muted: #b0b6bc;
+  --subtle: #8a9096;
+  --accent: #00b8a9;
+  --accent-hover: #1ec9ba;
+  --accent-soft: color-mix(in oklab, #00b8a9 16%, #1e2124);
+  --ink: #1e2124;
+  --border: color-mix(in oklab, #f3f1ec 12%, transparent);
+  --ring: #00b8a9;
+  --danger: #e08a7c;
+  --shadow-border: 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --shadow-border-hover: 0 0 0 1px rgba(255, 255, 255, 0.14);
+  --shadow-lift: 0 18px 40px -18px rgba(0, 0, 0, 0.55);
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  text-wrap: balance;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  img.product-photo {
+    outline: 1px solid rgba(30, 33, 36, 0.08);
+    outline-offset: -1px;
+  }
+
+  .dark img.product-photo {
+    outline-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.page-enter {
+  animation: page-in 250ms var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter {
+    animation: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
