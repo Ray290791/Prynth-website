@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ShoppingBag, Heart } from "lucide-react";
+import { ShoppingBag, Heart, Minus, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ColorSwatches } from "@/components/color-swatches";
@@ -11,6 +11,7 @@ import { useCart } from "@/lib/cart-store";
 import { formatINR } from "@/lib/format";
 import { productColor } from "@/lib/products";
 import { getProductBySlug, getRelatedProducts } from "@/lib/products-fns";
+import { useHydrated } from "@/lib/use-hydrated";
 import { getRecentlyViewed, trackProductView, toggleWishlist } from "@/lib/ecommerce-fns";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useCurrentUser } from "@/lib/auth/use-current-user";
@@ -39,6 +40,9 @@ function ProductPage() {
   const user = useCurrentUser();
   const navigate = useNavigate();
   const add = useCart((s) => s.add);
+  const items = useCart((s) => s.items);
+  const setQtyInCart = useCart((s) => s.setQty);
+  const hydrated = useHydrated();
   const [color, setColor] = useState(product?.colors[0] ?? "charcoal");
   const [size, setSize] = useState(product?.sizes?.[0] ?? "");
   const [qty, setQty] = useState(1);
@@ -85,6 +89,32 @@ function ProductPage() {
         </Button>
       </div>
     );
+  }
+
+  const productCartItems = items.filter(
+    i => i.productSlug === product?.slug && i.color === color && i.size === (size || undefined)
+  );
+  const totalQty = hydrated ? productCartItems.reduce((acc, i) => acc + i.qty, 0) : 0;
+
+  function handleQtyChange(newQty: number) {
+    if (!product) return;
+    if (newQty > totalQty) {
+      add({
+        kind: "product",
+        productSlug: product.slug,
+        name: product.name,
+        image: product.image,
+        color,
+        size: size || undefined,
+        unitPrice: product.price,
+        qty: 1,
+      });
+    } else if (newQty < totalQty) {
+      const firstItem = productCartItems[0];
+      if (firstItem) {
+        setQtyInCart(firstItem.id, firstItem.qty - 1);
+      }
+    }
   }
 
   function addToCart() {
@@ -187,27 +217,69 @@ function ProductPage() {
 
           {!isOutOfStock ? (
             <>
-              <div className="mt-6">
-                <p className="mb-2 text-sm font-medium">Quantity</p>
-                <QuantityStepper 
-                  value={qty} 
-                  onChange={setQty} 
-                  max={(product.stockCount ?? 0) > 0 ? product.stockCount : 99} 
-                />
-              </div>
+              {totalQty === 0 && (
+                <div className="mt-6">
+                  <p className="mb-2 text-sm font-medium">Quantity</p>
+                  <QuantityStepper 
+                    value={qty} 
+                    onChange={setQty} 
+                    max={(product.stockCount ?? 0) > 0 ? product.stockCount : 99} 
+                  />
+                </div>
+              )}
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Button size="lg" className="sm:flex-1" onClick={addToCart}>
-                  <ShoppingBag className="size-4" strokeWidth={1.75} />
-                  Add to cart
-                </Button>
-                <Button
-                  size="lg"
-                  variant="secondary"
-                  onClick={() => { addToCart(); navigate({ to: "/checkout" }); }}
-                >
-                  Buy now
-                </Button>
+                {totalQty > 0 ? (
+                  <div 
+                    className="flex h-11 sm:flex-1 overflow-hidden rounded-lg bg-accent text-ink transition-transform active:scale-[0.98]" 
+                    onClick={e => e.preventDefault()}
+                  >
+                    <div className="flex flex-1 items-center justify-between px-2">
+                      <button 
+                        type="button"
+                        className="flex size-9 items-center justify-center rounded-md transition-colors hover:bg-black/10 active:scale-95"
+                        onClick={() => handleQtyChange(totalQty - 1)}
+                      >
+                        <Minus className="size-5" strokeWidth={2.5} />
+                      </button>
+                      <span className="text-base font-semibold tabular-nums">{totalQty}</span>
+                      <button 
+                        type="button"
+                        className="flex size-9 items-center justify-center rounded-md transition-colors hover:bg-black/10 active:scale-95"
+                        onClick={() => handleQtyChange(totalQty + 1)}
+                      >
+                        <Plus className="size-5" strokeWidth={2.5} />
+                      </button>
+                    </div>
+                    
+                    <div className="w-[1px] bg-ink/15" />
+                    
+                    <button 
+                      type="button"
+                      className="flex w-12 items-center justify-center transition-colors hover:bg-black/10 active:scale-95"
+                      onClick={() => {
+                        productCartItems.forEach(item => setQtyInCart(item.id, 0));
+                      }}
+                    >
+                      <Trash2 className="size-5" strokeWidth={2} />
+                    </button>
+                  </div>
+                ) : (
+                  <Button size="lg" className="sm:flex-1" onClick={addToCart}>
+                    <ShoppingBag className="size-4" strokeWidth={1.75} />
+                    Add to cart
+                  </Button>
+                )}
+                
+                {totalQty === 0 && (
+                  <Button
+                    size="lg"
+                    variant="secondary"
+                    onClick={() => { addToCart(); navigate({ to: "/checkout" }); }}
+                  >
+                    Buy now
+                  </Button>
+                )}
               </div>
             </>
           ) : (
@@ -289,9 +361,33 @@ function ProductPage() {
             <p className="font-medium">{product.name}</p>
             <p className="text-sm text-muted">{formatINR(product.price)}</p>
           </div>
-          <Button onClick={addToCart} size="sm">
-            <ShoppingBag className="mr-2 size-4" /> Add
-          </Button>
+          {totalQty > 0 ? (
+            <div 
+              className="flex h-9 w-[120px] overflow-hidden rounded-lg bg-accent text-ink" 
+            >
+              <div className="flex flex-1 items-center justify-between px-1">
+                <button 
+                  type="button"
+                  className="flex size-7 items-center justify-center rounded-md transition-colors hover:bg-black/10 active:scale-95"
+                  onClick={() => handleQtyChange(totalQty - 1)}
+                >
+                  <Minus className="size-4" strokeWidth={2.5} />
+                </button>
+                <span className="text-sm font-semibold tabular-nums">{totalQty}</span>
+                <button 
+                  type="button"
+                  className="flex size-7 items-center justify-center rounded-md transition-colors hover:bg-black/10 active:scale-95"
+                  onClick={() => handleQtyChange(totalQty + 1)}
+                >
+                  <Plus className="size-4" strokeWidth={2.5} />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <Button onClick={addToCart} size="sm">
+              <ShoppingBag className="mr-2 size-4" /> Add
+            </Button>
+          )}
         </div>
       )}
     </div>
