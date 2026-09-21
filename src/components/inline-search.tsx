@@ -107,7 +107,7 @@ export function InlineSearch() {
 
       {/* Dropdown Results */}
       {open && query.trim().length > 0 && (
-        <div className="absolute top-14 right-0 w-80 max-h-[70vh] overflow-hidden bg-bg border border-border shadow-xl rounded-2xl flex flex-col z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="absolute top-14 right-0 w-80 max-h-[70vh] overflow-hidden bg-bg/85 backdrop-blur-xl border border-border shadow-xl rounded-2xl flex flex-col z-50 animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="overflow-y-auto p-2">
             {isLoading && (
               <div className="p-8 flex items-center justify-center text-muted">
