@@ -138,3 +138,32 @@ export const getAnalyticsAdmin = createServerFn({ method: "GET" })
       usersCount: parseInt(totalUsersRes[0]?.count || "0", 10),
     };
   });
+
+export const upsertCartSession = createServerFn({ method: "POST" })
+  .validator((data: { id: string; email?: string; items: any[] }) => data)
+  .handler(async ({ data, context }) => {
+    const sql = await getSql();
+    // Use user_id if we have one (from the optional middleware context, but since this endpoint 
+    // isn't strictly behind authMiddleware, we must check if context exists).
+    // Actually, createServerFn context without middleware is just {}. We'll pass user_id explicitly or extract from auth.
+    // To keep it simple, we just save it against the session ID.
+    const itemsJson = JSON.stringify(data.items);
+    await sql`
+      INSERT INTO cart_sessions (id, email, items, updated_at)
+      VALUES (${data.id}, ${data.email || null}, ${itemsJson}, now())
+      ON CONFLICT (id) DO UPDATE 
+      SET email = COALESCE(${data.email || null}, cart_sessions.email),
+          items = ${itemsJson},
+          updated_at = now()
+    `;
+    return { success: true };
+  });
+
+export const getCartSession = createServerFn({ method: "GET" })
+  .validator((id: string) => id)
+  .handler(async ({ data: id }) => {
+    const sql = await getSql();
+    const res = await sql`SELECT * FROM cart_sessions WHERE id = ${id}`;
+    if (res.length === 0) return null;
+    return res[0];
+  });

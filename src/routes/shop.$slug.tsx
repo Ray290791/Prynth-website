@@ -10,25 +10,38 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/lib/cart-store";
 import { formatINR } from "@/lib/format";
 import { productColor } from "@/lib/products";
-import { getProductBySlug, getRelatedProducts } from "@/lib/products-fns";
+import { getProductBySlug, getRelatedProducts, getProductReviews } from "@/lib/products-fns";
 import { useHydrated } from "@/lib/use-hydrated";
 import { getRecentlyViewed, trackProductView, toggleWishlist } from "@/lib/ecommerce-fns";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useCurrentUser } from "@/lib/auth/use-current-user";
+import { Star } from "lucide-react";
 
 export const Route = createFileRoute("/shop/$slug")({
   loader: async ({ params }) => {
     const product = await getProductBySlug({ data: params.slug });
     if (!product) throw new Error("Product not found");
-    const related = await getRelatedProducts({ data: params.slug });
-    return { product, related };
+    const [related, reviews] = await Promise.all([
+      getRelatedProducts({ data: params.slug }),
+      getProductReviews({ data: params.slug }),
+    ]);
+    return { product, related, reviews };
   },
   head: ({ loaderData }) => {
     if (!loaderData?.product) return {};
+    const p = loaderData.product;
     return {
       meta: [
-        { title: `${loaderData.product.name} | prynth!` },
-        { name: "description", content: loaderData.product.description.substring(0, 160) }
+        { title: `${p.name} | prynth!` },
+        { name: "description", content: p.description.substring(0, 160) },
+        { property: "og:title", content: `${p.name} | prynth!` },
+        { property: "og:description", content: p.description.substring(0, 160) },
+        { property: "og:image", content: p.image },
+        { property: "og:type", content: "product" },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: `${p.name} | prynth!` },
+        { name: "twitter:description", content: p.description.substring(0, 160) },
+        { name: "twitter:image", content: p.image },
       ]
     };
   },
@@ -36,7 +49,7 @@ export const Route = createFileRoute("/shop/$slug")({
 });
 
 function ProductPage() {
-  const { product, related } = Route.useLoaderData();
+  const { product, related, reviews } = Route.useLoaderData();
   const user = useCurrentUser();
   const navigate = useNavigate();
   const add = useCart((s) => s.add);
@@ -96,26 +109,22 @@ function ProductPage() {
   );
   const totalQty = hydrated ? productCartItems.reduce((acc, i) => acc + i.qty, 0) : 0;
 
-  function handleQtyChange(newQty: number) {
-    if (!product) return;
-    if (newQty > totalQty) {
-      add({
-        kind: "product",
-        productSlug: product.slug,
-        name: product.name,
-        image: product.image,
-        color,
-        size: size || undefined,
-        unitPrice: product.price,
-        qty: 1,
-      });
-    } else if (newQty < totalQty) {
-      const firstItem = productCartItems[0];
-      if (firstItem) {
-        setQtyInCart(firstItem.id, firstItem.qty - 1);
-      }
+  const handleNotifySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (notifyEmail) {
+      toast.success("We'll email you when it's back in stock!");
+      setNotifyEmail("");
     }
-  }
+  };
+
+  const selectedVariant = product.variants?.find(v => 
+    (v.color === color || (v.color === null && !color)) && 
+    (v.size === size || (v.size === null && !size))
+  );
+
+  const displayPrice = selectedVariant?.price ?? product.price;
+  const displayStock = selectedVariant?.stockCount ?? product.stockCount ?? -1;
+  const isOutOfStock = product.inStock === false || displayStock === 0;
 
   function addToCart() {
     if (!product) return;
@@ -126,7 +135,7 @@ function ProductPage() {
       image: product.image,
       color,
       size: size || undefined,
-      unitPrice: product.price,
+      unitPrice: displayPrice,
       qty,
     });
     toast.success(`${product.name} added to cart`, {
@@ -134,15 +143,26 @@ function ProductPage() {
     });
   }
 
-  const handleNotifySubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (notifyEmail) {
-      toast.success("We'll email you when it's back in stock!");
-      setNotifyEmail("");
+  function handleQtyChange(newQty: number) {
+    if (!product) return;
+    if (newQty > totalQty) {
+      add({
+        kind: "product",
+        productSlug: product.slug,
+        name: product.name,
+        image: product.image,
+        color,
+        size: size || undefined,
+        unitPrice: displayPrice,
+        qty: 1,
+      });
+    } else if (newQty < totalQty) {
+      const firstItem = productCartItems[0];
+      if (firstItem) {
+        setQtyInCart(firstItem.id, firstItem.qty - 1);
+      }
     }
-  };
-
-  const isOutOfStock = product.inStock === false || product.stockCount === 0;
+  }
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 pb-32 md:px-6 md:py-16 md:pb-16 relative">
@@ -182,7 +202,7 @@ function ProductPage() {
             {product.name}
           </h1>
           <p className="mt-3 text-xl sm:text-2xl font-medium tabular-nums">
-            {formatINR(product.price)}
+            {formatINR(displayPrice)}
           </p>
           <p className="mt-1 text-sm text-subtle">Includes packaging. Made to order.</p>
           <p className="mt-5 text-muted">{product.description}</p>
@@ -223,7 +243,7 @@ function ProductPage() {
                   <QuantityStepper 
                     value={qty} 
                     onChange={setQty} 
-                    max={(product.stockCount ?? 0) > 0 ? product.stockCount : 99} 
+                    max={displayStock > 0 ? displayStock : 99} 
                   />
                 </div>
               )}
@@ -324,6 +344,65 @@ function ProductPage() {
 
       <section className="mt-20">
         <h2 className="font-display text-2xl font-semibold tracking-tight">
+          Customer Reviews
+        </h2>
+        {reviews.length === 0 ? (
+          <p className="mt-6 text-muted">No reviews yet. Be the first to review this product!</p>
+        ) : (
+          <div className="mt-8 space-y-8">
+            <div className="flex items-center gap-4 border-b border-border pb-6">
+              <div className="text-4xl font-semibold">
+                {(reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)}
+              </div>
+              <div>
+                <div className="flex text-brand">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star 
+                      key={s} 
+                      className="size-5" 
+                      fill={s <= Math.round(reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length) ? "currentColor" : "none"} 
+                    />
+                  ))}
+                </div>
+                <p className="mt-1 text-sm text-muted">Based on {reviews.length} review{reviews.length === 1 ? '' : 's'}</p>
+              </div>
+            </div>
+            
+            <div className="divide-y divide-border">
+              {reviews.map((r) => (
+                <div key={r.id} className="py-6">
+                  <div className="flex items-center gap-3">
+                    <div className="size-10 overflow-hidden rounded-full bg-surface-2">
+                      {r.user_image ? (
+                        <img src={r.user_image} alt={r.user_name} className="size-full object-cover" />
+                      ) : (
+                        <div className="flex size-full items-center justify-center text-sm font-medium">
+                          {r.user_name?.[0]?.toUpperCase() || '?'}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-medium">{r.user_name}</p>
+                      <div className="flex text-brand mt-0.5">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star key={s} className="size-3" fill={s <= r.rating ? "currentColor" : "none"} />
+                        ))}
+                      </div>
+                    </div>
+                    <div className="ml-auto text-sm text-muted">
+                      {new Date(r.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                    </div>
+                  </div>
+                  {r.comment && <p className="mt-4 text-muted">{r.comment}</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
+
+      <section className="mt-20">
+        <h2 className="font-display text-2xl font-semibold tracking-tight">
           Also in the shop
         </h2>
         <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-6 sm:gap-y-12 lg:grid-cols-4">
@@ -359,7 +438,7 @@ function ProductPage() {
         <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-surface p-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] md:hidden flex items-center justify-between">
           <div>
             <p className="font-medium">{product.name}</p>
-            <p className="text-sm text-muted">{formatINR(product.price)}</p>
+            <p className="text-sm text-muted">{formatINR(displayPrice)}</p>
           </div>
           {totalQty > 0 ? (
             <div 

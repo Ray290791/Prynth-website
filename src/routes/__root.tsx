@@ -12,6 +12,7 @@ import { Toaster } from "sonner";
 import { getSiteSettings } from "@/lib/settings-fns";
 import { CartSync } from "@/components/cart-sync";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
+import { CookieConsent } from "@/components/cookie-consent";
 import appCss from "../styles.css?url";
 
 const APP_NAME = "prynth!";
@@ -159,6 +160,7 @@ function Root() {
               <SiteShell>
                 <Outlet />
               </SiteShell>
+              <CookieConsent />
               <CartSync />
               <Toaster
                 position="top-center"

@@ -10,6 +10,11 @@ import type { CartItem } from "@/lib/cart-store";
 import type { Address } from "@/lib/orders-store";
 import { useCart } from "@/lib/cart-store";
 import { useNavigate } from "@tanstack/react-router";
+import { useCurrentUser } from "@/lib/auth/use-current-user";
+import { createReview } from "@/lib/products-fns";
+import { useState } from "react";
+import { Star } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/order/$id")({ component: OrderPage });
 
@@ -18,6 +23,22 @@ function OrderPage() {
   const hydrated = useHydrated();
   const add = useCart(s => s.add);
   const navigate = useNavigate();
+  const user = useCurrentUser();
+
+  const [reviewProduct, setReviewProduct] = useState<{ slug: string; name: string } | null>(null);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+  
+  const createReviewMutation = useMutation({
+    mutationFn: createReview,
+    onSuccess: () => {
+      toast.success("Review submitted!");
+      setReviewProduct(null);
+      setRating(5);
+      setComment("");
+    },
+    onError: () => toast.error("Failed to submit review"),
+  });
 
   const { data: order, isLoading } = useQuery({
     queryKey: ["order", id],
@@ -142,14 +163,22 @@ function OrderPage() {
         <h2 className="font-display text-lg font-semibold">Items</h2>
         <ul className="mt-4 divide-y divide-border">
           {items?.map((item) => (
-            <li key={item.id} className="flex justify-between gap-3 py-3 text-sm">
-              <span>
-                {item.name}
-                <span className="block text-muted">
+            <li key={item.id} className="flex justify-between gap-3 py-4 text-sm flex-col sm:flex-row sm:items-center">
+              <div>
+                <span className="block font-medium">{item.name}</span>
+                <span className="block text-muted mt-1">
                   {productColor(item.color).name} {item.size && `· ${item.size}`} · ×{item.qty}
                 </span>
-              </span>
-              <span className="tabular-nums">{formatINR(item.unitPrice * item.qty)}</span>
+                {user && order.status === 'delivered' && (
+                  <button 
+                    onClick={() => setReviewProduct({ slug: item.slug, name: item.name })}
+                    className="text-brand font-medium hover:underline mt-2 inline-block print:hidden"
+                  >
+                    Write a review
+                  </button>
+                )}
+              </div>
+              <span className="tabular-nums font-medium sm:self-start">{formatINR(item.unitPrice * item.qty)}</span>
             </li>
           ))}
         </ul>
@@ -224,6 +253,44 @@ function OrderPage() {
         <p>Thank you for shopping with Prynth!</p>
         <p>Questions? Contact us at support@prynth.com</p>
       </div>
+
+      {/* Review Dialog */}
+      {reviewProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm print:hidden">
+          <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-xl relative">
+            <button 
+              onClick={() => setReviewProduct(null)}
+              className="absolute right-4 top-4 text-muted hover:text-foreground"
+            >
+              ✕
+            </button>
+            <h3 className="font-display text-xl font-semibold">Review {reviewProduct.name}</h3>
+            
+            <div className="mt-6 flex justify-center gap-2 text-brand">
+              {[1, 2, 3, 4, 5].map((s) => (
+                <button key={s} type="button" onClick={() => setRating(s)} className="hover:scale-110 transition-transform">
+                  <Star className="size-8" fill={s <= rating ? "currentColor" : "none"} strokeWidth={1.5} />
+                </button>
+              ))}
+            </div>
+
+            <textarea 
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="What did you think?"
+              className="mt-6 w-full rounded-lg border border-border bg-background p-3 text-sm placeholder:text-muted focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand min-h-[100px]"
+            />
+
+            <Button 
+              className="w-full mt-4" 
+              onClick={() => createReviewMutation.mutate({ data: { product_slug: reviewProduct.slug, rating, comment } })}
+              disabled={createReviewMutation.isPending}
+            >
+              {createReviewMutation.isPending ? "Submitting..." : "Submit Review"}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,9 +1,10 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Menu, ShoppingBag, X } from "lucide-react";
+import { Menu, ShoppingBag, X, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { LogoLink } from "@/components/logo";
 import { AuthModal } from "@/components/auth-modal";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { SearchModal } from "@/components/search-modal";
 import { SignedOut, UserButton } from "@/lib/auth/gates";
 import { cartCount, useCart } from "@/lib/cart-store";
 import { useHydrated } from "@/lib/use-hydrated";
@@ -24,6 +25,7 @@ export function SiteHeader() {
   const hydrated = useHydrated();
   const count = hydrated ? cartCount(items) : 0;
   const [open, setOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     setOpen(false);
@@ -65,6 +67,14 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-0.5">
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            aria-label="Search products"
+            className="inline-flex size-11 items-center justify-center rounded-xl text-fg hover:bg-surface-2 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
+          >
+            <Search className="size-5" strokeWidth={1.75} />
+          </button>
           <ThemeToggle />
           <SignedOut>
             <AuthModal
@@ -122,6 +132,8 @@ export function SiteHeader() {
           </nav>
         </div>
       ) : null}
+
+      <SearchModal open={searchOpen} onOpenChange={setSearchOpen} />
     </header>
   );
 }

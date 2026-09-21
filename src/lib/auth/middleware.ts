@@ -25,6 +25,25 @@ import { createMiddleware } from "@tanstack/react-start";
  * all. On the auth-on path, use it on every server function that touches
  * per-user data and scope every query by `context.userId`.
  */
+export const optionalAuthMiddleware = createMiddleware({ type: "function" })
+  .server(async ({ next }) => {
+    const { assertSameSiteRequest } = await import("./isolation.server");
+    const { getSessionUser, authConfigured, DEV_USER_ID } = await import("./verify.server");
+    
+    assertSameSiteRequest();
+    
+    let userId: string | null = null;
+    
+    if (authConfigured) {
+      const user = await getSessionUser();
+      userId = user ? user.id : null;
+    } else {
+      userId = DEV_USER_ID;
+    }
+    
+    return next({ context: { userId } });
+  });
+
 export const authMiddleware = createMiddleware({ type: "function" })
 
   .server(async ({ next }) => {

@@ -13,6 +13,15 @@ export const COLORS: Record<string, ProductColor> = {
 
 export type Category = string;
 
+export type ProductVariant = {
+  id: number;
+  productSlug: string;
+  size: string | null;
+  color: string | null;
+  price: number;
+  stockCount: number;
+};
+
 export type Product = {
   slug: string;
   name: string;
@@ -32,6 +41,7 @@ export type Product = {
   inStock?: boolean;
   stockCount?: number;
   sizes?: string[];
+  variants?: ProductVariant[];
 };
 
 // CATEGORIES is now dynamic and fetched from SiteSettings

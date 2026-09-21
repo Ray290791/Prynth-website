@@ -112,8 +112,18 @@ function CheckoutPage() {
 
   const field = (key: keyof Address) => ({
     value: address[key] ?? "",
-    onChange: (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-      setAddress((a) => ({ ...a, [key]: e.target.value })),
+    onChange: (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      const val = e.target.value;
+      setAddress((a) => ({ ...a, [key]: val }));
+      
+      // If they type an email and it looks valid, store it for abandoned cart tracking
+      if (key === "email" && !user && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+        if (localStorage.getItem("prynth-guest-email") !== val) {
+          localStorage.setItem("prynth-guest-email", val);
+          window.dispatchEvent(new Event("prynth-sync-cart"));
+        }
+      }
+    }
   });
 
   function validate() {
@@ -174,7 +184,7 @@ function CheckoutPage() {
           });
           toast.success("Payment successful! Order confirmed.");
           clear();
-          void navigate({ to: "/profile" });
+          void navigate({ to: "/order/$id", params: { id: internalOrderNumber } });
         } catch {
           toast.error("Payment verification failed.");
         }
@@ -235,7 +245,7 @@ function CheckoutPage() {
         });
         await handleRazorpayPayment({ orderId, amount }, internalOrderNumber);
       } else {
-        await createRazorpayOrder({
+        const { internalOrderNumber } = await createRazorpayOrder({
           data: {
             items,
             total,
@@ -251,7 +261,7 @@ function CheckoutPage() {
         clear();
         setBusy(false);
         toast.success(`Order confirmed via ${pay === "upi" ? "UPI" : "Cash on Delivery"}`);
-        void navigate({ to: "/profile" });
+        void navigate({ to: "/order/$id", params: { id: internalOrderNumber } });
       }
     } catch {
       toast.error("Error creating order.");
