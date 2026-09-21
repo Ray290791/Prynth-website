@@ -75,18 +75,18 @@ export function ProductCard({ product }: { product: Product }) {
         ) : null}
       </Link>
       <div className="flex flex-1 flex-col gap-3 pt-4">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col items-start justify-between gap-1 sm:flex-row sm:gap-3">
           <div>
             <Link
               to="/shop/$slug"
               params={{ slug: product.slug }}
-              className="font-display text-base font-semibold tracking-tight text-fg hover:text-accent"
+              className="font-display text-sm sm:text-base font-semibold tracking-tight text-fg hover:text-accent line-clamp-1"
             >
               {product.name}
             </Link>
-            <p className="mt-1 text-sm text-muted">{product.blurb}</p>
+            <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-muted line-clamp-2">{product.blurb}</p>
           </div>
-          <p className="shrink-0 font-medium tabular-nums">{formatINR(product.price)}</p>
+          <p className="shrink-0 text-sm sm:text-base font-medium tabular-nums">{formatINR(product.price)}</p>
         </div>
         
         {totalQty > 0 ? (
