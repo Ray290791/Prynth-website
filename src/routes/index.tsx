@@ -60,14 +60,14 @@ function Home() {
           className="pointer-events-none absolute -top-24 -right-20 size-[22rem] rounded-full bg-accent/15 md:size-[28rem] dark:bg-[#163836]"
         />
         <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-14 md:grid-cols-12 md:px-6 md:py-20 lg:gap-16 lg:py-24">
-          <div className="md:col-span-6 lg:col-span-6">
+          <div className="relative z-10 md:col-span-6 lg:col-span-6">
             <p className="text-[11px] font-medium tracking-[0.18em] text-subtle uppercase">
               Custom 3D printing · Ready-made prints · Design
             </p>
             <h1 className="mt-4">
-              <Wordmark className="block text-5xl sm:text-6xl lg:text-[4.5rem]" />
+              <Wordmark className="block text-4xl sm:text-6xl lg:text-[4.5rem]" />
             </h1>
-            <p className="mt-6 max-w-md text-lg text-muted">
+            <p className="mt-6 max-w-md text-base sm:text-lg text-muted">
               {settings.hero_tagline}
             </p>
             <p className="mt-3 max-w-md text-sm text-muted">
@@ -165,7 +165,7 @@ function Home() {
             </Link>
           </Button>
         </div>
-        <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-6 sm:gap-y-12 lg:grid-cols-4">
           {featured.map((p) => (
             <ProductCard key={p.slug} product={p} />
           ))}
@@ -252,7 +252,7 @@ function LastVisitedSection({ products }: { products: Product[] }) {
       <h2 className="font-display text-lg font-semibold tracking-tight text-muted">
         Pick up where you left off
       </h2>
-      <div className="mt-4 max-w-sm">
+      <div className="mt-4 w-1/2 sm:max-w-sm">
         <ProductCard product={product} />
       </div>
     </section>

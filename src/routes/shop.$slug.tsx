@@ -148,10 +148,10 @@ function ProductPage() {
               </button>
             )}
           </div>
-          <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight">
+          <h1 className="mt-3 font-display text-3xl sm:text-4xl font-semibold tracking-tight">
             {product.name}
           </h1>
-          <p className="mt-3 text-2xl font-medium tabular-nums">
+          <p className="mt-3 text-xl sm:text-2xl font-medium tabular-nums">
             {formatINR(product.price)}
           </p>
           <p className="mt-1 text-sm text-subtle">Includes packaging. Made to order.</p>
@@ -254,7 +254,7 @@ function ProductPage() {
         <h2 className="font-display text-2xl font-semibold tracking-tight">
           Also in the shop
         </h2>
-        <div className="mt-8 grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-6 sm:gap-y-12 lg:grid-cols-4">
           {related.map((p) => (
             <ProductCard key={p.slug} product={p} />
           ))}
@@ -284,7 +284,7 @@ function ProductPage() {
 
       {/* Sticky Mobile Add to Cart Bar */}
       {!isOutOfStock && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background p-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] md:hidden flex items-center justify-between">
+        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-surface p-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] md:hidden flex items-center justify-between">
           <div>
             <p className="font-medium">{product.name}</p>
             <p className="text-sm text-muted">{formatINR(product.price)}</p>
