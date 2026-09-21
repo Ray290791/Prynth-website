@@ -54,7 +54,7 @@ function ShopPage() {
       <p className="text-[11px] font-medium tracking-[0.18em] text-subtle uppercase">
         Ready-made
       </p>
-      <h1 className="mt-2 font-display text-4xl font-semibold tracking-tight md:text-5xl">
+      <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight md:text-5xl">
         Shop
       </h1>
       <p className="mt-3 max-w-xl text-muted">
