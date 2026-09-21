@@ -54,7 +54,7 @@ function WishlistPage() {
         <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {wishlist.map((item) => (
             <div key={item.id} className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-surface">
-              <Link to="/shop/$slug" params={{ slug: item.product_slug }} className="block overflow-hidden">
+              <Link to="/shop/$slug" params={{ slug: item.product_slug }} target="_blank" className="block overflow-hidden">
                 <img 
                   src={item.image} 
                   alt={item.name} 
@@ -65,7 +65,7 @@ function WishlistPage() {
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-1 sm:gap-0">
                   <div>
                     <h3 className="text-sm sm:text-base font-medium">
-                      <Link to="/shop/$slug" params={{ slug: item.product_slug }} className="hover:underline">
+                      <Link to="/shop/$slug" params={{ slug: item.product_slug }} target="_blank" className="hover:underline">
                         {item.name}
                       </Link>
                     </h3>

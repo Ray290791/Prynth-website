@@ -61,6 +61,10 @@ export default defineConfig(({ command, isPreview }) => ({
     port: 8081,
     strictPort: true,
   },
+  // Never emit source maps in production — exposing them reveals original TypeScript.
+  build: {
+    sourcemap: false,
+  },
   resolve: { tsconfigPaths: true },
   plugins: [
     pgliteBootstrapPlugin(),
@@ -70,6 +74,7 @@ export default defineConfig(({ command, isPreview }) => ({
       ? [
           nitro({
             preset: "vercel",
+            serverDir: "./server",
           }),
         ]
       : []),

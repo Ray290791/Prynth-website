@@ -120,6 +120,32 @@ p {
   }
 }
 
+/* ── Content-protection CSS ──────────────────────────────────────────────────
+   Prevent casual image saving and product card scraping.
+   Normal body text remains selectable so users can copy product names / details.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+/* Block right-click save / drag on all images */
+img {
+  -webkit-user-drag: none;
+  user-drag: none;
+  pointer-events: none; /* JS event listeners on ancestors still fire */
+}
+
+/* Allow pointer events on images inside interactive elements (links, buttons) */
+a img,
+button img {
+  pointer-events: auto;
+}
+
+/* Prevent selecting images via keyboard or mouse */
+img,
+[data-product-card] {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+
 @keyframes page-in {
   from {
     opacity: 0;

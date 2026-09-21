@@ -340,7 +340,7 @@ function ProductPage() {
           </h2>
           <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
             {recentlyViewed.filter(rv => rv.product_slug !== product.slug).slice(0, 5).map((rv) => (
-              <Link key={rv.id} to="/shop/$slug" params={{ slug: rv.product_slug }} className="group block">
+              <Link key={rv.id} to="/shop/$slug" params={{ slug: rv.product_slug }} target="_blank" className="group block">
                 <div className="overflow-hidden rounded-lg border border-border bg-surface">
                   <img src={rv.image} alt={rv.name} className="aspect-square object-cover transition-transform group-hover:scale-105" />
                   <div className="p-3">

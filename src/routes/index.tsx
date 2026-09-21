@@ -96,6 +96,7 @@ function Home() {
                   key={p.slug}
                   to="/shop/$slug"
                   params={{ slug: p.slug }}
+                  target="_blank"
                   className={
                     i % 2 === 1 ? "mt-6 overflow-hidden rounded-2xl" : "overflow-hidden rounded-2xl"
                   }
