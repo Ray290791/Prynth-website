@@ -16,14 +16,37 @@ export async function verifyAdminRole(userId: string, sql: any) {
   return userRes[0] as { email: string; role: string };
 }
 
-// Helper to verify PIN
+// Helper to verify PIN with brute-force lockout (5 attempts, 15 min lock)
 export async function verifyAdminPIN(email: string, pin: string, sql: any) {
-  const res = await sql`SELECT pin_hash FROM admin_users WHERE LOWER(email) = LOWER(${email})`;
+  const res = await sql`
+    SELECT pin_hash, pin_fail_count, pin_locked_until 
+    FROM admin_users WHERE LOWER(email) = LOWER(${email})
+  `;
   if (!res.length || !res[0].pin_hash) return false;
-  
+
+  // Check lockout
+  if (res[0].pin_locked_until && new Date() < new Date(res[0].pin_locked_until)) {
+    throw new Error("Too many failed attempts. PIN is locked for 15 minutes.");
+  }
+
   const [salt, hash] = res[0].pin_hash.split(':');
   const verifyHash = crypto.scryptSync(pin, salt, 64).toString('hex');
-  return verifyHash === hash;
+  const isValid = verifyHash === hash;
+
+  if (!isValid) {
+    const newCount = (res[0].pin_fail_count ?? 0) + 1;
+    if (newCount >= 5) {
+      const lockedUntil = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+      await sql`UPDATE admin_users SET pin_fail_count = ${newCount}, pin_locked_until = ${lockedUntil} WHERE LOWER(email) = LOWER(${email})`;
+    } else {
+      await sql`UPDATE admin_users SET pin_fail_count = ${newCount} WHERE LOWER(email) = LOWER(${email})`;
+    }
+    return false;
+  }
+
+  // Success — reset fail counter
+  await sql`UPDATE admin_users SET pin_fail_count = 0, pin_locked_until = NULL WHERE LOWER(email) = LOWER(${email})`;
+  return true;
 }
 
 export const getAdminTeam = createServerFn({ method: "GET" })
@@ -130,8 +153,8 @@ export const requestPinResetOTP = createServerFn({ method: "POST" })
     const admin = await verifyAdminRole(context.userId, sql);
     if (!admin) throw new Error("Unauthorized");
 
-    // Generate 6 digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    // Generate cryptographically secure 6-digit OTP
+    const otp = crypto.randomInt(100000, 1000000).toString();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
 
     await sql`

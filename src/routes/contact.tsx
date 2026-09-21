@@ -23,6 +23,9 @@ function ContactPage() {
     const name = String(data.get("name") ?? "").trim();
     const email = String(data.get("email") ?? "").trim();
     const message = String(data.get("message") ?? "").trim();
+    // Honeypot: if the hidden field has a value, it's a bot submission — silently drop it
+    const honeypot = String(data.get("_hp") ?? "");
+    if (honeypot) { setSent(true); return; }
     if (name.length < 2 || !email.includes("@") || message.length < 8) {
       toast.error("Please fill in your name, email, and a short message.");
       return;
@@ -104,6 +107,8 @@ function ContactPage() {
               onSubmit={onSubmit}
               className="space-y-4 rounded-3xl bg-surface p-6 shadow-[var(--shadow-border)] md:p-8"
             >
+              {/* Honeypot field — hidden from real users, bots fill it in */}
+              <input name="_hp" type="text" autoComplete="off" tabIndex={-1} aria-hidden="true" className="absolute -top-[9999px] -left-[9999px] opacity-0 pointer-events-none" />
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <Label htmlFor="name">Name</Label>

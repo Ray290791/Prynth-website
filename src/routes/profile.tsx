@@ -7,10 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { useCurrentUser } from "@/lib/auth/use-current-user";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { toast } from "sonner";
 import { updateUserProfile, setDefaultAddress, deleteAddress } from "@/lib/user-profile-fns";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
@@ -94,6 +94,11 @@ function ProfilePage() {
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) {
+                        if (file.size > 2 * 1024 * 1024) {
+                          toast.error("Photo must be under 2 MB.");
+                          e.target.value = "";
+                          return;
+                        }
                         const reader = new FileReader();
                         reader.onload = (ev) => {
                           const result = ev.target?.result as string;

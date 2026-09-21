@@ -63,15 +63,9 @@ export const getAllProductsAdmin = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const sql = await getSql();
     
-    // Verify admin
-    const userRes = await sql`SELECT email FROM "user" WHERE id = ${context.userId}`;
-    const user = userRes[0] as { email: string } | undefined;
-    const dbEmail = user?.email?.toLowerCase();
-    const envAdminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
-    
-    if (!user || !dbEmail || (dbEmail !== envAdminEmail && dbEmail !== "prynth07@gmail.com")) {
-      throw new Error("Unauthorized");
-    }
+    // Verify admin role via admin_users table
+    const admin = await verifyAdminRole(context.userId, sql);
+    if (!admin) throw new Error("Unauthorized");
     
     await seedProductsIfEmpty();
     const rows = await sql<any>`SELECT * FROM products ORDER BY name ASC`;
@@ -126,15 +120,8 @@ export const updateProduct = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const sql = await getSql();
     
-    // Verify admin
-    const userRes = await sql`SELECT email FROM "user" WHERE id = ${context.userId}`;
-    const user = userRes[0] as { email: string } | undefined;
-    const dbEmail = user?.email?.toLowerCase();
-    const envAdminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
-    
-    if (!user || !dbEmail || (dbEmail !== envAdminEmail && dbEmail !== "prynth07@gmail.com")) {
-      throw new Error("Unauthorized");
-    }
+    const admin = await verifyAdminRole(context.userId, sql);
+    if (!admin) throw new Error("Unauthorized");
     await sql`
       UPDATE products SET
         name = ${data.name},
@@ -164,15 +151,8 @@ export const updateProductInventory = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const sql = await getSql();
     
-    // Verify admin
-    const userRes = await sql`SELECT email FROM "user" WHERE id = ${context.userId}`;
-    const user = userRes[0] as { email: string } | undefined;
-    const dbEmail = user?.email?.toLowerCase();
-    const envAdminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
-    
-    if (!user || !dbEmail || (dbEmail !== envAdminEmail && dbEmail !== "prynth07@gmail.com")) {
-      throw new Error("Unauthorized");
-    }
+    const admin = await verifyAdminRole(context.userId, sql);
+    if (!admin) throw new Error("Unauthorized");
     await sql`
       UPDATE products SET
         stock_count = ${data.stockCount},
@@ -187,15 +167,8 @@ export const createProduct = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const sql = await getSql();
     
-    // Verify admin
-    const userRes = await sql`SELECT email FROM "user" WHERE id = ${context.userId}`;
-    const user = userRes[0] as { email: string } | undefined;
-    const dbEmail = user?.email?.toLowerCase();
-    const envAdminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
-    
-    if (!user || !dbEmail || (dbEmail !== envAdminEmail && dbEmail !== "prynth07@gmail.com")) {
-      throw new Error("Unauthorized");
-    }
+    const admin = await verifyAdminRole(context.userId, sql);
+    if (!admin) throw new Error("Unauthorized");
     await sql`
       INSERT INTO products (
         slug, name, price, image, category, blurb, description, 
@@ -218,14 +191,8 @@ export const deleteProduct = createServerFn({ method: "POST" })
   .handler(async ({ data: slug, context }) => {
     const sql = await getSql();
     
-    // Verify admin
-    const userRes = await sql`SELECT email FROM "user" WHERE id = ${context.userId}`;
-    const user = userRes[0] as { email: string } | undefined;
-    const dbEmail = user?.email?.toLowerCase();
-    const envAdminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
+    const admin = await verifyAdminRole(context.userId, sql);
+    if (!admin) throw new Error("Unauthorized");
     
-    if (!user || !dbEmail || (dbEmail !== envAdminEmail && dbEmail !== "prynth07@gmail.com")) {
-      throw new Error("Unauthorized");
-    }
     await sql`DELETE FROM products WHERE slug = ${slug}`;
   });

@@ -52,6 +52,10 @@ export const updateUserProfile = createServerFn({ method: "POST" })
       await sql`UPDATE "user" SET name = ${data.name} WHERE id = ${context.userId}`;
     }
     if (data.image !== undefined) {
+      // ~2 MB limit (base64 is ~4/3 of raw size, so 2MB raw ≈ 2.7MB base64)
+      if (data.image.length > 2_800_000) {
+        throw new Error("Image too large. Please use a photo under 2 MB.");
+      }
       await sql`UPDATE "user" SET image = ${data.image} WHERE id = ${context.userId}`;
     }
     return { success: true };
