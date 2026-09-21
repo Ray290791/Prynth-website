@@ -42,7 +42,7 @@ export const getUserProfile = createServerFn({ method: "GET" })
 
 export const updateUserProfile = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .validator((data: { phone?: string; name?: string }) => data)
+  .validator((data: { phone?: string; name?: string; image?: string }) => data)
   .handler(async ({ data, context }) => {
     const sql = await getSql();
     if (data.phone !== undefined) {
@@ -50,6 +50,9 @@ export const updateUserProfile = createServerFn({ method: "POST" })
     }
     if (data.name !== undefined) {
       await sql`UPDATE "user" SET name = ${data.name} WHERE id = ${context.userId}`;
+    }
+    if (data.image !== undefined) {
+      await sql`UPDATE "user" SET image = ${data.image} WHERE id = ${context.userId}`;
     }
     return { success: true };
   });

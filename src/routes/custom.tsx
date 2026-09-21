@@ -64,11 +64,9 @@ function CustomPage() {
   const navigate = useNavigate({ from: "/custom" });
   const add = useCart((s) => s.add);
 
-  const [tab, setTab] = useState<Path>(path ?? "upload");
-  useEffect(() => setTab(path ?? "upload"), [path]);
+  const tab = path ?? "upload";
 
   function switchTab(next: Path) {
-    setTab(next);
     void navigate({ search: { path: next } });
   }
 

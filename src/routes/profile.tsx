@@ -79,11 +79,32 @@ function ProfilePage() {
           <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
             <h3 className="text-lg font-semibold">Account Info</h3>
             <div className="mt-4 flex flex-col items-center sm:items-start sm:flex-row gap-4">
-              <img 
-                src={`https://api.dicebear.com/7.x/notionists/svg?seed=${user.primaryEmail}&backgroundColor=e5e5e5`} 
-                alt="Avatar" 
-                className="w-16 h-16 rounded-full border border-border bg-surface-2"
-              />
+              <div className="relative group w-16 h-16 rounded-full border border-border bg-surface-2 overflow-hidden shrink-0">
+                <img 
+                  src={user.profileImageUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${user.primaryEmail}&backgroundColor=e5e5e5`} 
+                  alt="Avatar" 
+                  className="w-full h-full object-cover"
+                />
+                <label className="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center cursor-pointer transition-opacity">
+                  <span className="text-[10px] text-white font-medium">Edit</span>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden" 
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          const result = ev.target?.result as string;
+                          updateMutation.mutate({ data: { image: result } });
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }} 
+                  />
+                </label>
+              </div>
               <div className="space-y-1 text-center sm:text-left flex-1">
                 {isEditing ? (
                   <form 

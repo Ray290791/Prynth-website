@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useRouter, useNavigate } from "@tanstack/react-router";
 import { getAllOrdersAdmin, updateOrderStatus, deleteOrderAdmin } from "@/lib/orders-fns";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatINR } from "@/lib/format";
@@ -15,11 +15,17 @@ import { getFaqsAdmin, createFaq, updateFaq, deleteFaq, reorderFaqs } from "@/li
 import { type Product } from "@/lib/products";
 
 export const Route = createFileRoute("/admin")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    tab: (search.tab as string) || "orders",
+  }),
   component: AdminPage,
 });
 
 function AdminPage() {
-  const [activeTab, setActiveTab] = useState("orders");
+  const { tab: activeTab } = Route.useSearch();
+  const navigate = useNavigate({ from: Route.fullPath });
+  const setActiveTab = (tab: string) => navigate({ search: { tab } });
+  
   const queryClient = useQueryClient();
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [deletingOrder, setDeletingOrder] = useState<string | null>(null);

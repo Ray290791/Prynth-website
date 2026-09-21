@@ -51,7 +51,7 @@ function WishlistPage() {
           </Link>
         </div>
       ) : (
-        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {wishlist.map((item) => (
             <div key={item.id} className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-surface">
               <Link to="/shop/$slug" params={{ slug: item.product_slug }} className="block overflow-hidden">
@@ -61,20 +61,20 @@ function WishlistPage() {
                   className="aspect-square object-cover transition-transform duration-300 group-hover:scale-105"
                 />
               </Link>
-              <div className="flex flex-1 flex-col p-4">
-                <div className="flex items-start justify-between">
+              <div className="flex flex-1 flex-col p-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-1 sm:gap-0">
                   <div>
-                    <h3 className="font-medium">
+                    <h3 className="text-sm sm:text-base font-medium">
                       <Link to="/shop/$slug" params={{ slug: item.product_slug }} className="hover:underline">
                         {item.name}
                       </Link>
                     </h3>
-                    <p className="mt-1 text-sm text-muted">{item.category}</p>
+                    <p className="mt-0.5 text-xs sm:text-sm text-muted">{item.category}</p>
                   </div>
-                  <p className="font-semibold">{formatINR(item.price)}</p>
+                  <p className="text-sm sm:text-base font-semibold">{formatINR(item.price)}</p>
                 </div>
                 
-                <div className="mt-auto pt-4 flex items-center justify-between">
+                <div className="mt-auto pt-3 sm:pt-4 flex items-center justify-between">
                   <span className={`text-xs font-medium ${item.in_stock ? 'text-green-600' : 'text-red-500'}`}>
                     {item.in_stock ? 'In Stock' : 'Out of Stock'}
                   </span>
