@@ -20,6 +20,7 @@ export function AuthModal({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState(false);
 
   async function handleEmailAuth(e: React.FormEvent) {
     e.preventDefault();
@@ -121,13 +122,20 @@ export function AuthModal({
                     key={p.providerId}
                     type="button"
                     variant="outline"
-                    onClick={() => {
-                      signIn(p.providerId, { callbackURL: "/" });
-                      onOpenChange?.(false);
+                    disabled={loading || socialLoading}
+                    onClick={async () => {
+                      try {
+                        setSocialLoading(true);
+                        await signIn(p.providerId, { callbackURL: window.location.href || "/" });
+                      } catch (err: any) {
+                        console.error("Sign in error:", err);
+                        toast.error(err?.message || "Sign in failed. Please check Google OAuth settings.");
+                        setSocialLoading(false);
+                      }
                     }}
                     className="w-full"
                   >
-                    {p.label}
+                    {socialLoading ? "Redirecting to Google..." : p.label}
                   </Button>
                 ))
               ) : (

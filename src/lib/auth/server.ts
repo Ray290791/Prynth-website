@@ -44,6 +44,24 @@ function initAuth() {
     ? new Pool({ connectionString: databaseUrl || "postgres://localhost/dummy" })
     : { dialect: pgliteDialect(() => getPglite()), type: "postgres" as const };
 
+  const socialProviders: Record<string, any> = {};
+  const googleId = env("GOOGLE_CLIENT_ID");
+  const googleSecret = env("GOOGLE_CLIENT_SECRET");
+  if (googleId && googleSecret) {
+    socialProviders.google = {
+      clientId: googleId,
+      clientSecret: googleSecret,
+    };
+  }
+  const twitterId = env("TWITTER_CLIENT_ID");
+  const twitterSecret = env("TWITTER_CLIENT_SECRET");
+  if (twitterId && twitterSecret) {
+    socialProviders.twitter = {
+      clientId: twitterId,
+      clientSecret: twitterSecret,
+    };
+  }
+
   return betterAuth({
     baseURL,
     secret: env("BETTER_AUTH_SECRET") ?? "development-secret-key-change-me",
@@ -54,16 +72,7 @@ function initAuth() {
 
     ...(emailAndPasswordEnabled ? { emailAndPassword: { enabled: true } } : {}),
 
-    socialProviders: {
-      google: {
-        clientId: env("GOOGLE_CLIENT_ID") as string,
-        clientSecret: env("GOOGLE_CLIENT_SECRET") as string,
-      },
-      twitter: {
-        clientId: env("TWITTER_CLIENT_ID") as string,
-        clientSecret: env("TWITTER_CLIENT_SECRET") as string,
-      },
-    },
+    ...(Object.keys(socialProviders).length > 0 ? { socialProviders } : {}),
 
     advanced: {
       useSecureCookies: false, // Allows auth over HTTP localhost
@@ -82,15 +91,15 @@ function initAuth() {
   });
 }
 
-let _authInstance: ReturnType<typeof betterAuth> | null = null;
-export const auth: ReturnType<typeof betterAuth> = new Proxy({} as ReturnType<typeof betterAuth>, {
+let _authInstance: ReturnType<typeof initAuth> | null = null;
+export const auth = new Proxy({} as any, {
   get(_target, prop) {
     if (!_authInstance) {
       _authInstance = initAuth();
     }
     return (_authInstance as any)[prop];
   },
-});
+}) as ReturnType<typeof initAuth>;
 
 export function readSessionToken(): string | null {
   return getCookie(SESSION_TOKEN_COOKIE) ?? null;
