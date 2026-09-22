@@ -29,10 +29,20 @@ function AdminPage() {
   const queryClient = useQueryClient();
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [deletingOrder, setDeletingOrder] = useState<string | null>(null);
+  const [orderSearchQuery, setOrderSearchQuery] = useState("");
 
   const { data: orders, isLoading, error } = useQuery({
     queryKey: ["adminOrders"],
     queryFn: () => getAllOrdersAdmin(),
+  });
+
+  const filteredOrders = orders?.filter((o: any) => {
+    const q = orderSearchQuery.toLowerCase();
+    return (
+      (o.order_number?.toLowerCase().includes(q) ?? false) ||
+      (o.user_name?.toLowerCase().includes(q) ?? false) ||
+      (o.user_email?.toLowerCase().includes(q) ?? false)
+    );
   });
 
   const updateMutation = useMutation({
@@ -119,38 +129,50 @@ function AdminPage() {
       <main className="flex-1 min-w-0">
         {activeTab === "orders" && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
               <div>
                 <h2 className="text-2xl font-semibold">Orders</h2>
                 <p className="text-muted mt-1 text-sm">Manage all incoming 3D printing orders.</p>
               </div>
-              <button
-                onClick={() => {
-                  if (!orders) return;
-                  const csv = [
-                    ["Order Number", "Customer Name", "Customer Email", "Date", "Total", "Status", "Payment Status"],
-                    ...orders.map((o: any) => [
-                      o.order_number,
-                      `"${o.user_name}"`,
-                      o.user_email,
-                      new Date(o.created_at).toLocaleDateString(),
-                      o.total,
-                      o.status,
-                      o.payment_status
-                    ])
-                  ].map(e => e.join(",")).join("\n");
-                  const blob = new Blob([csv], { type: 'text/csv' });
-                  const url = window.URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `orders-${new Date().toISOString().split('T')[0]}.csv`;
-                  a.click();
-                  window.URL.revokeObjectURL(url);
-                }}
-                className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-ink hover:opacity-90"
-              >
-                Export CSV
-              </button>
+              <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                <div className="relative w-full sm:w-72">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted" />
+                  <input
+                    type="text"
+                    placeholder="Search by order #, name or email..."
+                    value={orderSearchQuery}
+                    onChange={(e) => setOrderSearchQuery(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-surface-2 pl-9 pr-4 py-2 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
+                  />
+                </div>
+                <button
+                  onClick={() => {
+                    if (!filteredOrders) return;
+                    const csv = [
+                      ["Order Number", "Customer Name", "Customer Email", "Date", "Total", "Status", "Payment Status"],
+                      ...filteredOrders.map((o: any) => [
+                        o.order_number,
+                        `"${o.user_name}"`,
+                        o.user_email,
+                        new Date(o.created_at).toLocaleDateString(),
+                        o.total,
+                        o.status,
+                        o.payment_status
+                      ])
+                    ].map(e => e.join(",")).join("\n");
+                    const blob = new Blob([csv], { type: 'text/csv' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `orders-${new Date().toISOString().split('T')[0]}.csv`;
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                  }}
+                  className="w-full sm:w-auto rounded-lg bg-accent px-4 py-2 text-sm font-medium text-ink hover:opacity-90 shrink-0"
+                >
+                  Export CSV
+                </button>
+              </div>
             </div>
 
             <div className="overflow-x-auto rounded-xl border border-border bg-surface">
@@ -170,12 +192,12 @@ function AdminPage() {
                     <tr>
                       <td colSpan={6} className="p-8 text-center text-muted">Loading orders...</td>
                     </tr>
-                  ) : !orders || orders.length === 0 ? (
+                  ) : !filteredOrders || filteredOrders.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="p-8 text-center text-muted">No orders found.</td>
                     </tr>
                   ) : (
-                    orders.map((order: any) => (
+                    filteredOrders.map((order: any) => (
                       <tr key={order.id} className="hover:bg-surface-2/50 transition-colors">
                         <td className="p-4 font-medium">#{order.order_number}</td>
                         <td className="p-4">
@@ -236,7 +258,7 @@ function AdminPage() {
         {activeTab === "faqs" && <FaqsTab />}
         {activeTab === "admin-team" && <AdminTeamTab />}
         {activeTab === "admin-profile" && <AdminProfileTab />}
-        {activeTab === "users" && <UsersTab />}
+        {activeTab === "users" && <UsersTab orders={orders} />}
 
         {activeTab === "products" && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -1722,7 +1744,7 @@ function FaqsTab() {
   );
 }
 
-function UsersTab() {
+function UsersTab({ orders }: { orders: any[] | undefined }) {
   const [searchQuery, setSearchQuery] = useState("");
   const { data: users, isLoading, error } = useQuery({
     queryKey: ["adminUsers"],
@@ -1734,9 +1756,15 @@ function UsersTab() {
 
   const filteredUsers = users?.filter((user: any) => {
     const q = searchQuery.toLowerCase();
+    
+    const hasMatchingOrder = orders?.some((order: any) => 
+      order.user_id === user.id && order.order_number?.toLowerCase().includes(q)
+    );
+
     return (
       (user.name?.toLowerCase().includes(q) ?? false) ||
-      (user.email?.toLowerCase().includes(q) ?? false)
+      (user.email?.toLowerCase().includes(q) ?? false) ||
+      hasMatchingOrder
     );
   });
 
@@ -1751,7 +1779,7 @@ function UsersTab() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted" />
           <input
             type="text"
-            placeholder="Search name or email..."
+            placeholder="Search name, email, or order #..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full rounded-lg border border-border bg-surface-2 pl-9 pr-4 py-2 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
