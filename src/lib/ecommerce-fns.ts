@@ -128,14 +128,43 @@ export const getAnalyticsAdmin = createServerFn({ method: "GET" })
       throw new Error("Unauthorized");
     }
 
-    const totalRevenueRes = await sql<{ total: string }>`SELECT SUM(total) as total FROM orders WHERE status != 'cancelled'`;
-    const totalOrdersRes = await sql<{ count: string }>`SELECT COUNT(*) as count FROM orders`;
-    const totalUsersRes = await sql<{ count: string }>`SELECT COUNT(*) as count FROM "user"`;
+    const ordersRes = await sql<any>`SELECT total, created_at, status FROM orders WHERE status != 'cancelled' ORDER BY created_at ASC`;
+    const usersRes = await sql<any>`SELECT "createdAt" FROM "user" ORDER BY "createdAt" ASC`;
+    
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const activeSessionsRes = await sql<any>`SELECT id, "userId" FROM "session" WHERE "updatedAt" >= ${oneDayAgo}`;
+
+    // Calculate totals
+    const totalRevenue = ordersRes.reduce((acc, o) => acc + parseFloat(o.total || "0"), 0);
+    const totalOrders = ordersRes.length;
+    const totalUsers = usersRes.length;
+    
+    // Count unique users active in last 24h
+    const activeUserIds = new Set(activeSessionsRes.map(s => s.userId));
+    const activeUsers24h = activeUserIds.size;
+
+    // Time-series grouping function
+    const groupByDate = (items: any[], dateKey: string, valueFn: (item: any) => number) => {
+      const grouped: Record<string, number> = {};
+      items.forEach(item => {
+        const date = new Date(item[dateKey]).toISOString().split('T')[0];
+        grouped[date] = (grouped[date] || 0) + valueFn(item);
+      });
+      return Object.entries(grouped).map(([date, value]) => ({ date, value }));
+    };
+
+    const revenueOverTime = groupByDate(ordersRes, 'created_at', o => parseFloat(o.total || "0"));
+    const ordersOverTime = groupByDate(ordersRes, 'created_at', () => 1);
+    const usersJoinedOverTime = groupByDate(usersRes, 'createdAt', () => 1);
 
     return {
-      revenue: parseFloat(totalRevenueRes[0]?.total || "0"),
-      ordersCount: parseInt(totalOrdersRes[0]?.count || "0", 10),
-      usersCount: parseInt(totalUsersRes[0]?.count || "0", 10),
+      revenue: totalRevenue,
+      ordersCount: totalOrders,
+      usersCount: totalUsers,
+      activeUsers24h,
+      revenueOverTime,
+      ordersOverTime,
+      usersJoinedOverTime
     };
   });
 
