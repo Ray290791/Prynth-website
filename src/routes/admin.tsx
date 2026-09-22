@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { Package, Box, X, Settings, Image as ImageIcon, BarChart3, Tag, ClipboardList, Shield, UserCog, HelpCircle, Users } from "lucide-react";
+import { Package, Box, X, Settings, Image as ImageIcon, BarChart3, Tag, ClipboardList, Shield, UserCog, HelpCircle, Users, Search } from "lucide-react";
 import { getAllProductsAdmin, deleteProduct, updateProduct, createProduct, updateProductInventory } from "@/lib/products-fns";
 import { getSiteSettings, updateSiteSettings } from "@/lib/settings-fns";
 import { getCouponsAdmin, createCoupon, deleteCoupon, getAnalyticsAdmin } from "@/lib/ecommerce-fns";
@@ -1563,6 +1563,7 @@ function FaqsTab() {
 }
 
 function UsersTab() {
+  const [searchQuery, setSearchQuery] = useState("");
   const { data: users, isLoading, error } = useQuery({
     queryKey: ["adminUsers"],
     queryFn: () => getAllUsersAdmin(),
@@ -1571,12 +1572,30 @@ function UsersTab() {
   if (isLoading) return <div className="p-8 text-center text-muted">Loading users...</div>;
   if (error) return <div className="p-8 text-center text-danger">Failed to load users</div>;
 
+  const filteredUsers = users?.filter((user: any) => {
+    const q = searchQuery.toLowerCase();
+    return (
+      (user.name?.toLowerCase().includes(q) ?? false) ||
+      (user.email?.toLowerCase().includes(q) ?? false)
+    );
+  });
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-semibold">Registered Users</h2>
           <p className="text-muted mt-1 text-sm">View all registered accounts on your platform.</p>
+        </div>
+        <div className="relative w-full sm:w-72">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted" />
+          <input
+            type="text"
+            placeholder="Search name or email..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full rounded-lg border border-border bg-surface-2 pl-9 pr-4 py-2 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
+          />
         </div>
       </div>
 
@@ -1590,12 +1609,12 @@ function UsersTab() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {!users || users.length === 0 ? (
+            {!filteredUsers || filteredUsers.length === 0 ? (
               <tr>
                 <td colSpan={3} className="p-8 text-center text-muted">No users found.</td>
               </tr>
             ) : (
-              users.map((user: any) => (
+              filteredUsers.map((user: any) => (
                 <tr key={user.id} className="hover:bg-surface-2/50 transition-colors">
                   <td className="p-4">
                     <div className="flex items-center gap-3">
