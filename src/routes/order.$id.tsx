@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { formatDate, formatINR } from "@/lib/format";
 import { getOrderById } from "@/lib/orders-fns";
 import { productColor } from "@/lib/products";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useHydrated } from "@/lib/use-hydrated";
 import type { CartItem } from "@/lib/cart-store";
 import type { Address } from "@/lib/orders-store";
@@ -171,7 +171,7 @@ function OrderPage() {
                 </span>
                 {user && order.status === 'delivered' && (
                   <button 
-                    onClick={() => setReviewProduct({ slug: item.slug, name: item.name })}
+                    onClick={() => setReviewProduct({ slug: item.productSlug!, name: item.name })}
                     className="text-brand font-medium hover:underline mt-2 inline-block print:hidden"
                   >
                     Write a review

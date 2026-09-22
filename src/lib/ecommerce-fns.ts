@@ -165,5 +165,5 @@ export const getCartSession = createServerFn({ method: "GET" })
     const sql = await getSql();
     const res = await sql`SELECT * FROM cart_sessions WHERE id = ${id}`;
     if (res.length === 0) return null;
-    return res[0];
+    return res[0] as any;
   });

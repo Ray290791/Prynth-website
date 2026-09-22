@@ -85,6 +85,7 @@ export function UserButton() {
           {user.primaryEmail === "prynth07@gmail.com" && (
             <Link
               to="/admin"
+              search={{ tab: "orders" }}
               onClick={() => setOpen(false)}
               className="flex w-full items-center rounded-sm px-2 py-1.5 text-sm hover:bg-surface-2"
             >
