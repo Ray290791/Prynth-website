@@ -6,14 +6,30 @@ import { Resend } from "resend";
 
 // Helper to check if a user is any admin
 export async function verifyAdminRole(userId: string, sql: any) {
-  const userRes = await sql`
-    SELECT "user".email, admin_users.role 
-    FROM "user" 
-    JOIN admin_users ON LOWER(admin_users.email) = LOWER("user".email)
-    WHERE "user".id = ${userId}
-  `;
-  if (!userRes.length) return null;
-  return userRes[0] as { email: string; role: string };
+  try {
+    const userRes = await sql`
+      SELECT "user".email, admin_users.role 
+      FROM "user" 
+      LEFT JOIN admin_users ON LOWER(admin_users.email) = LOWER("user".email)
+      WHERE "user".id = ${userId}
+    `;
+    if (!userRes.length) return null;
+    const user = userRes[0] as { email: string; role: string | null };
+
+    // Check if email matches configured ADMIN_EMAIL or default admin
+    const configuredAdmin = (process.env.ADMIN_EMAIL || (globalThis as any).__env__?.ADMIN_EMAIL || "prynth07@gmail.com").toLowerCase();
+    if (user.email && user.email.toLowerCase() === configuredAdmin) {
+      return { email: user.email, role: user.role || "super_admin" };
+    }
+
+    if (user.role) {
+      return { email: user.email, role: user.role };
+    }
+    return null;
+  } catch (err) {
+    console.error("[verifyAdminRole error]:", err);
+    return null;
+  }
 }
 
 // Helper to verify PIN with brute-force lockout (5 attempts, 15 min lock)

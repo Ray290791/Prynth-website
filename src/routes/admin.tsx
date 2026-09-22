@@ -35,7 +35,10 @@ function AdminPage() {
 
   const { data: orders, isLoading, error } = useQuery({
     queryKey: ["adminOrders"],
-    queryFn: () => getAllOrdersAdmin(),
+    queryFn: async () => {
+      const data = await getAllOrdersAdmin();
+      return data ?? [];
+    },
   });
 
   const filteredOrders = orders?.filter((o: any) => {
