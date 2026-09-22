@@ -2,7 +2,7 @@ import { betterAuth } from "better-auth";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { getCookie } from "@tanstack/react-start/server";
 import { Pool } from "pg";
-import { ensureDbReady, getPglite, isCloudflare, isProd } from "../db";
+import { ensureDbReady, getPglite, isCloudflare, isProd, getDatabaseUrl } from "../db";
 import { emailAndPasswordEnabled } from "./email-password";
 import { pgliteDialect } from "./pglite-dialect";
 
@@ -38,11 +38,22 @@ function initAuth() {
     ? [explicitBaseURL, ...LOCAL_DEV_ORIGINS]
     : [baseURL, ...LOCAL_DEV_ORIGINS];
 
-  const databaseUrl = env("DATABASE_URL");
+  const databaseUrl = getDatabaseUrl();
 
-  const database = databaseUrl || isProd || isCloudflare
-    ? new Pool({ connectionString: databaseUrl || "postgres://localhost/dummy" })
-    : { dialect: pgliteDialect(() => getPglite()), type: "postgres" as const };
+  let pool: Pool | null = null;
+  if (databaseUrl || isProd || isCloudflare) {
+    pool = new Pool({
+      connectionString: databaseUrl || "postgres://localhost/dummy",
+      max: isCloudflare ? 2 : 10,
+      idleTimeoutMillis: 10000,
+      connectionTimeoutMillis: 10000,
+    });
+    pool.on("error", (err) => {
+      console.error("[auth pg pool error]:", err);
+    });
+  }
+
+  const database = pool ?? { dialect: pgliteDialect(() => getPglite()), type: "postgres" as const };
 
   const socialProviders: Record<string, any> = {};
   const googleId = env("GOOGLE_CLIENT_ID");

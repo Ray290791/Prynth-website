@@ -8,7 +8,8 @@ export function getDatabaseUrl(): string | undefined {
     (typeof process !== "undefined" ? process.env?.DATABASE_URL : undefined) ||
     (globalThis as any).__env__?.DATABASE_URL ||
     (globalThis as any).DATABASE_URL;
-  return raw && raw.trim() ? raw.trim() : undefined;
+  if (!raw || !raw.trim()) return undefined;
+  return raw.trim().replace(/[&?]channel_binding=[^&]+/g, "");
 }
 
 export const isCloudflare =
@@ -105,7 +106,15 @@ function createNeonSql(): Promise<Sql> {
     types.setTypeParser(OID_INT8, Number);
     types.setTypeParser(OID_DATE, identity);
     types.setTypeParser(OID_INTERVAL, identity);
-    const pool = new Pool({ connectionString: dbUrl });
+    const pool = new Pool({
+      connectionString: dbUrl,
+      max: isCloudflare ? 2 : 10,
+      idleTimeoutMillis: 10000,
+      connectionTimeoutMillis: 10000,
+    });
+    pool.on("error", (err) => {
+      console.error("[db pg pool error]:", err);
+    });
     return toSql(async <T>(text: string, params: unknown[]) => {
       const res = await pool.query(text, params);
       return res.rows as T[];
