@@ -248,6 +248,7 @@ export const updateProduct = createServerFn({ method: "POST" })
         stock_count = ${data.stockCount ?? -1}
       WHERE slug = ${data.slug}
     `;
+    return { success: true };
   });
 
 export const updateProductInventory = createServerFn({ method: "POST" })
@@ -264,6 +265,7 @@ export const updateProductInventory = createServerFn({ method: "POST" })
         in_stock = ${data.stockCount > 0 || data.stockCount === -1}
       WHERE slug = ${data.slug}
     `;
+    return { success: true };
   });
 
 export const createProduct = createServerFn({ method: "POST" })
@@ -291,6 +293,7 @@ export const createProduct = createServerFn({ method: "POST" })
         ${data.inStock ?? true}, ${data.stockCount ?? -1}
       )
     `;
+    return { success: true };
   });
 
 export const deleteProduct = createServerFn({ method: "POST" })
@@ -303,6 +306,7 @@ export const deleteProduct = createServerFn({ method: "POST" })
     if (!admin) throw new Error("Unauthorized");
     
     await sql`DELETE FROM products WHERE slug = ${slug}`;
+    return { success: true };
   });
 
 export const getProductReviews = createServerFn({ method: "GET" })

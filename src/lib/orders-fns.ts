@@ -131,9 +131,9 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
       throw new Error("Invalid signature");
     }
 
-    const orderRes = await sql`SELECT * FROM orders WHERE order_number = ${data.internalOrderNumber} AND (user_id = ${context.userId || null} OR user_id IS NULL)`;
+    const orderRes = await sql`SELECT * FROM orders WHERE order_number = ${data.internalOrderNumber}`;
     const order = orderRes[0] as any;
-    if (!order) throw new Error("Order not found or unauthorized");
+    if (!order) throw new Error("Order not found");
 
     // Decrement stock upon successful payment
     if (order.items && Array.isArray(order.items)) {
@@ -200,9 +200,12 @@ export const getOrderById = createServerFn({ method: "GET" })
     if (res.length === 0) return null;
     const order = res[0] as any;
     
-    // If order belongs to a user, strictly enforce auth
+    // If order belongs to a user, strictly enforce auth unless admin
     if (order.user_id && order.user_id !== context.userId) {
-      return null;
+      const admin = context.userId ? await verifyAdminRole(context.userId, sql) : null;
+      if (!admin) {
+        return null;
+      }
     }
     
     return order;
