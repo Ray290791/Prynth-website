@@ -222,3 +222,18 @@ export const resetAdminPinWithOTP = createServerFn({ method: "POST" })
 
     return { success: true };
   });
+
+export const getAllUsersAdmin = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => {
+    const sql = await getSql();
+    const admin = await verifyAdminRole(context.userId, sql);
+    if (!admin) throw new Error("Unauthorized");
+
+    const res = await sql`
+      SELECT id, name, email, email_verified, image, created_at, updated_at 
+      FROM "user" 
+      ORDER BY created_at DESC
+    `;
+    return res as any[];
+  });

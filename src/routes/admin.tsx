@@ -6,11 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { Package, Box, X, Settings, Image as ImageIcon, BarChart3, Tag, ClipboardList, Shield, UserCog, HelpCircle } from "lucide-react";
+import { Package, Box, X, Settings, Image as ImageIcon, BarChart3, Tag, ClipboardList, Shield, UserCog, HelpCircle, Users } from "lucide-react";
 import { getAllProductsAdmin, deleteProduct, updateProduct, createProduct, updateProductInventory } from "@/lib/products-fns";
 import { getSiteSettings, updateSiteSettings } from "@/lib/settings-fns";
 import { getCouponsAdmin, createCoupon, deleteCoupon, getAnalyticsAdmin } from "@/lib/ecommerce-fns";
-import { getAdminTeam, addAdmin, removeAdmin, getAdminProfile, setAdminPin, requestPinResetOTP, resetAdminPinWithOTP } from "@/lib/admin-fns";
+import { getAdminTeam, addAdmin, removeAdmin, getAdminProfile, setAdminPin, requestPinResetOTP, resetAdminPinWithOTP, getAllUsersAdmin } from "@/lib/admin-fns";
 import { getFaqsAdmin, createFaq, updateFaq, deleteFaq, reorderFaqs } from "@/lib/faq-fns";
 import { type Product } from "@/lib/products";
 
@@ -83,6 +83,7 @@ function AdminPage() {
     { id: "faqs", label: "FAQs", icon: HelpCircle },
     { id: "admin-team", label: "Admin Team", icon: Shield },
     { id: "admin-profile", label: "Admin Profile", icon: UserCog },
+    { id: "users", label: "Users", icon: Users },
     { id: "settings", label: "Site Settings", icon: Settings },
   ];
 
@@ -235,6 +236,7 @@ function AdminPage() {
         {activeTab === "faqs" && <FaqsTab />}
         {activeTab === "admin-team" && <AdminTeamTab />}
         {activeTab === "admin-profile" && <AdminProfileTab />}
+        {activeTab === "users" && <UsersTab />}
 
         {activeTab === "products" && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -1560,3 +1562,66 @@ function FaqsTab() {
   );
 }
 
+function UsersTab() {
+  const { data: users, isLoading, error } = useQuery({
+    queryKey: ["adminUsers"],
+    queryFn: () => getAllUsersAdmin(),
+  });
+
+  if (isLoading) return <div className="p-8 text-center text-muted">Loading users...</div>;
+  if (error) return <div className="p-8 text-center text-danger">Failed to load users</div>;
+
+  return (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-semibold">Registered Users</h2>
+          <p className="text-muted mt-1 text-sm">View all registered accounts on your platform.</p>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto rounded-xl border border-border bg-surface">
+        <table className="w-full text-left text-sm">
+          <thead className="border-b border-border bg-surface-2 text-muted">
+            <tr>
+              <th className="p-4 font-medium">User</th>
+              <th className="p-4 font-medium">Status</th>
+              <th className="p-4 font-medium">Joined</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {!users || users.length === 0 ? (
+              <tr>
+                <td colSpan={3} className="p-8 text-center text-muted">No users found.</td>
+              </tr>
+            ) : (
+              users.map((user: any) => (
+                <tr key={user.id} className="hover:bg-surface-2/50 transition-colors">
+                  <td className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/20 text-accent font-medium">
+                        {user.name ? user.name.slice(0, 2).toUpperCase() : user.email.slice(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="font-medium">{user.name || "Unnamed"}</div>
+                        <div className="text-xs text-muted">{user.email}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="p-4">
+                    <Badge className={user.email_verified ? "bg-primary/20 text-primary border-primary/20" : "bg-warning/20 text-warning border-warning/20"}>
+                      {user.email_verified ? "Verified" : "Unverified"}
+                    </Badge>
+                  </td>
+                  <td className="p-4 text-muted">
+                    {new Date(user.created_at).toLocaleDateString()}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
