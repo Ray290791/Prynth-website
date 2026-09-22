@@ -451,10 +451,14 @@ function ProductModal({
   const queryClient = useQueryClient();
   const [busy, setBusy] = useState(false);
   const [imagePreview, setImagePreview] = useState(product?.image || "");
+  const [colors, setColors] = useState<string[]>(product?.colors || []);
+  const [colorInput, setColorInput] = useState("");
 
-  // Reset image preview when product changes (e.g. opening different products)
+  // Reset states when product changes (e.g. opening different products)
   useEffect(() => {
     setImagePreview(product?.image || "");
+    setColors(product?.colors || []);
+    setColorInput("");
   }, [product]);
 
   const mutation = useMutation({
@@ -499,7 +503,7 @@ function ProductModal({
                 category: fd.get("category") as any,
                 blurb: fd.get("blurb") as string,
                 description: fd.get("description") as string,
-                colors: (fd.get("colors") as string).split(",").map(s => s.trim()),
+                colors: colors,
                 size: fd.get("size") as string,
                 material: fd.get("material") as string,
                 printTime: fd.get("printTime") as string,
@@ -573,9 +577,55 @@ function ProductModal({
                 <label className="block text-sm font-medium mb-1">Description</label>
                 <textarea name="description" defaultValue={product?.description} required rows={3} className="w-full rounded border border-border bg-surface-2 p-2 text-sm" />
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Colors (comma separated)</label>
-                <input name="colors" defaultValue={product?.colors.join(", ")} required className="w-full rounded border border-border bg-surface-2 p-2 text-sm" />
+              <div className="col-span-2">
+                <label className="block text-sm font-medium mb-2">Colors</label>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {colors.map((c, i) => (
+                    <span key={i} className="flex items-center gap-1 rounded-full bg-accent/10 pl-3 pr-1 py-1 text-xs font-medium text-accent border border-accent/20">
+                      {c}
+                      <button
+                        type="button"
+                        onClick={() => setColors(colors.filter((_, idx) => idx !== i))}
+                        className="ml-1 flex size-5 items-center justify-center rounded-full hover:bg-accent/20 transition-colors"
+                      >
+                        <X className="size-3" />
+                      </button>
+                    </span>
+                  ))}
+                  {colors.length === 0 && <span className="text-xs text-muted py-1">No colors added.</span>}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={colorInput}
+                    onChange={(e) => setColorInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        const newColor = colorInput.trim();
+                        if (newColor && !colors.includes(newColor)) {
+                          setColors([...colors, newColor]);
+                          setColorInput("");
+                        }
+                      }
+                    }}
+                    placeholder="Type a color and press Enter..."
+                    className="flex-1 rounded-lg border border-border bg-surface-2 p-2.5 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newColor = colorInput.trim();
+                      if (newColor && !colors.includes(newColor)) {
+                        setColors([...colors, newColor]);
+                        setColorInput("");
+                      }
+                    }}
+                    className="rounded-lg bg-surface-2 px-4 py-2.5 text-sm font-medium border border-border hover:bg-surface-3 transition-colors active:scale-95"
+                  >
+                    Add
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Size</label>
