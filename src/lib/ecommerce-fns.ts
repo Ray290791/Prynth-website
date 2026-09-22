@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getSql } from "./db";
-import { authMiddleware } from "./auth/middleware";
+import { authMiddleware, optionalAuthMiddleware } from "./auth/middleware";
 import { verifyAdminRole } from "./admin-fns";
 
 export const getWishlist = createServerFn({ method: "GET" })
@@ -119,6 +119,26 @@ export const deleteCoupon = createServerFn({ method: "POST" })
     return { success: true };
   });
 
+export const touchUserActivity = createServerFn({ method: "POST" })
+  .middleware([optionalAuthMiddleware])
+  .handler(async ({ context }) => {
+    if (context.userId && context.userId !== "dev-user") {
+      try {
+        const sql = await getSql();
+        await sql`
+          UPDATE "session" 
+          SET "updatedAt" = NOW() 
+          WHERE "userId" = ${context.userId} 
+            AND "expiresAt" > NOW() 
+            AND "updatedAt" < NOW() - INTERVAL '1 minute'
+        `;
+      } catch (err) {
+        // non-blocking fail-safe
+      }
+    }
+    return { ok: true };
+  });
+
 export const getAnalyticsAdmin = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
@@ -128,12 +148,31 @@ export const getAnalyticsAdmin = createServerFn({ method: "GET" })
       throw new Error("Unauthorized");
     }
 
+    // Refresh caller's active session timestamp immediately
+    if (context.userId && context.userId !== "dev-user") {
+      try {
+        await sql`
+          UPDATE "session" 
+          SET "updatedAt" = NOW() 
+          WHERE "userId" = ${context.userId} 
+            AND "expiresAt" > NOW()
+        `;
+      } catch (err) {
+        console.error("Failed to touch admin session:", err);
+      }
+    }
+
     const ordersRes = await sql<any>`SELECT total, created_at, status FROM orders WHERE status != 'cancelled' ORDER BY created_at ASC`;
     const usersRes = await sql<any>`SELECT "createdAt" FROM "user" ORDER BY "createdAt" ASC`;
     
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-    const activeSessionsRes = await sql<any>`SELECT id, "userId", "updatedAt" FROM "session" WHERE "updatedAt" >= ${oneDayAgo}`;
+    const activeSessionsRes = await sql<any>`
+      SELECT id, "userId", "updatedAt" 
+      FROM "session" 
+      WHERE "updatedAt" >= ${oneDayAgo}
+        AND "expiresAt" > NOW()
+    `;
 
     // Calculate totals
     const totalRevenue = ordersRes.reduce((acc, o) => acc + parseFloat(o.total || "0"), 0);
@@ -142,6 +181,9 @@ export const getAnalyticsAdmin = createServerFn({ method: "GET" })
 
     // Count unique users active in last 24h
     const activeUserIds24h = new Set(activeSessionsRes.map((s: any) => s.userId));
+    if (context.userId) {
+      activeUserIds24h.add(context.userId);
+    }
     const activeUsers24h = activeUserIds24h.size;
 
     // Count unique users active in last 10 minutes
@@ -150,6 +192,9 @@ export const getAnalyticsAdmin = createServerFn({ method: "GET" })
         .filter((s: any) => new Date(s.updatedAt) >= new Date(tenMinutesAgo))
         .map((s: any) => s.userId)
     );
+    if (context.userId) {
+      activeUserIds10m.add(context.userId);
+    }
     const activeUsers10m = activeUserIds10m.size;
 
     // Time-series grouping function

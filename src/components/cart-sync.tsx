@@ -2,11 +2,35 @@ import { useEffect } from "react";
 import { useCurrentUser } from "@/lib/auth/use-current-user";
 import { useCart } from "@/lib/cart-store";
 import { getCartFromDb, syncCartToDb } from "@/lib/cart-fns";
-import { upsertCartSession } from "@/lib/ecommerce-fns";
+import { upsertCartSession, touchUserActivity } from "@/lib/ecommerce-fns";
 
 export function CartSync() {
   const user = useCurrentUser();
   const items = useCart((s) => s.items);
+
+  // Keep active user session timestamp fresh while tab is open
+  useEffect(() => {
+    if (!user) return;
+    touchUserActivity().catch(() => {});
+
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        touchUserActivity().catch(() => {});
+      }
+    }, 2 * 60 * 1000);
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        touchUserActivity().catch(() => {});
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [user]);
 
   // When user logs in, fetch the remote cart and merge or replace the local cart.
   // We'll replace it to keep it simple, but we only do this once on login.

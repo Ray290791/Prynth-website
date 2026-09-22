@@ -968,6 +968,7 @@ function AnalyticsTab() {
   const { data: analytics, isLoading, error } = useQuery({
     queryKey: ["adminAnalytics"],
     queryFn: () => getAnalyticsAdmin(),
+    refetchInterval: 15000,
   });
 
   if (isLoading) return <div className="p-8 text-center text-muted">Loading analytics...</div>;
