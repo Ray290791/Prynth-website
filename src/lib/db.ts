@@ -3,20 +3,28 @@ import { pendingMigrations } from "../../scripts/migration-plan.mjs";
 /** Which database backend is active. */
 export type DbSource = "neon" | "pglite";
 
-// An empty/whitespace DATABASE_URL (an easy misconfig in deploy UIs) must mean
-// "unset" — otherwise production would silently run on the PGLite fallback.
-const rawDatabaseUrl =
-  typeof process !== "undefined" ? process.env.DATABASE_URL : undefined;
-const databaseUrl =
-  rawDatabaseUrl && rawDatabaseUrl.trim() ? rawDatabaseUrl : undefined;
+export function getDatabaseUrl(): string | undefined {
+  const raw =
+    (typeof process !== "undefined" ? process.env?.DATABASE_URL : undefined) ||
+    (globalThis as any).__env__?.DATABASE_URL ||
+    (globalThis as any).DATABASE_URL;
+  return raw && raw.trim() ? raw.trim() : undefined;
+}
+
+export const isCloudflare =
+  typeof navigator !== "undefined" &&
+  (navigator.userAgent === "Cloudflare-Workers" || typeof (globalThis as any).WebSocketPair !== "undefined");
+
+export const isProd =
+  process.env.NODE_ENV === "production" ||
+  Boolean(process.env.NITRO_PRESET) ||
+  isCloudflare;
 
 /**
- * Active backend: real **Neon** when `DATABASE_URL` is set (deployed / configured
- * sandbox), otherwise a local embedded **PGLite** (Postgres compiled to WASM) so
- * the app has a working database even with nothing configured — the live preview
- * included. Swap in Neon later by just setting `DATABASE_URL`; no code changes.
+ * Active backend: real **Neon** when `DATABASE_URL` is set or in production,
+ * otherwise a local embedded **PGLite** for local dev preview.
  */
-export const dbSource: DbSource = databaseUrl ? "neon" : "pglite";
+export const dbSource: DbSource = getDatabaseUrl() || isProd ? "neon" : "pglite";
 
 /**
  * Minimal shared SQL surface, satisfied by both Neon and PGLite. Both the
@@ -89,11 +97,15 @@ function createNeonSql(): Promise<Sql> {
   globalRef.__pgSqlPromise__ ??= (async () => {
     // Regular Postgres driver: node-postgres (`pg`) — works directly with Neon's
     // pooled endpoint. One pool per process; warm serverless instances reuse it.
+    const dbUrl = getDatabaseUrl();
+    if (!dbUrl) {
+      throw new Error("DATABASE_URL environment variable is missing.");
+    }
     const { Pool, types } = await import("pg");
     types.setTypeParser(OID_INT8, Number);
     types.setTypeParser(OID_DATE, identity);
     types.setTypeParser(OID_INTERVAL, identity);
-    const pool = new Pool({ connectionString: databaseUrl });
+    const pool = new Pool({ connectionString: dbUrl });
     return toSql(async <T>(text: string, params: unknown[]) => {
       const res = await pool.query(text, params);
       return res.rows as T[];
@@ -177,7 +189,7 @@ async function createSql(): Promise<Sql> {
         "or a server route loader, never from client code.",
     );
   }
-  return dbSource === "neon" ? createNeonSql() : createPgliteSql();
+  return getDatabaseUrl() || isProd ? createNeonSql() : createPgliteSql();
 }
 
 /**
@@ -221,16 +233,18 @@ export async function getPglite(): Promise<import("@electric-sql/pglite").PGlite
  * module kick it off immediately (see bottom of file).
  */
 export function ensureDbReady(): Promise<void> {
-  if (dbSource !== "pglite") return Promise.resolve();
+  if (isProd || isCloudflare || getDatabaseUrl() || dbSource !== "pglite") {
+    return Promise.resolve();
+  }
   return getSql().then(() => undefined);
 }
 
 // Server-only eager start: kick PGLite bootstrap as soon as this module loads in
-// Node. Client bundles never hit this path (`getSql` throws in the browser).
+// Node dev only. Client bundles and Cloudflare Workers never hit this path.
 const globalBoot = globalThis as typeof globalThis & {
   __pgBootstrapPromise__?: Promise<void>;
 };
-if (typeof window === "undefined" && dbSource === "pglite") {
+if (typeof window === "undefined" && !isProd && !isCloudflare && !getDatabaseUrl() && dbSource === "pglite") {
   globalBoot.__pgBootstrapPromise__ ??= ensureDbReady().catch((err) => {
     globalBoot.__pgBootstrapPromise__ = undefined;
     console.error("[db] PGLite bootstrap failed:", err);
