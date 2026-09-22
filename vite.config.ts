@@ -75,7 +75,7 @@ export default defineConfig(({ command, isPreview }) => ({
             preset:
               process.env.VERCEL
                 ? "vercel"
-                : "cloudflare-pages",
+                : "cloudflare-module",
             serverDir: "./server",
           }),
         ]
