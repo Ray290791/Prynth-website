@@ -444,13 +444,15 @@ function TagInput({
   setTags, 
   placeholder = "Type and press Enter...",
   className = "",
-  suggestions = []
+  suggestions = [],
+  isColor = false
 }: { 
   tags: string[], 
   setTags: (tags: string[]) => void, 
   placeholder?: string,
   className?: string,
-  suggestions?: string[]
+  suggestions?: string[],
+  isColor?: boolean
 }) {
   const [input, setInput] = useState("");
   const datalistId = useId();
@@ -459,10 +461,20 @@ function TagInput({
       <div className="flex flex-wrap gap-2 mb-3">
         {tags.map((t, i) => (
           <span key={i} className="flex items-center gap-1 rounded-full bg-accent/10 pl-3 pr-1 py-1 text-xs font-medium text-accent border border-accent/20">
+            {isColor && (
+              <span 
+                className="w-2.5 h-2.5 rounded-full border border-black/20 inline-block mr-1"
+                style={{ backgroundColor: t.toLowerCase().replace(/\s/g, "") }} 
+              />
+            )}
             {t}
             <button
               type="button"
-              onClick={() => setTags(tags.filter((_, idx) => idx !== i))}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setTags(tags.filter((_, idx) => idx !== i));
+              }}
               className="ml-1 flex size-5 items-center justify-center rounded-full hover:bg-accent/20 transition-colors"
             >
               <X className="size-3" />
@@ -722,7 +734,7 @@ function ProductModal({
               </div>
               <div className="col-span-2">
                 <label className="block text-sm font-medium mb-2">Colors</label>
-                <TagInput tags={colors} setTags={setColors} placeholder="e.g. Teal" />
+                <TagInput tags={colors} setTags={setColors} placeholder="e.g. Teal" isColor={true} />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Sizes</label>
