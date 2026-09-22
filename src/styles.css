@@ -19,6 +19,8 @@
   --color-border: var(--border);
   --color-ring: var(--ring);
   --color-danger: var(--danger);
+  --color-glass: var(--glass-bg);
+  --color-glass-border: var(--glass-border);
 
   --radius-xs: 4px;
   --radius-sm: 8px;
@@ -57,6 +59,8 @@
     0 0 0 1px rgba(30, 33, 36, 0.1), 0 1px 2px -1px rgba(30, 33, 36, 0.08),
     0 8px 20px -8px rgba(30, 33, 36, 0.12);
   --shadow-lift: 0 16px 40px -20px rgba(30, 33, 36, 0.22);
+  --glass-bg: rgba(255, 255, 255, 0.45);
+  --glass-border: rgba(255, 255, 255, 0.6);
 }
 
 .dark {
@@ -77,6 +81,8 @@
   --shadow-border: 0 0 0 1px rgba(255, 255, 255, 0.08);
   --shadow-border-hover: 0 0 0 1px rgba(255, 255, 255, 0.14);
   --shadow-lift: 0 18px 40px -18px rgba(0, 0, 0, 0.55);
+  --glass-bg: rgba(30, 33, 36, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.1);
 }
 
 html {
@@ -105,6 +111,7 @@ p {
 }
 
 @layer base {
+
   button:not(:disabled),
   [role="button"]:not(:disabled) {
     cursor: pointer;
@@ -129,7 +136,8 @@ p {
 img {
   -webkit-user-drag: none;
   user-drag: none;
-  pointer-events: none; /* JS event listeners on ancestors still fire */
+  pointer-events: none;
+  /* JS event listeners on ancestors still fire */
 }
 
 /* Allow pointer events on images inside interactive elements (links, buttons) */
@@ -151,6 +159,7 @@ img,
     opacity: 0;
     transform: translateY(6px);
   }
+
   to {
     opacity: 1;
     transform: none;
