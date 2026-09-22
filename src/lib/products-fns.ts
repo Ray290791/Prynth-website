@@ -105,6 +105,9 @@ function mapDbProduct(row: any): Product {
     inStock: row.in_stock,
     stockCount: row.stock_count,
     sizes: typeof row.sizes === "string" ? JSON.parse(row.sizes) : row.sizes,
+    gallery: typeof row.gallery === "string" ? JSON.parse(row.gallery) : (row.gallery || []),
+    categories: typeof row.categories === "string" ? JSON.parse(row.categories) : (row.categories || []),
+    materials: typeof row.materials === "string" ? JSON.parse(row.materials) : (row.materials || []),
     variants: row.variants ? (typeof row.variants === "string" ? JSON.parse(row.variants) : row.variants) : [],
   };
 }
@@ -128,16 +131,24 @@ const SELECT_PRODUCTS_WITH_VARIANTS = `
   LEFT JOIN product_variants v ON p.slug = v.product_slug
 `;
 
-async function ensureCategoryExists(category: string, sql: any) {
-  if (!category) return;
+async function ensureCategoryExists(newCategories: string[], sql: any) {
+  if (!newCategories || newCategories.length === 0) return;
   const rows = await sql<{ key: string; value: string }>`SELECT key, value FROM site_settings WHERE key = 'product_categories'`;
   let currentStr = rows.length > 0 ? rows[0].value : "Desk, Home, Bath";
-  const categories = currentStr.split(",").map((s: string) => s.trim().toLowerCase());
+  const existingCategories = currentStr.split(",").map((s: string) => s.trim().toLowerCase());
   
-  if (!categories.includes(category.toLowerCase())) {
-    // Capitalize first letter for display
-    const formattedCategory = category.charAt(0).toUpperCase() + category.slice(1);
-    currentStr += `, ${formattedCategory}`;
+  let added = false;
+  for (const category of newCategories) {
+    if (!category) continue;
+    if (!existingCategories.includes(category.toLowerCase())) {
+      const formattedCategory = category.charAt(0).toUpperCase() + category.slice(1);
+      currentStr += `, ${formattedCategory}`;
+      existingCategories.push(category.toLowerCase());
+      added = true;
+    }
+  }
+
+  if (added) {
     if (rows.length > 0) {
       await sql`UPDATE site_settings SET value = ${currentStr} WHERE key = 'product_categories'`;
     } else {
@@ -211,7 +222,7 @@ export const updateProduct = createServerFn({ method: "POST" })
     const admin = await verifyAdminRole(context.userId, sql);
     if (!admin) throw new Error("Unauthorized");
 
-    await ensureCategoryExists(data.category ?? data.categories?.[0] ?? "", sql);
+    await ensureCategoryExists(data.categories && data.categories.length > 0 ? data.categories : (data.category ? [data.category] : []), sql);
 
     await sql`
       UPDATE products SET
@@ -264,7 +275,7 @@ export const createProduct = createServerFn({ method: "POST" })
     const admin = await verifyAdminRole(context.userId, sql);
     if (!admin) throw new Error("Unauthorized");
 
-    await ensureCategoryExists(data.category ?? data.categories?.[0] ?? "", sql);
+    await ensureCategoryExists(data.categories && data.categories.length > 0 ? data.categories : (data.category ? [data.category] : []), sql);
 
     await sql`
       INSERT INTO products (

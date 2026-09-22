@@ -38,7 +38,7 @@ export function SiteHeader() {
   }, [open]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-glass-border bg-glass backdrop-blur-3xl backdrop-saturate-150">
+    <header className="sticky top-0 z-40 border-b border-glass-border bg-glass backdrop-blur-2xl backdrop-saturate-150 shadow-xl shadow-black/5">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 md:h-[4.25rem] md:px-6">
         <LogoLink />
 
@@ -110,7 +110,7 @@ export function SiteHeader() {
       </div>
 
       {open ? (
-        <div className="border-t border-glass-border bg-glass backdrop-blur-3xl backdrop-saturate-150 md:hidden">
+        <div className="border-t border-glass-border bg-glass backdrop-blur-2xl backdrop-saturate-150 md:hidden shadow-xl shadow-black/5">
           <nav className="mx-auto flex max-w-6xl flex-col px-4 py-3" aria-label="Mobile">
             {NAV.map((item) => (
               <Link

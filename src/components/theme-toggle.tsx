@@ -20,8 +20,8 @@ export function ThemeToggle() {
         </div>
         <span
           className={cn(
-            "absolute left-[3px] flex size-6 items-center justify-center rounded-full bg-bg shadow-[0_1px_3px_rgba(0,0,0,0.1)] ring-1 ring-black/5 dark:ring-white/10 transition-transform duration-300 ease-[cubic-bezier(0.2,0,0,1)]",
-            isDark ? "translate-x-[26px]" : "translate-x-0",
+            "absolute flex size-6 items-center justify-center rounded-full bg-bg shadow-[0_1px_3px_rgba(0,0,0,0.1)] ring-1 ring-black/5 dark:ring-white/10 transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)]",
+            isDark ? "left-[27px]" : "left-[3px]",
           )}
         >
           {isDark ? (
