@@ -1,6 +1,6 @@
 name = "prynth"
 compatibility_date = "2024-09-23"
-compatibility_flags = ["nodejs_compat", "nodejs_compat_populate_process_env"]
+compatibility_flags = ["nodejs_compat", "nodejs_compat_populate_process_env", "global_navigator"]
 
 [vars]
 ADMIN_EMAIL = "prynth07@gmail.com"
