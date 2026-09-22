@@ -128,6 +128,24 @@ const SELECT_PRODUCTS_WITH_VARIANTS = `
   LEFT JOIN product_variants v ON p.slug = v.product_slug
 `;
 
+async function ensureCategoryExists(category: string, sql: any) {
+  if (!category) return;
+  const rows = await sql<{ key: string; value: string }>`SELECT key, value FROM site_settings WHERE key = 'product_categories'`;
+  let currentStr = rows.length > 0 ? rows[0].value : "Desk, Home, Bath";
+  const categories = currentStr.split(",").map((s: string) => s.trim().toLowerCase());
+  
+  if (!categories.includes(category.toLowerCase())) {
+    // Capitalize first letter for display
+    const formattedCategory = category.charAt(0).toUpperCase() + category.slice(1);
+    currentStr += `, ${formattedCategory}`;
+    if (rows.length > 0) {
+      await sql`UPDATE site_settings SET value = ${currentStr} WHERE key = 'product_categories'`;
+    } else {
+      await sql`INSERT INTO site_settings (key, value) VALUES ('product_categories', ${currentStr})`;
+    }
+  }
+}
+
 export const getAllProductsAdmin = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
@@ -192,6 +210,9 @@ export const updateProduct = createServerFn({ method: "POST" })
     
     const admin = await verifyAdminRole(context.userId, sql);
     if (!admin) throw new Error("Unauthorized");
+
+    await ensureCategoryExists(data.category, sql);
+
     await sql`
       UPDATE products SET
         name = ${data.name},
@@ -239,6 +260,9 @@ export const createProduct = createServerFn({ method: "POST" })
     
     const admin = await verifyAdminRole(context.userId, sql);
     if (!admin) throw new Error("Unauthorized");
+
+    await ensureCategoryExists(data.category, sql);
+
     await sql`
       INSERT INTO products (
         slug, name, price, image, category, blurb, description, 

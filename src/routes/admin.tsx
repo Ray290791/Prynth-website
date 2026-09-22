@@ -453,12 +453,24 @@ function ProductModal({
   const [imagePreview, setImagePreview] = useState(product?.image || "");
   const [colors, setColors] = useState<string[]>(product?.colors || []);
   const [colorInput, setColorInput] = useState("");
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [newCategory, setNewCategory] = useState("");
+
+  const { data: settings } = useQuery({
+    queryKey: ["siteSettings"],
+    queryFn: () => getSiteSettings(),
+  });
+  const categoriesList = settings?.product_categories
+    ? settings.product_categories.split(",").map(c => c.trim())
+    : ["Desk", "Home", "Bath"];
 
   // Reset states when product changes (e.g. opening different products)
   useEffect(() => {
     setImagePreview(product?.image || "");
     setColors(product?.colors || []);
     setColorInput("");
+    setIsAddingCategory(false);
+    setNewCategory("");
   }, [product]);
 
   const mutation = useMutation({
@@ -531,11 +543,42 @@ function ProductModal({
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Category</label>
-                <select name="category" defaultValue={product?.category || "desk"} required className="w-full rounded border border-border bg-surface-2 p-2 text-sm">
-                  <option value="desk">Desk</option>
-                  <option value="home">Home</option>
-                  <option value="bath">Bath</option>
-                </select>
+                {isAddingCategory ? (
+                  <div className="flex gap-2">
+                    <input
+                      name="category"
+                      value={newCategory}
+                      onChange={e => setNewCategory(e.target.value)}
+                      placeholder="e.g. Keyboards"
+                      required
+                      className="w-full rounded border border-border bg-surface-2 p-2 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
+                    />
+                    <button type="button" onClick={() => setIsAddingCategory(false)} className="rounded bg-surface-2 px-3 py-2 text-sm border border-border hover:bg-surface-3 transition-colors active:scale-95">
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <select 
+                    name="category" 
+                    defaultValue={product?.category || categoriesList[0]?.toLowerCase()} 
+                    onChange={(e) => {
+                      if (e.target.value === "__NEW__") {
+                        setIsAddingCategory(true);
+                        setNewCategory("");
+                      }
+                    }}
+                    required 
+                    className="w-full rounded border border-border bg-surface-2 p-2 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
+                  >
+                    {categoriesList.map(c => (
+                      <option key={c} value={c.toLowerCase()}>{c}</option>
+                    ))}
+                    {product?.category && !categoriesList.map(c => c.toLowerCase()).includes(product.category) && (
+                      <option value={product.category}>{product.category} (Current)</option>
+                    )}
+                    <option value="__NEW__">+ Add new category...</option>
+                  </select>
+                )}
               </div>
               <div className="col-span-2">
                 <label className="block text-sm font-medium mb-1">Image</label>
