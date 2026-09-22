@@ -47,7 +47,7 @@ export const auth = betterAuth({
   database,
   trustedOrigins,
 
-  session: { cookieCache: { enabled: true, maxAge: 300 } },
+  session: { cookieCache: { enabled: false, maxAge: 300 } },
 
   ...(emailAndPasswordEnabled ? { emailAndPassword: { enabled: true } } : {}),
 
