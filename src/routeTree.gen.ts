@@ -18,6 +18,7 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CustomRouteImport } from './routes/custom'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as HistoryRouteImport } from './routes/history'
+import { Route as MaterialsRouteImport } from './routes/materials'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ReturnsRouteImport } from './routes/returns'
@@ -72,6 +73,11 @@ const FaqRoute = FaqRouteImport.update({
 const HistoryRoute = HistoryRouteImport.update({
   id: '/history',
   path: '/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MaterialsRoute = MaterialsRouteImport.update({
+  id: '/materials',
+  path: '/materials',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -135,6 +141,7 @@ export interface FileRoutesByFullPath {
   '/custom': typeof CustomRoute
   '/faq': typeof FaqRoute
   '/history': typeof HistoryRoute
+  '/materials': typeof MaterialsRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/returns': typeof ReturnsRoute
@@ -156,6 +163,7 @@ export interface FileRoutesByTo {
   '/custom': typeof CustomRoute
   '/faq': typeof FaqRoute
   '/history': typeof HistoryRoute
+  '/materials': typeof MaterialsRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/returns': typeof ReturnsRoute
@@ -178,6 +186,7 @@ export interface FileRoutesById {
   '/custom': typeof CustomRoute
   '/faq': typeof FaqRoute
   '/history': typeof HistoryRoute
+  '/materials': typeof MaterialsRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/returns': typeof ReturnsRoute
@@ -201,6 +210,7 @@ export interface FileRouteTypes {
     | '/custom'
     | '/faq'
     | '/history'
+    | '/materials'
     | '/privacy'
     | '/profile'
     | '/returns'
@@ -222,6 +232,7 @@ export interface FileRouteTypes {
     | '/custom'
     | '/faq'
     | '/history'
+    | '/materials'
     | '/privacy'
     | '/profile'
     | '/returns'
@@ -243,6 +254,7 @@ export interface FileRouteTypes {
     | '/custom'
     | '/faq'
     | '/history'
+    | '/materials'
     | '/privacy'
     | '/profile'
     | '/returns'
@@ -265,6 +277,7 @@ export interface RootRouteChildren {
   CustomRoute: typeof CustomRoute
   FaqRoute: typeof FaqRoute
   HistoryRoute: typeof HistoryRoute
+  MaterialsRoute: typeof MaterialsRoute
   PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
   ReturnsRoute: typeof ReturnsRoute
@@ -340,6 +353,13 @@ declare module '@tanstack/react-router' {
       path: '/history'
       fullPath: '/history'
       preLoaderRoute: typeof HistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/materials': {
+      id: '/materials'
+      path: '/materials'
+      fullPath: '/materials'
+      preLoaderRoute: typeof MaterialsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -425,6 +445,7 @@ const rootRouteChildren: RootRouteChildren = {
   CustomRoute: CustomRoute,
   FaqRoute: FaqRoute,
   HistoryRoute: HistoryRoute,
+  MaterialsRoute: MaterialsRoute,
   PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
   ReturnsRoute: ReturnsRoute,

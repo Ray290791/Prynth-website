@@ -7,6 +7,7 @@ const rootRoute = getRouteApi("__root__");
 const SHOP = [
   { to: "/shop", label: "Ready-made prints" },
   { to: "/custom", label: "Custom orders" },
+  { to: "/materials", label: "Filaments & Materials" },
   { to: "/cart", label: "Cart" },
 ] as const;
 

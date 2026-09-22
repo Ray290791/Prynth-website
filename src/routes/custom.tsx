@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { FileDropzone } from "@/components/file-dropzone";
@@ -346,7 +346,12 @@ function UploadForm({ add }: { add: ReturnType<typeof useCart.getState>["add"] }
             <QuantityStepper value={qty} onChange={setQty} />
           </div>
         </div>
-        <p className="text-sm text-muted">{materialMeta?.note}</p>
+        <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted">
+          <p>{materialMeta?.note}</p>
+          <Link to="/materials" className="text-xs font-medium text-accent hover:underline inline-flex items-center gap-1">
+            Need help choosing? View Filament Guide &rarr;
+          </Link>
+        </div>
         <p className="text-sm text-muted">{qualityMeta?.note}</p>
         <p className="text-sm text-muted">{infillMeta?.note}</p>
 
@@ -528,6 +533,11 @@ function IdeaForm({ add }: { add: ReturnType<typeof useCart.getState>["add"] }) 
               </option>
             ))}
           </FieldSelect>
+        </div>
+        <div className="flex justify-end -mt-2 mb-2">
+          <Link to="/materials" className="text-xs font-medium text-accent hover:underline">
+            Not sure which material? Check Filament Guide &rarr;
+          </Link>
         </div>
         <div>
           <Label>Colour</Label>
