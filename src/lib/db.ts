@@ -95,13 +95,29 @@ function toSql(run: Run): Sql {
 }
 
 function createNeonSql(): Promise<Sql> {
+  const dbUrl = getDatabaseUrl();
+  if (!dbUrl) {
+    throw new Error("DATABASE_URL environment variable is missing.");
+  }
+  if (isCloudflare || isProd) {
+    // Stateless HTTP-based queries: perfect for Cloudflare Workers & serverless edge
+    // Immune to "Cannot perform I/O on behalf of a different request"
+    return (async () => {
+      const { neon } = await import("@neondatabase/serverless");
+      const client = neon(dbUrl);
+      const sql = (async <T = Record<string, unknown>>(
+        strings: TemplateStringsArray,
+        ...values: unknown[]
+      ): Promise<T[]> => {
+        return (await client(strings, ...values)) as unknown as T[];
+      }) as unknown as Sql;
+      sql.query = async <T = Record<string, unknown>>(text: string, params: unknown[] = []) => {
+        return (await client.query(text, params)) as unknown as T[];
+      };
+      return sql;
+    })();
+  }
   globalRef.__pgSqlPromise__ ??= (async () => {
-    // Regular Postgres driver: node-postgres (`pg`) — works directly with Neon's
-    // pooled endpoint. One pool per process; warm serverless instances reuse it.
-    const dbUrl = getDatabaseUrl();
-    if (!dbUrl) {
-      throw new Error("DATABASE_URL environment variable is missing.");
-    }
     const { Pool, types } = await import("@neondatabase/serverless");
     types.setTypeParser(OID_INT8, Number);
     types.setTypeParser(OID_DATE, identity);

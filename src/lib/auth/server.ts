@@ -102,6 +102,11 @@ function initAuth() {
 let _authInstance: ReturnType<typeof initAuth> | null = null;
 export const auth = new Proxy({} as any, {
   get(_target, prop) {
+    // In Cloudflare Workers and serverless production, I/O objects cannot be shared
+    // across requests. Fresh instance ensures the Pool WebSocket is tied to the current request.
+    if (isCloudflare || isProd) {
+      return (initAuth() as any)[prop];
+    }
     if (!_authInstance || !(_authInstance as any).options?.socialProviders?.google) {
       _authInstance = initAuth();
     }
