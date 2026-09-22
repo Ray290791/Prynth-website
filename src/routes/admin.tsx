@@ -500,7 +500,7 @@ function TagInput({
             }
           }}
           placeholder={placeholder}
-          className="flex-1 rounded-lg border border-border bg-surface-2 p-2.5 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
+          className="flex-1 rounded-xl border border-border/50 bg-surface-2/50 backdrop-blur-sm px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
         />
         {suggestions.length > 0 && (
           <datalist id={datalistId}>
@@ -516,7 +516,7 @@ function TagInput({
               setInput("");
             }
           }}
-          className="rounded-lg bg-surface-2 px-4 py-2.5 text-sm font-medium border border-border hover:bg-surface-3 transition-colors active:scale-95"
+          className="rounded-xl bg-surface-2/80 px-5 py-2.5 text-sm font-medium border border-border/50 hover:bg-surface-3 transition-colors active:scale-95"
         >
           Add
         </button>
@@ -581,9 +581,9 @@ function ProductModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-surface border border-border rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between border-b border-border p-6 bg-surface shrink-0">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="bg-surface/85 backdrop-blur-2xl border border-white/10 dark:border-white/5 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between border-b border-border/50 p-6 bg-transparent shrink-0">
           <h2 className="text-xl font-bold">{product ? "Edit Product" : "Add Product"}</h2>
           <button onClick={onClose} className="rounded-full p-2 hover:bg-surface-2 transition-colors text-muted hover:text-ink">
             <X className="w-5 h-5" />
@@ -620,15 +620,15 @@ function ProductModal({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Slug (ID)</label>
-                <input name="slug" defaultValue={product?.slug} required readOnly={!!product} className="w-full rounded border border-border bg-surface-2 p-2 text-sm" />
+                <input name="slug" defaultValue={product?.slug} required readOnly={!!product} className="w-full rounded-xl border border-border/50 bg-surface-2/50 backdrop-blur-sm px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Name</label>
-                <input name="name" defaultValue={product?.name} required className="w-full rounded border border-border bg-surface-2 p-2 text-sm" />
+                <input name="name" defaultValue={product?.name} required className="w-full rounded-xl border border-border/50 bg-surface-2/50 backdrop-blur-sm px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Price (INR)</label>
-                <input name="price" type="number" defaultValue={product?.price} required className="w-full rounded border border-border bg-surface-2 p-2 text-sm" />
+                <input name="price" type="number" defaultValue={product?.price} required className="w-full rounded-xl border border-border/50 bg-surface-2/50 backdrop-blur-sm px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Categories</label>
@@ -698,7 +698,7 @@ function ProductModal({
                     </div>
                   ))}
 
-                  <div className="flex items-center gap-4 p-4 border border-dashed border-border rounded-lg">
+                  <div className="flex items-center gap-4 p-6 border-2 border-dashed border-border/50 rounded-xl bg-surface-2/30 hover:bg-surface-2/50 transition-colors">
                     <div className="flex-1">
                       <input
                         type="file"
@@ -726,11 +726,11 @@ function ProductModal({
               </div>
               <div className="col-span-2">
                 <label className="block text-sm font-medium mb-1">Blurb (Short)</label>
-                <input name="blurb" defaultValue={product?.blurb} required className="w-full rounded border border-border bg-surface-2 p-2 text-sm" />
+                <input name="blurb" defaultValue={product?.blurb} required className="w-full rounded-xl border border-border/50 bg-surface-2/50 backdrop-blur-sm px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" />
               </div>
               <div className="col-span-2">
                 <label className="block text-sm font-medium mb-1">Description</label>
-                <textarea name="description" defaultValue={product?.description} required rows={3} className="w-full rounded border border-border bg-surface-2 p-2 text-sm" />
+                <textarea name="description" defaultValue={product?.description} required rows={3} className="w-full rounded-xl border border-border/50 bg-surface-2/50 backdrop-blur-sm px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" />
               </div>
               <div className="col-span-2">
                 <label className="block text-sm font-medium mb-2">Colors</label>
@@ -746,19 +746,19 @@ function ProductModal({
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Print Time</label>
-                <input name="printTime" defaultValue={product?.printTime} required className="w-full rounded border border-border bg-surface-2 p-2 text-sm" />
+                <input name="printTime" defaultValue={product?.printTime} required className="w-full rounded-xl border border-border/50 bg-surface-2/50 backdrop-blur-sm px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" />
               </div>
               <div className="col-span-2">
                 <label className="block text-sm font-medium mb-1">Includes</label>
-                <input name="includes" defaultValue={product?.includes} required className="w-full rounded border border-border bg-surface-2 p-2 text-sm" />
+                <input name="includes" defaultValue={product?.includes} required className="w-full rounded-xl border border-border/50 bg-surface-2/50 backdrop-blur-sm px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" />
               </div>
               <div className="col-span-2">
                 <label className="block text-sm font-medium mb-1">Care</label>
-                <input name="care" defaultValue={product?.care} required className="w-full rounded border border-border bg-surface-2 p-2 text-sm" />
+                <input name="care" defaultValue={product?.care} required className="w-full rounded-xl border border-border/50 bg-surface-2/50 backdrop-blur-sm px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Badge (Optional)</label>
-                <input name="badge" defaultValue={product?.badge} className="w-full rounded border border-border bg-surface-2 p-2 text-sm" />
+                <input name="badge" defaultValue={product?.badge} className="w-full rounded-xl border border-border/50 bg-surface-2/50 backdrop-blur-sm px-4 py-2.5 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" />
               </div>
               <div className="flex items-center gap-2">
                 <input type="checkbox" name="featured" id="featured" defaultChecked={product?.featured} className="rounded" />
@@ -766,9 +766,9 @@ function ProductModal({
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-border">
-              <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg border border-border hover:bg-surface-2 text-sm font-medium">Cancel</button>
-              <button type="submit" disabled={busy} className="px-4 py-2 rounded-lg bg-accent text-ink hover:opacity-90 text-sm font-medium">
+            <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-border/50">
+              <button type="button" onClick={onClose} className="px-5 py-2.5 rounded-xl border border-border/50 bg-surface-2/30 hover:bg-surface-2/80 text-sm font-medium transition-colors">Cancel</button>
+              <button type="submit" disabled={busy} className="px-5 py-2.5 rounded-xl bg-accent text-ink hover:opacity-90 text-sm font-medium transition-opacity">
                 {busy ? "Saving..." : "Save Product"}
               </button>
             </div>
