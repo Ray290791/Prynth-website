@@ -37,7 +37,7 @@ function AdminPage() {
   });
 
   const filteredOrders = orders?.filter((o: any) => {
-    const q = orderSearchQuery.toLowerCase();
+    const q = orderSearchQuery.toLowerCase().replace(/^#/, '').trim();
     return (
       (o.order_number?.toLowerCase().includes(q) ?? false) ||
       (o.user_name?.toLowerCase().includes(q) ?? false) ||
@@ -1755,7 +1755,7 @@ function UsersTab({ orders }: { orders: any[] | undefined }) {
   if (error) return <div className="p-8 text-center text-danger">Failed to load users</div>;
 
   const filteredUsers = users?.filter((user: any) => {
-    const q = searchQuery.toLowerCase();
+    const q = searchQuery.toLowerCase().replace(/^#/, '').trim();
     
     const hasMatchingOrder = orders?.some((order: any) => 
       order.user_id === user.id && order.order_number?.toLowerCase().includes(q)
