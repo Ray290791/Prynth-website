@@ -73,7 +73,7 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
     contact_phone: z.string(),
     shipping_policy: z.string().min(1),
     returns_policy: z.string().min(1),
-    product_categories: z.string().min(1),
+    product_categories: z.string().min(1).optional(),
   }))
   .handler(async ({ data, context }) => {
     if (!context.userId) throw new Error("Unauthorized");
@@ -85,16 +85,15 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
       throw new Error("Unauthorized");
     }
 
-    // Update settings using transaction
-    await sql.query("BEGIN");
     for (const [key, value] of Object.entries(data)) {
-      await sql`
-        INSERT INTO site_settings (key, value)
-        VALUES (${key}, ${value})
-        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
-      `;
+      if (value !== undefined) {
+        await sql`
+          INSERT INTO site_settings (key, value)
+          VALUES (${key}, ${value})
+          ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+        `;
+      }
     }
-    await sql.query("COMMIT");
 
     return { success: true };
   });

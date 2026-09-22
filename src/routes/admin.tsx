@@ -827,8 +827,9 @@ function SettingsTab() {
       void router.invalidate();
       toast.success("Site settings updated!");
     },
-    onError: () => {
-      toast.error("Failed to update site settings");
+    onError: (err: any) => {
+      console.error("Failed to update site settings:", err);
+      toast.error(err?.message || "Failed to update site settings");
     }
   });
 
@@ -839,20 +840,21 @@ function SettingsTab() {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const data = {
-      tagline: fd.get("tagline") as string,
-      email: fd.get("email") as string,
-      instagram: fd.get("instagram") as string,
-      copyright: fd.get("copyright") as string,
-      bottom_text: fd.get("bottom_text") as string,
-      hero_tagline: fd.get("hero_tagline") as string,
-      hero_description: fd.get("hero_description") as string,
-      about_story: fd.get("about_story") as string,
-      contact_email: fd.get("contact_email") as string,
-      contact_instagram: fd.get("contact_instagram") as string,
-      contact_address: fd.get("contact_address") as string,
-      contact_phone: fd.get("contact_phone") as string,
-      shipping_policy: fd.get("shipping_policy") as string,
-      returns_policy: fd.get("returns_policy") as string,
+      tagline: (fd.get("tagline") as string)?.trim(),
+      email: (fd.get("email") as string)?.trim(),
+      instagram: (fd.get("instagram") as string)?.trim(),
+      copyright: (fd.get("copyright") as string)?.trim(),
+      bottom_text: (fd.get("bottom_text") as string)?.trim(),
+      hero_tagline: (fd.get("hero_tagline") as string)?.trim(),
+      hero_description: (fd.get("hero_description") as string)?.trim(),
+      about_story: (fd.get("about_story") as string)?.trim(),
+      contact_email: (fd.get("contact_email") as string)?.trim() || "",
+      contact_instagram: (fd.get("contact_instagram") as string)?.trim() || "",
+      contact_address: (fd.get("contact_address") as string)?.trim() || "",
+      contact_phone: (fd.get("contact_phone") as string)?.trim() || "",
+      shipping_policy: (fd.get("shipping_policy") as string)?.trim(),
+      returns_policy: (fd.get("returns_policy") as string)?.trim(),
+      product_categories: ((fd.get("product_categories") as string) || settings?.product_categories || "Desk, Home, Bath").trim(),
     };
     updateMutation.mutate(data);
   };
@@ -875,6 +877,22 @@ function SettingsTab() {
           <div>
             <label className="block text-sm font-medium mb-1">Hero Description</label>
             <textarea name="hero_description" defaultValue={settings.hero_description} required rows={3} className="w-full rounded border border-border bg-surface p-2 text-sm" />
+          </div>
+        </section>
+
+        {/* SHOP & CATEGORIES SECTION */}
+        <section className="space-y-4">
+          <h3 className="text-lg font-semibold border-b border-border pb-2">Shop & Categories</h3>
+          <div>
+            <label className="block text-sm font-medium mb-1">Product Categories (comma-separated)</label>
+            <input
+              name="product_categories"
+              defaultValue={settings.product_categories || "Desk, Home, Bath"}
+              required
+              className="w-full rounded border border-border bg-surface p-2 text-sm"
+              placeholder="Desk, Home, Bath"
+            />
+            <p className="text-xs text-muted mt-1">Categories displayed on the shop filters and product creation forms.</p>
           </div>
         </section>
 
