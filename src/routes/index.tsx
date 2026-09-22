@@ -83,12 +83,31 @@ const rootRoute = getRouteApi("__root__");
 function Home() {
   const { featured, products } = Route.useLoaderData();
   const { settings } = rootRoute.useLoaderData();
-  const mosaic = [
-    products[0],
-    products[1],
-    products[2],
-    products[5],
-  ].filter(Boolean);
+  // Parse configured hero slots (or fallback dynamically to products)
+  let heroSlots: { slug: string; image?: string }[] = [];
+  try {
+    if (settings?.hero_featured_slots) {
+      heroSlots = JSON.parse(settings.hero_featured_slots);
+    }
+  } catch (err) {
+    console.error("Failed to parse hero_featured_slots:", err);
+  }
+
+  const mosaic = Array.from({ length: 4 }).map((_, i) => {
+    const slot = heroSlots[i];
+    if (slot && slot.slug) {
+      const prod = products.find((p) => p.slug === slot.slug);
+      if (prod) {
+        return {
+          ...prod,
+          image: slot.image || prod.image,
+        };
+      }
+    }
+    // Fallback: pick product by index without skipping or out-of-bounds
+    const fallbackProd = products.length > 0 ? products[i % products.length] : null;
+    return fallbackProd ? { ...fallbackProd } : null;
+  }).filter(Boolean) as typeof products;
 
   const [activePolymer, setActivePolymer] = useState("pla");
   const poly = POLYMERS.find((p) => p.id === activePolymer) ?? POLYMERS[0];
@@ -169,7 +188,7 @@ function Home() {
             <div className="grid grid-cols-2 gap-3 sm:gap-4 items-start">
               {mosaic.map((p, i) => (
                 <Link
-                  key={p.slug}
+                  key={`${p.slug}-${i}`}
                   to="/shop/$slug"
                   params={{ slug: p.slug }}
                   target="_blank"

@@ -25,6 +25,7 @@ export type SiteSettings = {
   express_shipping_fee: string;
   cod_fee: string;
   promo_banner: string;
+  hero_featured_slots?: string;
 };
 
 export const getSiteSettings = createServerFn({ method: "GET" }).handler(
@@ -54,6 +55,12 @@ export const getSiteSettings = createServerFn({ method: "GET" }).handler(
       express_shipping_fee: "129",
       cod_fee: "40",
       promo_banner: "Free delivery across India on orders over ₹799",
+      hero_featured_slots: JSON.stringify([
+        { slug: "catch-bowl", image: "/products/catch-bowl.jpg" },
+        { slug: "desk-tray", image: "/products/desk-tray.jpg" },
+        { slug: "geo-planter", image: "/products/geo-planter.jpg" },
+        { slug: "hex-coasters", image: "/products/hex-coasters.jpg" },
+      ]),
     };
 
     for (const row of rows) {
@@ -89,6 +96,7 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
     express_shipping_fee: z.string().optional(),
     cod_fee: z.string().optional(),
     promo_banner: z.string().optional(),
+    hero_featured_slots: z.string().optional(),
   }))
   .handler(async ({ data, context }) => {
     if (!context.userId) throw new Error("Unauthorized");

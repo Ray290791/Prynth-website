@@ -821,6 +821,37 @@ function SettingsTab() {
     queryFn: () => getSiteSettings(),
   });
 
+  const { data: products } = useQuery({
+    queryKey: ["adminProducts"],
+    queryFn: () => getAllProductsAdmin(),
+  });
+
+  const [heroSlots, setHeroSlots] = useState<{ slug: string; image?: string }[]>(() => {
+    try {
+      if (settings?.hero_featured_slots) {
+        const parsed = JSON.parse(settings.hero_featured_slots);
+        if (Array.isArray(parsed) && parsed.length === 4) return parsed;
+      }
+    } catch {}
+    return [
+      { slug: "catch-bowl", image: "/products/catch-bowl.jpg" },
+      { slug: "desk-tray", image: "/products/desk-tray.jpg" },
+      { slug: "geo-planter", image: "/products/geo-planter.jpg" },
+      { slug: "hex-coasters", image: "/products/hex-coasters.jpg" },
+    ];
+  });
+
+  useEffect(() => {
+    if (settings?.hero_featured_slots) {
+      try {
+        const parsed = JSON.parse(settings.hero_featured_slots);
+        if (Array.isArray(parsed) && parsed.length === 4) {
+          setHeroSlots(parsed);
+        }
+      } catch {}
+    }
+  }, [settings?.hero_featured_slots]);
+
   const updateMutation = useMutation({
     mutationFn: async (data: any) => {
       await updateSiteSettings({ data });
@@ -863,6 +894,7 @@ function SettingsTab() {
       express_shipping_fee: ((fd.get("express_shipping_fee") as string) || settings?.express_shipping_fee || "129").trim(),
       cod_fee: ((fd.get("cod_fee") as string) || settings?.cod_fee || "40").trim(),
       promo_banner: ((fd.get("promo_banner") as string) || settings?.promo_banner || "").trim(),
+      hero_featured_slots: JSON.stringify(heroSlots),
     };
     updateMutation.mutate(data);
   };
@@ -874,10 +906,10 @@ function SettingsTab() {
         <p className="text-muted mt-1 text-sm">Update the global content across your site.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-12 max-w-2xl">
+      <form onSubmit={handleSubmit} className="space-y-12 max-w-3xl">
         {/* HOMEPAGE SECTION */}
-        <section className="space-y-4">
-          <h3 className="text-lg font-semibold border-b border-border pb-2">Homepage</h3>
+        <section className="space-y-5">
+          <h3 className="text-lg font-semibold border-b border-border pb-2">Homepage & Hero Showcase</h3>
           <div>
             <label className="block text-sm font-medium mb-1">Hero Tagline</label>
             <input name="hero_tagline" defaultValue={settings.hero_tagline} required className="w-full rounded border border-border bg-surface p-2 text-sm" />
@@ -895,6 +927,119 @@ function SettingsTab() {
               placeholder="Free delivery across India on orders over ₹799"
             />
             <p className="text-xs text-muted mt-1">Badge shown above hero on the homepage. (Leave empty to auto-update based on the free delivery threshold below).</p>
+          </div>
+
+          {/* 4-SLOT HERO SHOWCASE SELECTOR */}
+          <div className="rounded-xl border border-border bg-surface-2/40 p-5 space-y-4">
+            <div>
+              <h4 className="font-semibold text-base text-fg">Hero 2×2 Showcase Products & Images</h4>
+              <p className="text-xs text-muted mt-0.5">Select the 4 products to show in the 2×2 grid on the homepage hero, and pick which photo from their gallery to display.</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {[
+                { title: "Slot 1 (Top Left)", index: 0 },
+                { title: "Slot 2 (Top Right)", index: 1 },
+                { title: "Slot 3 (Bottom Left)", index: 2 },
+                { title: "Slot 4 (Bottom Right)", index: 3 },
+              ].map(({ title, index }) => {
+                const currentSlot = heroSlots[index] || { slug: products?.[index]?.slug || "", image: products?.[index]?.image || "" };
+                const currentProduct = products?.find((p: any) => p.slug === currentSlot.slug) || products?.[index];
+
+                const productImages = currentProduct
+                  ? Array.from(new Set([
+                      currentProduct.image,
+                      ...(currentProduct.gallery || []).map((g: any) => typeof g === "string" ? g : g.url),
+                    ].filter(Boolean)))
+                  : [];
+
+                const activeImage = currentSlot.image || currentProduct?.image || "";
+
+                return (
+                  <div key={index} className="rounded-xl border border-border bg-surface p-4 space-y-3 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-accent">{title}</span>
+                      {activeImage && (
+                        <img src={activeImage} alt="Preview" className="w-10 h-10 rounded-lg object-cover border border-border shrink-0" />
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-muted mb-1">Choose Product</label>
+                      <select
+                        className="w-full rounded border border-border bg-surface-2 p-2 text-xs text-fg focus:ring-1 focus:ring-accent"
+                        value={currentSlot.slug || currentProduct?.slug || ""}
+                        onChange={(e) => {
+                          const newSlug = e.target.value;
+                          const chosen = products?.find((p: any) => p.slug === newSlug);
+                          const next = [...heroSlots];
+                          next[index] = {
+                            slug: newSlug,
+                            image: chosen?.image || "",
+                          };
+                          setHeroSlots(next);
+                        }}
+                      >
+                        {products?.map((p: any) => (
+                          <option key={p.slug} value={p.slug}>
+                            {p.name} ({p.slug})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {productImages.length > 0 && (
+                      <div>
+                        <label className="block text-xs font-medium text-muted mb-1.5">Select Display Image</label>
+                        <div className="flex flex-wrap gap-2">
+                          {productImages.map((imgUrl, imgIdx) => {
+                            const isSelected = activeImage === imgUrl;
+                            return (
+                              <button
+                                key={imgIdx}
+                                type="button"
+                                onClick={() => {
+                                  const next = [...heroSlots];
+                                  next[index] = {
+                                    slug: currentSlot.slug || currentProduct?.slug || "",
+                                    image: imgUrl,
+                                  };
+                                  setHeroSlots(next);
+                                }}
+                                className={cn(
+                                  "relative rounded-lg overflow-hidden border-2 transition-all p-0.5",
+                                  isSelected ? "border-accent ring-2 ring-accent/30" : "border-transparent opacity-65 hover:opacity-100 hover:border-border"
+                                )}
+                              >
+                                <img src={imgUrl} alt={`Option ${imgIdx + 1}`} className="w-12 h-12 object-cover rounded-md" />
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-xs font-medium text-muted mb-1">Image URL (or custom link)</label>
+                      <input
+                        type="text"
+                        value={currentSlot.image || ""}
+                        onChange={(e) => {
+                          const next = [...heroSlots];
+                          next[index] = {
+                            slug: currentSlot.slug || currentProduct?.slug || "",
+                            image: e.target.value.trim(),
+                          };
+                          setHeroSlots(next);
+                        }}
+                        placeholder="e.g. /products/catch-bowl.jpg"
+                        className="w-full rounded border border-border bg-surface-2 p-1.5 text-xs text-fg"
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </section>
 
