@@ -2,12 +2,12 @@ import { FileUp, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
-const ACCEPT = ".stl,.3mf,.obj";
+const ACCEPT = ".stl,.3mf,.obj,.f3d";
 
 export function FileDropzone({
   file,
   onFile,
-  hint = "STL, 3MF, or OBJ. Max 50 MB.",
+  hint = "STL, 3MF, OBJ, or F3D. Max 50 MB.",
 }: {
   file: File | null;
   onFile: (file: File | null) => void;
@@ -20,7 +20,7 @@ export function FileDropzone({
     const next = list?.[0];
     if (!next) return;
     const ext = next.name.split(".").pop()?.toLowerCase();
-    if (!ext || !["stl", "3mf", "obj"].includes(ext)) return;
+    if (!ext || !["stl", "3mf", "obj", "f3d"].includes(ext)) return;
     if (next.size > 50 * 1024 * 1024) return;
     onFile(next);
   }
