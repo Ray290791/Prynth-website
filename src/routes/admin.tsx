@@ -1206,14 +1206,14 @@ function CouponsTab() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: number) => {
-      await deleteCoupon({ data: id });
+    mutationFn: async (code: string) => {
+      await deleteCoupon({ data: code });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["adminCoupons"] });
       toast.success("Coupon deleted successfully");
     },
-    onError: () => toast.error("Failed to delete coupon")
+    onError: (err: any) => toast.error(err?.message || "Failed to delete coupon")
   });
 
   if (isLoading) {
@@ -1253,7 +1253,7 @@ function CouponsTab() {
               </tr>
             ) : (
               coupons.map((c: any) => (
-                <tr key={c.id} className="hover:bg-surface-2/50 transition-colors">
+                <tr key={c.code} className="hover:bg-surface-2/50 transition-colors">
                   <td className="p-4 font-medium text-accent">{c.code}</td>
                   <td className="p-4">{c.discount_percent}% OFF</td>
                   <td className="p-4">{c.current_uses} / {c.max_uses ? c.max_uses : "∞"}</td>
@@ -1262,7 +1262,7 @@ function CouponsTab() {
                     <button
                       onClick={() => {
                         if (confirm(`Are you sure you want to delete coupon ${c.code}?`)) {
-                          deleteMutation.mutate(c.id);
+                          deleteMutation.mutate(c.code);
                         }
                       }}
                       className="text-xs px-2 py-1 rounded bg-danger/10 text-danger hover:bg-danger/20 transition-colors border border-danger/20"

@@ -108,14 +108,14 @@ export const createCoupon = createServerFn({ method: "POST" })
 
 export const deleteCoupon = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .validator((id: number) => id)
-  .handler(async ({ data: id, context }) => {
+  .validator((code: string) => code)
+  .handler(async ({ data: code, context }) => {
     const sql = await getSql();
     const admin = await verifyAdminRole(context.userId, sql);
     if (!admin) {
       throw new Error("Unauthorized");
     }
-    await sql`DELETE FROM coupons WHERE id = ${id}`;
+    await sql`DELETE FROM coupons WHERE LOWER(code) = LOWER(${code})`;
     return { success: true };
   });
 
