@@ -103,7 +103,7 @@ function AdminPage() {
       {/* Sidebar */}
       <aside className="w-full shrink-0 space-y-2 sm:w-64">
         <h1 className="font-display text-2xl font-semibold tracking-tight mb-6">Admin Panel</h1>
-        <nav className="flex flex-col gap-1 p-4 rounded-2xl border border-border/50 bg-surface/40 backdrop-blur-xl shadow-sm">
+        <nav className="flex flex-col gap-1 p-4 rounded-3xl border border-white/20 dark:border-white/10 bg-surface/30 backdrop-blur-2xl backdrop-saturate-150 shadow-xl shadow-black/5">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -970,7 +970,7 @@ function AnalyticsTab() {
   const CustomTooltip = ({ active, payload, label, formatter }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="rounded-lg border border-border/50 bg-surface/80 backdrop-blur-md p-3 shadow-xl">
+        <div className="rounded-xl border border-white/20 dark:border-white/10 bg-surface/50 backdrop-blur-2xl backdrop-saturate-150 p-4 shadow-2xl shadow-black/10">
           <p className="text-sm text-muted mb-1">{label}</p>
           <p className="text-sm font-semibold text-accent">
             {formatter ? formatter(payload[0].value) : payload[0].value}
@@ -989,19 +989,19 @@ function AnalyticsTab() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-border/50 bg-surface/40 backdrop-blur-xl p-5 shadow-sm transition-all hover:bg-surface/60">
+        <div className="rounded-2xl border border-white/20 dark:border-white/10 bg-surface/30 backdrop-blur-2xl backdrop-saturate-150 p-6 shadow-xl shadow-black/5 transition-all hover:bg-surface/40">
           <div className="text-xs font-medium text-muted uppercase tracking-wider">Total Revenue</div>
           <div className="mt-2 text-2xl font-bold">{formatINR(analytics.revenue)}</div>
         </div>
-        <div className="rounded-xl border border-border/50 bg-surface/40 backdrop-blur-xl p-5 shadow-sm transition-all hover:bg-surface/60">
+        <div className="rounded-2xl border border-white/20 dark:border-white/10 bg-surface/30 backdrop-blur-2xl backdrop-saturate-150 p-6 shadow-xl shadow-black/5 transition-all hover:bg-surface/40">
           <div className="text-xs font-medium text-muted uppercase tracking-wider">Total Orders</div>
           <div className="mt-2 text-2xl font-bold">{analytics.ordersCount}</div>
         </div>
-        <div className="rounded-xl border border-border/50 bg-surface/40 backdrop-blur-xl p-5 shadow-sm transition-all hover:bg-surface/60">
+        <div className="rounded-2xl border border-white/20 dark:border-white/10 bg-surface/30 backdrop-blur-2xl backdrop-saturate-150 p-6 shadow-xl shadow-black/5 transition-all hover:bg-surface/40">
           <div className="text-xs font-medium text-muted uppercase tracking-wider">Total Users</div>
           <div className="mt-2 text-2xl font-bold">{analytics.usersCount}</div>
         </div>
-        <div className="rounded-xl border border-accent/20 bg-accent/5 backdrop-blur-xl p-5 shadow-sm transition-all hover:bg-accent/10">
+        <div className="rounded-2xl border border-accent/30 bg-accent/10 backdrop-blur-2xl backdrop-saturate-150 p-6 shadow-xl shadow-accent/5 transition-all hover:bg-accent/15">
           <div className="text-xs font-medium text-accent uppercase tracking-wider flex items-center gap-2">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
@@ -1015,7 +1015,7 @@ function AnalyticsTab() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Revenue Trend */}
-        <div className="rounded-xl border border-border/50 bg-surface/40 backdrop-blur-xl p-6 shadow-sm flex flex-col h-[350px]">
+        <div className="rounded-3xl border border-white/20 dark:border-white/10 bg-surface/30 backdrop-blur-2xl backdrop-saturate-150 p-6 shadow-xl shadow-black/5 flex flex-col h-[350px]">
           <h3 className="text-sm font-medium text-muted mb-6 uppercase tracking-wider">Revenue Trend</h3>
           <div className="flex-1 w-full min-h-0">
             <ResponsiveContainer width="100%" height="100%">
@@ -1037,7 +1037,7 @@ function AnalyticsTab() {
         </div>
 
         {/* Order Volume */}
-        <div className="rounded-xl border border-border/50 bg-surface/40 backdrop-blur-xl p-6 shadow-sm flex flex-col h-[350px]">
+        <div className="rounded-3xl border border-white/20 dark:border-white/10 bg-surface/30 backdrop-blur-2xl backdrop-saturate-150 p-6 shadow-xl shadow-black/5 flex flex-col h-[350px]">
           <h3 className="text-sm font-medium text-muted mb-6 uppercase tracking-wider">Order Volume</h3>
           <div className="flex-1 w-full min-h-0">
             <ResponsiveContainer width="100%" height="100%">
@@ -1053,7 +1053,7 @@ function AnalyticsTab() {
         </div>
 
         {/* User Growth */}
-        <div className="rounded-xl border border-border/50 bg-surface/40 backdrop-blur-xl p-6 shadow-sm flex flex-col h-[350px] lg:col-span-2">
+        <div className="rounded-3xl border border-white/20 dark:border-white/10 bg-surface/30 backdrop-blur-2xl backdrop-saturate-150 p-6 shadow-xl shadow-black/5 flex flex-col h-[350px] lg:col-span-2">
           <h3 className="text-sm font-medium text-muted mb-6 uppercase tracking-wider">User Growth (Signups)</h3>
           <div className="flex-1 w-full min-h-0">
             <ResponsiveContainer width="100%" height="100%">
