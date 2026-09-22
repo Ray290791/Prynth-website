@@ -132,16 +132,25 @@ export const getAnalyticsAdmin = createServerFn({ method: "GET" })
     const usersRes = await sql<any>`SELECT "createdAt" FROM "user" ORDER BY "createdAt" ASC`;
     
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const activeSessionsRes = await sql<any>`SELECT id, "userId" FROM "session" WHERE "updatedAt" >= ${oneDayAgo}`;
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    const activeSessionsRes = await sql<any>`SELECT id, "userId", "updatedAt" FROM "session" WHERE "updatedAt" >= ${oneDayAgo}`;
 
     // Calculate totals
     const totalRevenue = ordersRes.reduce((acc, o) => acc + parseFloat(o.total || "0"), 0);
     const totalOrders = ordersRes.length;
     const totalUsers = usersRes.length;
-    
+
     // Count unique users active in last 24h
-    const activeUserIds = new Set(activeSessionsRes.map(s => s.userId));
-    const activeUsers24h = activeUserIds.size;
+    const activeUserIds24h = new Set(activeSessionsRes.map((s: any) => s.userId));
+    const activeUsers24h = activeUserIds24h.size;
+
+    // Count unique users active in last 10 minutes
+    const activeUserIds10m = new Set(
+      activeSessionsRes
+        .filter((s: any) => new Date(s.updatedAt) >= new Date(tenMinutesAgo))
+        .map((s: any) => s.userId)
+    );
+    const activeUsers10m = activeUserIds10m.size;
 
     // Time-series grouping function
     const groupByDate = (items: any[], dateKey: string, valueFn: (item: any) => number) => {
@@ -162,6 +171,7 @@ export const getAnalyticsAdmin = createServerFn({ method: "GET" })
       ordersCount: totalOrders,
       usersCount: totalUsers,
       activeUsers24h,
+      activeUsers10m,
       revenueOverTime,
       ordersOverTime,
       usersJoinedOverTime

@@ -1013,9 +1013,10 @@ function AnalyticsTab() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
             </span>
-            Active Users (24h)
+            Active Now (10 min)
           </div>
-          <div className="mt-2 text-2xl font-bold text-accent">{analytics.activeUsers24h}</div>
+          <div className="mt-2 text-2xl font-bold text-accent">{analytics.activeUsers10m}</div>
+          <div className="mt-1 text-xs text-muted">Last 24h: {analytics.activeUsers24h}</div>
         </div>
       </div>
 
