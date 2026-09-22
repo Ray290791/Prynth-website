@@ -94,7 +94,7 @@ function initAuth() {
 let _authInstance: ReturnType<typeof initAuth> | null = null;
 export const auth = new Proxy({} as any, {
   get(_target, prop) {
-    if (!_authInstance) {
+    if (!_authInstance || !(_authInstance as any).options?.socialProviders?.google) {
       _authInstance = initAuth();
     }
     return (_authInstance as any)[prop];
