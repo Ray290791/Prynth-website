@@ -458,31 +458,6 @@ function TagInput({
   const datalistId = useId();
   return (
     <div className={className}>
-      <div className="flex flex-wrap gap-2 mb-3">
-        {tags.map((t, i) => (
-          <span key={i} className="flex items-center gap-1 rounded-full bg-accent/10 pl-3 pr-1 py-1 text-xs font-medium text-accent border border-accent/20">
-            {isColor && (
-              <span 
-                className="w-2.5 h-2.5 rounded-full border border-black/20 inline-block mr-1"
-                style={{ backgroundColor: t.toLowerCase().replace(/\s/g, "") }} 
-              />
-            )}
-            {t}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setTags(tags.filter((_, idx) => idx !== i));
-              }}
-              className="ml-1 flex size-5 items-center justify-center rounded-full hover:bg-accent/20 transition-colors"
-            >
-              <X className="size-3" />
-            </button>
-          </span>
-        ))}
-        {tags.length === 0 && <span className="text-xs text-muted py-1">No tags added.</span>}
-      </div>
       <div className="flex gap-2">
         <input
           type="text"
@@ -521,6 +496,32 @@ function TagInput({
           Add
         </button>
       </div>
+      {tags.length > 0 && (
+        <div className="flex flex-wrap gap-2 mt-3">
+          {tags.map((t, i) => (
+            <span key={i} className="flex items-center gap-1 rounded-full bg-accent/10 pl-3 pr-1 py-1 text-xs font-medium text-accent border border-accent/20">
+              {isColor && (
+                <span 
+                  className="w-2.5 h-2.5 rounded-full border border-black/20 inline-block mr-1"
+                  style={{ backgroundColor: t.toLowerCase().replace(/\s/g, "") }} 
+                />
+              )}
+              {t}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setTags(tags.filter((_, idx) => idx !== i));
+                }}
+                className="ml-1 flex size-5 items-center justify-center rounded-full hover:bg-accent/20 transition-colors"
+              >
+                <X className="size-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
