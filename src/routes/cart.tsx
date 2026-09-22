@@ -1,10 +1,12 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, getRouteApi } from "@tanstack/react-router";
 import { ShoppingBag, Trash2 } from "lucide-react";
 import { QuantityStepper } from "@/components/quantity-stepper";
 import { Button } from "@/components/ui/button";
 import {
   cartSubtotal,
   FREE_SHIPPING_AT,
+  STANDARD_SHIPPING,
+  EXPRESS_SHIPPING,
   shippingFee,
   useCart,
 } from "@/lib/cart-store";
@@ -12,16 +14,23 @@ import { formatINR } from "@/lib/format";
 import { productColor } from "@/lib/products";
 import { useHydrated } from "@/lib/use-hydrated";
 
+const rootRoute = getRouteApi("__root__");
+
 export const Route = createFileRoute("/cart")({ component: CartPage });
 
 function CartPage() {
+  const { settings } = rootRoute.useLoaderData();
+  const freeThreshold = Number(settings?.free_shipping_threshold) || FREE_SHIPPING_AT;
+  const standardFee = Number(settings?.standard_shipping_fee) || STANDARD_SHIPPING;
+  const expressFee = Number(settings?.express_shipping_fee) || EXPRESS_SHIPPING;
+
   const hydrated = useHydrated();
   const items = useCart((s) => s.items);
   const setQty = useCart((s) => s.setQty);
   const remove = useCart((s) => s.remove);
   const subtotal = cartSubtotal(items);
-  const ship = shippingFee(subtotal, "standard");
-  const remaining = Math.max(0, FREE_SHIPPING_AT - subtotal);
+  const ship = shippingFee(subtotal, "standard", { freeThreshold, standardFee, expressFee });
+  const remaining = Math.max(0, freeThreshold - subtotal);
 
   if (!hydrated) {
     return <div className="mx-auto max-w-6xl px-4 py-16 md:px-6">Loading cart…</div>;

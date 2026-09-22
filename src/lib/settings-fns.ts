@@ -20,6 +20,11 @@ export type SiteSettings = {
   shipping_policy: string;
   returns_policy: string;
   product_categories: string;
+  free_shipping_threshold: string;
+  standard_shipping_fee: string;
+  express_shipping_fee: string;
+  cod_fee: string;
+  promo_banner: string;
 };
 
 export const getSiteSettings = createServerFn({ method: "GET" }).handler(
@@ -44,6 +49,11 @@ export const getSiteSettings = createServerFn({ method: "GET" }).handler(
       shipping_policy: "We ship across India. Pieces are packed in a small box with a bit of paper fill — enough to survive a courier, not a crate of foam.\n\nStandard: 3–5 days (₹49, free over ₹799)\nExpress: 1–2 days (₹129)\n\nPrint time is separate. Ready-made orders typically spend 3–5 days on the printer and cooling bench before they go out. Fine-quality custom work can take a week. We email a tracking link when the courier has the packet.\n\nRemote PIN codes can add a day or two. If a route isn't serviceable we'll write before charging shipping. Cash on delivery is available with a ₹40 collection fee.",
       returns_policy: "If a piece arrives broken, incomplete, or clearly not what you ordered, we'll reprint it. Photograph the issue and email us within 7 days of delivery, with your order number.\n\nChange-of-mind returns are possible on unused ready-made pieces in the original packing, also within 7 days. You cover return shipping; we refund the product amount, not the outbound courier fee.\n\nWe don't take back:\n- Custom prints made from your file, if they match the quote you approved.\n- Modeled-from-scratch work after you've signed off the design.\n- Used bath pieces (soap dishes) or anything that's been washed or soiled.\n\nThat's the whole policy. No restocking riddle. If we're at fault, we make it right.",
       product_categories: "Desk, Home, Bath",
+      free_shipping_threshold: "799",
+      standard_shipping_fee: "49",
+      express_shipping_fee: "129",
+      cod_fee: "40",
+      promo_banner: "Free delivery across India on orders over ₹799",
     };
 
     for (const row of rows) {
@@ -74,6 +84,11 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
     shipping_policy: z.string().min(1),
     returns_policy: z.string().min(1),
     product_categories: z.string().min(1).optional(),
+    free_shipping_threshold: z.string().optional(),
+    standard_shipping_fee: z.string().optional(),
+    express_shipping_fee: z.string().optional(),
+    cod_fee: z.string().optional(),
+    promo_banner: z.string().optional(),
   }))
   .handler(async ({ data, context }) => {
     if (!context.userId) throw new Error("Unauthorized");

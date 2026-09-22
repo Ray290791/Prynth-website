@@ -93,6 +93,24 @@ function Home() {
   const [activePolymer, setActivePolymer] = useState("pla");
   const poly = POLYMERS.find((p) => p.id === activePolymer) ?? POLYMERS[0];
 
+  const trustItems = [
+    {
+      icon: ShieldCheck,
+      title: "Quality checked",
+      text: "Every piece is looked at before it leaves. If it isn't right, we print it again.",
+    },
+    {
+      icon: Clock3,
+      title: "3–5 day typical turnaround",
+      text: "Made to order, not sitting in a warehouse. Most ready-made pieces ship in a few days.",
+    },
+    {
+      icon: Truck,
+      title: "Ships across India",
+      text: `Standard shipping ₹${settings.standard_shipping_fee || 49}, free over ₹${settings.free_shipping_threshold || 799}. Express if you need it sooner.`,
+    },
+  ];
+
   return (
     <div>
       {/* ── Hero ───────────────────────────────────────────── */}
@@ -110,7 +128,7 @@ function Home() {
             className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-4 py-1.5 text-sm font-medium text-accent backdrop-blur-xl transition-all duration-200 hover:border-accent/40 hover:bg-accent/15"
           >
             <Zap className="size-3.5 shrink-0" strokeWidth={2} />
-            Free delivery across India on orders over ₹799
+            {settings.promo_banner || `Free delivery across India on orders over ₹${settings.free_shipping_threshold || 799}`}
             <ArrowRight className="size-3.5 shrink-0" strokeWidth={2} />
           </Link>
         </div>
@@ -239,7 +257,7 @@ function Home() {
       {/* ── Trust Bento Pods ───────────────────────────────── */}
       <section className="bg-surface/50">
         <div className="mx-auto grid max-w-6xl gap-4 px-4 py-12 md:grid-cols-3 md:px-6 md:py-14">
-          {TRUST.map((item) => (
+          {trustItems.map((item) => (
             <div
               key={item.title}
               className="flex gap-4 rounded-2xl border border-glass-border bg-glass p-5 backdrop-blur-2xl backdrop-saturate-150 shadow-xl shadow-black/5 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"

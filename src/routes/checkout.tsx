@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, getRouteApi } from "@tanstack/react-router";
 import { useState, useEffect, type ChangeEvent } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   cartSubtotal,
   COD_FEE,
+  FREE_SHIPPING_AT,
+  STANDARD_SHIPPING,
+  EXPRESS_SHIPPING,
   shippingFee,
   useCart,
 } from "@/lib/cart-store";
@@ -24,12 +27,21 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useCurrentUser } from "@/lib/auth/use-current-user";
 import { loadRazorpay } from "@/lib/razorpay-client";
 
+const rootRoute = getRouteApi("__root__");
+
 export const Route = createFileRoute("/checkout")({ component: CheckoutPage });
 
 type Pay = "online" | "cod" | "upi";
 type Ship = "standard" | "express";
 
 function CheckoutPage() {
+  const { settings } = rootRoute.useLoaderData();
+  const freeThreshold = Number(settings?.free_shipping_threshold) || FREE_SHIPPING_AT;
+  const standardFee = Number(settings?.standard_shipping_fee) || STANDARD_SHIPPING;
+  const expressFee = Number(settings?.express_shipping_fee) || EXPRESS_SHIPPING;
+  const codFee = Number(settings?.cod_fee) || COD_FEE;
+  const shippingRates = { freeThreshold, standardFee, expressFee, codFee };
+
   const hydrated = useHydrated();
   const items = useCart((s) => s.items);
   const clear = useCart((s) => s.clear);
@@ -104,8 +116,8 @@ function CheckoutPage() {
 
   const subtotal = cartSubtotal(items);
   const discountAmount = appliedCoupon ? (subtotal * appliedCoupon.discount_percent) / 100 : 0;
-  const shipping = shippingFee(subtotal - discountAmount, ship);
-  const extra = pay === "cod" ? COD_FEE : 0;
+  const shipping = shippingFee(subtotal - discountAmount, ship, shippingRates);
+  const extra = pay === "cod" ? codFee : 0;
   const total = subtotal - discountAmount + shipping + extra;
 
   const empty = hydrated && items.length === 0;
@@ -390,13 +402,13 @@ function CheckoutPage() {
                     id: "standard" as const,
                     title: "Standard",
                     detail: "3–5 days after we print",
-                    price: shippingFee(subtotal, "standard"),
+                    price: shippingFee(subtotal - discountAmount, "standard", shippingRates),
                   },
                   {
                     id: "express" as const,
                     title: "Express",
                     detail: "1–2 days after we print",
-                    price: shippingFee(subtotal, "express"),
+                    price: shippingFee(subtotal - discountAmount, "express", shippingRates),
                   },
                 ]
               ).map((opt) => (
@@ -446,7 +458,7 @@ function CheckoutPage() {
             </div>
             {pay === "cod" && (
               <p className="mt-4 text-sm text-muted">
-                Pay the courier in cash. A {formatINR(COD_FEE)} collection fee is added.
+                Pay the courier in cash. A {formatINR(codFee)} collection fee is added.
               </p>
             )}
             {pay === "upi" && (

@@ -93,11 +93,23 @@ export const STANDARD_SHIPPING = 49;
 export const EXPRESS_SHIPPING = 129;
 export const COD_FEE = 40;
 
+export interface ShippingRates {
+  freeThreshold?: number;
+  standardFee?: number;
+  expressFee?: number;
+  codFee?: number;
+}
+
 export function shippingFee(
   subtotal: number,
   method: "standard" | "express",
+  rates?: ShippingRates,
 ) {
-  if (method === "express") return EXPRESS_SHIPPING;
-  if (subtotal >= FREE_SHIPPING_AT) return 0;
-  return STANDARD_SHIPPING;
+  const express = rates?.expressFee ?? EXPRESS_SHIPPING;
+  const standard = rates?.standardFee ?? STANDARD_SHIPPING;
+  const freeAt = rates?.freeThreshold ?? FREE_SHIPPING_AT;
+
+  if (method === "express") return express;
+  if (subtotal >= freeAt) return 0;
+  return standard;
 }

@@ -855,6 +855,11 @@ function SettingsTab() {
       shipping_policy: (fd.get("shipping_policy") as string)?.trim(),
       returns_policy: (fd.get("returns_policy") as string)?.trim(),
       product_categories: ((fd.get("product_categories") as string) || settings?.product_categories || "Desk, Home, Bath").trim(),
+      free_shipping_threshold: ((fd.get("free_shipping_threshold") as string) || settings?.free_shipping_threshold || "799").trim(),
+      standard_shipping_fee: ((fd.get("standard_shipping_fee") as string) || settings?.standard_shipping_fee || "49").trim(),
+      express_shipping_fee: ((fd.get("express_shipping_fee") as string) || settings?.express_shipping_fee || "129").trim(),
+      cod_fee: ((fd.get("cod_fee") as string) || settings?.cod_fee || "40").trim(),
+      promo_banner: ((fd.get("promo_banner") as string) || settings?.promo_banner || "").trim(),
     };
     updateMutation.mutate(data);
   };
@@ -877,6 +882,84 @@ function SettingsTab() {
           <div>
             <label className="block text-sm font-medium mb-1">Hero Description</label>
             <textarea name="hero_description" defaultValue={settings.hero_description} required rows={3} className="w-full rounded border border-border bg-surface p-2 text-sm" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Floating Promo Pill / Free Delivery Banner</label>
+            <input
+              name="promo_banner"
+              defaultValue={settings.promo_banner || `Free delivery across India on orders over ₹${settings.free_shipping_threshold || "799"}`}
+              className="w-full rounded border border-border bg-surface p-2 text-sm"
+              placeholder="Free delivery across India on orders over ₹799"
+            />
+            <p className="text-xs text-muted mt-1">Badge shown above hero on the homepage. (Leave empty to auto-update based on the free delivery threshold below).</p>
+          </div>
+        </section>
+
+        {/* SHIPPING & DELIVERY RATES SECTION */}
+        <section className="space-y-4">
+          <h3 className="text-lg font-semibold border-b border-border pb-2">Shipping & Delivery Rates</h3>
+          <p className="text-xs text-muted">Configure shipping thresholds and courier fees used across the homepage, cart calculation, and checkout.</p>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Free Delivery Threshold (₹)</label>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                name="free_shipping_threshold"
+                defaultValue={settings.free_shipping_threshold || "799"}
+                required
+                className="w-full rounded border border-border bg-surface p-2 text-sm"
+                placeholder="799"
+              />
+              <p className="text-xs text-muted mt-1">Orders at or above this cart amount unlock free standard delivery.</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Standard Shipping Fee (₹)</label>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                name="standard_shipping_fee"
+                defaultValue={settings.standard_shipping_fee || "49"}
+                required
+                className="w-full rounded border border-border bg-surface p-2 text-sm"
+                placeholder="49"
+              />
+              <p className="text-xs text-muted mt-1">Standard 3–5 day delivery fee charged for orders below threshold.</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Express Shipping Fee (₹)</label>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                name="express_shipping_fee"
+                defaultValue={settings.express_shipping_fee || "129"}
+                required
+                className="w-full rounded border border-border bg-surface p-2 text-sm"
+                placeholder="129"
+              />
+              <p className="text-xs text-muted mt-1">Faster 1–2 day courier fee.</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Cash on Delivery (COD) Fee (₹)</label>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                name="cod_fee"
+                defaultValue={settings.cod_fee || "40"}
+                required
+                className="w-full rounded border border-border bg-surface p-2 text-sm"
+                placeholder="40"
+              />
+              <p className="text-xs text-muted mt-1">Collection fee added when customer selects Cash on Delivery.</p>
+            </div>
           </div>
         </section>
 
