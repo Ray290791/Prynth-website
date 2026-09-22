@@ -22,17 +22,26 @@ export type ProductVariant = {
   stockCount: number;
 };
 
+export type ProductImage = {
+  url: string;
+  tags: string[];
+};
+
 export type Product = {
   slug: string;
   name: string;
   price: number;
-  image: string;
-  category: Category;
+  image: string; // Keep as primary/thumbnail image
+  gallery?: ProductImage[]; // New multi-image gallery
+  category?: Category; // Legacy single category
+  categories?: Category[]; // New multi-category array
   blurb: string;
   description: string;
   colors: string[];
-  size: string;
-  material: string;
+  size?: string; // Legacy single size
+  sizes?: string[]; // Tag-based sizes array
+  material?: string; // Legacy single material
+  materials?: string[]; // Tag-based materials array
   printTime: string;
   featured?: boolean;
   badge?: "Favourite" | "New";
@@ -40,7 +49,6 @@ export type Product = {
   care: string;
   inStock?: boolean;
   stockCount?: number;
-  sizes?: string[];
   variants?: ProductVariant[];
 };
 

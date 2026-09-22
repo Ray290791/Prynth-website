@@ -56,10 +56,33 @@ function ProductPage() {
   const items = useCart((s) => s.items);
   const setQtyInCart = useCart((s) => s.setQty);
   const hydrated = useHydrated();
-  const [color, setColor] = useState(product?.colors[0] ?? "charcoal");
-  const [size, setSize] = useState(product?.sizes?.[0] ?? "");
+  const [color, setColor] = useState(product?.colors?.[0] ?? "charcoal");
+  const [size, setSize] = useState(product?.sizes?.[0] ?? product?.size ?? "");
+  const [material, setMaterial] = useState(product?.materials?.[0] ?? product?.material ?? "");
   const [qty, setQty] = useState(1);
   const [notifyEmail, setNotifyEmail] = useState("");
+
+  const selectedTags = [
+    productColor(color).name,
+    size,
+    material
+  ].filter(Boolean).map(t => t.toLowerCase());
+
+  const filteredGallery = (product?.gallery || []).filter(img => {
+    if (!img.tags || img.tags.length === 0) return false;
+    const imgTags = img.tags.map(t => t.toLowerCase());
+    return imgTags.some(t => selectedTags.includes(t));
+  });
+
+  const displayImages = filteredGallery.length > 0 
+    ? filteredGallery.map(g => g.url) 
+    : (product?.gallery && product.gallery.length > 0 ? product.gallery.map(g => g.url) : [product?.image || ""]);
+  
+  const [activeImage, setActiveImage] = useState(displayImages[0]);
+
+  useEffect(() => {
+    setActiveImage(displayImages[0]);
+  }, [displayImages.join(",")]);
 
   const trackViewMutation = useMutation({
     mutationFn: trackProductView,
@@ -80,8 +103,9 @@ function ProductPage() {
 
   useEffect(() => {
     if (product) {
-      setColor(product.colors[0] ?? "charcoal");
-      setSize(product.sizes?.[0] ?? "");
+      setColor(product.colors?.[0] ?? "charcoal");
+      setSize(product.sizes?.[0] ?? product.size ?? "");
+      setMaterial(product.materials?.[0] ?? product.material ?? "");
       setQty(1);
       import("@/lib/product-history").then(({ recordProductView }) => {
         recordProductView(product.slug);
@@ -135,11 +159,12 @@ function ProductPage() {
       image: product.image,
       color,
       size: size || undefined,
+      material: material || undefined,
       unitPrice: displayPrice,
       qty,
     });
     toast.success(`${product.name} added to cart`, {
-      description: `${productColor(color).name} ${size ? `· ${size}` : ""} · Qty: ${qty}`,
+      description: `${productColor(color).name} ${size ? `· ${size}` : ""} ${material ? `· ${material}` : ""} · Qty: ${qty}`,
     });
   }
 
@@ -176,12 +201,27 @@ function ProductPage() {
 
       <div className="mt-8 grid gap-10 md:grid-cols-12 md:gap-10 lg:gap-14">
         <div className="md:col-span-6 lg:col-span-7">
-          <div className="overflow-hidden rounded-3xl bg-surface shadow-[var(--shadow-border)]">
-            <img
-              src={product.image}
-              alt={product.name}
-              className="product-photo aspect-square w-full object-cover"
-            />
+          <div className="flex flex-col gap-4">
+            <div className="overflow-hidden rounded-3xl bg-surface shadow-[var(--shadow-border)] transition-opacity duration-300">
+              <img
+                src={activeImage}
+                alt={product.name}
+                className="product-photo aspect-square w-full object-cover"
+              />
+            </div>
+            {displayImages.length > 1 && (
+              <div className="flex gap-3 overflow-x-auto pb-2 snap-x">
+                {displayImages.map((img, i) => (
+                  <button 
+                    key={i} 
+                    onClick={() => setActiveImage(img)}
+                    className={`shrink-0 snap-center rounded-xl overflow-hidden border-2 transition-all w-20 h-20 md:w-24 md:h-24 ${activeImage === img ? 'border-primary ring-2 ring-primary/20 scale-95' : 'border-transparent hover:border-border'}`}
+                  >
+                    <img src={img} alt="" className="w-full h-full object-cover bg-surface" />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
         <div className="md:col-span-6 lg:col-span-5">
@@ -224,11 +264,30 @@ function ProductPage() {
                   <button
                     key={s}
                     onClick={() => setSize(s)}
-                    className={`rounded-md border px-4 py-2 text-sm font-medium transition-colors ${
-                      size === s ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-secondary"
+                    className={`rounded-md border px-4 py-2 text-sm font-medium transition-colors active:scale-95 ${
+                      size === s ? "border-primary bg-primary text-primary-foreground shadow-md" : "border-border hover:bg-secondary text-muted hover:text-fg"
                     }`}
                   >
                     {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {product.materials && product.materials.length > 0 && (
+            <div className="mt-6">
+              <p className="mb-2 text-sm font-medium">Material</p>
+              <div className="flex flex-wrap gap-2">
+                {product.materials.map((m: string) => (
+                  <button
+                    key={m}
+                    onClick={() => setMaterial(m)}
+                    className={`rounded-md border px-4 py-2 text-sm font-medium transition-colors active:scale-95 ${
+                      material === m ? "border-primary bg-primary text-primary-foreground shadow-md" : "border-border hover:bg-secondary text-muted hover:text-fg"
+                    }`}
+                  >
+                    {m}
                   </button>
                 ))}
               </div>
@@ -323,11 +382,11 @@ function ProductPage() {
           <dl className="mt-10 grid grid-cols-1 gap-4 border-t border-border pt-6 text-sm sm:grid-cols-2">
             <div>
               <dt className="text-subtle">Base Size</dt>
-              <dd className="mt-1 text-fg">{product.size}</dd>
+              <dd className="mt-1 text-fg">{size || product.size}</dd>
             </div>
             <div>
               <dt className="text-subtle">Material</dt>
-              <dd className="mt-1 text-fg">{product.material}</dd>
+              <dd className="mt-1 text-fg">{material || product.material}</dd>
             </div>
             <div>
               <dt className="text-subtle">Turnaround</dt>

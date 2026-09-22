@@ -32,12 +32,13 @@ function ShopPage() {
   const list = useMemo(() => {
     const q = query.trim().toLowerCase();
     const filtered = products.filter((p) => {
-      if (category !== "all" && p.category !== category) return false;
+      const pCats = p.categories && p.categories.length > 0 ? p.categories.map(c => c.toLowerCase()) : (p.category ? [p.category.toLowerCase()] : []);
+      if (category !== "all" && !pCats.includes(category)) return false;
       if (!q) return true;
       return (
         p.name.toLowerCase().includes(q) ||
         p.blurb.toLowerCase().includes(q) ||
-        p.category.includes(q)
+        pCats.some(c => c.includes(q))
       );
     });
 

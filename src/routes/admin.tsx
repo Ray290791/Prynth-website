@@ -4,15 +4,15 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatINR } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import { cn } from "@/lib/utils";
-import { Package, Box, X, Settings, Image as ImageIcon, BarChart3, Tag, ClipboardList, Shield, UserCog, HelpCircle, Users, Search } from "lucide-react";
+import { Package, Box, X, Settings, Image as ImageIcon, BarChart3, Tag, ClipboardList, Shield, UserCog, HelpCircle, Users, Search, Trash2 } from "lucide-react";
 import { getAllProductsAdmin, deleteProduct, updateProduct, createProduct, updateProductInventory } from "@/lib/products-fns";
 import { getSiteSettings, updateSiteSettings } from "@/lib/settings-fns";
 import { getCouponsAdmin, createCoupon, deleteCoupon, getAnalyticsAdmin } from "@/lib/ecommerce-fns";
 import { getAdminTeam, addAdmin, removeAdmin, getAdminProfile, setAdminPin, requestPinResetOTP, resetAdminPinWithOTP, getAllUsersAdmin } from "@/lib/admin-fns";
 import { getFaqsAdmin, createFaq, updateFaq, deleteFaq, reorderFaqs } from "@/lib/faq-fns";
-import { type Product } from "@/lib/products";
+import { type Product, type ProductImage } from "@/lib/products";
 
 export const Route = createFileRoute("/admin")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -403,7 +403,7 @@ function ProductsTable() {
                 </div>
               </td>
               <td className="p-4 tabular-nums font-medium">{formatINR(p.price)}</td>
-              <td className="p-4 capitalize">{p.category}</td>
+              <td className="p-4 capitalize">{Array.isArray(p.categories) ? p.categories.join(", ") : p.category}</td>
               <td className="p-4 text-right space-x-2">
                 <button
                   onClick={() => {
@@ -439,6 +439,80 @@ function ProductsTable() {
   );
 }
 
+function TagInput({ 
+  tags, 
+  setTags, 
+  placeholder = "Type and press Enter...",
+  className = "",
+  suggestions = []
+}: { 
+  tags: string[], 
+  setTags: (tags: string[]) => void, 
+  placeholder?: string,
+  className?: string,
+  suggestions?: string[]
+}) {
+  const [input, setInput] = useState("");
+  const datalistId = useId();
+  return (
+    <div className={className}>
+      <div className="flex flex-wrap gap-2 mb-3">
+        {tags.map((t, i) => (
+          <span key={i} className="flex items-center gap-1 rounded-full bg-accent/10 pl-3 pr-1 py-1 text-xs font-medium text-accent border border-accent/20">
+            {t}
+            <button
+              type="button"
+              onClick={() => setTags(tags.filter((_, idx) => idx !== i))}
+              className="ml-1 flex size-5 items-center justify-center rounded-full hover:bg-accent/20 transition-colors"
+            >
+              <X className="size-3" />
+            </button>
+          </span>
+        ))}
+        {tags.length === 0 && <span className="text-xs text-muted py-1">No tags added.</span>}
+      </div>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={input}
+          list={suggestions.length > 0 ? datalistId : undefined}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              const newTag = input.trim();
+              if (newTag && !tags.includes(newTag)) {
+                setTags([...tags, newTag]);
+                setInput("");
+              }
+            }
+          }}
+          placeholder={placeholder}
+          className="flex-1 rounded-lg border border-border bg-surface-2 p-2.5 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
+        />
+        {suggestions.length > 0 && (
+          <datalist id={datalistId}>
+            {suggestions.map(s => <option key={s} value={s} />)}
+          </datalist>
+        )}
+        <button
+          type="button"
+          onClick={() => {
+            const newTag = input.trim();
+            if (newTag && !tags.includes(newTag)) {
+              setTags([...tags, newTag]);
+              setInput("");
+            }
+          }}
+          className="rounded-lg bg-surface-2 px-4 py-2.5 text-sm font-medium border border-border hover:bg-surface-3 transition-colors active:scale-95"
+        >
+          Add
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ProductModal({
   product,
   isOpen,
@@ -452,9 +526,10 @@ function ProductModal({
   const [busy, setBusy] = useState(false);
   const [imagePreview, setImagePreview] = useState(product?.image || "");
   const [colors, setColors] = useState<string[]>(product?.colors || []);
-  const [colorInput, setColorInput] = useState("");
-  const [isAddingCategory, setIsAddingCategory] = useState(false);
-  const [newCategory, setNewCategory] = useState("");
+  const [categories, setCategories] = useState<string[]>(product?.categories || (product?.category ? [product.category] : []));
+  const [sizes, setSizes] = useState<string[]>(product?.sizes || (product?.size ? [product.size] : []));
+  const [materials, setMaterials] = useState<string[]>(product?.materials || (product?.material ? [product.material] : []));
+  const [gallery, setGallery] = useState<ProductImage[]>(product?.gallery || []);
 
   const { data: settings } = useQuery({
     queryKey: ["siteSettings"],
@@ -468,9 +543,10 @@ function ProductModal({
   useEffect(() => {
     setImagePreview(product?.image || "");
     setColors(product?.colors || []);
-    setColorInput("");
-    setIsAddingCategory(false);
-    setNewCategory("");
+    setCategories(product?.categories || (product?.category ? [product.category] : []));
+    setSizes(product?.sizes || (product?.size ? [product.size] : []));
+    setMaterials(product?.materials || (product?.material ? [product.material] : []));
+    setGallery(product?.gallery || []);
   }, [product]);
 
   const mutation = useMutation({
@@ -511,13 +587,14 @@ function ProductModal({
                 slug: fd.get("slug") as string,
                 name: fd.get("name") as string,
                 price: parseInt(fd.get("price") as string, 10),
-                image: fd.get("image") as string,
-                category: fd.get("category") as any,
+                image: imagePreview,
+                gallery: gallery,
+                categories: categories,
                 blurb: fd.get("blurb") as string,
                 description: fd.get("description") as string,
                 colors: colors,
-                size: fd.get("size") as string,
-                material: fd.get("material") as string,
+                sizes: sizes,
+                materials: materials,
                 printTime: fd.get("printTime") as string,
                 featured: fd.get("featured") === "on",
                 badge: (fd.get("badge") as "Favourite" | "New") || undefined,
@@ -542,50 +619,15 @@ function ProductModal({
                 <input name="price" type="number" defaultValue={product?.price} required className="w-full rounded border border-border bg-surface-2 p-2 text-sm" />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Category</label>
-                {isAddingCategory ? (
-                  <div className="flex gap-2">
-                    <input
-                      name="category"
-                      value={newCategory}
-                      onChange={e => setNewCategory(e.target.value)}
-                      placeholder="e.g. Keyboards"
-                      required
-                      className="w-full rounded border border-border bg-surface-2 p-2 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
-                    />
-                    <button type="button" onClick={() => setIsAddingCategory(false)} className="rounded bg-surface-2 px-3 py-2 text-sm border border-border hover:bg-surface-3 transition-colors active:scale-95">
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
-                  <select 
-                    name="category" 
-                    defaultValue={product?.category || categoriesList[0]?.toLowerCase()} 
-                    onChange={(e) => {
-                      if (e.target.value === "__NEW__") {
-                        setIsAddingCategory(true);
-                        setNewCategory("");
-                      }
-                    }}
-                    required 
-                    className="w-full rounded border border-border bg-surface-2 p-2 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
-                  >
-                    {categoriesList.map(c => (
-                      <option key={c} value={c.toLowerCase()}>{c}</option>
-                    ))}
-                    {product?.category && !categoriesList.map(c => c.toLowerCase()).includes(product.category) && (
-                      <option value={product.category}>{product.category} (Current)</option>
-                    )}
-                    <option value="__NEW__">+ Add new category...</option>
-                  </select>
-                )}
+                <label className="block text-sm font-medium mb-1">Categories</label>
+                <TagInput tags={categories} setTags={setCategories} suggestions={categoriesList} placeholder="e.g. Desk, Keyboards" />
               </div>
               <div className="col-span-2">
-                <label className="block text-sm font-medium mb-1">Image</label>
+                <label className="block text-sm font-medium mb-1">Primary Image (Thumbnail)</label>
                 <div className="flex gap-4 items-start">
-                  <div className="w-24 h-24 shrink-0 rounded-lg overflow-hidden bg-surface-2 border border-border">
+                  <div className="w-24 h-24 shrink-0 rounded-lg border border-border bg-surface-2 overflow-hidden">
                     {imagePreview ? (
-                      <img src={imagePreview} className="w-full h-full object-cover" alt="Preview" />
+                      <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex flex-col items-center justify-center text-muted text-xs">
                         <ImageIcon className="w-6 h-6 mb-1 opacity-50" />
@@ -612,6 +654,64 @@ function ProductModal({
                   </div>
                 </div>
               </div>
+
+              {/* Multi-Image Gallery with Tags */}
+              <div className="col-span-2 pt-4 border-t border-border mt-4">
+                <label className="block text-sm font-medium mb-1">Image Gallery</label>
+                <p className="text-xs text-muted mb-4">Upload multiple images for the product page carousel. You can tag each image with colors, sizes, or materials.</p>
+                
+                <div className="space-y-4">
+                  {gallery.map((img, idx) => (
+                    <div key={idx} className="flex gap-4 items-start p-4 border border-border rounded-lg bg-surface-2">
+                      <img src={img.url} alt="Gallery" className="w-24 h-24 object-cover rounded border border-border shrink-0" />
+                      <div className="flex-1">
+                        <label className="block text-xs font-medium mb-1">Tags (e.g., Teal, Standard, PLA)</label>
+                        <TagInput 
+                          tags={img.tags} 
+                          setTags={(newTags) => {
+                            const newGallery = [...gallery];
+                            newGallery[idx].tags = newTags;
+                            setGallery(newGallery);
+                          }} 
+                          placeholder="Add tags..." 
+                        />
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={() => setGallery(gallery.filter((_, i) => i !== idx))}
+                        className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+
+                  <div className="flex items-center gap-4 p-4 border border-dashed border-border rounded-lg">
+                    <div className="flex-1">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-medium file:bg-surface-3 file:text-foreground hover:file:bg-border cursor-pointer"
+                        onChange={(e) => {
+                          const files = Array.from(e.target.files || []);
+                          if (files.length > 0) {
+                            Promise.all(files.map(file => {
+                              return new Promise<ProductImage>((resolve) => {
+                                const reader = new FileReader();
+                                reader.onload = (e) => resolve({ url: e.target?.result as string, tags: [] });
+                                reader.readAsDataURL(file);
+                              });
+                            })).then(newImages => {
+                              setGallery([...gallery, ...newImages]);
+                            });
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
               <div className="col-span-2">
                 <label className="block text-sm font-medium mb-1">Blurb (Short)</label>
                 <input name="blurb" defaultValue={product?.blurb} required className="w-full rounded border border-border bg-surface-2 p-2 text-sm" />
@@ -622,61 +722,15 @@ function ProductModal({
               </div>
               <div className="col-span-2">
                 <label className="block text-sm font-medium mb-2">Colors</label>
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {colors.map((c, i) => (
-                    <span key={i} className="flex items-center gap-1 rounded-full bg-accent/10 pl-3 pr-1 py-1 text-xs font-medium text-accent border border-accent/20">
-                      {c}
-                      <button
-                        type="button"
-                        onClick={() => setColors(colors.filter((_, idx) => idx !== i))}
-                        className="ml-1 flex size-5 items-center justify-center rounded-full hover:bg-accent/20 transition-colors"
-                      >
-                        <X className="size-3" />
-                      </button>
-                    </span>
-                  ))}
-                  {colors.length === 0 && <span className="text-xs text-muted py-1">No colors added.</span>}
-                </div>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={colorInput}
-                    onChange={(e) => setColorInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        const newColor = colorInput.trim();
-                        if (newColor && !colors.includes(newColor)) {
-                          setColors([...colors, newColor]);
-                          setColorInput("");
-                        }
-                      }
-                    }}
-                    placeholder="Type a color and press Enter..."
-                    className="flex-1 rounded-lg border border-border bg-surface-2 p-2.5 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const newColor = colorInput.trim();
-                      if (newColor && !colors.includes(newColor)) {
-                        setColors([...colors, newColor]);
-                        setColorInput("");
-                      }
-                    }}
-                    className="rounded-lg bg-surface-2 px-4 py-2.5 text-sm font-medium border border-border hover:bg-surface-3 transition-colors active:scale-95"
-                  >
-                    Add
-                  </button>
-                </div>
+                <TagInput tags={colors} setTags={setColors} placeholder="e.g. Teal" />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Size</label>
-                <input name="size" defaultValue={product?.size} required className="w-full rounded border border-border bg-surface-2 p-2 text-sm" />
+                <label className="block text-sm font-medium mb-1">Sizes</label>
+                <TagInput tags={sizes} setTags={setSizes} placeholder="e.g. Standard" />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Material</label>
-                <input name="material" defaultValue={product?.material} required className="w-full rounded border border-border bg-surface-2 p-2 text-sm" />
+                <label className="block text-sm font-medium mb-1">Materials</label>
+                <TagInput tags={materials} setTags={setMaterials} placeholder="e.g. PLA" />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Print Time</label>

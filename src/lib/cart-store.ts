@@ -22,6 +22,7 @@ export type CartItem = {
   image?: string;
   color: string;
   size?: string;
+  material?: string;
   unitPrice: number;
   qty: number;
   custom?: CustomSpec;

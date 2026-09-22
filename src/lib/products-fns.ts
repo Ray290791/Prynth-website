@@ -211,27 +211,30 @@ export const updateProduct = createServerFn({ method: "POST" })
     const admin = await verifyAdminRole(context.userId, sql);
     if (!admin) throw new Error("Unauthorized");
 
-    await ensureCategoryExists(data.category, sql);
+    await ensureCategoryExists(data.category ?? data.categories?.[0] ?? "", sql);
 
     await sql`
       UPDATE products SET
         name = ${data.name},
         price = ${data.price},
         image = ${data.image},
-        category = ${data.category},
+        gallery = ${JSON.stringify(data.gallery ?? [])},
+        category = ${data.category ?? data.categories?.[0] ?? ""},
+        categories = ${JSON.stringify(data.categories ?? [])},
         blurb = ${data.blurb},
         description = ${data.description},
         colors = ${JSON.stringify(data.colors)},
-        size = ${data.size},
-        material = ${data.material},
+        size = ${data.size ?? data.sizes?.[0] ?? ""},
+        sizes = ${JSON.stringify(data.sizes ?? [])},
+        material = ${data.material ?? data.materials?.[0] ?? ""},
+        materials = ${JSON.stringify(data.materials ?? [])},
         print_time = ${data.printTime},
         featured = ${data.featured ?? false},
         badge = ${data.badge ?? null},
         includes = ${data.includes},
         care = ${data.care},
         in_stock = ${data.inStock ?? true},
-        stock_count = ${data.stockCount ?? -1},
-        sizes = ${JSON.stringify(data.sizes ?? [])}
+        stock_count = ${data.stockCount ?? -1}
       WHERE slug = ${data.slug}
     `;
   });
@@ -261,20 +264,20 @@ export const createProduct = createServerFn({ method: "POST" })
     const admin = await verifyAdminRole(context.userId, sql);
     if (!admin) throw new Error("Unauthorized");
 
-    await ensureCategoryExists(data.category, sql);
+    await ensureCategoryExists(data.category ?? data.categories?.[0] ?? "", sql);
 
     await sql`
       INSERT INTO products (
-        slug, name, price, image, category, blurb, description, 
-        colors, size, material, print_time, featured, badge, includes, care,
-        in_stock, stock_count, sizes
+        slug, name, price, image, gallery, category, categories, blurb, description, 
+        colors, size, sizes, material, materials, print_time, featured, badge, includes, care,
+        in_stock, stock_count
       ) VALUES (
-        ${data.slug}, ${data.name}, ${data.price}, ${data.image}, 
-        ${data.category}, ${data.blurb}, ${data.description}, 
-        ${JSON.stringify(data.colors)}, ${data.size}, ${data.material}, 
+        ${data.slug}, ${data.name}, ${data.price}, ${data.image}, ${JSON.stringify(data.gallery ?? [])},
+        ${data.category ?? data.categories?.[0] ?? ""}, ${JSON.stringify(data.categories ?? [])}, ${data.blurb}, ${data.description}, 
+        ${JSON.stringify(data.colors)}, ${data.size ?? data.sizes?.[0] ?? ""}, ${JSON.stringify(data.sizes ?? [])}, ${data.material ?? data.materials?.[0] ?? ""}, ${JSON.stringify(data.materials ?? [])}, 
         ${data.printTime}, ${data.featured ?? false}, ${data.badge ?? null}, 
         ${data.includes}, ${data.care},
-        ${data.inStock ?? true}, ${data.stockCount ?? -1}, ${JSON.stringify(data.sizes ?? [])}
+        ${data.inStock ?? true}, ${data.stockCount ?? -1}
       )
     `;
   });
