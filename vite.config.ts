@@ -73,9 +73,9 @@ export default defineConfig(({ command, isPreview }) => ({
       ? [
           nitro({
             preset:
-              process.env.CF_PAGES || process.env.DEPLOY_TARGET === "cloudflare"
-                ? "cloudflare-pages"
-                : "vercel",
+              process.env.VERCEL
+                ? "vercel"
+                : "cloudflare-pages",
             serverDir: "./server",
           }),
         ]
