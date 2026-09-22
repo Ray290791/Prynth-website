@@ -1,7 +1,8 @@
 import { betterAuth } from "better-auth";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { getCookie } from "@tanstack/react-start/server";
-import { Pool } from "pg";
+import { Pool as NeonPool } from "@neondatabase/serverless";
+import { Pool as PgPool } from "pg";
 import { ensureDbReady, getPglite, isCloudflare, isProd, getDatabaseUrl } from "../db";
 import { emailAndPasswordEnabled } from "./email-password";
 import { pgliteDialect } from "./pglite-dialect";
@@ -40,15 +41,13 @@ function initAuth() {
 
   const databaseUrl = getDatabaseUrl();
 
-  let pool: Pool | null = null;
+  let pool: any = null;
   if (databaseUrl || isProd || isCloudflare) {
-    pool = new Pool({
+    const PoolClass = (isCloudflare ? NeonPool : PgPool) as any;
+    pool = new PoolClass({
       connectionString: databaseUrl || "postgres://localhost/dummy",
-      max: isCloudflare ? 2 : 10,
-      idleTimeoutMillis: 10000,
-      connectionTimeoutMillis: 10000,
     });
-    pool.on("error", (err) => {
+    pool.on("error", (err: any) => {
       console.error("[auth pg pool error]:", err);
     });
   }

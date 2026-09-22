@@ -102,17 +102,16 @@ function createNeonSql(): Promise<Sql> {
     if (!dbUrl) {
       throw new Error("DATABASE_URL environment variable is missing.");
     }
-    const { Pool, types } = await import("pg");
+    const { Pool, types } = isCloudflare
+      ? await import("@neondatabase/serverless")
+      : await import("pg");
     types.setTypeParser(OID_INT8, Number);
     types.setTypeParser(OID_DATE, identity);
     types.setTypeParser(OID_INTERVAL, identity);
     const pool = new Pool({
       connectionString: dbUrl,
-      max: isCloudflare ? 2 : 10,
-      idleTimeoutMillis: 10000,
-      connectionTimeoutMillis: 10000,
     });
-    pool.on("error", (err) => {
+    pool.on("error", (err: any) => {
       console.error("[db pg pool error]:", err);
     });
     return toSql(async <T>(text: string, params: unknown[]) => {
