@@ -231,9 +231,9 @@ export const getAllUsersAdmin = createServerFn({ method: "GET" })
     if (!admin) throw new Error("Unauthorized");
 
     const res = await sql`
-      SELECT id, name, email, email_verified, image, created_at, updated_at 
+      SELECT id, name, email, "emailVerified", image, "createdAt", "updatedAt" 
       FROM "user" 
-      ORDER BY created_at DESC
+      ORDER BY "createdAt" DESC
     `;
     return res as any[];
   });

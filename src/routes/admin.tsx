@@ -1609,12 +1609,12 @@ function UsersTab() {
                     </div>
                   </td>
                   <td className="p-4">
-                    <Badge className={user.email_verified ? "bg-primary/20 text-primary border-primary/20" : "bg-warning/20 text-warning border-warning/20"}>
-                      {user.email_verified ? "Verified" : "Unverified"}
+                    <Badge className={user.emailVerified ? "bg-primary/20 text-primary border-primary/20" : "bg-warning/20 text-warning border-warning/20"}>
+                      {user.emailVerified ? "Verified" : "Unverified"}
                     </Badge>
                   </td>
                   <td className="p-4 text-muted">
-                    {new Date(user.created_at).toLocaleDateString()}
+                    {new Date(user.createdAt).toLocaleDateString()}
                   </td>
                 </tr>
               ))
