@@ -1,4 +1,12 @@
 name = "prynth"
 compatibility_date = "2024-09-23"
-compatibility_flags = ["nodejs_compat"]
+compatibility_flags = ["nodejs_compat", "nodejs_compat_populate_process_env"]
+
+[vars]
+ADMIN_EMAIL = "prynth07@gmail.com"
+BETTER_AUTH_URL = "https://prynth.prynth07.workers.dev"
+GOOGLE_CLIENT_ID = "643060983104-512gqpe7ag7a31838kh43dkrl5oa7eqi.apps.googleusercontent.com"
+RAZORPAY_KEY_ID = "rzp_test_TdWyTzFRBBGque"
+VITE_RAZORPAY_KEY_ID = "rzp_test_TdWyTzFRBBGque"
+
 
