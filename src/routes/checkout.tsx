@@ -496,7 +496,7 @@ function CheckoutPage() {
                   className="shrink-0"
                 >
                   {item.image ? (
-                    <img src={item.image} alt="" className="product-photo size-14 rounded-lg object-cover transition-opacity hover:opacity-80" />
+                    <img src={item.image} alt="" loading="lazy" className="product-photo size-14 rounded-lg object-cover transition-opacity hover:opacity-80" />
                   ) : (
                     <div className="size-14 rounded-lg bg-accent-soft transition-opacity hover:opacity-80" />
                   )}

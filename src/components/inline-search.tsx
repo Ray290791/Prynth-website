@@ -136,7 +136,7 @@ export function InlineSearch() {
                   >
                     <div className="size-10 shrink-0 bg-surface rounded-md overflow-hidden border border-border">
                       {product.image ? (
-                        <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                        <img src={product.image} alt={product.name} loading="lazy" className="w-full h-full object-cover" />
                       ) : null}
                     </div>
                     <div className="flex-1 overflow-hidden">

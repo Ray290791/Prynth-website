@@ -67,6 +67,7 @@ export function ProductCard({ product }: { product: Product }) {
         <img
           src={product.image}
           alt={product.name}
+          loading="lazy"
           className="product-photo aspect-square w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]"
         />
         {product.badge ? (

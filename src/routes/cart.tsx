@@ -59,6 +59,7 @@ function CartPage() {
                 <img
                   src={item.image}
                   alt=""
+                  loading="lazy"
                   className="product-photo size-24 rounded-xl object-cover sm:size-28"
                 />
               ) : (

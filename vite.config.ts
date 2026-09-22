@@ -61,7 +61,6 @@ export default defineConfig(({ command, isPreview }) => ({
     port: 8081,
     strictPort: true,
   },
-  // Never emit source maps in production — exposing them reveals original TypeScript.
   build: {
     sourcemap: false,
   },
