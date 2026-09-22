@@ -69,6 +69,18 @@ export function SiteHeader() {
         <div className="flex items-center gap-0.5">
           <InlineSearch />
           <ThemeToggle />
+          <Link
+            to="/cart"
+            aria-label={count ? `Cart, ${count} items` : "Cart"}
+            className="relative inline-flex size-11 items-center justify-center rounded-xl text-fg transition-colors duration-150 hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
+          >
+            <ShoppingBag className="size-5" strokeWidth={1.75} />
+            {count > 0 ? (
+              <span className="absolute top-1.5 right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-semibold text-ink tabular-nums">
+                {count > 99 ? "99+" : count}
+              </span>
+            ) : null}
+          </Link>
           <SignedOut>
             <AuthModal
               trigger={
@@ -82,18 +94,6 @@ export function SiteHeader() {
             />
           </SignedOut>
           <UserButton />
-          <Link
-            to="/cart"
-            aria-label={count ? `Cart, ${count} items` : "Cart"}
-            className="relative inline-flex size-11 items-center justify-center rounded-xl text-fg transition-colors duration-150 hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
-          >
-            <ShoppingBag className="size-5" strokeWidth={1.75} />
-            {count > 0 ? (
-              <span className="absolute top-1.5 right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-semibold text-ink tabular-nums">
-                {count > 99 ? "99+" : count}
-              </span>
-            ) : null}
-          </Link>
           <button
             type="button"
             className="inline-flex size-11 items-center justify-center rounded-xl text-fg hover:bg-surface-2 md:hidden"
