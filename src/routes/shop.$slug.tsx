@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/lib/cart-store";
 import { formatINR } from "@/lib/format";
-import { productColor } from "@/lib/products";
+import { COLORS, productColor } from "@/lib/products";
 import { getProductBySlug, getRelatedProducts, getProductReviews } from "@/lib/products-fns";
 import { useHydrated } from "@/lib/use-hydrated";
 import { getRecentlyViewed, trackProductView, toggleWishlist } from "@/lib/ecommerce-fns";
@@ -62,27 +62,49 @@ function ProductPage() {
   const [qty, setQty] = useState(1);
   const [notifyEmail, setNotifyEmail] = useState("");
 
-  const selectedTags = [
-    productColor(color).name,
-    size,
-    material
-  ].filter(Boolean).map(t => t.toLowerCase());
+  const colorName = (COLORS[color]?.name || color).toLowerCase();
+  const colorId = (color || "").toLowerCase();
+  const selectedColorTags = [colorId, colorName].filter(Boolean);
+  const selectedOptionTags = [size, material].filter(Boolean).map(t => t.toLowerCase().trim());
 
-  const filteredGallery = (product?.gallery || []).filter(img => {
-    if (!img.tags || img.tags.length === 0) return false;
-    const imgTags = img.tags.map(t => t.toLowerCase());
-    return imgTags.some(t => selectedTags.includes(t));
-  });
+  // Competing colors that are NOT currently selected
+  const otherColorTags = (product?.colors || [])
+    .filter((c: string) => c.toLowerCase() !== colorId)
+    .flatMap((c: string) => [c.toLowerCase(), (COLORS[c]?.name || c).toLowerCase()]);
 
-  const displayImages = filteredGallery.length > 0 
-    ? filteredGallery.map(g => g.url) 
+  // Score & filter gallery images based on active selection
+  const scoredGallery = (product?.gallery || []).map(img => {
+    const imgTags = (img.tags || []).map(t => t.toLowerCase().trim());
+    
+    // If tagged with another color that isn't selected, exclude it from active view
+    const isOtherColor = imgTags.some(t => otherColorTags.includes(t));
+    const isSelectedColor = imgTags.some(t => selectedColorTags.includes(t));
+    if (isOtherColor && !isSelectedColor) {
+      return { img, score: -1 };
+    }
+
+    let score = 0;
+    if (isSelectedColor) score += 10;
+    if (imgTags.some(t => selectedOptionTags.includes(t))) score += 5;
+    
+    return { img, score };
+  }).filter(item => item.score >= 0);
+
+  // Put best matching images first, followed by untagged general photos
+  const hasTagMatches = scoredGallery.some(item => item.score > 0);
+  const finalGallery = hasTagMatches
+    ? [...scoredGallery].sort((a, b) => b.score - a.score).map(item => item.img.url)
     : (product?.gallery && product.gallery.length > 0 ? product.gallery.map(g => g.url) : [product?.image || ""]);
+
+  const displayImages = finalGallery.length > 0 ? finalGallery : [product?.image || ""];
   
   const [activeImage, setActiveImage] = useState(displayImages[0]);
 
   useEffect(() => {
-    setActiveImage(displayImages[0]);
-  }, [displayImages.join(",")]);
+    if (displayImages[0]) {
+      setActiveImage(displayImages[0]);
+    }
+  }, [color, size, material, displayImages[0]]);
 
   const trackViewMutation = useMutation({
     mutationFn: trackProductView,
