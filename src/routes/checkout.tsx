@@ -524,6 +524,7 @@ function CheckoutPage() {
                   <p className="text-xs text-muted">
                     {productColor(item.color).name}
                     {item.size && ` · ${item.size}`}
+                    {item.custom?.printerName && ` · ${item.custom.printerName}`}
                     {item.custom?.material && ` · ${item.custom.material}`}
                     {item.custom?.quality && ` · ${item.custom.quality}`}
                     {item.custom?.infillPercentage != null && ` · ${item.custom.infillPercentage}% infill`}

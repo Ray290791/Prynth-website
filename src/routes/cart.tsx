@@ -87,6 +87,11 @@ function CartPage() {
                     </p>
                     {item.custom ? (
                       <div className="mt-1.5 flex flex-wrap gap-1.5 text-xs text-muted">
+                        {item.custom.printerName ? (
+                          <span className="rounded bg-accent/10 px-1.5 py-0.5 font-medium text-accent">
+                            {item.custom.printerName}
+                          </span>
+                        ) : null}
                         {item.custom.infillPercentage != null ? (
                           <span className="rounded bg-surface-2 px-1.5 py-0.5 font-medium">
                             {item.custom.infillPercentage}% infill{item.custom.infillPattern ? ` (${item.custom.infillPattern})` : ""}

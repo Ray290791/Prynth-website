@@ -5,6 +5,11 @@ export type CustomSpec = {
   path: "upload" | "idea";
   fileName?: string;
   fileSize?: number;
+  fileId?: string;
+  fileUrl?: string;
+  printerId?: string;
+  printerName?: string;
+  printerModel?: string;
   material: string;
   quality: string;
   infill: string;

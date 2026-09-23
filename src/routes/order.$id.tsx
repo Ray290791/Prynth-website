@@ -169,6 +169,7 @@ function OrderPage() {
                 <span className="block text-muted mt-1">
                   {productColor(item.color).name}
                   {item.size && ` · ${item.size}`}
+                  {item.custom?.printerName && ` · ${item.custom.printerName}`}
                   {item.custom?.material && ` · ${item.custom.material}`}
                   {item.custom?.quality && ` · ${item.custom.quality}`}
                   {item.custom?.infillPercentage != null && ` · ${item.custom.infillPercentage}% infill`}
@@ -176,6 +177,11 @@ function OrderPage() {
                 </span>
                 {item.custom ? (
                   <div className="mt-2 flex flex-wrap gap-1.5 text-xs text-muted">
+                    {item.custom.printerName ? (
+                      <span className="rounded bg-accent/10 px-1.5 py-0.5 font-medium text-accent">
+                        Machine: {item.custom.printerName}
+                      </span>
+                    ) : null}
                     {item.custom.infillPattern ? (
                       <span className="rounded bg-surface-2 px-1.5 py-0.5">
                         Pattern: {item.custom.infillPattern}

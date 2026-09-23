@@ -29,6 +29,7 @@ import { Route as OrderIdRouteImport } from './routes/order.$id'
 import { Route as ShopIndexRouteImport } from './routes/shop.index'
 import { Route as ShopSlugRouteImport } from './routes/shop.$slug'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiCustomModelIdRouteImport } from './routes/api/custom-model.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -130,6 +131,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCustomModelIdRoute = ApiCustomModelIdRouteImport.update({
+  id: '/api/custom-model/$id',
+  path: '/api/custom-model/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -152,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/shop/$slug': typeof ShopSlugRoute
   '/shop/': typeof ShopIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/custom-model/$id': typeof ApiCustomModelIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -174,6 +181,7 @@ export interface FileRoutesByTo {
   '/shop/$slug': typeof ShopSlugRoute
   '/shop': typeof ShopIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/custom-model/$id': typeof ApiCustomModelIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -197,6 +205,7 @@ export interface FileRoutesById {
   '/shop/$slug': typeof ShopSlugRoute
   '/shop/': typeof ShopIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/custom-model/$id': typeof ApiCustomModelIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -221,6 +230,7 @@ export interface FileRouteTypes {
     | '/shop/$slug'
     | '/shop/'
     | '/api/auth/$'
+    | '/api/custom-model/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -243,6 +253,7 @@ export interface FileRouteTypes {
     | '/shop/$slug'
     | '/shop'
     | '/api/auth/$'
+    | '/api/custom-model/$id'
   id:
     | '__root__'
     | '/'
@@ -265,6 +276,7 @@ export interface FileRouteTypes {
     | '/shop/$slug'
     | '/shop/'
     | '/api/auth/$'
+    | '/api/custom-model/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -288,6 +300,7 @@ export interface RootRouteChildren {
   ShopSlugRoute: typeof ShopSlugRoute
   ShopIndexRoute: typeof ShopIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiCustomModelIdRoute: typeof ApiCustomModelIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -432,6 +445,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/custom-model/$id': {
+      id: '/api/custom-model/$id'
+      path: '/api/custom-model/$id'
+      fullPath: '/api/custom-model/$id'
+      preLoaderRoute: typeof ApiCustomModelIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -456,6 +476,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShopSlugRoute: ShopSlugRoute,
   ShopIndexRoute: ShopIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiCustomModelIdRoute: ApiCustomModelIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

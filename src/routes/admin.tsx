@@ -6,7 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useState, useEffect, useId } from "react";
 import { cn } from "@/lib/utils";
-import { Package, Box, X, Settings, Image as ImageIcon, BarChart3, Tag, ClipboardList, Shield, UserCog, HelpCircle, Users, Search, Trash2, Layers, Edit2, Plus, Eye, EyeOff } from "lucide-react";
+import { Package, Box, X, Settings, Image as ImageIcon, BarChart3, Tag, ClipboardList, Shield, UserCog, HelpCircle, Users, Search, Trash2, Layers, Edit2, Plus, Eye, EyeOff, Printer as PrinterIcon } from "lucide-react";
+import { PrintersTab } from "@/components/printers-tab";
+import { OrderDetailsDialog } from "@/components/order-details-dialog";
 import { getMaterialsAdmin, createMaterial, updateMaterial, deleteMaterial, type Material, type MaterialInput } from "@/lib/materials-fns";
 import { getAllProductsAdmin, deleteProduct, updateProduct, createProduct, updateProductInventory } from "@/lib/products-fns";
 import { getSiteSettings, updateSiteSettings } from "@/lib/settings-fns";
@@ -33,6 +35,7 @@ function AdminPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [deletingOrder, setDeletingOrder] = useState<string | null>(null);
   const [orderSearchQuery, setOrderSearchQuery] = useState("");
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
 
   const { data: orders, isLoading, error } = useQuery({
     queryKey: ["adminOrders"],
@@ -93,6 +96,7 @@ function AdminPage() {
   const navItems = [
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     { id: "orders", label: "Orders", icon: Package },
+    { id: "printers", label: "Printers", icon: PrinterIcon },
     { id: "products", label: "Products", icon: Box },
     { id: "inventory", label: "Inventory", icon: ClipboardList },
     { id: "materials", label: "Materials", icon: Layers },
@@ -205,21 +209,34 @@ function AdminPage() {
                     </tr>
                   ) : (
                     filteredOrders.map((order: any) => (
-                      <tr key={order.id} className="hover:bg-surface-2/50 transition-colors">
-                        <td className="p-4 font-medium">#{order.order_number}</td>
+                      <tr
+                        key={order.id}
+                        className="hover:bg-surface-2/60 transition-colors cursor-pointer group"
+                        onClick={() => setSelectedOrder(order)}
+                      >
+                        <td className="p-4 font-medium text-accent group-hover:underline">
+                          #{order.order_number}
+                        </td>
                         <td className="p-4">
-                          <div>{order.user_name}</div>
+                          <div className="font-medium text-fg">{order.user_name}</div>
                           <div className="text-xs text-muted">{order.user_email}</div>
                         </td>
                         <td className="p-4 text-muted">{new Date(order.created_at).toLocaleDateString()}</td>
                         <td className="p-4 tabular-nums font-medium">{formatINR(order.total)}</td>
                         <td className="p-4">
-                          <Badge className={order.status === 'pending' ? 'bg-secondary' : order.status === 'shipped' ? 'bg-primary' : 'bg-transparent border'}>
+                          <Badge className={order.status === 'pending' ? 'bg-secondary' : order.status === 'shipped' ? 'bg-primary' : order.status === 'printing' ? 'bg-accent text-accent-foreground' : 'bg-transparent border'}>
                             {order.status}
                           </Badge>
                           <div className="text-xs text-muted mt-1">Payment: {order.payment_status}</div>
                         </td>
-                        <td className="p-4 text-right space-x-2">
+                        <td className="p-4 text-right space-x-2" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedOrder(order)}
+                            className="text-xs px-2.5 py-1 rounded bg-surface-2 hover:bg-surface-3 transition-colors border border-border font-medium"
+                          >
+                            Details
+                          </button>
                           <select
                             className="text-sm rounded border border-border bg-surface p-1 focus:ring-1 focus:ring-accent"
                             value={order.status}
@@ -249,6 +266,8 @@ function AdminPage() {
             </div>
           </div>
         )}
+
+        {activeTab === "printers" && <PrintersTab />}
 
         <PinConfirmModal
           isOpen={!!deletingOrder}
@@ -309,6 +328,17 @@ function AdminPage() {
           <MaterialsTab />
         )}
       </main>
+
+      {selectedOrder && (
+        <OrderDetailsDialog
+          order={selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+          onUpdateStatus={(newStatus) => {
+            updateMutation.mutate({ order_number: selectedOrder.order_number, status: newStatus });
+            setSelectedOrder((prev: any) => (prev ? { ...prev, status: newStatus } : null));
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate, Link, getRouteApi } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { FileDropzone } from "@/components/file-dropzone";
 import { ColorSwatches } from "@/components/color-swatches";
@@ -20,9 +21,11 @@ import {
   BRIM_TYPES,
   type CustomPricingConfig,
 } from "@/lib/quote";
+import { getPrinters, type Printer } from "@/lib/printers-fns";
+import { uploadCustomFile } from "@/lib/custom-files-fns";
 import { parseStl } from "@/lib/stl";
 import { cn } from "@/lib/utils";
-import { ChevronDown, Sliders, Sparkles } from "lucide-react";
+import { ChevronDown, Sliders, Sparkles, Printer as PrinterIcon, Loader2, Check } from "lucide-react";
 
 const rootRoute = getRouteApi("__root__");
 
@@ -63,6 +66,91 @@ function FieldSelect({
   );
 }
 
+function PrinterSelector({
+  printers,
+  selectedPrinterId,
+  onSelect,
+}: {
+  printers: Printer[];
+  selectedPrinterId: string;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <Label className="text-sm font-medium">Select 3D Printer</Label>
+        <span className="text-xs text-muted">Bambu Lab Fleet</span>
+      </div>
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+        {printers.map((p) => {
+          const isSelected = p.id === selectedPrinterId;
+          const isUnavailable = p.status === "maintenance" || p.status === "offline";
+
+          let statusBadge = (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+              <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Available
+            </span>
+          );
+          if (p.status === "busy") {
+            statusBadge = (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                <span className="size-1.5 rounded-full bg-amber-500" />
+                In Queue
+              </span>
+            );
+          } else if (p.status === "maintenance") {
+            statusBadge = (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/10 px-2 py-0.5 text-[11px] font-medium text-rose-600 dark:text-rose-400">
+                <span className="size-1.5 rounded-full bg-rose-500" />
+                Maintenance
+              </span>
+            );
+          } else if (p.status === "offline") {
+            statusBadge = (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-3 px-2 py-0.5 text-[11px] font-medium text-muted">
+                Offline
+              </span>
+            );
+          }
+
+          return (
+            <button
+              key={p.id}
+              type="button"
+              disabled={isUnavailable}
+              onClick={() => onSelect(p.id)}
+              className={cn(
+                "relative flex flex-col justify-between rounded-xl border p-3.5 text-left transition-all",
+                isSelected
+                  ? "border-accent bg-accent-soft/40 shadow-sm ring-1 ring-accent"
+                  : isUnavailable
+                    ? "border-border/60 bg-surface-2/40 opacity-60 cursor-not-allowed"
+                    : "border-border bg-surface hover:border-border-hover hover:bg-surface-2/50 cursor-pointer"
+              )}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-sm font-semibold text-fg">{p.name}</p>
+                    {isSelected && <Check className="size-3.5 text-accent" strokeWidth={2.5} />}
+                  </div>
+                  <p className="text-xs text-muted">{p.model}</p>
+                </div>
+                {statusBadge}
+              </div>
+              <div className="mt-2.5 flex items-center justify-between text-[11px] text-muted border-t border-border/40 pt-2">
+                <span>{p.build_volume}</span>
+                <span>{p.nozzle_size}</span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function CustomPage() {
   const { path } = Route.useSearch();
   const navigate = useNavigate({ from: "/custom" });
@@ -70,6 +158,11 @@ function CustomPage() {
 
   const { settings } = rootRoute.useLoaderData();
   const pricingConfig = useMemo(() => getPricingConfig(settings), [settings]);
+
+  const { data: printers = [] } = useQuery({
+    queryKey: ["printers"],
+    queryFn: () => getPrinters(),
+  });
 
   const tab = path ?? "upload";
 
@@ -86,7 +179,7 @@ function CustomPage() {
         Print it your way
       </h1>
       <p className="mt-3 max-w-2xl text-muted">
-        Precision 3D printing on our high-speed Bambu Lab P1S fleet. Upload your 3D model, or describe
+        Precision 3D printing on our high-speed Bambu Lab fleet. Choose your machine, upload your 3D model, or describe
         your concept and we'll model it first.
       </p>
 
@@ -101,7 +194,7 @@ function CustomPage() {
         >
           <p className="font-display text-lg font-semibold">Upload your model</p>
           <p className="mt-1 text-sm text-muted">
-            STL, 3MF, or OBJ. Instant volume estimate, layer height selection, and full Bambu slicer tuning.
+            STL, 3MF, or OBJ. Instant volume estimate, printer selection, and full Bambu slicer tuning.
           </p>
         </button>
         <button
@@ -121,9 +214,9 @@ function CustomPage() {
 
       <div className="mt-10">
         {tab === "upload" ? (
-          <UploadForm add={add} pricingConfig={pricingConfig} />
+          <UploadForm add={add} pricingConfig={pricingConfig} printers={printers} />
         ) : (
-          <IdeaForm add={add} pricingConfig={pricingConfig} />
+          <IdeaForm add={add} pricingConfig={pricingConfig} printers={printers} />
         )}
       </div>
     </div>
@@ -146,6 +239,7 @@ function QuotePanel({
   volumeCm3: number;
   ready: boolean;
   specs?: {
+    printerName?: string;
     qualityName?: string;
     infillLabel?: string;
     wallLoops?: number;
@@ -163,7 +257,7 @@ function QuotePanel({
       </p>
       <p className="mt-1 text-sm text-muted">
         {ready
-          ? "Honest quote calculated for your specifications on our Bambu Lab P1S printers."
+          ? "Honest quote calculated for your specifications on our Bambu Lab fleet."
           : "Add a file or choose a size to preview your price."}
       </p>
       {ready ? (
@@ -190,6 +284,12 @@ function QuotePanel({
           ) : null}
           {specs ? (
             <div className="border-t border-border/70 pt-2.5 mt-2.5 space-y-1.5 text-xs text-muted">
+              {specs.printerName && (
+                <div className="flex justify-between">
+                  <span>Selected Machine</span>
+                  <span className="font-medium text-fg">{specs.printerName}</span>
+                </div>
+              )}
               {specs.qualityName && (
                 <div className="flex justify-between">
                   <span>Layer Profile</span>
@@ -234,11 +334,29 @@ function QuotePanel({
 function UploadForm({
   add,
   pricingConfig,
+  printers,
 }: {
   add: ReturnType<typeof useCart.getState>["add"];
   pricingConfig: CustomPricingConfig;
+  printers: Printer[];
 }) {
+  const [selectedPrinterId, setSelectedPrinterId] = useState(() => {
+    const firstAvail = printers.find((p) => p.status === "available");
+    return firstAvail?.id || printers[0]?.id || "p1s-01";
+  });
+
+  useEffect(() => {
+    if (printers.length > 0 && !printers.some((p) => p.id === selectedPrinterId)) {
+      const firstAvail = printers.find((p) => p.status === "available");
+      setSelectedPrinterId(firstAvail?.id || printers[0].id);
+    }
+  }, [printers, selectedPrinterId]);
+
+  const selectedPrinter = printers.find((p) => p.id === selectedPrinterId) ?? printers[0];
+
   const [file, setFile] = useState<File | null>(null);
+  const [fileId, setFileId] = useState<string | null>(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
   const [volume, setVolume] = useState(0);
   const [sizeLabel, setSizeLabel] = useState("");
   const [parsing, setParsing] = useState(false);
@@ -258,9 +376,38 @@ function UploadForm({
 
   async function handleFile(next: File | null) {
     setFile(next);
+    setFileId(null);
     setVolume(0);
     setSizeLabel("");
     if (!next) return;
+
+    // Upload model in background so admin can open it directly in Bambu Studio
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64 = e.target?.result as string;
+      if (base64) {
+        setUploadingFile(true);
+        try {
+          const res = await uploadCustomFile({
+            data: {
+              fileName: next.name,
+              fileSize: next.size,
+              mimeType: next.type || "application/octet-stream",
+              fileData: base64,
+            },
+          });
+          if (res?.fileId) {
+            setFileId(res.fileId);
+          }
+        } catch (err) {
+          console.error("Failed to upload model file:", err);
+        } finally {
+          setUploadingFile(false);
+        }
+      }
+    };
+    reader.readAsDataURL(next);
+
     const ext = next.name.split(".").pop()?.toLowerCase();
     if (ext !== "stl") {
       const preset =
@@ -341,6 +488,10 @@ function UploadForm({
         path: "upload",
         fileName: file.name,
         fileSize: file.size,
+        fileId: fileId ?? undefined,
+        printerId: selectedPrinter?.id,
+        printerName: selectedPrinter?.name,
+        printerModel: selectedPrinter?.model,
         material: materialMeta?.name ?? material,
         quality: qualityMeta?.name ?? quality,
         infill: `${infillPct}% (${patternMeta?.name ?? "Gyroid"})`,
@@ -368,6 +519,12 @@ function UploadForm({
         }}
       >
         <FileDropzone file={file} onFile={handleFile} />
+        {uploadingFile && (
+          <p className="flex items-center gap-1.5 text-xs text-accent">
+            <Loader2 className="size-3.5 animate-spin" />
+            Uploading 3D model to production queue…
+          </p>
+        )}
         {parsing ? <p className="text-sm text-muted">Reading the model…</p> : null}
         {sizeLabel ? <p className="text-sm text-muted">{sizeLabel}</p> : null}
 
@@ -406,6 +563,13 @@ function UploadForm({
             ))}
           </div>
         </div>
+
+        {/* Printer Selection */}
+        <PrinterSelector
+          printers={printers}
+          selectedPrinterId={selectedPrinterId}
+          onSelect={setSelectedPrinterId}
+        />
 
         <div className="grid gap-4 sm:grid-cols-2">
           {/* Material */}
@@ -673,6 +837,7 @@ function UploadForm({
           volumeCm3={quote.volumeCm3}
           ready={Boolean(file) && quote.total > 0}
           specs={{
+            printerName: selectedPrinter?.name,
             qualityName: qualityMeta?.name,
             infillLabel: `${infillPct}% ${patternMeta?.name ?? "Gyroid"}`,
             wallLoops,
@@ -688,10 +853,26 @@ function UploadForm({
 function IdeaForm({
   add,
   pricingConfig,
+  printers,
 }: {
   add: ReturnType<typeof useCart.getState>["add"];
   pricingConfig: CustomPricingConfig;
+  printers: Printer[];
 }) {
+  const [selectedPrinterId, setSelectedPrinterId] = useState(() => {
+    const firstAvail = printers.find((p) => p.status === "available");
+    return firstAvail?.id || printers[0]?.id || "p1s-01";
+  });
+
+  useEffect(() => {
+    if (printers.length > 0 && !printers.some((p) => p.id === selectedPrinterId)) {
+      const firstAvail = printers.find((p) => p.status === "available");
+      setSelectedPrinterId(firstAvail?.id || printers[0].id);
+    }
+  }, [printers, selectedPrinterId]);
+
+  const selectedPrinter = printers.find((p) => p.id === selectedPrinterId) ?? printers[0];
+
   const [idea, setIdea] = useState("");
   const [size, setSize] = useState("desk");
   const [complexity, setComplexity] = useState("photo");
@@ -756,6 +937,9 @@ function IdeaForm({
       qty: 1,
       custom: {
         path: "idea",
+        printerId: selectedPrinter?.id,
+        printerName: selectedPrinter?.name,
+        printerModel: selectedPrinter?.model,
         material: materialMeta?.name ?? material,
         quality: qualityMeta?.name ?? quality,
         infill: `${infillPct}% (${patternMeta?.name ?? "Gyroid"})`,
@@ -848,6 +1032,13 @@ function IdeaForm({
             ))}
           </div>
         </div>
+
+        {/* Printer Selection */}
+        <PrinterSelector
+          printers={printers}
+          selectedPrinterId={selectedPrinterId}
+          onSelect={setSelectedPrinterId}
+        />
 
         <div className="grid gap-4 sm:grid-cols-2">
           {/* Material */}
@@ -1082,6 +1273,7 @@ function IdeaForm({
           volumeCm3={quote.volumeCm3}
           ready={idea.trim().length > 0}
           specs={{
+            printerName: selectedPrinter?.name,
             qualityName: qualityMeta?.name,
             infillLabel: `${infillPct}% ${patternMeta?.name ?? "Gyroid"}`,
             wallLoops,
