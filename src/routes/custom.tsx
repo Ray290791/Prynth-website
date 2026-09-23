@@ -787,6 +787,7 @@ function UploadForm({
               { pct: 15, label: "15% · Light" },
               { pct: 20, label: "20% · Standard" },
               { pct: 40, label: "40% · Sturdy" },
+              { pct: 70, label: "70% · Heavy Duty" },
               { pct: 100, label: "100% · Solid" },
             ].map((p) => (
               <button
@@ -1031,7 +1032,7 @@ function IdeaForm({
 
   const [idea, setIdea] = useState("");
   const [size, setSize] = useState("desk");
-  const [complexity, setComplexity] = useState("photo");
+  const [complexity, setComplexity] = useState("basic");
   const [material, setMaterial] = useState("pla");
   const [quality, setQuality] = useState("standard");
   const [infillPct, setInfillPct] = useState(20);
@@ -1088,7 +1089,8 @@ function IdeaForm({
     pricingConfig.sizePresets[0];
   const cx =
     pricingConfig.complexities.find((c) => c.id === complexity) ??
-    pricingConfig.complexities[1] ??
+    pricingConfig.complexities.find((c) => c.id === "basic") ??
+    pricingConfig.complexities.find((c) => c.id === "photo") ??
     pricingConfig.complexities[0];
 
   const quote = useMemo(
@@ -1304,6 +1306,7 @@ function IdeaForm({
               { pct: 15, label: "15% · Light" },
               { pct: 20, label: "20% · Standard" },
               { pct: 40, label: "40% · Sturdy" },
+              { pct: 70, label: "70% · Heavy Duty" },
               { pct: 100, label: "100% · Solid" },
             ].map((p) => (
               <button

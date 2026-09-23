@@ -59,12 +59,20 @@ export function CustomPricingSettings({
   const [copiedFormula, setCopiedFormula] = useState(false);
 
   // Formula state
-  const [uploadFormula, setUploadFormula] = useState<string>(
-    () => settings.custom_pricing_upload_formula || DEFAULT_UPLOAD_FORMULA,
-  );
-  const [ideaFormula, setIdeaFormula] = useState<string>(
-    () => settings.custom_pricing_idea_formula || DEFAULT_IDEA_FORMULA,
-  );
+  const [uploadFormula, setUploadFormula] = useState<string>(() => {
+    const raw = settings.custom_pricing_upload_formula?.trim();
+    if (!raw || raw.includes("setup_fee)) * qty")) {
+      return DEFAULT_UPLOAD_FORMULA;
+    }
+    return raw;
+  });
+  const [ideaFormula, setIdeaFormula] = useState<string>(() => {
+    const raw = settings.custom_pricing_idea_formula?.trim();
+    if (!raw || !raw.includes("modeling_fee") || raw.includes("setup_fee)) * qty")) {
+      return DEFAULT_IDEA_FORMULA;
+    }
+    return raw;
+  });
 
   // Global pricing parameters
   const [setupFee, setSetupFee] = useState<number>(() =>
@@ -81,15 +89,40 @@ export function CustomPricingSettings({
   const [qualities, setQualities] = useState<QualityPricing[]>(() =>
     safeParse<QualityPricing[]>(settings.custom_pricing_qualities, QUALITIES as unknown as QualityPricing[]),
   );
-  const [infills, setInfills] = useState<InfillPricing[]>(() =>
-    safeParse<InfillPricing[]>(settings.custom_pricing_infills, INFILLS as unknown as InfillPricing[]),
-  );
-  const [sizePresets, setSizePresets] = useState<SizePresetPricing[]>(() =>
-    safeParse<SizePresetPricing[]>(settings.custom_pricing_size_presets, SIZE_PRESETS as unknown as SizePresetPricing[]),
-  );
-  const [complexities, setComplexities] = useState<ComplexityPricing[]>(() =>
-    safeParse<ComplexityPricing[]>(settings.custom_pricing_complexities, COMPLEXITY as unknown as ComplexityPricing[]),
-  );
+  const [infills, setInfills] = useState<InfillPricing[]>(() => {
+    const parsed = safeParse<InfillPricing[]>(settings.custom_pricing_infills, INFILLS as unknown as InfillPricing[]);
+    if (Array.isArray(parsed) && !parsed.some((i) => i.id === "solid")) {
+      return [
+        ...parsed,
+        {
+          id: "solid",
+          name: "Solid / Heavy Duty (70%–100%)",
+          mult: 1.65,
+          note: "Extreme strength, gears, motor mounts, structural brackets.",
+        },
+      ];
+    }
+    return parsed;
+  });
+  const [sizePresets, setSizePresets] = useState<SizePresetPricing[]>(() => {
+    const parsed = safeParse<SizePresetPricing[]>(settings.custom_pricing_size_presets, SIZE_PRESETS as unknown as SizePresetPricing[]);
+    if (Array.isArray(parsed)) {
+      return parsed.map((sp) => {
+        if (sp.id === "large" && (sp.hint === "25 cm+" || !sp.hint.includes("Max Single Print"))) {
+          return { ...sp, hint: "20–25 cm (Max Single Print)" };
+        }
+        return sp;
+      });
+    }
+    return parsed;
+  });
+  const [complexities, setComplexities] = useState<ComplexityPricing[]>(() => {
+    const parsed = safeParse<ComplexityPricing[]>(settings.custom_pricing_complexities, COMPLEXITY as unknown as ComplexityPricing[]);
+    if (Array.isArray(parsed) && (!parsed.some((c) => c.id === "basic") || parsed.some((c) => c.id === "photo" && c.fee === 799))) {
+      return COMPLEXITY as unknown as ComplexityPricing[];
+    }
+    return parsed;
+  });
 
   // Textarea refs for variable insertion at cursor
   const uploadTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -104,7 +137,7 @@ export function CustomPricingSettings({
 
   // Live simulator state for Idea / Description
   const [simIdeaSize, setSimIdeaSize] = useState<string>("desk");
-  const [simIdeaComplexity, setSimIdeaComplexity] = useState<string>("photo");
+  const [simIdeaComplexity, setSimIdeaComplexity] = useState<string>("basic");
   const [simIdeaMaterial, setSimIdeaMaterial] = useState<string>("pla");
   const [simIdeaQuality, setSimIdeaQuality] = useState<string>("standard");
   const [simIdeaInfill, setSimIdeaInfill] = useState<string>("standard");
@@ -428,7 +461,7 @@ export function CustomPricingSettings({
             <div className="rounded-lg bg-surface-2/60 p-3 text-xs text-muted space-y-1">
               <p className="font-semibold text-fg">Default File Upload Formula:</p>
               <code className="block font-mono text-[11px] text-accent break-all">
-                Math.max(min_print, Math.round(volume * material_rate * quality_mult * infill_mult + setup_fee)) * qty
+                Math.max(min_print, Math.round(volume * material_rate * quality_mult * infill_mult) * qty + setup_fee)
               </code>
               <p className="pt-1 text-[11px]">
                 Supports Math functions: <code className="font-mono">max()</code>,{" "}
@@ -651,8 +684,7 @@ export function CustomPricingSettings({
             <div className="rounded-lg bg-surface-2/60 p-3 text-xs text-muted space-y-1">
               <p className="font-semibold text-fg">Default Description / Idea Formula:</p>
               <code className="block font-mono text-[11px] text-accent break-all">
-                Math.max(min_print, Math.round(volume * material_rate * quality_mult * infill_mult + setup_fee)) * qty +
-                modeling_fee
+                Math.max(min_print, Math.round(volume * material_rate * quality_mult * infill_mult) * qty + setup_fee) + modeling_fee
               </code>
               <p className="pt-1 text-[11px]">
                 In this formula, <code className="font-mono text-accent">modeling_fee</code> is added once per custom

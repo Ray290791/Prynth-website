@@ -99,6 +99,20 @@ export const getSiteSettings = createServerFn({ method: "GET" }).handler(
       }
     }
 
+    // Auto-heal legacy buggy formula records if present in DB
+    if (
+      settings.custom_pricing_upload_formula?.includes("setup_fee)) * qty")
+    ) {
+      settings.custom_pricing_upload_formula = DEFAULT_UPLOAD_FORMULA;
+    }
+    if (
+      settings.custom_pricing_idea_formula &&
+      (!settings.custom_pricing_idea_formula.includes("modeling_fee") ||
+        settings.custom_pricing_idea_formula.includes("setup_fee)) * qty"))
+    ) {
+      settings.custom_pricing_idea_formula = DEFAULT_IDEA_FORMULA;
+    }
+
     return settings;
   }
 );

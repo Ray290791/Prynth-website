@@ -114,13 +114,19 @@ export const INFILLS = [
     mult: 1.3,
     note: "Hooks, stands, anything that takes weight.",
   },
+  {
+    id: "solid",
+    name: "Solid / Heavy Duty (70%–100%)",
+    mult: 1.65,
+    note: "Extreme strength, gears, motor mounts, structural brackets.",
+  },
 ] as const;
 
 export const SIZE_PRESETS = [
   { id: "palm", name: "Palm", hint: "under 8 cm", cm3: 8 },
   { id: "desk", name: "Desk", hint: "8–15 cm", cm3: 28 },
   { id: "shelf", name: "Shelf", hint: "15–25 cm", cm3: 90 },
-  { id: "large", name: "Large", hint: "25 cm+", cm3: 220 },
+  { id: "large", name: "Large", hint: "20–25 cm (Max Single Print)", cm3: 220 },
 ] as const;
 
 export const COMPLEXITY = [
@@ -131,24 +137,30 @@ export const COMPLEXITY = [
     note: "You upload an STL or 3MF. We print it.",
   },
   {
+    id: "basic",
+    name: "Basic / Small Fix (under 30 mins)",
+    fee: 349,
+    note: "Simple hooks, flat brackets, basic dimensional shapes.",
+  },
+  {
     id: "photo",
-    name: "Match a photo or sketch",
-    fee: 799,
-    note: "We model from your reference. Simple household objects.",
+    name: "Photo / Sketch Reference (Standard)",
+    fee: 699,
+    note: "Enclosures, contoured parts, multi-feature parts.",
   },
   {
     id: "original",
-    name: "Design from scratch",
-    fee: 1499,
-    note: "A conversation, then a model, then a print. For new ideas.",
+    name: "Complex Mechanism / From Scratch",
+    fee: 1299,
+    note: "Assemblies, snap-fits, threaded parts, custom functional mechanisms.",
   },
 ] as const;
 
 export const DEFAULT_UPLOAD_FORMULA =
-  "Math.max(min_print, Math.round(volume * material_rate * quality_mult * infill_mult + setup_fee)) * qty";
+  "Math.max(min_print, Math.round(volume * material_rate * quality_mult * infill_mult) * qty + setup_fee)";
 
 export const DEFAULT_IDEA_FORMULA =
-  "Math.max(min_print, Math.round(volume * material_rate * quality_mult * infill_mult + setup_fee)) * qty + modeling_fee";
+  "Math.max(min_print, Math.round(volume * material_rate * quality_mult * infill_mult) * qty + setup_fee) + modeling_fee";
 
 export const DEFAULT_SETUP_FEE = 49;
 export const DEFAULT_MIN_PRINT = 99;
@@ -232,7 +244,8 @@ export type Quote = {
  * - 15% -> 0.85 (Light)
  * - 20% -> 1.00 (Standard default)
  * - 40% -> 1.30 (Sturdy)
- * - 100% -> 1.80 (Solid)
+ * - 70% -> 1.48
+ * - 100% -> 1.65 (Solid / Heavy Duty)
  */
 export function getInfillMultFromPercentage(pct: number): number {
   const p = Math.max(5, Math.min(100, Math.round(pct)));
@@ -244,7 +257,7 @@ export function getInfillMultFromPercentage(pct: number): number {
   } else if (p <= 40) {
     return Number((1.0 + ((p - 20) / 20) * 0.3).toFixed(2));
   } else {
-    return Number((1.3 + ((p - 40) / 60) * 0.5).toFixed(2));
+    return Number((1.3 + ((p - 40) / 60) * 0.35).toFixed(2));
   }
 }
 
@@ -263,10 +276,31 @@ function safeJsonParse<T>(val: any, fallback: T): T {
  * Extracts normalized custom pricing configuration from site settings.
  */
 export function getPricingConfig(settings?: Record<string, any> | null): CustomPricingConfig {
-  const uploadFormula =
+  let uploadFormula =
     settings?.custom_pricing_upload_formula?.trim() || DEFAULT_UPLOAD_FORMULA;
-  const ideaFormula =
+  let ideaFormula =
     settings?.custom_pricing_idea_formula?.trim() || DEFAULT_IDEA_FORMULA;
+
+  // Auto-heal outdated / buggy formulas if stored in DB from older versions:
+  // 1. Bug B: Upload formula wrapping setup_fee inside rounded block before * qty
+  if (
+    uploadFormula.includes("setup_fee)) * qty") ||
+    uploadFormula === "Math.max(min_print, Math.round(volume * material_rate * quality_mult * infill_mult + setup_fee)) * qty"
+  ) {
+    uploadFormula = DEFAULT_UPLOAD_FORMULA;
+  }
+
+  // 2. Bug A: Idea formula missing modeling_fee or having setup_fee inside qty
+  if (!ideaFormula.includes("modeling_fee")) {
+    ideaFormula = `${ideaFormula} + modeling_fee`;
+  }
+  if (
+    ideaFormula.includes("setup_fee)) * qty") ||
+    ideaFormula === "Math.max(min_print, Math.round(volume * material_rate * quality_mult * infill_mult + setup_fee)) * qty + modeling_fee" ||
+    ideaFormula === "Math.max(min_print, Math.round(volume * material_rate * quality_mult * infill_mult) * qty + setup_fee)"
+  ) {
+    ideaFormula = DEFAULT_IDEA_FORMULA;
+  }
 
   const setupFee = Number(settings?.custom_pricing_setup_fee) || DEFAULT_SETUP_FEE;
   const minPrint = Number(settings?.custom_pricing_min_print) || DEFAULT_MIN_PRINT;
@@ -279,18 +313,54 @@ export function getPricingConfig(settings?: Record<string, any> | null): CustomP
     settings?.custom_pricing_qualities,
     QUALITIES as unknown as QualityPricing[],
   );
-  const infills = safeJsonParse<InfillPricing[]>(
+
+  let infills = safeJsonParse<InfillPricing[]>(
     settings?.custom_pricing_infills,
     INFILLS as unknown as InfillPricing[],
   );
-  const sizePresets = safeJsonParse<SizePresetPricing[]>(
+  if (Array.isArray(infills) && infills.length > 0) {
+    if (!infills.some((i) => i.id === "solid")) {
+      infills = [
+        ...infills,
+        {
+          id: "solid",
+          name: "Solid / Heavy Duty (70%–100%)",
+          mult: 1.65,
+          note: "Extreme strength, gears, motor mounts, structural brackets.",
+        },
+      ];
+    }
+  } else {
+    infills = INFILLS as unknown as InfillPricing[];
+  }
+
+  let sizePresets = safeJsonParse<SizePresetPricing[]>(
     settings?.custom_pricing_size_presets,
     SIZE_PRESETS as unknown as SizePresetPricing[],
   );
-  const complexities = safeJsonParse<ComplexityPricing[]>(
+  if (Array.isArray(sizePresets) && sizePresets.length > 0) {
+    sizePresets = sizePresets.map((sp) => {
+      if (sp.id === "large" && (sp.hint === "25 cm+" || !sp.hint.includes("Max Single Print"))) {
+        return { ...sp, hint: "20–25 cm (Max Single Print)" };
+      }
+      return sp;
+    });
+  } else {
+    sizePresets = SIZE_PRESETS as unknown as SizePresetPricing[];
+  }
+
+  let complexities = safeJsonParse<ComplexityPricing[]>(
     settings?.custom_pricing_complexities,
     COMPLEXITY as unknown as ComplexityPricing[],
   );
+  if (Array.isArray(complexities) && complexities.length > 0) {
+    // If basic tier is missing or old fees are present, sync with updated COMPLEXITY definitions
+    if (!complexities.some((c) => c.id === "basic") || complexities.some((c) => c.id === "photo" && c.fee === 799)) {
+      complexities = COMPLEXITY as unknown as ComplexityPricing[];
+    }
+  } else {
+    complexities = COMPLEXITY as unknown as ComplexityPricing[];
+  }
 
   return {
     uploadFormula,
@@ -299,9 +369,9 @@ export function getPricingConfig(settings?: Record<string, any> | null): CustomP
     minPrint: Math.max(0, minPrint),
     materials: Array.isArray(materials) && materials.length > 0 ? materials : (MATERIALS as unknown as MaterialPricing[]),
     qualities: Array.isArray(qualities) && qualities.length > 0 ? qualities : (QUALITIES as unknown as QualityPricing[]),
-    infills: Array.isArray(infills) && infills.length > 0 ? infills : (INFILLS as unknown as InfillPricing[]),
-    sizePresets: Array.isArray(sizePresets) && sizePresets.length > 0 ? sizePresets : (SIZE_PRESETS as unknown as SizePresetPricing[]),
-    complexities: Array.isArray(complexities) && complexities.length > 0 ? complexities : (COMPLEXITY as unknown as ComplexityPricing[]),
+    infills,
+    sizePresets,
+    complexities,
   };
 }
 
@@ -370,19 +440,20 @@ export function computeQuote(
     total = Math.round(evalResult.value) + slicerExtraPerUnit * qty;
     printUnit = isIdea ? Math.max(0, Math.round((total - modeling) / qty)) : Math.round(total / qty);
   } else {
-    // Fallback standard calculation
-    printUnit =
+    // Fallback standard calculation: setup fee is one-time per batch, not multiplied per unit
+    const batchPrintCost =
       Math.max(
         config.minPrint,
-        Math.round(volume * material.rate * quality.mult * infillMult + config.setupFee),
-      ) + slicerExtraPerUnit;
-    total = printUnit * qty + modeling;
+        Math.round(volume * material.rate * quality.mult * infillMult) * qty + config.setupFee,
+      ) + slicerExtraPerUnit * qty;
+    total = batchPrintCost + modeling;
+    printUnit = Math.round(batchPrintCost / qty);
   }
 
   return {
     print: printUnit * qty,
     modeling,
-    setup: config.setupFee * qty,
+    setup: config.setupFee,
     total,
     days: quality.days,
     volumeCm3: volume,
