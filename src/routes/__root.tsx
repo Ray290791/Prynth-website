@@ -115,6 +115,10 @@ export const Route = createRootRoute({
           "prynth! — quality 3D prints at honest prices. Ready-made pieces and custom print or design, ships across India.",
       },
       { name: "theme-color", content: "#F6F5F2" },
+      {
+        name: "strix-verification",
+        content: "strix-verify-e881dc2df817534b0d76e030da14de8e",
+      },
     ],
     links: [
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
@@ -156,6 +160,7 @@ function Root() {
     <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
+        <meta name="strix-verification" content="strix-verify-e881dc2df817534b0d76e030da14de8e" />
         {/* Theme boot — must be first so no flash */}
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
         {/* Security: disable image right-click and drag */}
