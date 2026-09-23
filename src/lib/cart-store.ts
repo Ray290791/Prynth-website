@@ -22,6 +22,7 @@ export type CustomSpec = {
   orientation?: string;
   preflightScore?: string;
   color: string;
+  dimensions?: string;
   notes?: string;
   volumeCm3?: number;
   modeling?: string;

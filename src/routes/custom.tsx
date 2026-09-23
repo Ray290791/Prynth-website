@@ -29,7 +29,7 @@ import { PrintabilityChecker } from "@/components/printability-checker";
 import type { PrintabilityReport } from "@/lib/mesh-analysis";
 import { parseModelFile } from "@/lib/model-parser";
 import { cn } from "@/lib/utils";
-import { ChevronDown, Sliders, Sparkles, Printer as PrinterIcon, Loader2, Check } from "lucide-react";
+import { ChevronDown, Sliders, Sparkles, Printer as PrinterIcon, Loader2, Check, CheckCircle2, RefreshCcw } from "lucide-react";
 
 const rootRoute = getRouteApi("__root__");
 
@@ -255,6 +255,7 @@ function QuotePanel({
     supports?: string;
     surfaceFinish?: string;
     orientation?: string;
+    dimensions?: string;
   };
 }) {
   return (
@@ -289,7 +290,13 @@ function QuotePanel({
           {volumeCm3 > 0 ? (
             <div className="flex justify-between">
               <dt className="text-muted">Est. volume</dt>
-              <dd className="tabular-nums">{volumeCm3.toFixed(1)} cm³</dd>
+              <dd className="tabular-nums font-mono">{volumeCm3.toFixed(1)} cm³</dd>
+            </div>
+          ) : null}
+          {specs?.dimensions ? (
+            <div className="flex justify-between">
+              <dt className="text-muted">Model dimensions</dt>
+              <dd className="tabular-nums font-mono text-fg">{specs.dimensions}</dd>
             </div>
           ) : null}
           {specs ? (
@@ -377,6 +384,9 @@ function UploadForm({
   const [uploadingFile, setUploadingFile] = useState(false);
   const [volume, setVolume] = useState(0);
   const [sizeLabel, setSizeLabel] = useState("");
+  const [autoDetected, setAutoDetected] = useState(false);
+  const [parsedDimensions, setParsedDimensions] = useState<{ x: number; y: number; z: number } | null>(null);
+  const [parsedTriangles, setParsedTriangles] = useState(0);
   const [parsing, setParsing] = useState(false);
   const [material, setMaterial] = useState("pla");
   const [quality, setQuality] = useState("standard");
@@ -438,6 +448,9 @@ function UploadForm({
     setFileId(null);
     setVolume(0);
     setSizeLabel("");
+    setAutoDetected(false);
+    setParsedDimensions(null);
+    setParsedTriangles(0);
     setModelRotation([0, 0, 0]);
     setPrintabilityReport(null);
     if (!next) return;
@@ -476,15 +489,20 @@ function UploadForm({
       if (est && est.volumeCm3 > 0) {
         setVolume(est.volumeCm3);
         if (est.isCad && !est.cadInfo?.hasMesh) {
+          setAutoDetected(false);
           setSizeLabel(
             `Fusion 360 CAD Model · Direct Bambu Studio Slicing (Est. ${est.volumeCm3.toFixed(1)} cm³)`
           );
         } else {
+          setAutoDetected(true);
+          setParsedDimensions(est.sizeMm);
+          setParsedTriangles(est.triangles);
           setSizeLabel(
-            `${est.sizeMm.x.toFixed(0)} × ${est.sizeMm.y.toFixed(0)} × ${est.sizeMm.z.toFixed(0)} mm · ${est.triangles.toLocaleString("en-IN")} triangles`
+            `${est.sizeMm.x.toFixed(1)} × ${est.sizeMm.y.toFixed(1)} × ${est.sizeMm.z.toFixed(1)} mm · ${est.triangles.toLocaleString("en-IN")} triangles`
           );
         }
       } else {
+        setAutoDetected(false);
         const preset =
           pricingConfig.sizePresets.find((s) => s.id === fallback) ??
           pricingConfig.sizePresets[1] ??
@@ -494,6 +512,7 @@ function UploadForm({
       }
     } catch (err) {
       console.error("Model parse failed:", err);
+      setAutoDetected(false);
       const preset =
         pricingConfig.sizePresets.find((s) => s.id === fallback) ??
         pricingConfig.sizePresets[1] ??
@@ -566,6 +585,9 @@ function UploadForm({
             : "Default (As Uploaded)",
         preflightScore: printabilityReport ? `${printabilityReport.score}% (${printabilityReport.status})` : undefined,
         color: selectedColorName,
+        dimensions: parsedDimensions
+          ? `${parsedDimensions.x.toFixed(1)} × ${parsedDimensions.y.toFixed(1)} × ${parsedDimensions.z.toFixed(1)} mm`
+          : undefined,
         notes,
         volumeCm3: quote.volumeCm3,
       },
@@ -589,8 +611,53 @@ function UploadForm({
             Uploading 3D model to production queue…
           </p>
         )}
-        {parsing ? <p className="text-sm text-muted">Reading the model…</p> : null}
-        {sizeLabel ? <p className="text-sm text-muted">{sizeLabel}</p> : null}
+        {parsing && (
+          <div className="flex items-center gap-2 rounded-xl bg-surface-2 p-3 text-xs text-muted animate-pulse">
+            <Loader2 className="size-4 animate-spin text-accent" />
+            <span>Analyzing 3D model geometry, wall boundaries, and exact volume…</span>
+          </div>
+        )}
+
+        {autoDetected && parsedDimensions && (
+          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 space-y-2.5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-emerald-400 font-semibold text-sm">
+                <CheckCircle2 className="size-4 shrink-0" />
+                <span>Model Dimensions & Volume Auto-Detected</span>
+              </div>
+              <span className="rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-300">
+                Live Slicer Measurement
+              </span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+              <div className="rounded-xl bg-black/40 border border-white/5 p-2.5">
+                <p className="text-white/60">Bounding Dimensions</p>
+                <p className="font-mono font-semibold text-white mt-0.5">
+                  {parsedDimensions.x.toFixed(1)} × {parsedDimensions.y.toFixed(1)} × {parsedDimensions.z.toFixed(1)} mm
+                </p>
+              </div>
+              <div className="rounded-xl bg-black/40 border border-white/5 p-2.5">
+                <p className="text-white/60">Actual Solid Volume</p>
+                <p className="font-mono font-semibold text-accent mt-0.5">
+                  {volume.toFixed(1)} cm³
+                </p>
+              </div>
+              <div className="rounded-xl bg-black/40 border border-white/5 p-2.5 col-span-2 sm:col-span-1">
+                <p className="text-white/60">Mesh Complexity</p>
+                <p className="font-mono font-semibold text-white mt-0.5">
+                  {parsedTriangles.toLocaleString("en-IN")} triangles
+                </p>
+              </div>
+            </div>
+            <p className="text-[11px] text-emerald-300/80 pt-0.5">
+              Your price is automatically calculated from your model's exact solid volume, not preset size tiers.
+            </p>
+          </div>
+        )}
+
+        {!autoDetected && !parsing && sizeLabel && (
+          <p className="text-xs text-muted">{sizeLabel}</p>
+        )}
 
         {file && !parsing && (
           <div className="mt-5 space-y-3">
@@ -679,32 +746,69 @@ function UploadForm({
           </div>
         )}
 
-        <div>
-          <Label>If we can't read the file, treat it as</Label>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {pricingConfig.sizePresets.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => {
-                  setFallback(s.id);
-                  if (!file || sizeLabel.includes("preset") || sizeLabel.includes("Couldn't")) {
-                    setVolume(s.cm3);
-                  }
-                }}
-                className={cn(
-                  "h-11 rounded-full px-4 text-sm font-medium transition-all",
-                  fallback === s.id
-                    ? "bg-accent text-ink shadow-sm"
-                    : "bg-surface text-muted shadow-[var(--shadow-border)] hover:text-fg",
-                )}
-              >
-                {s.name}
-                <span className="ml-1 text-xs opacity-70">{s.hint}</span>
-              </button>
-            ))}
+        {autoDetected ? (
+          <div className="rounded-xl border border-emerald-500/20 bg-surface/80 p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <span className="flex items-center gap-1.5 text-emerald-400 font-medium">
+              <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Model dimensions active ({volume.toFixed(1)} cm³). Size presets bypassed.</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setAutoDetected(false);
+                const preset = pricingConfig.sizePresets.find((s) => s.id === fallback) ?? pricingConfig.sizePresets[0];
+                setVolume(preset.cm3);
+                toast.info(`Switched to manual ${preset.name} size preset.`);
+              }}
+              className="text-xs text-muted hover:text-accent underline cursor-pointer"
+            >
+              Manual preset override
+            </button>
           </div>
-        </div>
+        ) : (
+          <div>
+            <div className="flex items-center justify-between">
+              <Label>{file ? "Could not auto-calculate volume — select approximate size:" : "If we can't read the file, treat it as"}</Label>
+              {file && parsedDimensions && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAutoDetected(true);
+                    if (parsedDimensions) {
+                      const estVol = (parsedDimensions.x * parsedDimensions.y * parsedDimensions.z * 0.28) / 1000;
+                      setVolume(estVol > 0 ? estVol : 28);
+                    }
+                    toast.success("Restored auto-detected model dimensions!");
+                  }}
+                  className="text-xs text-accent hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <RefreshCcw className="size-3" /> Re-apply auto-detected volume
+                </button>
+              )}
+            </div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {pricingConfig.sizePresets.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => {
+                    setFallback(s.id);
+                    setVolume(s.cm3);
+                  }}
+                  className={cn(
+                    "h-11 rounded-full px-4 text-sm font-medium transition-all",
+                    fallback === s.id
+                      ? "bg-accent text-ink shadow-sm"
+                      : "bg-surface text-muted shadow-[var(--shadow-border)] hover:text-fg",
+                  )}
+                >
+                  {s.name}
+                  <span className="ml-1 text-xs opacity-70">{s.hint} ({s.cm3} cm³)</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Printer Selection */}
         <PrinterSelector
@@ -996,6 +1100,9 @@ function UploadForm({
               modelRotation[0] !== 0 || modelRotation[2] !== 0
                 ? `Rotated (${Math.round((modelRotation[0] * 180) / Math.PI)}°, ${Math.round((modelRotation[2] * 180) / Math.PI)}°)`
                 : undefined,
+            dimensions: parsedDimensions
+              ? `${parsedDimensions.x.toFixed(1)} × ${parsedDimensions.y.toFixed(1)} × ${parsedDimensions.z.toFixed(1)} mm`
+              : undefined,
           }}
         />
       </div>
