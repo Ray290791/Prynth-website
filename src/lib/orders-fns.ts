@@ -21,16 +21,19 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
       shippingMethod: string;
       paymentMethod: string;
       notes?: string;
+      couponCode?: string;
     }) => data,
   )
   .handler(async ({ data, context }) => {
     const sql = await getSql();
 
-    // Inventory Validation
+    // 1. Inventory & Price Validation from Database
+    let serverSubtotal = 0;
     for (const item of data.items) {
+      const qty = Math.max(1, Math.floor(Number(item.qty) || 1));
       if (item.kind === "product" && item.productSlug) {
-        const productRes = await sql`SELECT stock_count, in_stock FROM products WHERE slug = ${item.productSlug}`;
-        const product = productRes[0] as { stock_count: number; in_stock: boolean } | undefined;
+        const productRes = await sql`SELECT price, stock_count, in_stock FROM products WHERE slug = ${item.productSlug}`;
+        const product = productRes[0] as { price: number; stock_count: number; in_stock: boolean } | undefined;
         if (!product) throw new Error(`Product ${item.name} not found`);
         if (product.in_stock === false) throw new Error(`Product ${item.name} is currently out of stock`);
         
@@ -41,16 +44,57 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
         );
         
         const stockToCheck = Number(variant ? variant.stock_count : product.stock_count);
-        if (stockToCheck > -1 && stockToCheck < item.qty) {
-          throw new Error(`Only ${stockToCheck} units left of ${item.name} (${item.size || ''} ${item.color || ''})`.trim());
+        if (stockToCheck > -1 && stockToCheck < qty) {
+          throw new Error(`Only ${stockToCheck} units left of ${item.name}`.trim());
         }
+
+        const realUnitPrice = Number(variant ? variant.price : product.price);
+        serverSubtotal += realUnitPrice * qty;
+      } else {
+        // Custom print item
+        const unitPrice = Math.max(0, Number(item.unitPrice) || 0);
+        serverSubtotal += unitPrice * qty;
       }
     }
 
+    // 2. Validate Coupon & Discount Server-Side
+    let discount = 0;
+    if (data.couponCode) {
+      const couponRes = await sql`
+        SELECT code, discount_percent, max_uses, current_uses 
+        FROM coupons 
+        WHERE code = ${data.couponCode.toUpperCase()} 
+        AND (expires_at IS NULL OR expires_at > now())
+        AND (max_uses IS NULL OR current_uses < max_uses)
+      `;
+      if (couponRes.length > 0) {
+        const c = couponRes[0];
+        discount = Math.round((serverSubtotal * Number(c.discount_percent)) / 100);
+        // Atomically increment coupon usage
+        await sql`
+          UPDATE coupons 
+          SET current_uses = current_uses + 1 
+          WHERE code = ${c.code}
+        `;
+      }
+    }
+
+    // 3. Verified Total Calculation
+    const shipping = Math.max(0, Number(data.shipping) || 0);
+    const extra = Math.max(0, Number(data.extra) || 0);
+    const verifiedTotal = Math.max(0, serverSubtotal - discount + shipping + extra);
+
+    // Prevent client-side price tampering
+    if (Math.abs(verifiedTotal - Number(data.total)) > 2 && Number(data.total) < verifiedTotal) {
+      throw new Error("Price mismatch detected. Please refresh your cart and try again.");
+    }
+
+    const finalTotal = verifiedTotal;
+    const finalSubtotal = serverSubtotal;
     const orderNumber = `PRY-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 5).toUpperCase()}`;
 
     if (data.paymentMethod === "razorpay" || data.paymentMethod === "online") {
-      const amountInPaise = Math.round(data.total * 100);
+      const amountInPaise = Math.round(finalTotal * 100);
 
       const rzpOrder = await razorpay.orders.create({
         amount: amountInPaise,
@@ -64,7 +108,7 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
           items, shipping_address, shipping_method, payment_method, 
           razorpay_order_id, payment_status, notes
         ) VALUES (
-          ${context.userId || null}, ${!context.userId ? data.address.email : null}, ${orderNumber}, 'pending', ${data.total}, ${data.subtotal}, ${data.shipping}, ${data.extra},
+          ${context.userId || null}, ${!context.userId ? data.address.email : null}, ${orderNumber}, 'pending', ${finalTotal}, ${finalSubtotal}, ${shipping}, ${extra},
           ${JSON.stringify(data.items)}, ${JSON.stringify(data.address)}, ${data.shippingMethod}, ${data.paymentMethod},
           ${rzpOrder.id}, 'pending', ${data.notes || null}
         )
@@ -79,7 +123,7 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
           items, shipping_address, shipping_method, payment_method, 
           payment_status, notes
         ) VALUES (
-          ${context.userId || null}, ${!context.userId ? data.address.email : null}, ${orderNumber}, 'pending', ${data.total}, ${data.subtotal}, ${data.shipping}, ${data.extra},
+          ${context.userId || null}, ${!context.userId ? data.address.email : null}, ${orderNumber}, 'pending', ${finalTotal}, ${finalSubtotal}, ${shipping}, ${extra},
           ${JSON.stringify(data.items)}, ${JSON.stringify(data.address)}, ${data.shippingMethod}, ${data.paymentMethod},
           'pending', ${data.notes || null}
         )
@@ -192,7 +236,7 @@ export const getUserOrders = createServerFn({ method: "GET" })
 
 export const getOrderById = createServerFn({ method: "GET" })
   .middleware([optionalAuthMiddleware])
-  .validator((data: { id: string }) => data)
+  .validator((data: { id: string; email?: string }) => data)
   .handler(async ({ data, context }) => {
     const sql = await getSql();
     // Assuming 'id' in the route is the order_number
@@ -200,15 +244,50 @@ export const getOrderById = createServerFn({ method: "GET" })
     if (res.length === 0) return null;
     const order = res[0] as any;
     
-    // If order belongs to a user, strictly enforce auth unless admin
-    if (order.user_id && order.user_id !== context.userId) {
-      const admin = context.userId ? await verifyAdminRole(context.userId, sql) : null;
-      if (!admin) {
-        return null;
+    // 1. If admin, allow full access
+    const admin = context.userId ? await verifyAdminRole(context.userId, sql) : null;
+    if (admin) {
+      return order;
+    }
+
+    // 2. If order belongs to an authenticated user
+    if (order.user_id) {
+      if (order.user_id === context.userId) {
+        return order;
       }
+      return null;
     }
     
-    return order;
+    // 3. Guest order: allow full access if email matches guest email or shipping address
+    if (data.email) {
+      const inputEmail = data.email.trim().toLowerCase();
+      const guestEmail = (order.guest_email || "").trim().toLowerCase();
+      let addressEmail = "";
+      try {
+        const addr = typeof order.shipping_address === "string" ? JSON.parse(order.shipping_address) : order.shipping_address;
+        addressEmail = (addr?.email || "").trim().toLowerCase();
+      } catch {}
+      if (inputEmail === guestEmail || inputEmail === addressEmail) {
+        return order;
+      }
+    }
+
+    // 4. Return sanitized summary without exposing customer PII (address, phone, email)
+    return {
+      id: order.id,
+      order_number: order.order_number,
+      status: order.status,
+      created_at: order.created_at,
+      payment_status: order.payment_status,
+      shipping_method: order.shipping_method,
+      total: order.total,
+      subtotal: order.subtotal,
+      shipping: order.shipping,
+      extra: order.extra,
+      items: order.items,
+      is_guest: true,
+      requires_email_verification: true,
+    };
   });
 
 export const getAllOrdersAdmin = createServerFn({ method: "GET" })

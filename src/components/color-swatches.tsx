@@ -1,19 +1,27 @@
 import { productColor } from "@/lib/products";
 import { cn } from "@/lib/utils";
 
+export interface ColorItem {
+  id: string;
+  name: string;
+  hex: string;
+}
+
 export function ColorSwatches({
   colors,
   value,
   onChange,
+  colorMap,
 }: {
   colors: string[];
   value: string;
   onChange: (id: string) => void;
+  colorMap?: Record<string, ColorItem>;
 }) {
   return (
     <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Colour">
       {colors.map((id) => {
-        const c = productColor(id);
+        const c = colorMap?.[id] ?? productColor(id);
         const selected = value === id;
         return (
           <button

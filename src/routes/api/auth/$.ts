@@ -9,7 +9,7 @@ export const Route = createFileRoute("/api/auth/$")({
           return await auth.handler(request);
         } catch (err: any) {
           console.error("[auth GET error]:", err);
-          return new Response(JSON.stringify({ error: err?.message || String(err), stack: err?.stack }), {
+          return new Response(JSON.stringify({ error: err?.message || "Authentication error" }), {
             status: 500,
             headers: { "Content-Type": "application/json" },
           });
@@ -20,7 +20,7 @@ export const Route = createFileRoute("/api/auth/$")({
           return await auth.handler(request);
         } catch (err: any) {
           console.error("[auth POST error]:", err);
-          return new Response(JSON.stringify({ error: err?.message || String(err), stack: err?.stack }), {
+          return new Response(JSON.stringify({ error: err?.message || "Authentication error" }), {
             status: 500,
             headers: { "Content-Type": "application/json" },
           });

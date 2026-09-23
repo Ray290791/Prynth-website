@@ -325,7 +325,13 @@ export const getProductReviews = createServerFn({ method: "GET" })
 
 export const createReview = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .validator((data: { product_slug: string; rating: number; comment?: string }) => data)
+  .validator((data: { product_slug: string; rating: number; comment?: string }) => {
+    const slug = data.product_slug?.trim();
+    if (!slug) throw new Error("Product slug is required.");
+    const rating = Math.min(5, Math.max(1, Math.round(Number(data.rating) || 5)));
+    const comment = data.comment ? data.comment.trim().slice(0, 1000) : null;
+    return { product_slug: slug, rating, comment };
+  })
   .handler(async ({ data, context }) => {
     const sql = await getSql();
     

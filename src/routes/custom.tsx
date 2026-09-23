@@ -23,6 +23,7 @@ import {
   type CustomPricingConfig,
 } from "@/lib/quote";
 import { getPrinters, type Printer } from "@/lib/printers-fns";
+import { getAvailableFilaments, type FilamentRecord } from "@/lib/filaments-fns";
 import { uploadCustomFile } from "@/lib/custom-files-fns";
 import { parseStl } from "@/lib/stl";
 import { cn } from "@/lib/utils";
@@ -165,6 +166,11 @@ function CustomPage() {
     queryFn: () => getPrinters(),
   });
 
+  const { data: filaments = [] } = useQuery({
+    queryKey: ["filaments"],
+    queryFn: () => getAvailableFilaments(),
+  });
+
   const tab = path ?? "upload";
 
   function switchTab(next: Path) {
@@ -215,9 +221,9 @@ function CustomPage() {
 
       <div className="mt-10">
         {tab === "upload" ? (
-          <UploadForm add={add} pricingConfig={pricingConfig} printers={printers} />
+          <UploadForm add={add} pricingConfig={pricingConfig} printers={printers} filaments={filaments} />
         ) : (
-          <IdeaForm add={add} pricingConfig={pricingConfig} printers={printers} />
+          <IdeaForm add={add} pricingConfig={pricingConfig} printers={printers} filaments={filaments} />
         )}
       </div>
     </div>
@@ -336,10 +342,12 @@ function UploadForm({
   add,
   pricingConfig,
   printers,
+  filaments,
 }: {
   add: ReturnType<typeof useCart.getState>["add"];
   pricingConfig: CustomPricingConfig;
   printers: Printer[];
+  filaments: FilamentRecord[];
 }) {
   const [selectedPrinterId, setSelectedPrinterId] = useState(() => {
     const firstAvail = printers.find((p) => p.status === "available");
@@ -374,6 +382,45 @@ function UploadForm({
   const [qty, setQty] = useState(1);
   const [notes, setNotes] = useState("");
   const [fallback, setFallback] = useState("desk");
+
+  // Filter filaments dynamically by selected material
+  const materialFilaments = useMemo(() => {
+    return filaments.filter(
+      (f) => f.material_id.toLowerCase() === material.toLowerCase() && f.status !== "filament_over" && f.spool_count > 0,
+    );
+  }, [filaments, material]);
+
+  // Compute available colors and dynamic colorMap
+  const { availableColors, colorMap } = useMemo(() => {
+    if (materialFilaments.length > 0) {
+      const colors: string[] = [];
+      const map: Record<string, { id: string; name: string; hex: string }> = {};
+      for (const f of materialFilaments) {
+        if (!colors.includes(f.color_id)) {
+          colors.push(f.color_id);
+          map[f.color_id] = { id: f.color_id, name: f.color_name, hex: f.color_hex };
+        }
+      }
+      return { availableColors: colors, colorMap: map };
+    }
+    const defaultColors = ["charcoal", "teal", "bone", "stone"];
+    const map: Record<string, { id: string; name: string; hex: string }> = {};
+    for (const c of defaultColors) {
+      if (COLORS[c]) {
+        map[c] = { id: c, name: COLORS[c].name, hex: COLORS[c].hex };
+      }
+    }
+    return { availableColors: defaultColors, colorMap: map };
+  }, [materialFilaments]);
+
+  useEffect(() => {
+    if (availableColors.length > 0 && !availableColors.includes(color)) {
+      setColor(availableColors[0]);
+    }
+  }, [availableColors, color]);
+
+  const selectedColorName = colorMap[color]?.name ?? COLORS[color]?.name ?? color;
+  const selectedColorHex = colorMap[color]?.hex ?? COLORS[color]?.hex ?? "#2A2E32";
 
   async function handleFile(next: File | null) {
     setFile(next);
@@ -482,7 +529,7 @@ function UploadForm({
     add({
       kind: "custom",
       name: `Custom print · ${file.name}`,
-      color,
+      color: selectedColorName,
       unitPrice: quote.total,
       qty: 1,
       custom: {
@@ -502,7 +549,7 @@ function UploadForm({
         supports: supportMeta?.name ?? supports,
         surfaceFinish: finishMeta?.name ?? surfaceFinish,
         brim,
-        color,
+        color: selectedColorName,
         notes,
         volumeCm3: quote.volumeCm3,
       },
@@ -543,10 +590,10 @@ function UploadForm({
             <ModelViewer
               file={file}
               printer={selectedPrinter}
-              colorName={color}
-              colorHex={COLORS[color]?.hex ?? "#2A2E32"}
+              colorName={selectedColorName}
+              colorHex={selectedColorHex}
               onColorChange={(colorId) => {
-                if (COLORS[colorId]) {
+                if (availableColors.includes(colorId) || colorMap[colorId]) {
                   setColor(colorId);
                 }
               }}
@@ -817,9 +864,15 @@ function UploadForm({
         </div>
 
         <div>
-          <Label>Colour</Label>
+          <div className="flex items-center justify-between">
+            <Label>Colour</Label>
+            <span className="text-xs text-muted">
+              {availableColors.length} {material.toUpperCase()} {availableColors.length === 1 ? "shade" : "shades"} in stock
+            </span>
+          </div>
           <ColorSwatches
-            colors={["charcoal", "teal", "bone", "stone"]}
+            colors={availableColors}
+            colorMap={colorMap}
             value={color}
             onChange={setColor}
           />
@@ -871,10 +924,12 @@ function IdeaForm({
   add,
   pricingConfig,
   printers,
+  filaments,
 }: {
   add: ReturnType<typeof useCart.getState>["add"];
   pricingConfig: CustomPricingConfig;
   printers: Printer[];
+  filaments: FilamentRecord[];
 }) {
   const [selectedPrinterId, setSelectedPrinterId] = useState(() => {
     const firstAvail = printers.find((p) => p.status === "available");
@@ -904,6 +959,44 @@ function IdeaForm({
   const [color, setColor] = useState("charcoal");
   const [qty, setQty] = useState(1);
   const [email, setEmail] = useState("");
+
+  // Filter filaments dynamically by selected material
+  const materialFilaments = useMemo(() => {
+    return filaments.filter(
+      (f) => f.material_id.toLowerCase() === material.toLowerCase() && f.status !== "filament_over" && f.spool_count > 0,
+    );
+  }, [filaments, material]);
+
+  // Compute available colors and dynamic colorMap
+  const { availableColors, colorMap } = useMemo(() => {
+    if (materialFilaments.length > 0) {
+      const colors: string[] = [];
+      const map: Record<string, { id: string; name: string; hex: string }> = {};
+      for (const f of materialFilaments) {
+        if (!colors.includes(f.color_id)) {
+          colors.push(f.color_id);
+          map[f.color_id] = { id: f.color_id, name: f.color_name, hex: f.color_hex };
+        }
+      }
+      return { availableColors: colors, colorMap: map };
+    }
+    const defaultColors = ["charcoal", "teal", "bone", "stone"];
+    const map: Record<string, { id: string; name: string; hex: string }> = {};
+    for (const c of defaultColors) {
+      if (COLORS[c]) {
+        map[c] = { id: c, name: COLORS[c].name, hex: COLORS[c].hex };
+      }
+    }
+    return { availableColors: defaultColors, colorMap: map };
+  }, [materialFilaments]);
+
+  useEffect(() => {
+    if (availableColors.length > 0 && !availableColors.includes(color)) {
+      setColor(availableColors[0]);
+    }
+  }, [availableColors, color]);
+
+  const selectedColorName = colorMap[color]?.name ?? COLORS[color]?.name ?? color;
 
   const preset =
     pricingConfig.sizePresets.find((s) => s.id === size) ??
@@ -949,7 +1042,7 @@ function IdeaForm({
     add({
       kind: "custom",
       name: `Custom design · ${preset.name}`,
-      color,
+      color: selectedColorName,
       unitPrice: quote.total,
       qty: 1,
       custom: {
@@ -965,7 +1058,7 @@ function IdeaForm({
         wallLoops,
         supports: supportMeta?.name ?? supports,
         surfaceFinish: finishMeta?.name ?? surfaceFinish,
-        color,
+        color: selectedColorName,
         notes: `${idea}${email ? ` · ${email}` : ""}`,
         volumeCm3: quote.volumeCm3,
         modeling: cx.name,
@@ -1263,9 +1356,15 @@ function IdeaForm({
         </div>
 
         <div>
-          <Label>Colour</Label>
+          <div className="flex items-center justify-between">
+            <Label>Colour</Label>
+            <span className="text-xs text-muted">
+              {availableColors.length} {material.toUpperCase()} {availableColors.length === 1 ? "shade" : "shades"} in stock
+            </span>
+          </div>
           <ColorSwatches
-            colors={["charcoal", "teal", "bone", "stone"]}
+            colors={availableColors}
+            colorMap={colorMap}
             value={color}
             onChange={setColor}
           />

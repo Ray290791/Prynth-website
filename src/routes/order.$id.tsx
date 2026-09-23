@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, Package, Truck, Receipt, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { formatDate, formatINR } from "@/lib/format";
 import { getOrderById } from "@/lib/orders-fns";
 import { productColor } from "@/lib/products";
@@ -28,6 +29,8 @@ function OrderPage() {
   const [reviewProduct, setReviewProduct] = useState<{ slug: string; name: string } | null>(null);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
+  const [guestEmailInput, setGuestEmailInput] = useState("");
+  const [verifiedEmail, setVerifiedEmail] = useState("");
   
   const createReviewMutation = useMutation({
     mutationFn: createReview,
@@ -41,8 +44,8 @@ function OrderPage() {
   });
 
   const { data: order, isLoading } = useQuery({
-    queryKey: ["order", id],
-    queryFn: () => getOrderById({ data: { id } }),
+    queryKey: ["order", id, verifiedEmail],
+    queryFn: () => getOrderById({ data: { id, email: verifiedEmail || undefined } }),
   });
 
   if (!hydrated || isLoading) {
@@ -254,21 +257,44 @@ function OrderPage() {
       <section className="mt-6 grid gap-6 rounded-3xl bg-surface p-6 shadow-[var(--shadow-border)] sm:grid-cols-2">
         <div>
           <h2 className="text-sm font-medium text-subtle">Ship to</h2>
-          <p className="mt-2 text-sm">
-            {address?.name}
-            <br />
-            {address?.line1}
-            {address?.line2 ? (
-              <>
-                <br />
-                {address.line2}
-              </>
-            ) : null}
-            <br />
-            {address?.city}, {address?.state} {address?.pincode}
-            <br />
-            {address?.phone}
-          </p>
+          {address ? (
+            <p className="mt-2 text-sm">
+              {address.name}
+              <br />
+              {address.line1}
+              {address.line2 ? (
+                <>
+                  <br />
+                  {address.line2}
+                </>
+              ) : null}
+              <br />
+              {address.city}, {address.state} {address.pincode}
+              <br />
+              {address.phone}
+            </p>
+          ) : (
+            <div className="mt-2 text-sm text-muted">
+              <p className="text-xs">For customer privacy, address details are protected.</p>
+              <div className="mt-2.5 flex items-center gap-2">
+                <Input
+                  type="email"
+                  placeholder="Verify order email"
+                  value={guestEmailInput}
+                  onChange={(e) => setGuestEmailInput(e.target.value)}
+                  className="h-8 text-xs max-w-[200px]"
+                />
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="h-8 text-xs"
+                  onClick={() => setVerifiedEmail(guestEmailInput)}
+                >
+                  Verify
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
         <div>
           <h2 className="text-sm font-medium text-subtle">Payment</h2>

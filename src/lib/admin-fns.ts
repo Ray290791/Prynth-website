@@ -16,9 +16,9 @@ export async function verifyAdminRole(userId: string, sql: any) {
     if (!userRes.length) return null;
     const user = userRes[0] as { email: string; role: string | null };
 
-    // Check if email matches configured ADMIN_EMAIL or default admin
-    const configuredAdmin = (process.env.ADMIN_EMAIL || (globalThis as any).__env__?.ADMIN_EMAIL || "prynth07@gmail.com").toLowerCase();
-    if (user.email && user.email.toLowerCase() === configuredAdmin) {
+    // Check if email matches configured ADMIN_EMAIL
+    const configuredAdmin = (process.env.ADMIN_EMAIL || (globalThis as any).__env__?.ADMIN_EMAIL)?.trim()?.toLowerCase();
+    if (configuredAdmin && user.email && user.email.toLowerCase() === configuredAdmin) {
       return { email: user.email, role: user.role || "super_admin" };
     }
 
@@ -208,7 +208,7 @@ export const resetAdminPinWithOTP = createServerFn({ method: "POST" })
     }
 
     const res = await sql`
-      SELECT reset_otp, reset_otp_expires_at 
+      SELECT reset_otp, reset_otp_expires_at, pin_fail_count, pin_locked_until 
       FROM admin_users 
       WHERE LOWER(email) = LOWER(${admin.email})
     `;
@@ -217,12 +217,32 @@ export const resetAdminPinWithOTP = createServerFn({ method: "POST" })
       throw new Error("No OTP requested");
     }
 
-    if (res[0].reset_otp !== data.otp) {
-      throw new Error("Invalid OTP");
+    if (res[0].pin_locked_until && new Date() < new Date(res[0].pin_locked_until as string)) {
+      throw new Error("Too many failed attempts. PIN reset is locked for 15 minutes.");
     }
 
     if (new Date() > new Date(res[0].reset_otp_expires_at as string)) {
-      throw new Error("OTP has expired");
+      throw new Error("OTP has expired. Please request a new one.");
+    }
+
+    if (res[0].reset_otp !== data.otp) {
+      const fails = Number(res[0].pin_fail_count || 0) + 1;
+      if (fails >= 5) {
+        const lockUntil = new Date(Date.now() + 15 * 60 * 1000);
+        await sql`
+          UPDATE admin_users 
+          SET pin_fail_count = ${fails}, pin_locked_until = ${lockUntil.toISOString()}, reset_otp = NULL, reset_otp_expires_at = NULL
+          WHERE LOWER(email) = LOWER(${admin.email})
+        `;
+        throw new Error("Too many failed OTP attempts. Account locked for 15 minutes.");
+      } else {
+        await sql`
+          UPDATE admin_users 
+          SET pin_fail_count = ${fails}
+          WHERE LOWER(email) = LOWER(${admin.email})
+        `;
+        throw new Error(`Invalid OTP. ${5 - fails} attempts remaining.`);
+      }
     }
 
     // Set new PIN
@@ -232,7 +252,7 @@ export const resetAdminPinWithOTP = createServerFn({ method: "POST" })
 
     await sql`
       UPDATE admin_users 
-      SET pin_hash = ${pinHash}, reset_otp = NULL, reset_otp_expires_at = NULL 
+      SET pin_hash = ${pinHash}, reset_otp = NULL, reset_otp_expires_at = NULL, pin_fail_count = 0, pin_locked_until = NULL 
       WHERE LOWER(email) = LOWER(${admin.email})
     `;
 

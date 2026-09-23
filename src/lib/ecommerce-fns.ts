@@ -92,7 +92,18 @@ export const getCouponsAdmin = createServerFn({ method: "GET" })
 
 export const createCoupon = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .validator((data: { code: string; discount_percent: number; max_uses?: number }) => data)
+  .validator((data: { code: string; discount_percent: number; max_uses?: number }) => {
+    const code = data.code?.trim().toUpperCase();
+    if (!code || !/^[A-Z0-9_-]{2,30}$/.test(code)) {
+      throw new Error("Coupon code must be 2 to 30 alphanumeric characters.");
+    }
+    const discount = Number(data.discount_percent);
+    if (isNaN(discount) || discount < 1 || discount > 100) {
+      throw new Error("Discount percentage must be between 1% and 100%.");
+    }
+    const maxUses = data.max_uses ? Math.max(1, Math.floor(Number(data.max_uses))) : null;
+    return { code, discount_percent: discount, max_uses: maxUses ?? undefined };
+  })
   .handler(async ({ data, context }) => {
     const sql = await getSql();
     const admin = await verifyAdminRole(context.userId, sql);
@@ -101,7 +112,7 @@ export const createCoupon = createServerFn({ method: "POST" })
     }
     await sql`
       INSERT INTO coupons (code, discount_percent, max_uses)
-      VALUES (${data.code.toUpperCase()}, ${data.discount_percent}, ${data.max_uses || null})
+      VALUES (${data.code}, ${data.discount_percent}, ${data.max_uses || null})
     `;
     return { success: true };
   });

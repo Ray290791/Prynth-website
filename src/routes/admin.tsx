@@ -6,8 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useState, useEffect, useId } from "react";
 import { cn } from "@/lib/utils";
-import { Package, Box, X, Settings, Image as ImageIcon, BarChart3, Tag, ClipboardList, Shield, UserCog, HelpCircle, Users, Search, Trash2, Layers, Edit2, Plus, Eye, EyeOff, Printer as PrinterIcon } from "lucide-react";
+import { Package, Box, X, Settings, Image as ImageIcon, BarChart3, Tag, ClipboardList, Shield, UserCog, HelpCircle, Users, Search, Trash2, Layers, Edit2, Plus, Eye, EyeOff, Printer as PrinterIcon, Disc } from "lucide-react";
 import { PrintersTab } from "@/components/printers-tab";
+import { FilamentsTab } from "@/components/filaments-tab";
 import { OrderDetailsDialog } from "@/components/order-details-dialog";
 import { getMaterialsAdmin, createMaterial, updateMaterial, deleteMaterial, type Material, type MaterialInput } from "@/lib/materials-fns";
 import { getAllProductsAdmin, deleteProduct, updateProduct, createProduct, updateProductInventory } from "@/lib/products-fns";
@@ -97,6 +98,7 @@ function AdminPage() {
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     { id: "orders", label: "Orders", icon: Package },
     { id: "printers", label: "Printers", icon: PrinterIcon },
+    { id: "filaments", label: "Filaments", icon: Disc },
     { id: "products", label: "Products", icon: Box },
     { id: "inventory", label: "Inventory", icon: ClipboardList },
     { id: "materials", label: "Materials", icon: Layers },
@@ -268,6 +270,7 @@ function AdminPage() {
         )}
 
         {activeTab === "printers" && <PrintersTab />}
+        {activeTab === "filaments" && <FilamentsTab />}
 
         <PinConfirmModal
           isOpen={!!deletingOrder}
