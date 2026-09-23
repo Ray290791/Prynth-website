@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { FileDropzone } from "@/components/file-dropzone";
 import { ColorSwatches } from "@/components/color-swatches";
+import { COLORS } from "@/lib/products";
 import { QuantityStepper } from "@/components/quantity-stepper";
 import { ModelViewer } from "@/components/model-viewer";
 import { Button } from "@/components/ui/button";
@@ -528,12 +529,28 @@ function UploadForm({
         {parsing ? <p className="text-sm text-muted">Reading the model…</p> : null}
         {sizeLabel ? <p className="text-sm text-muted">{sizeLabel}</p> : null}
 
-        {file && sizeLabel && !parsing && (
-          <div className="mt-4">
-            <Label>3D Preview</Label>
-            <div className="mt-2">
-              <ModelViewer file={file} />
+        {file && !parsing && (
+          <div className="mt-5 space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-semibold flex items-center gap-2">
+                <span className="size-2 rounded-full bg-accent animate-pulse" />
+                Slicer Build Plate 3D Preview
+              </Label>
+              <span className="text-xs text-muted">
+                {selectedPrinter?.name ?? "Bambu Lab P1S"} ({selectedPrinter?.build_volume ?? "256 × 256 mm"})
+              </span>
             </div>
+            <ModelViewer
+              file={file}
+              printer={selectedPrinter}
+              colorName={color}
+              colorHex={COLORS[color]?.hex ?? "#2A2E32"}
+              onColorChange={(colorId) => {
+                if (COLORS[colorId]) {
+                  setColor(colorId);
+                }
+              }}
+            />
           </div>
         )}
 
