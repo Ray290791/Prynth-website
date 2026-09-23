@@ -1,3 +1,5 @@
+import { evaluateFormula, type PricingVariables } from "./formula-evaluator";
+
 export const MATERIALS = [
   {
     id: "pla",
@@ -92,6 +94,63 @@ export const COMPLEXITY = [
   },
 ] as const;
 
+export const DEFAULT_UPLOAD_FORMULA =
+  "Math.max(min_print, Math.round(volume * material_rate * quality_mult * infill_mult + setup_fee)) * qty";
+
+export const DEFAULT_IDEA_FORMULA =
+  "Math.max(min_print, Math.round(volume * material_rate * quality_mult * infill_mult + setup_fee)) * qty + modeling_fee";
+
+export const DEFAULT_SETUP_FEE = 49;
+export const DEFAULT_MIN_PRINT = 99;
+
+export type MaterialPricing = {
+  id: string;
+  name: string;
+  rate: number;
+  note?: string;
+};
+
+export type QualityPricing = {
+  id: string;
+  name: string;
+  mult: number;
+  days: string;
+  note?: string;
+};
+
+export type InfillPricing = {
+  id: string;
+  name: string;
+  mult: number;
+  note?: string;
+};
+
+export type SizePresetPricing = {
+  id: string;
+  name: string;
+  hint: string;
+  cm3: number;
+};
+
+export type ComplexityPricing = {
+  id: string;
+  name: string;
+  fee: number;
+  note?: string;
+};
+
+export type CustomPricingConfig = {
+  uploadFormula: string;
+  ideaFormula: string;
+  setupFee: number;
+  minPrint: number;
+  materials: MaterialPricing[];
+  qualities: QualityPricing[];
+  infills: InfillPricing[];
+  sizePresets: SizePresetPricing[];
+  complexities: ComplexityPricing[];
+};
+
 export type QuoteInput = {
   volumeCm3: number;
   materialId: string;
@@ -110,25 +169,121 @@ export type Quote = {
   volumeCm3: number;
 };
 
-const SETUP = 49;
-const MIN_PRINT = 99;
+function safeJsonParse<T>(val: any, fallback: T): T {
+  if (!val) return fallback;
+  if (typeof val !== "string") return val as T;
+  try {
+    const parsed = JSON.parse(val);
+    return parsed ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
 
-export function computeQuote(input: QuoteInput): Quote {
-  const material = MATERIALS.find((m) => m.id === input.materialId) ?? MATERIALS[0];
-  const quality = QUALITIES.find((q) => q.id === input.qualityId) ?? QUALITIES[1];
-  const infill = INFILLS.find((i) => i.id === input.infillId) ?? INFILLS[1];
+/**
+ * Extracts normalized custom pricing configuration from site settings.
+ */
+export function getPricingConfig(settings?: Record<string, any> | null): CustomPricingConfig {
+  const uploadFormula =
+    settings?.custom_pricing_upload_formula?.trim() || DEFAULT_UPLOAD_FORMULA;
+  const ideaFormula =
+    settings?.custom_pricing_idea_formula?.trim() || DEFAULT_IDEA_FORMULA;
+
+  const setupFee = Number(settings?.custom_pricing_setup_fee) || DEFAULT_SETUP_FEE;
+  const minPrint = Number(settings?.custom_pricing_min_print) || DEFAULT_MIN_PRINT;
+
+  const materials = safeJsonParse<MaterialPricing[]>(
+    settings?.custom_pricing_materials,
+    MATERIALS as unknown as MaterialPricing[],
+  );
+  const qualities = safeJsonParse<QualityPricing[]>(
+    settings?.custom_pricing_qualities,
+    QUALITIES as unknown as QualityPricing[],
+  );
+  const infills = safeJsonParse<InfillPricing[]>(
+    settings?.custom_pricing_infills,
+    INFILLS as unknown as InfillPricing[],
+  );
+  const sizePresets = safeJsonParse<SizePresetPricing[]>(
+    settings?.custom_pricing_size_presets,
+    SIZE_PRESETS as unknown as SizePresetPricing[],
+  );
+  const complexities = safeJsonParse<ComplexityPricing[]>(
+    settings?.custom_pricing_complexities,
+    COMPLEXITY as unknown as ComplexityPricing[],
+  );
+
+  return {
+    uploadFormula,
+    ideaFormula,
+    setupFee: Math.max(0, setupFee),
+    minPrint: Math.max(0, minPrint),
+    materials: Array.isArray(materials) && materials.length > 0 ? materials : (MATERIALS as unknown as MaterialPricing[]),
+    qualities: Array.isArray(qualities) && qualities.length > 0 ? qualities : (QUALITIES as unknown as QualityPricing[]),
+    infills: Array.isArray(infills) && infills.length > 0 ? infills : (INFILLS as unknown as InfillPricing[]),
+    sizePresets: Array.isArray(sizePresets) && sizePresets.length > 0 ? sizePresets : (SIZE_PRESETS as unknown as SizePresetPricing[]),
+    complexities: Array.isArray(complexities) && complexities.length > 0 ? complexities : (COMPLEXITY as unknown as ComplexityPricing[]),
+  };
+}
+
+export function computeQuote(
+  input: QuoteInput,
+  settingsOrConfig?: Record<string, any> | CustomPricingConfig | null,
+  mode: "upload" | "idea" = "upload",
+): Quote {
+  const config =
+    settingsOrConfig && "uploadFormula" in settingsOrConfig
+      ? (settingsOrConfig as CustomPricingConfig)
+      : getPricingConfig(settingsOrConfig);
+
+  const material =
+    config.materials.find((m) => m.id === input.materialId) ?? config.materials[0];
+  const quality =
+    config.qualities.find((q) => q.id === input.qualityId) ?? config.qualities[1];
+  const infill =
+    config.infills.find((i) => i.id === input.infillId) ?? config.infills[1];
+
   const qty = Math.max(1, Math.round(input.qty) || 1);
   const volume = Math.max(0, input.volumeCm3);
-  const printUnit = Math.max(
-    MIN_PRINT,
-    Math.round(volume * material.rate * quality.mult * infill.mult + SETUP),
-  );
   const modeling = input.modelingFee ?? 0;
+
+  // Determine pricing variables for evaluator
+  const vars: PricingVariables = {
+    volume,
+    material_rate: material.rate,
+    quality_mult: quality.mult,
+    infill_mult: infill.mult,
+    setup_fee: config.setupFee,
+    min_print: config.minPrint,
+    qty,
+    modeling_fee: modeling,
+  };
+
+  const isIdea = mode === "idea" || modeling > 0;
+  const activeFormula = isIdea ? config.ideaFormula : config.uploadFormula;
+
+  const evalResult = evaluateFormula(activeFormula, vars);
+
+  let total: number;
+  let printUnit: number;
+
+  if (evalResult.success && evalResult.value >= 0) {
+    total = Math.round(evalResult.value);
+    printUnit = isIdea ? Math.max(0, Math.round((total - modeling) / qty)) : Math.round(total / qty);
+  } else {
+    // Fallback standard calculation
+    printUnit = Math.max(
+      config.minPrint,
+      Math.round(volume * material.rate * quality.mult * infill.mult + config.setupFee),
+    );
+    total = printUnit * qty + modeling;
+  }
+
   return {
     print: printUnit * qty,
     modeling,
-    setup: SETUP * qty,
-    total: printUnit * qty + modeling,
+    setup: config.setupFee * qty,
+    total,
     days: quality.days,
     volumeCm3: volume,
   };

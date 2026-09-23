@@ -3,6 +3,17 @@ import { getSql } from "./db";
 import { authMiddleware } from "./auth/middleware";
 import { verifyAdminRole } from "./admin-fns";
 import { z } from "zod";
+import {
+  DEFAULT_UPLOAD_FORMULA,
+  DEFAULT_IDEA_FORMULA,
+  DEFAULT_SETUP_FEE,
+  DEFAULT_MIN_PRINT,
+  MATERIALS,
+  QUALITIES,
+  INFILLS,
+  SIZE_PRESETS,
+  COMPLEXITY,
+} from "./quote";
 
 export type SiteSettings = {
   tagline: string;
@@ -26,6 +37,16 @@ export type SiteSettings = {
   cod_fee: string;
   promo_banner: string;
   hero_featured_slots?: string;
+  // Custom print pricing formula & values
+  custom_pricing_upload_formula?: string;
+  custom_pricing_idea_formula?: string;
+  custom_pricing_setup_fee?: string;
+  custom_pricing_min_print?: string;
+  custom_pricing_materials?: string;
+  custom_pricing_qualities?: string;
+  custom_pricing_infills?: string;
+  custom_pricing_size_presets?: string;
+  custom_pricing_complexities?: string;
 };
 
 export const getSiteSettings = createServerFn({ method: "GET" }).handler(
@@ -61,6 +82,15 @@ export const getSiteSettings = createServerFn({ method: "GET" }).handler(
         { slug: "geo-planter", image: "/products/geo-planter.jpg" },
         { slug: "hex-coasters", image: "/products/hex-coasters.jpg" },
       ]),
+      custom_pricing_upload_formula: DEFAULT_UPLOAD_FORMULA,
+      custom_pricing_idea_formula: DEFAULT_IDEA_FORMULA,
+      custom_pricing_setup_fee: String(DEFAULT_SETUP_FEE),
+      custom_pricing_min_print: String(DEFAULT_MIN_PRINT),
+      custom_pricing_materials: JSON.stringify(MATERIALS),
+      custom_pricing_qualities: JSON.stringify(QUALITIES),
+      custom_pricing_infills: JSON.stringify(INFILLS),
+      custom_pricing_size_presets: JSON.stringify(SIZE_PRESETS),
+      custom_pricing_complexities: JSON.stringify(COMPLEXITY),
     };
 
     for (const row of rows) {
@@ -97,6 +127,15 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
     cod_fee: z.string().optional(),
     promo_banner: z.string().optional(),
     hero_featured_slots: z.string().optional(),
+    custom_pricing_upload_formula: z.string().optional(),
+    custom_pricing_idea_formula: z.string().optional(),
+    custom_pricing_setup_fee: z.string().optional(),
+    custom_pricing_min_print: z.string().optional(),
+    custom_pricing_materials: z.string().optional(),
+    custom_pricing_qualities: z.string().optional(),
+    custom_pricing_infills: z.string().optional(),
+    custom_pricing_size_presets: z.string().optional(),
+    custom_pricing_complexities: z.string().optional(),
   }))
   .handler(async ({ data, context }) => {
     if (!context.userId) throw new Error("Unauthorized");

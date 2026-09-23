@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link, getRouteApi } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { FileDropzone } from "@/components/file-dropzone";
@@ -12,15 +12,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { useCart } from "@/lib/cart-store";
 import { formatINR } from "@/lib/format";
 import {
-  COMPLEXITY,
   computeQuote,
-  INFILLS,
-  MATERIALS,
-  QUALITIES,
-  SIZE_PRESETS,
+  getPricingConfig,
+  type CustomPricingConfig,
 } from "@/lib/quote";
 import { parseStl } from "@/lib/stl";
 import { cn } from "@/lib/utils";
+
+const rootRoute = getRouteApi("__root__");
 
 type Path = "upload" | "idea";
 
@@ -63,6 +62,9 @@ function CustomPage() {
   const { path } = Route.useSearch();
   const navigate = useNavigate({ from: "/custom" });
   const add = useCart((s) => s.add);
+
+  const { settings } = rootRoute.useLoaderData();
+  const pricingConfig = useMemo(() => getPricingConfig(settings), [settings]);
 
   const tab = path ?? "upload";
 
@@ -115,7 +117,11 @@ function CustomPage() {
       </div>
 
       <div className="mt-10">
-        {tab === "upload" ? <UploadForm add={add} /> : <IdeaForm add={add} />}
+        {tab === "upload" ? (
+          <UploadForm add={add} pricingConfig={pricingConfig} />
+        ) : (
+          <IdeaForm add={add} pricingConfig={pricingConfig} />
+        )}
       </div>
     </div>
   );
@@ -181,7 +187,13 @@ function QuotePanel({
   );
 }
 
-function UploadForm({ add }: { add: ReturnType<typeof useCart.getState>["add"] }) {
+function UploadForm({
+  add,
+  pricingConfig,
+}: {
+  add: ReturnType<typeof useCart.getState>["add"];
+  pricingConfig: CustomPricingConfig;
+}) {
   const [file, setFile] = useState<File | null>(null);
   const [volume, setVolume] = useState(0);
   const [sizeLabel, setSizeLabel] = useState("");
@@ -201,7 +213,10 @@ function UploadForm({ add }: { add: ReturnType<typeof useCart.getState>["add"] }
     if (!next) return;
     const ext = next.name.split(".").pop()?.toLowerCase();
     if (ext !== "stl") {
-      const preset = SIZE_PRESETS.find((s) => s.id === fallback) ?? SIZE_PRESETS[1];
+      const preset =
+        pricingConfig.sizePresets.find((s) => s.id === fallback) ??
+        pricingConfig.sizePresets[1] ??
+        pricingConfig.sizePresets[0];
       setVolume(preset.cm3);
       setSizeLabel("Using size preset — 3MF/OBJ quotes are confirmed by email.");
       return;
@@ -215,12 +230,18 @@ function UploadForm({ add }: { add: ReturnType<typeof useCart.getState>["add"] }
           `${est.sizeMm.x.toFixed(0)} × ${est.sizeMm.y.toFixed(0)} × ${est.sizeMm.z.toFixed(0)} mm · ${est.triangles.toLocaleString("en-IN")} triangles`,
         );
       } else {
-        const preset = SIZE_PRESETS.find((s) => s.id === fallback) ?? SIZE_PRESETS[1];
+        const preset =
+          pricingConfig.sizePresets.find((s) => s.id === fallback) ??
+          pricingConfig.sizePresets[1] ??
+          pricingConfig.sizePresets[0];
         setVolume(preset.cm3);
         setSizeLabel("Couldn't read that STL. Using the size preset below.");
       }
     } catch {
-      const preset = SIZE_PRESETS.find((s) => s.id === fallback) ?? SIZE_PRESETS[1];
+      const preset =
+        pricingConfig.sizePresets.find((s) => s.id === fallback) ??
+        pricingConfig.sizePresets[1] ??
+        pricingConfig.sizePresets[0];
       setVolume(preset.cm3);
       setSizeLabel("Couldn't read that STL. Using the size preset below.");
     } finally {
@@ -230,19 +251,23 @@ function UploadForm({ add }: { add: ReturnType<typeof useCart.getState>["add"] }
 
   const quote = useMemo(
     () =>
-      computeQuote({
-        volumeCm3: volume,
-        materialId: material,
-        qualityId: quality,
-        infillId: infill,
-        qty,
-      }),
-    [volume, material, quality, infill, qty],
+      computeQuote(
+        {
+          volumeCm3: volume,
+          materialId: material,
+          qualityId: quality,
+          infillId: infill,
+          qty,
+        },
+        pricingConfig,
+        "upload",
+      ),
+    [volume, material, quality, infill, qty, pricingConfig],
   );
 
-  const materialMeta = MATERIALS.find((m) => m.id === material);
-  const qualityMeta = QUALITIES.find((q) => q.id === quality);
-  const infillMeta = INFILLS.find((i) => i.id === infill);
+  const materialMeta = pricingConfig.materials.find((m) => m.id === material);
+  const qualityMeta = pricingConfig.qualities.find((q) => q.id === quality);
+  const infillMeta = pricingConfig.infills.find((i) => i.id === infill);
 
   function addEstimate() {
     if (!file || quote.total <= 0) {
@@ -295,7 +320,7 @@ function UploadForm({ add }: { add: ReturnType<typeof useCart.getState>["add"] }
         <div>
           <Label>If we can't read the file, treat it as</Label>
           <div className="mt-2 flex flex-wrap gap-2">
-            {SIZE_PRESETS.map((s) => (
+            {pricingConfig.sizePresets.map((s) => (
               <button
                 key={s.id}
                 type="button"
@@ -321,23 +346,23 @@ function UploadForm({ add }: { add: ReturnType<typeof useCart.getState>["add"] }
 
         <div className="grid gap-4 sm:grid-cols-2">
           <FieldSelect id="mat" label="Material" value={material} onChange={setMaterial}>
-            {MATERIALS.map((m) => (
+            {pricingConfig.materials.map((m) => (
               <option key={m.id} value={m.id}>
-                {m.name}
+                {m.name} (₹{m.rate}/cm³)
               </option>
             ))}
           </FieldSelect>
           <FieldSelect id="qual" label="Print quality" value={quality} onChange={setQuality}>
-            {QUALITIES.map((q) => (
+            {pricingConfig.qualities.map((q) => (
               <option key={q.id} value={q.id}>
-                {q.name}
+                {q.name} ({q.mult}×)
               </option>
             ))}
           </FieldSelect>
           <FieldSelect id="inf" label="Infill" value={infill} onChange={setInfill}>
-            {INFILLS.map((i) => (
+            {pricingConfig.infills.map((i) => (
               <option key={i.id} value={i.id}>
-                {i.name}
+                {i.name} ({i.mult}×)
               </option>
             ))}
           </FieldSelect>
@@ -392,7 +417,13 @@ function UploadForm({ add }: { add: ReturnType<typeof useCart.getState>["add"] }
   );
 }
 
-function IdeaForm({ add }: { add: ReturnType<typeof useCart.getState>["add"] }) {
+function IdeaForm({
+  add,
+  pricingConfig,
+}: {
+  add: ReturnType<typeof useCart.getState>["add"];
+  pricingConfig: CustomPricingConfig;
+}) {
   const [idea, setIdea] = useState("");
   const [size, setSize] = useState("desk");
   const [complexity, setComplexity] = useState("photo");
@@ -403,19 +434,30 @@ function IdeaForm({ add }: { add: ReturnType<typeof useCart.getState>["add"] }) 
   const [qty, setQty] = useState(1);
   const [email, setEmail] = useState("");
 
-  const preset = SIZE_PRESETS.find((s) => s.id === size) ?? SIZE_PRESETS[1];
-  const cx = COMPLEXITY.find((c) => c.id === complexity) ?? COMPLEXITY[1];
+  const preset =
+    pricingConfig.sizePresets.find((s) => s.id === size) ??
+    pricingConfig.sizePresets[1] ??
+    pricingConfig.sizePresets[0];
+  const cx =
+    pricingConfig.complexities.find((c) => c.id === complexity) ??
+    pricingConfig.complexities[1] ??
+    pricingConfig.complexities[0];
+
   const quote = useMemo(
     () =>
-      computeQuote({
-        volumeCm3: preset.cm3,
-        materialId: material,
-        qualityId: quality,
-        infillId: infill,
-        qty,
-        modelingFee: cx.fee,
-      }),
-    [preset.cm3, material, quality, infill, qty, cx.fee],
+      computeQuote(
+        {
+          volumeCm3: preset.cm3,
+          materialId: material,
+          qualityId: quality,
+          infillId: infill,
+          qty,
+          modelingFee: cx.fee,
+        },
+        pricingConfig,
+        "idea",
+      ),
+    [preset.cm3, material, quality, infill, qty, cx.fee, pricingConfig],
   );
 
   function addEstimate() {
@@ -431,9 +473,9 @@ function IdeaForm({ add }: { add: ReturnType<typeof useCart.getState>["add"] }) 
       qty: 1,
       custom: {
         path: "idea",
-        material: MATERIALS.find((m) => m.id === material)?.name ?? material,
-        quality: QUALITIES.find((q) => q.id === quality)?.name ?? quality,
-        infill: INFILLS.find((i) => i.id === infill)?.name ?? infill,
+        material: pricingConfig.materials.find((m) => m.id === material)?.name ?? material,
+        quality: pricingConfig.qualities.find((q) => q.id === quality)?.name ?? quality,
+        infill: pricingConfig.infills.find((i) => i.id === infill)?.name ?? infill,
         color,
         notes: `${idea}${email ? ` · ${email}` : ""}`,
         volumeCm3: quote.volumeCm3,
@@ -474,7 +516,7 @@ function IdeaForm({ add }: { add: ReturnType<typeof useCart.getState>["add"] }) 
         <div>
           <Label>How big is it?</Label>
           <div className="mt-2 flex flex-wrap gap-2">
-            {SIZE_PRESETS.map((s) => (
+            {pricingConfig.sizePresets.map((s) => (
               <button
                 key={s.id}
                 type="button"
@@ -495,7 +537,7 @@ function IdeaForm({ add }: { add: ReturnType<typeof useCart.getState>["add"] }) 
         <div>
           <Label>How should we model it?</Label>
           <div className="mt-2 grid gap-2">
-            {COMPLEXITY.filter((c) => c.id !== "file").map((c) => (
+            {pricingConfig.complexities.filter((c) => c.id !== "file").map((c) => (
               <button
                 key={c.id}
                 type="button"
@@ -520,16 +562,16 @@ function IdeaForm({ add }: { add: ReturnType<typeof useCart.getState>["add"] }) 
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <FieldSelect id="imat" label="Material" value={material} onChange={setMaterial}>
-            {MATERIALS.map((m) => (
+            {pricingConfig.materials.map((m) => (
               <option key={m.id} value={m.id}>
-                {m.name}
+                {m.name} (₹{m.rate}/cm³)
               </option>
             ))}
           </FieldSelect>
           <FieldSelect id="iqual" label="Print quality" value={quality} onChange={setQuality}>
-            {QUALITIES.map((q) => (
+            {pricingConfig.qualities.map((q) => (
               <option key={q.id} value={q.id}>
-                {q.name}
+                {q.name} ({q.mult}×)
               </option>
             ))}
           </FieldSelect>

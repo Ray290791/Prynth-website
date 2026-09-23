@@ -10,6 +10,7 @@ import { Package, Box, X, Settings, Image as ImageIcon, BarChart3, Tag, Clipboar
 import { getMaterialsAdmin, createMaterial, updateMaterial, deleteMaterial, type Material, type MaterialInput } from "@/lib/materials-fns";
 import { getAllProductsAdmin, deleteProduct, updateProduct, createProduct, updateProductInventory } from "@/lib/products-fns";
 import { getSiteSettings, updateSiteSettings } from "@/lib/settings-fns";
+import { CustomPricingSettings } from "@/components/custom-pricing-settings";
 import { getCouponsAdmin, createCoupon, deleteCoupon, getAnalyticsAdmin } from "@/lib/ecommerce-fns";
 import { getAdminTeam, addAdmin, removeAdmin, getAdminProfile, setAdminPin, requestPinResetOTP, resetAdminPinWithOTP, getAllUsersAdmin } from "@/lib/admin-fns";
 import { getFaqsAdmin, createFaq, updateFaq, deleteFaq, reorderFaqs } from "@/lib/faq-fns";
@@ -870,6 +871,17 @@ function SettingsTab() {
   if (isLoading) return <div className="p-8">Loading settings...</div>;
   if (error || !settings) return <div className="p-8 text-danger">Failed to load settings</div>;
 
+  const handleQuickSavePricing = async (pricingData: Record<string, string>) => {
+    try {
+      await updateMutation.mutateAsync({
+        ...settings,
+        ...pricingData,
+      });
+    } catch (err: any) {
+      console.error("Failed to quick save custom pricing settings:", err);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
@@ -895,6 +907,15 @@ function SettingsTab() {
       cod_fee: ((fd.get("cod_fee") as string) || settings?.cod_fee || "40").trim(),
       promo_banner: ((fd.get("promo_banner") as string) || settings?.promo_banner || "").trim(),
       hero_featured_slots: JSON.stringify(heroSlots),
+      custom_pricing_upload_formula: ((fd.get("custom_pricing_upload_formula") as string) || settings?.custom_pricing_upload_formula || "").trim(),
+      custom_pricing_idea_formula: ((fd.get("custom_pricing_idea_formula") as string) || settings?.custom_pricing_idea_formula || "").trim(),
+      custom_pricing_setup_fee: ((fd.get("custom_pricing_setup_fee") as string) || settings?.custom_pricing_setup_fee || "49").trim(),
+      custom_pricing_min_print: ((fd.get("custom_pricing_min_print") as string) || settings?.custom_pricing_min_print || "99").trim(),
+      custom_pricing_materials: ((fd.get("custom_pricing_materials") as string) || settings?.custom_pricing_materials || "").trim(),
+      custom_pricing_qualities: ((fd.get("custom_pricing_qualities") as string) || settings?.custom_pricing_qualities || "").trim(),
+      custom_pricing_infills: ((fd.get("custom_pricing_infills") as string) || settings?.custom_pricing_infills || "").trim(),
+      custom_pricing_size_presets: ((fd.get("custom_pricing_size_presets") as string) || settings?.custom_pricing_size_presets || "").trim(),
+      custom_pricing_complexities: ((fd.get("custom_pricing_complexities") as string) || settings?.custom_pricing_complexities || "").trim(),
     };
     updateMutation.mutate(data);
   };
@@ -1110,6 +1131,13 @@ function SettingsTab() {
             </div>
           </div>
         </section>
+
+        {/* CUSTOM PRINT PRICING & FORMULAS SECTION */}
+        <CustomPricingSettings
+          settings={settings}
+          onQuickSave={handleQuickSavePricing}
+          isSaving={updateMutation.isPending}
+        />
 
         {/* SHOP & CATEGORIES SECTION */}
         <section className="space-y-4">
