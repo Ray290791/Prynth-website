@@ -88,6 +88,8 @@ export function OrderDetailsDialog({
       `Support Type: ${custom.supports || "None"}`,
       `Surface Finish: ${custom.surfaceFinish || "Standard"}`,
       `Bed Brim: ${custom.brim || "Auto"}`,
+      custom.orientation ? `Print Orientation: ${custom.orientation}` : null,
+      custom.preflightScore ? `Pre-Flight Score: ${custom.preflightScore}` : null,
       custom.fileName ? `Model File: ${custom.fileName}` : null,
       custom.notes ? `Customer Notes: ${custom.notes}` : null,
     ]
@@ -321,6 +323,20 @@ export function OrderDetailsDialog({
                             {custom.volumeCm3 ? `${custom.volumeCm3.toFixed(1)} cm³` : "Preset"}
                           </span>
                         </div>
+
+                        {custom.orientation && (
+                          <div className="rounded-xl bg-surface/80 p-2 border border-border/40">
+                            <span className="text-muted block text-[10px]">Orientation</span>
+                            <span className="font-semibold text-accent">{custom.orientation}</span>
+                          </div>
+                        )}
+
+                        {custom.preflightScore && (
+                          <div className="rounded-xl bg-surface/80 p-2 border border-border/40">
+                            <span className="text-muted block text-[10px]">Pre-Flight Slicer Score</span>
+                            <span className="font-semibold text-emerald-500">{custom.preflightScore}</span>
+                          </div>
+                        )}
                       </div>
 
                       {custom.notes && (

@@ -19,6 +19,8 @@ export type CustomSpec = {
   supports?: string;
   surfaceFinish?: string;
   brim?: string;
+  orientation?: string;
+  preflightScore?: string;
   color: string;
   notes?: string;
   volumeCm3?: number;

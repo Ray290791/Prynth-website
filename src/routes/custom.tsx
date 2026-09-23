@@ -25,6 +25,8 @@ import {
 import { getPrinters, type Printer } from "@/lib/printers-fns";
 import { getAvailableFilaments, type FilamentRecord } from "@/lib/filaments-fns";
 import { uploadCustomFile } from "@/lib/custom-files-fns";
+import { PrintabilityChecker } from "@/components/printability-checker";
+import type { PrintabilityReport } from "@/lib/mesh-analysis";
 import { parseStl } from "@/lib/stl";
 import { cn } from "@/lib/utils";
 import { ChevronDown, Sliders, Sparkles, Printer as PrinterIcon, Loader2, Check } from "lucide-react";
@@ -252,6 +254,7 @@ function QuotePanel({
     wallLoops?: number;
     supports?: string;
     surfaceFinish?: string;
+    orientation?: string;
   };
 }) {
   return (
@@ -327,6 +330,12 @@ function QuotePanel({
                   <span className="font-medium text-accent">{specs.surfaceFinish}</span>
                 </div>
               )}
+              {specs.orientation && (
+                <div className="flex justify-between">
+                  <span>Print Orientation</span>
+                  <span className="font-medium text-accent">{specs.orientation}</span>
+                </div>
+              )}
             </div>
           ) : null}
         </dl>
@@ -382,6 +391,8 @@ function UploadForm({
   const [qty, setQty] = useState(1);
   const [notes, setNotes] = useState("");
   const [fallback, setFallback] = useState("desk");
+  const [modelRotation, setModelRotation] = useState<[number, number, number]>([0, 0, 0]);
+  const [printabilityReport, setPrintabilityReport] = useState<PrintabilityReport | null>(null);
 
   // Filter filaments dynamically by selected material
   const materialFilaments = useMemo(() => {
@@ -427,6 +438,8 @@ function UploadForm({
     setFileId(null);
     setVolume(0);
     setSizeLabel("");
+    setModelRotation([0, 0, 0]);
+    setPrintabilityReport(null);
     if (!next) return;
 
     // Upload model in background so admin can open it directly in Bambu Studio
@@ -549,6 +562,11 @@ function UploadForm({
         supports: supportMeta?.name ?? supports,
         surfaceFinish: finishMeta?.name ?? surfaceFinish,
         brim,
+        orientation:
+          modelRotation[0] !== 0 || modelRotation[2] !== 0
+            ? `Rotated (${Math.round((modelRotation[0] * 180) / Math.PI)}°, ${Math.round((modelRotation[2] * 180) / Math.PI)}°)`
+            : "Default (As Uploaded)",
+        preflightScore: printabilityReport ? `${printabilityReport.score}% (${printabilityReport.status})` : undefined,
         color: selectedColorName,
         notes,
         volumeCm3: quote.volumeCm3,
@@ -577,7 +595,7 @@ function UploadForm({
         {sizeLabel ? <p className="text-sm text-muted">{sizeLabel}</p> : null}
 
         {file && !parsing && (
-          <div className="mt-5 space-y-2">
+          <div className="mt-5 space-y-3">
             <div className="flex items-center justify-between">
               <Label className="text-sm font-semibold flex items-center gap-2">
                 <span className="size-2 rounded-full bg-accent animate-pulse" />
@@ -592,10 +610,72 @@ function UploadForm({
               printer={selectedPrinter}
               colorName={selectedColorName}
               colorHex={selectedColorHex}
+              rotation={modelRotation}
+              onRotationChange={setModelRotation}
+              onReportChange={setPrintabilityReport}
               onColorChange={(colorId) => {
                 if (availableColors.includes(colorId) || colorMap[colorId]) {
                   setColor(colorId);
                 }
+              }}
+            />
+
+            {/* Printability Pre-Flight Analysis & Slicer Recommendations */}
+            <PrintabilityChecker
+              report={printabilityReport}
+              currentSettings={{
+                supports,
+                brim,
+                quality,
+                infillPct,
+                infillPattern,
+              }}
+              onApplyOrientation={(rot) => {
+                setModelRotation(rot);
+                toast.success("Applied optimal orientation!");
+              }}
+              onApplyRecommendation={(rec) => {
+                if (rec.category === "orientation" && rec.suggestedValue) {
+                  setModelRotation(rec.suggestedValue);
+                  toast.success("Applied optimal orientation!");
+                } else if (rec.category === "supports") {
+                  setSupports(rec.suggestedValue);
+                  setShowAdvanced(true);
+                  toast.success(`Enabled ${rec.suggestedValue === "tree" ? "Tree" : "Standard"} Supports!`);
+                } else if (rec.category === "brim") {
+                  setBrim(rec.suggestedValue);
+                  setShowAdvanced(true);
+                  toast.success("Enabled Outer Brim for bed adhesion!");
+                } else if (rec.category === "quality") {
+                  setQuality(rec.suggestedValue);
+                  toast.success(`Layer profile set to ${rec.suggestedValue}!`);
+                } else if (rec.category === "infill") {
+                  setInfillPct(rec.suggestedValue.infillPct);
+                  setInfillPattern(rec.suggestedValue.infillPattern);
+                  setWallLoops(rec.suggestedValue.wallLoops);
+                  setShowAdvanced(true);
+                  toast.success("Optimized infill & wall thickness!");
+                }
+              }}
+              onApplyAllRecommendations={() => {
+                if (!printabilityReport) return;
+                for (const rec of printabilityReport.recommendations) {
+                  if (rec.category === "orientation" && rec.suggestedValue) {
+                    setModelRotation(rec.suggestedValue);
+                  } else if (rec.category === "supports") {
+                    setSupports(rec.suggestedValue);
+                  } else if (rec.category === "brim") {
+                    setBrim(rec.suggestedValue);
+                  } else if (rec.category === "quality") {
+                    setQuality(rec.suggestedValue);
+                  } else if (rec.category === "infill") {
+                    setInfillPct(rec.suggestedValue.infillPct);
+                    setInfillPattern(rec.suggestedValue.infillPattern);
+                    setWallLoops(rec.suggestedValue.wallLoops);
+                  }
+                }
+                setShowAdvanced(true);
+                toast.success("All optimal slicer recommendations applied!");
               }}
             />
           </div>
@@ -913,6 +993,10 @@ function UploadForm({
             wallLoops,
             supports: supports !== "none" ? supportMeta?.name : undefined,
             surfaceFinish: surfaceFinish !== "standard" ? finishMeta?.name : undefined,
+            orientation:
+              modelRotation[0] !== 0 || modelRotation[2] !== 0
+                ? `Rotated (${Math.round((modelRotation[0] * 180) / Math.PI)}°, ${Math.round((modelRotation[2] * 180) / Math.PI)}°)`
+                : undefined,
           }}
         />
       </div>

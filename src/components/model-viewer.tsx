@@ -17,8 +17,11 @@ import {
   RefreshCcw,
   Camera,
   Grid,
+  Compass,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { analyzePrintability, type PrintabilityReport } from "@/lib/mesh-analysis";
 
 export interface ModelViewerProps {
   file: File;
@@ -33,6 +36,9 @@ export interface ModelViewerProps {
   colorHex?: string;
   colorName?: string;
   onColorChange?: (colorId: string) => void;
+  rotation?: [number, number, number];
+  onRotationChange?: (rotation: [number, number, number]) => void;
+  onReportChange?: (report: PrintabilityReport | null) => void;
   className?: string;
 }
 
@@ -426,6 +432,9 @@ export function ModelViewer({
   colorHex = "#2A2E32",
   colorName = "charcoal",
   onColorChange,
+  rotation: externalRotation,
+  onRotationChange,
+  onReportChange,
   className,
 }: ModelViewerProps) {
   const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null);
@@ -435,7 +444,7 @@ export function ModelViewer({
 
   // Slicer Viewport States
   const [viewMode, setViewMode] = useState<"3d" | "top" | "front">("3d");
-  const [rotation, setRotation] = useState<[number, number, number]>([0, 0, 0]);
+  const [rotation, setRotation] = useState<[number, number, number]>(externalRotation ?? [0, 0, 0]);
   const [showVolume, setShowVolume] = useState(false);
   const [wireframe, setWireframe] = useState(false);
   const [autoRotate, setAutoRotate] = useState(false);
@@ -450,6 +459,13 @@ export function ModelViewer({
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Sync externalRotation when changed from parent
+  useEffect(() => {
+    if (externalRotation) {
+      setRotation(externalRotation);
+    }
+  }, [externalRotation]);
 
   // Sync activeColor when colorHex changes from parent form
   useEffect(() => {
@@ -604,6 +620,18 @@ export function ModelViewer({
     );
   }, [stats, rotation, buildVolume]);
 
+  // Run Printability Pre-Flight Analysis
+  const printabilityReport = useMemo(() => {
+    if (!geometry) return null;
+    return analyzePrintability(geometry, rotation, buildVolume);
+  }, [geometry, rotation, buildVolume]);
+
+  useEffect(() => {
+    if (onReportChange) {
+      onReportChange(printabilityReport);
+    }
+  }, [printabilityReport, onReportChange]);
+
   if (!mounted) {
     return (
       <div className="flex h-80 w-full animate-pulse items-center justify-center rounded-2xl bg-surface-2 text-sm text-muted">
@@ -716,13 +744,36 @@ export function ModelViewer({
 
           <div className="h-3.5 w-px bg-white/20 mx-0.5" />
 
+          {/* Auto-Orient Button if non-optimal */}
+          {printabilityReport && !printabilityReport.isCurrentOrientationOptimal && printabilityReport.optimalOrientation && (
+            <button
+              type="button"
+              title={`Auto-Orient to ${printabilityReport.optimalOrientation.name} for maximum adhesion`}
+              onClick={() => {
+                const opt = printabilityReport.optimalOrientation!.rotation;
+                setRotation(opt);
+                onRotationChange?.(opt);
+              }}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-accent text-ink hover:opacity-90 text-xs font-semibold shadow-sm transition-all animate-pulse"
+            >
+              <Compass className="size-3.5" />
+              <span>Auto-Orient</span>
+            </button>
+          )}
+
           {/* Rotate 90° X */}
           <button
             type="button"
             title="Rotate 90° (Lay Flat / Turn)"
-            onClick={() =>
-              setRotation((prev) => [(prev[0] + Math.PI / 2) % (Math.PI * 2), prev[1], prev[2]])
-            }
+            onClick={() => {
+              const nextRot: [number, number, number] = [
+                (rotation[0] + Math.PI / 2) % (Math.PI * 2),
+                rotation[1],
+                rotation[2],
+              ];
+              setRotation(nextRot);
+              onRotationChange?.(nextRot);
+            }}
             className="p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
           >
             <RotateCw className="size-3.5" />
