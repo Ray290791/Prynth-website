@@ -8,6 +8,12 @@ export type CustomSpec = {
   material: string;
   quality: string;
   infill: string;
+  infillPercentage?: number;
+  infillPattern?: string;
+  wallLoops?: number;
+  supports?: string;
+  surfaceFinish?: string;
+  brim?: string;
   color: string;
   notes?: string;
   volumeCm3?: number;

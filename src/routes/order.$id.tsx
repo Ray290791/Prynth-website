@@ -167,8 +167,47 @@ function OrderPage() {
               <div>
                 <span className="block font-medium">{item.name}</span>
                 <span className="block text-muted mt-1">
-                  {productColor(item.color).name} {item.size && `· ${item.size}`} · ×{item.qty}
+                  {productColor(item.color).name}
+                  {item.size && ` · ${item.size}`}
+                  {item.custom?.material && ` · ${item.custom.material}`}
+                  {item.custom?.quality && ` · ${item.custom.quality}`}
+                  {item.custom?.infillPercentage != null && ` · ${item.custom.infillPercentage}% infill`}
+                  {" · "}×{item.qty}
                 </span>
+                {item.custom ? (
+                  <div className="mt-2 flex flex-wrap gap-1.5 text-xs text-muted">
+                    {item.custom.infillPattern ? (
+                      <span className="rounded bg-surface-2 px-1.5 py-0.5">
+                        Pattern: {item.custom.infillPattern}
+                      </span>
+                    ) : null}
+                    {item.custom.wallLoops ? (
+                      <span className="rounded bg-surface-2 px-1.5 py-0.5">
+                        {item.custom.wallLoops} walls
+                      </span>
+                    ) : null}
+                    {item.custom.supports && item.custom.supports !== "none" ? (
+                      <span className="rounded bg-surface-2 px-1.5 py-0.5">
+                        {item.custom.supports === "tree" ? "Tree supports" : "Supports"}
+                      </span>
+                    ) : null}
+                    {item.custom.surfaceFinish && item.custom.surfaceFinish !== "standard" ? (
+                      <span className="rounded bg-surface-2 px-1.5 py-0.5 capitalize">
+                        {item.custom.surfaceFinish}
+                      </span>
+                    ) : null}
+                    {item.custom.brim && item.custom.brim !== "none" ? (
+                      <span className="rounded bg-surface-2 px-1.5 py-0.5">
+                        {item.custom.brim === "outer" ? "Outer brim" : item.custom.brim}
+                      </span>
+                    ) : null}
+                    {item.custom.fileName ? (
+                      <span className="truncate rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[11px]">
+                        File: {item.custom.fileName}
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
                 {user && order.status === 'delivered' && (
                   <button 
                     onClick={() => setReviewProduct({ slug: item.productSlug!, name: item.name })}

@@ -522,7 +522,12 @@ function CheckoutPage() {
                     {item.name}
                   </Link>
                   <p className="text-xs text-muted">
-                    {productColor(item.color).name} {item.size && `· ${item.size}`} · ×{item.qty}
+                    {productColor(item.color).name}
+                    {item.size && ` · ${item.size}`}
+                    {item.custom?.material && ` · ${item.custom.material}`}
+                    {item.custom?.quality && ` · ${item.custom.quality}`}
+                    {item.custom?.infillPercentage != null && ` · ${item.custom.infillPercentage}% infill`}
+                    {" · "}×{item.qty}
                   </p>
                 </div>
                 <p className="text-sm tabular-nums">{formatINR(item.unitPrice * item.qty)}</p>

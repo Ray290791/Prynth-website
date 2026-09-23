@@ -83,7 +83,36 @@ function CartPage() {
                     <p className="mt-1 text-sm text-muted">
                       {productColor(item.color).name}
                       {item.custom?.material ? ` · ${item.custom.material}` : ""}
+                      {item.custom?.quality ? ` · ${item.custom.quality}` : ""}
                     </p>
+                    {item.custom ? (
+                      <div className="mt-1.5 flex flex-wrap gap-1.5 text-xs text-muted">
+                        {item.custom.infillPercentage != null ? (
+                          <span className="rounded bg-surface-2 px-1.5 py-0.5 font-medium">
+                            {item.custom.infillPercentage}% infill{item.custom.infillPattern ? ` (${item.custom.infillPattern})` : ""}
+                          </span>
+                        ) : item.custom.infill ? (
+                          <span className="rounded bg-surface-2 px-1.5 py-0.5 font-medium">
+                            {item.custom.infill} infill
+                          </span>
+                        ) : null}
+                        {item.custom.wallLoops ? (
+                          <span className="rounded bg-surface-2 px-1.5 py-0.5">
+                            {item.custom.wallLoops} walls
+                          </span>
+                        ) : null}
+                        {item.custom.supports && item.custom.supports !== "none" ? (
+                          <span className="rounded bg-surface-2 px-1.5 py-0.5">
+                            {item.custom.supports === "tree" ? "Tree supports" : "Supports"}
+                          </span>
+                        ) : null}
+                        {item.custom.surfaceFinish && item.custom.surfaceFinish !== "standard" ? (
+                          <span className="rounded bg-surface-2 px-1.5 py-0.5 capitalize">
+                            {item.custom.surfaceFinish}
+                          </span>
+                        ) : null}
+                      </div>
+                    ) : null}
                     {item.custom?.fileName ? (
                       <p className="mt-1 truncate text-xs text-subtle">{item.custom.fileName}</p>
                     ) : null}

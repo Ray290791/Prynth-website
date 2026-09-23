@@ -14,10 +14,15 @@ import { formatINR } from "@/lib/format";
 import {
   computeQuote,
   getPricingConfig,
+  INFILL_PATTERNS,
+  SUPPORT_TYPES,
+  SURFACE_FINISHES,
+  BRIM_TYPES,
   type CustomPricingConfig,
 } from "@/lib/quote";
 import { parseStl } from "@/lib/stl";
 import { cn } from "@/lib/utils";
+import { ChevronDown, Sliders, Sparkles } from "lucide-react";
 
 const rootRoute = getRouteApi("__root__");
 
@@ -75,14 +80,14 @@ function CustomPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-16">
       <p className="text-[11px] font-medium tracking-[0.18em] text-subtle uppercase">
-        Custom
+        Custom Studio
       </p>
       <h1 className="mt-2 font-display text-4xl font-semibold tracking-tight md:text-5xl">
         Print it your way
       </h1>
       <p className="mt-3 max-w-2xl text-muted">
-        Two paths, same honest quote. Upload a model if you have one. If you
-        don't, describe the thing — we'll model it first.
+        Precision 3D printing on our high-speed Bambu Lab P1S fleet. Upload your 3D model, or describe
+        your concept and we'll model it first.
       </p>
 
       <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -96,8 +101,7 @@ function CustomPage() {
         >
           <p className="font-display text-lg font-semibold">Upload your model</p>
           <p className="mt-1 text-sm text-muted">
-            STL, 3MF, or OBJ. Pick material, colour, and quality. Instant estimate
-            from the file when we can read it.
+            STL, 3MF, or OBJ. Instant volume estimate, layer height selection, and full Bambu slicer tuning.
           </p>
         </button>
         <button
@@ -110,8 +114,7 @@ function CustomPage() {
         >
           <p className="font-display text-lg font-semibold">Describe your idea</p>
           <p className="mt-1 text-sm text-muted">
-            No file needed. Tell us the size and what it's for. Modeling is a
-            separate, listed fee — no surprise design charges.
+            No file needed. Tell us the dimensions and purpose. Listed CAD design fee with zero surprise charges.
           </p>
         </button>
       </div>
@@ -134,6 +137,7 @@ function QuotePanel({
   days,
   volumeCm3,
   ready,
+  specs,
 }: {
   total: number;
   print: number;
@@ -141,6 +145,13 @@ function QuotePanel({
   days: string;
   volumeCm3: number;
   ready: boolean;
+  specs?: {
+    qualityName?: string;
+    infillLabel?: string;
+    wallLoops?: number;
+    supports?: string;
+    surfaceFinish?: string;
+  };
 }) {
   return (
     <aside className="h-fit rounded-3xl bg-surface p-6 shadow-[var(--shadow-border)] md:sticky md:top-24">
@@ -152,8 +163,8 @@ function QuotePanel({
       </p>
       <p className="mt-1 text-sm text-muted">
         {ready
-          ? "This is the price we'll honour if the file matches what you described. We'll email if anything is off."
-          : "Add a file or a size so we can price this."}
+          ? "Honest quote calculated for your specifications on our Bambu Lab P1S printers."
+          : "Add a file or choose a size to preview your price."}
       </p>
       {ready ? (
         <dl className="mt-6 space-y-2 border-t border-border pt-4 text-sm">
@@ -177,11 +188,44 @@ function QuotePanel({
               <dd className="tabular-nums">{volumeCm3.toFixed(1)} cm³</dd>
             </div>
           ) : null}
+          {specs ? (
+            <div className="border-t border-border/70 pt-2.5 mt-2.5 space-y-1.5 text-xs text-muted">
+              {specs.qualityName && (
+                <div className="flex justify-between">
+                  <span>Layer Profile</span>
+                  <span className="font-medium text-fg">{specs.qualityName}</span>
+                </div>
+              )}
+              {specs.infillLabel && (
+                <div className="flex justify-between">
+                  <span>Infill Setup</span>
+                  <span className="font-medium text-fg">{specs.infillLabel}</span>
+                </div>
+              )}
+              {specs.wallLoops && (
+                <div className="flex justify-between">
+                  <span>Perimeter Walls</span>
+                  <span className="font-medium text-fg">{specs.wallLoops} loops</span>
+                </div>
+              )}
+              {specs.supports && specs.supports !== "none" && (
+                <div className="flex justify-between">
+                  <span>Support Structure</span>
+                  <span className="font-medium text-accent">{specs.supports}</span>
+                </div>
+              )}
+              {specs.surfaceFinish && specs.surfaceFinish !== "standard" && (
+                <div className="flex justify-between">
+                  <span>Surface Finish</span>
+                  <span className="font-medium text-accent">{specs.surfaceFinish}</span>
+                </div>
+              )}
+            </div>
+          ) : null}
         </dl>
       ) : null}
       <p className="mt-5 text-xs text-subtle">
-        Setup is included. No extra fees for colour changes in the listed
-        palette. Shipping added at checkout.
+        Setup is included. No extra fees for standard colour choices. Shipping added at checkout.
       </p>
     </aside>
   );
@@ -200,7 +244,13 @@ function UploadForm({
   const [parsing, setParsing] = useState(false);
   const [material, setMaterial] = useState("pla");
   const [quality, setQuality] = useState("standard");
-  const [infill, setInfill] = useState("standard");
+  const [infillPct, setInfillPct] = useState(20);
+  const [infillPattern, setInfillPattern] = useState("gyroid");
+  const [wallLoops, setWallLoops] = useState(2);
+  const [supports, setSupports] = useState("none");
+  const [surfaceFinish, setSurfaceFinish] = useState("standard");
+  const [brim, setBrim] = useState("auto");
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [color, setColor] = useState("charcoal");
   const [qty, setQty] = useState(1);
   const [notes, setNotes] = useState("");
@@ -256,18 +306,25 @@ function UploadForm({
           volumeCm3: volume,
           materialId: material,
           qualityId: quality,
-          infillId: infill,
+          infillPercentage: infillPct,
+          infillPattern,
+          wallLoops,
+          supports,
+          surfaceFinish,
+          brim,
           qty,
         },
         pricingConfig,
         "upload",
       ),
-    [volume, material, quality, infill, qty, pricingConfig],
+    [volume, material, quality, infillPct, infillPattern, wallLoops, supports, surfaceFinish, brim, qty, pricingConfig],
   );
 
   const materialMeta = pricingConfig.materials.find((m) => m.id === material);
   const qualityMeta = pricingConfig.qualities.find((q) => q.id === quality);
-  const infillMeta = pricingConfig.infills.find((i) => i.id === infill);
+  const patternMeta = INFILL_PATTERNS.find((p) => p.id === infillPattern);
+  const supportMeta = SUPPORT_TYPES.find((s) => s.id === supports);
+  const finishMeta = SURFACE_FINISHES.find((f) => f.id === surfaceFinish);
 
   function addEstimate() {
     if (!file || quote.total <= 0) {
@@ -286,7 +343,13 @@ function UploadForm({
         fileSize: file.size,
         material: materialMeta?.name ?? material,
         quality: qualityMeta?.name ?? quality,
-        infill: infillMeta?.name ?? infill,
+        infill: `${infillPct}% (${patternMeta?.name ?? "Gyroid"})`,
+        infillPercentage: infillPct,
+        infillPattern,
+        wallLoops,
+        supports: supportMeta?.name ?? supports,
+        surfaceFinish: finishMeta?.name ?? surfaceFinish,
+        brim,
         color,
         notes,
         volumeCm3: quote.volumeCm3,
@@ -307,7 +370,7 @@ function UploadForm({
         <FileDropzone file={file} onFile={handleFile} />
         {parsing ? <p className="text-sm text-muted">Reading the model…</p> : null}
         {sizeLabel ? <p className="text-sm text-muted">{sizeLabel}</p> : null}
-        
+
         {file && sizeLabel && !parsing && (
           <div className="mt-4">
             <Label>3D Preview</Label>
@@ -331,10 +394,10 @@ function UploadForm({
                   }
                 }}
                 className={cn(
-                  "h-11 rounded-full px-4 text-sm font-medium",
+                  "h-11 rounded-full px-4 text-sm font-medium transition-all",
                   fallback === s.id
-                    ? "bg-accent text-ink"
-                    : "bg-surface text-muted shadow-[var(--shadow-border)]",
+                    ? "bg-accent text-ink shadow-sm"
+                    : "bg-surface text-muted shadow-[var(--shadow-border)] hover:text-fg",
                 )}
               >
                 {s.name}
@@ -345,32 +408,25 @@ function UploadForm({
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
+          {/* Material */}
           <FieldSelect id="mat" label="Material" value={material} onChange={setMaterial}>
             {pricingConfig.materials.map((m) => (
               <option key={m.id} value={m.id}>
-                {m.name} (₹{m.rate}/cm³)
+                {m.name}
               </option>
             ))}
           </FieldSelect>
-          <FieldSelect id="qual" label="Print quality" value={quality} onChange={setQuality}>
+
+          {/* Layer Height (Bambu Lab P1S Profiles - No Multipliers) */}
+          <FieldSelect id="qual" label="Layer Height & Detail" value={quality} onChange={setQuality}>
             {pricingConfig.qualities.map((q) => (
               <option key={q.id} value={q.id}>
-                {q.name} ({q.mult}×)
+                {q.name}
               </option>
             ))}
           </FieldSelect>
-          <FieldSelect id="inf" label="Infill" value={infill} onChange={setInfill}>
-            {pricingConfig.infills.map((i) => (
-              <option key={i.id} value={i.id}>
-                {i.name} ({i.mult}×)
-              </option>
-            ))}
-          </FieldSelect>
-          <div>
-            <Label>Quantity</Label>
-            <QuantityStepper value={qty} onChange={setQty} />
-          </div>
         </div>
+
         <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted">
           <p>{materialMeta?.note}</p>
           <Link to="/materials" className="text-xs font-medium text-accent hover:underline inline-flex items-center gap-1">
@@ -378,7 +434,206 @@ function UploadForm({
           </Link>
         </div>
         <p className="text-sm text-muted">{qualityMeta?.note}</p>
-        <p className="text-sm text-muted">{infillMeta?.note}</p>
+
+        {/* INFILL SLIDER + NUMERIC TEXTBOX */}
+        <div className="rounded-2xl border border-border bg-surface p-4 sm:p-5 space-y-3 shadow-[var(--shadow-border)]">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="infill-slider" className="text-sm font-medium">Infill Percentage</Label>
+              <p className="text-xs text-muted">Internal density for strength vs. weight</p>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <input
+                id="infill-number"
+                type="number"
+                min="5"
+                max="100"
+                step="1"
+                value={infillPct}
+                onChange={(e) => {
+                  const val = Math.max(5, Math.min(100, Number(e.target.value) || 5));
+                  setInfillPct(val);
+                }}
+                className="w-16 h-9 rounded-xl border border-border bg-surface-2 px-2.5 text-right font-medium text-sm text-fg focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent tabular-nums"
+              />
+              <span className="text-sm font-bold text-muted">%</span>
+            </div>
+          </div>
+
+          <div className="py-1">
+            <input
+              id="infill-slider"
+              type="range"
+              min="5"
+              max="100"
+              step="1"
+              value={infillPct}
+              onChange={(e) => setInfillPct(Number(e.target.value))}
+              className="w-full accent-accent h-2.5 bg-surface-2 rounded-lg cursor-pointer"
+            />
+          </div>
+
+          {/* Quick Preset Buttons */}
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            {[
+              { pct: 15, label: "15% · Light" },
+              { pct: 20, label: "20% · Standard" },
+              { pct: 40, label: "40% · Sturdy" },
+              { pct: 100, label: "100% · Solid" },
+            ].map((p) => (
+              <button
+                key={p.pct}
+                type="button"
+                onClick={() => setInfillPct(p.pct)}
+                className={cn(
+                  "rounded-lg px-3 py-1 text-xs font-medium transition-colors",
+                  infillPct === p.pct
+                    ? "bg-accent text-ink"
+                    : "bg-surface-2 text-muted border border-border/70 hover:border-accent/60 hover:text-fg",
+                )}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ADVANCED BAMBU STUDIO SLICER SETTINGS (COLLAPSIBLE) */}
+        <div className="rounded-2xl border border-border bg-surface shadow-[var(--shadow-border)] overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="w-full flex items-center justify-between p-4 sm:p-5 text-left hover:bg-surface-2/40 transition-colors"
+          >
+            <div className="flex items-center gap-2.5">
+              <span className="flex size-7 items-center justify-center rounded-lg bg-accent/15 text-accent">
+                <Sliders className="size-4" />
+              </span>
+              <div>
+                <p className="font-semibold text-sm text-fg flex items-center gap-2">
+                  <span>Advanced Bambu Slicer Settings</span>
+                  <span className="rounded-full bg-accent/15 text-accent px-2 py-0.5 text-[10px] font-semibold">
+                    Studio Tuned
+                  </span>
+                </p>
+                <p className="text-xs text-muted mt-0.5">
+                  Pattern ({patternMeta?.name}), {wallLoops} wall loops, supports ({supportMeta?.name})
+                </p>
+              </div>
+            </div>
+            <ChevronDown
+              className={cn("size-4 text-muted transition-transform duration-200", showAdvanced ? "rotate-180" : "")}
+            />
+          </button>
+
+          {showAdvanced && (
+            <div className="p-4 sm:p-5 pt-0 space-y-4 border-t border-border/70 animate-in fade-in duration-200">
+              <div className="grid gap-4 sm:grid-cols-2 pt-3">
+                {/* Infill Pattern */}
+                <div>
+                  <Label htmlFor="infill-pattern">Infill Pattern</Label>
+                  <select
+                    id="infill-pattern"
+                    value={infillPattern}
+                    onChange={(e) => setInfillPattern(e.target.value)}
+                    className="h-11 w-full rounded-xl border border-border bg-surface px-3.5 text-sm text-fg shadow-[var(--shadow-border)] focus:border-accent focus:outline-none"
+                  >
+                    {INFILL_PATTERNS.map((pat) => (
+                      <option key={pat.id} value={pat.id}>
+                        {pat.name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-muted mt-1">{patternMeta?.hint}</p>
+                </div>
+
+                {/* Wall Loops (Perimeters) */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <Label htmlFor="wall-loops">Wall Loops (Shells)</Label>
+                    <span className="text-xs font-semibold text-accent">{wallLoops} loops</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input
+                      id="wall-loops"
+                      type="range"
+                      min="2"
+                      max="6"
+                      step="1"
+                      value={wallLoops}
+                      onChange={(e) => setWallLoops(Number(e.target.value))}
+                      className="w-full accent-accent h-2.5 bg-surface-2 rounded-lg cursor-pointer"
+                    />
+                    <input
+                      type="number"
+                      min="2"
+                      max="6"
+                      value={wallLoops}
+                      onChange={(e) => setWallLoops(Math.max(2, Math.min(6, Number(e.target.value) || 2)))}
+                      className="w-12 h-9 rounded-xl border border-border bg-surface-2 text-center font-medium text-xs text-fg"
+                    />
+                  </div>
+                  <p className="text-xs text-muted mt-1">Extra walls dramatically increase side-impact strength</p>
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                {/* Supports */}
+                <div>
+                  <Label htmlFor="supports">Support Structure</Label>
+                  <select
+                    id="supports"
+                    value={supports}
+                    onChange={(e) => setSupports(e.target.value)}
+                    className="h-11 w-full rounded-xl border border-border bg-surface px-3.5 text-sm text-fg shadow-[var(--shadow-border)] focus:border-accent focus:outline-none"
+                  >
+                    {SUPPORT_TYPES.map((sup) => (
+                      <option key={sup.id} value={sup.id}>
+                        {sup.name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-muted mt-1">{supportMeta?.hint}</p>
+                </div>
+
+                {/* Surface Finish / Texture */}
+                <div>
+                  <Label htmlFor="finish">Surface Finish</Label>
+                  <select
+                    id="finish"
+                    value={surfaceFinish}
+                    onChange={(e) => setSurfaceFinish(e.target.value)}
+                    className="h-11 w-full rounded-xl border border-border bg-surface px-3.5 text-sm text-fg shadow-[var(--shadow-border)] focus:border-accent focus:outline-none"
+                  >
+                    {SURFACE_FINISHES.map((fin) => (
+                      <option key={fin.id} value={fin.id}>
+                        {fin.name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-muted mt-1">{finishMeta?.hint}</p>
+                </div>
+              </div>
+
+              {/* Brim */}
+              <div>
+                <Label htmlFor="brim">Build Plate Adhesion</Label>
+                <select
+                  id="brim"
+                  value={brim}
+                  onChange={(e) => setBrim(e.target.value)}
+                  className="h-11 w-full rounded-xl border border-border bg-surface px-3.5 text-sm text-fg shadow-[var(--shadow-border)] focus:border-accent focus:outline-none"
+                >
+                  {BRIM_TYPES.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+        </div>
 
         <div>
           <Label>Colour</Label>
@@ -390,12 +645,17 @@ function UploadForm({
         </div>
 
         <div>
+          <Label>Quantity</Label>
+          <QuantityStepper value={qty} onChange={setQty} />
+        </div>
+
+        <div>
           <Label htmlFor="notes">Notes (optional)</Label>
           <Textarea
             id="notes"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Orientation, which face should be pretty, holes that must be exact…"
+            placeholder="Orientation preference, which face should be pretty, critical hole tolerances…"
           />
         </div>
 
@@ -403,6 +663,7 @@ function UploadForm({
           Add estimate to cart
         </Button>
       </form>
+
       <div className="md:col-span-5">
         <QuotePanel
           total={quote.total}
@@ -411,6 +672,13 @@ function UploadForm({
           days={quote.days}
           volumeCm3={quote.volumeCm3}
           ready={Boolean(file) && quote.total > 0}
+          specs={{
+            qualityName: qualityMeta?.name,
+            infillLabel: `${infillPct}% ${patternMeta?.name ?? "Gyroid"}`,
+            wallLoops,
+            supports: supports !== "none" ? supportMeta?.name : undefined,
+            surfaceFinish: surfaceFinish !== "standard" ? finishMeta?.name : undefined,
+          }}
         />
       </div>
     </div>
@@ -429,7 +697,12 @@ function IdeaForm({
   const [complexity, setComplexity] = useState("photo");
   const [material, setMaterial] = useState("pla");
   const [quality, setQuality] = useState("standard");
-  const [infill] = useState("standard");
+  const [infillPct, setInfillPct] = useState(20);
+  const [infillPattern, setInfillPattern] = useState("gyroid");
+  const [wallLoops, setWallLoops] = useState(2);
+  const [supports, setSupports] = useState("none");
+  const [surfaceFinish, setSurfaceFinish] = useState("standard");
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [color, setColor] = useState("charcoal");
   const [qty, setQty] = useState(1);
   const [email, setEmail] = useState("");
@@ -450,15 +723,25 @@ function IdeaForm({
           volumeCm3: preset.cm3,
           materialId: material,
           qualityId: quality,
-          infillId: infill,
+          infillPercentage: infillPct,
+          infillPattern,
+          wallLoops,
+          supports,
+          surfaceFinish,
           qty,
           modelingFee: cx.fee,
         },
         pricingConfig,
         "idea",
       ),
-    [preset.cm3, material, quality, infill, qty, cx.fee, pricingConfig],
+    [preset.cm3, material, quality, infillPct, infillPattern, wallLoops, supports, surfaceFinish, qty, cx.fee, pricingConfig],
   );
+
+  const materialMeta = pricingConfig.materials.find((m) => m.id === material);
+  const qualityMeta = pricingConfig.qualities.find((q) => q.id === quality);
+  const patternMeta = INFILL_PATTERNS.find((p) => p.id === infillPattern);
+  const supportMeta = SUPPORT_TYPES.find((s) => s.id === supports);
+  const finishMeta = SURFACE_FINISHES.find((f) => f.id === surfaceFinish);
 
   function addEstimate() {
     if (idea.trim().length < 12) {
@@ -473,9 +756,14 @@ function IdeaForm({
       qty: 1,
       custom: {
         path: "idea",
-        material: pricingConfig.materials.find((m) => m.id === material)?.name ?? material,
-        quality: pricingConfig.qualities.find((q) => q.id === quality)?.name ?? quality,
-        infill: pricingConfig.infills.find((i) => i.id === infill)?.name ?? infill,
+        material: materialMeta?.name ?? material,
+        quality: qualityMeta?.name ?? quality,
+        infill: `${infillPct}% (${patternMeta?.name ?? "Gyroid"})`,
+        infillPercentage: infillPct,
+        infillPattern,
+        wallLoops,
+        supports: supportMeta?.name ?? supports,
+        surfaceFinish: finishMeta?.name ?? surfaceFinish,
         color,
         notes: `${idea}${email ? ` · ${email}` : ""}`,
         volumeCm3: quote.volumeCm3,
@@ -522,10 +810,10 @@ function IdeaForm({
                 type="button"
                 onClick={() => setSize(s.id)}
                 className={cn(
-                  "h-11 rounded-full px-4 text-sm font-medium",
+                  "h-11 rounded-full px-4 text-sm font-medium transition-all",
                   size === s.id
-                    ? "bg-accent text-ink"
-                    : "bg-surface text-muted shadow-[var(--shadow-border)]",
+                    ? "bg-accent text-ink shadow-sm"
+                    : "bg-surface text-muted shadow-[var(--shadow-border)] hover:text-fg",
                 )}
               >
                 {s.name}
@@ -543,8 +831,8 @@ function IdeaForm({
                 type="button"
                 onClick={() => setComplexity(c.id)}
                 className={cn(
-                  "rounded-2xl p-4 text-left shadow-[var(--shadow-border)]",
-                  complexity === c.id ? "bg-accent-soft ring-2 ring-accent" : "bg-surface",
+                  "rounded-2xl p-4 text-left shadow-[var(--shadow-border)] transition-colors",
+                  complexity === c.id ? "bg-accent-soft ring-2 ring-accent" : "bg-surface hover:bg-surface-2/40",
                 )}
               >
                 <p className="font-medium">
@@ -560,27 +848,212 @@ function IdeaForm({
             ))}
           </div>
         </div>
+
         <div className="grid gap-4 sm:grid-cols-2">
+          {/* Material */}
           <FieldSelect id="imat" label="Material" value={material} onChange={setMaterial}>
             {pricingConfig.materials.map((m) => (
               <option key={m.id} value={m.id}>
-                {m.name} (₹{m.rate}/cm³)
+                {m.name}
               </option>
             ))}
           </FieldSelect>
-          <FieldSelect id="iqual" label="Print quality" value={quality} onChange={setQuality}>
+
+          {/* Layer Height (No Multipliers) */}
+          <FieldSelect id="iqual" label="Layer Height & Detail" value={quality} onChange={setQuality}>
             {pricingConfig.qualities.map((q) => (
               <option key={q.id} value={q.id}>
-                {q.name} ({q.mult}×)
+                {q.name}
               </option>
             ))}
           </FieldSelect>
         </div>
+
         <div className="flex justify-end -mt-2 mb-2">
           <Link to="/materials" className="text-xs font-medium text-accent hover:underline">
             Not sure which material? Check Filament Guide &rarr;
           </Link>
         </div>
+
+        {/* INFILL SLIDER + NUMERIC TEXTBOX FOR IDEA */}
+        <div className="rounded-2xl border border-border bg-surface p-4 sm:p-5 space-y-3 shadow-[var(--shadow-border)]">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="idea-infill-slider" className="text-sm font-medium">Infill Percentage</Label>
+              <p className="text-xs text-muted">Internal strength vs. lightweight feel</p>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <input
+                id="idea-infill-number"
+                type="number"
+                min="5"
+                max="100"
+                step="1"
+                value={infillPct}
+                onChange={(e) => {
+                  const val = Math.max(5, Math.min(100, Number(e.target.value) || 5));
+                  setInfillPct(val);
+                }}
+                className="w-16 h-9 rounded-xl border border-border bg-surface-2 px-2.5 text-right font-medium text-sm text-fg focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent tabular-nums"
+              />
+              <span className="text-sm font-bold text-muted">%</span>
+            </div>
+          </div>
+
+          <div className="py-1">
+            <input
+              id="idea-infill-slider"
+              type="range"
+              min="5"
+              max="100"
+              step="1"
+              value={infillPct}
+              onChange={(e) => setInfillPct(Number(e.target.value))}
+              className="w-full accent-accent h-2.5 bg-surface-2 rounded-lg cursor-pointer"
+            />
+          </div>
+
+          {/* Quick Preset Buttons */}
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            {[
+              { pct: 15, label: "15% · Light" },
+              { pct: 20, label: "20% · Standard" },
+              { pct: 40, label: "40% · Sturdy" },
+              { pct: 100, label: "100% · Solid" },
+            ].map((p) => (
+              <button
+                key={p.pct}
+                type="button"
+                onClick={() => setInfillPct(p.pct)}
+                className={cn(
+                  "rounded-lg px-3 py-1 text-xs font-medium transition-colors",
+                  infillPct === p.pct
+                    ? "bg-accent text-ink"
+                    : "bg-surface-2 text-muted border border-border/70 hover:border-accent/60 hover:text-fg",
+                )}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ADVANCED BAMBU SETTINGS FOR IDEA */}
+        <div className="rounded-2xl border border-border bg-surface shadow-[var(--shadow-border)] overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="w-full flex items-center justify-between p-4 sm:p-5 text-left hover:bg-surface-2/40 transition-colors"
+          >
+            <div className="flex items-center gap-2.5">
+              <span className="flex size-7 items-center justify-center rounded-lg bg-accent/15 text-accent">
+                <Sliders className="size-4" />
+              </span>
+              <div>
+                <p className="font-semibold text-sm text-fg flex items-center gap-2">
+                  <span>Advanced Bambu Slicer Settings</span>
+                  <span className="rounded-full bg-accent/15 text-accent px-2 py-0.5 text-[10px] font-semibold">
+                    Studio Tuned
+                  </span>
+                </p>
+                <p className="text-xs text-muted mt-0.5">
+                  Pattern ({patternMeta?.name}), {wallLoops} walls, {supportMeta?.name}
+                </p>
+              </div>
+            </div>
+            <ChevronDown
+              className={cn("size-4 text-muted transition-transform duration-200", showAdvanced ? "rotate-180" : "")}
+            />
+          </button>
+
+          {showAdvanced && (
+            <div className="p-4 sm:p-5 pt-0 space-y-4 border-t border-border/70 animate-in fade-in duration-200">
+              <div className="grid gap-4 sm:grid-cols-2 pt-3">
+                <div>
+                  <Label htmlFor="idea-infill-pattern">Infill Pattern</Label>
+                  <select
+                    id="idea-infill-pattern"
+                    value={infillPattern}
+                    onChange={(e) => setInfillPattern(e.target.value)}
+                    className="h-11 w-full rounded-xl border border-border bg-surface px-3.5 text-sm text-fg shadow-[var(--shadow-border)] focus:border-accent focus:outline-none"
+                  >
+                    {INFILL_PATTERNS.map((pat) => (
+                      <option key={pat.id} value={pat.id}>
+                        {pat.name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-muted mt-1">{patternMeta?.hint}</p>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <Label htmlFor="idea-wall-loops">Wall Loops (Shells)</Label>
+                    <span className="text-xs font-semibold text-accent">{wallLoops} loops</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input
+                      id="idea-wall-loops"
+                      type="range"
+                      min="2"
+                      max="6"
+                      step="1"
+                      value={wallLoops}
+                      onChange={(e) => setWallLoops(Number(e.target.value))}
+                      className="w-full accent-accent h-2.5 bg-surface-2 rounded-lg cursor-pointer"
+                    />
+                    <input
+                      type="number"
+                      min="2"
+                      max="6"
+                      value={wallLoops}
+                      onChange={(e) => setWallLoops(Math.max(2, Math.min(6, Number(e.target.value) || 2)))}
+                      className="w-12 h-9 rounded-xl border border-border bg-surface-2 text-center font-medium text-xs text-fg"
+                    />
+                  </div>
+                  <p className="text-xs text-muted mt-1">Perimeter wall loops</p>
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="idea-supports">Support Structure</Label>
+                  <select
+                    id="idea-supports"
+                    value={supports}
+                    onChange={(e) => setSupports(e.target.value)}
+                    className="h-11 w-full rounded-xl border border-border bg-surface px-3.5 text-sm text-fg shadow-[var(--shadow-border)] focus:border-accent focus:outline-none"
+                  >
+                    {SUPPORT_TYPES.map((sup) => (
+                      <option key={sup.id} value={sup.id}>
+                        {sup.name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-muted mt-1">{supportMeta?.hint}</p>
+                </div>
+
+                <div>
+                  <Label htmlFor="idea-finish">Surface Finish</Label>
+                  <select
+                    id="idea-finish"
+                    value={surfaceFinish}
+                    onChange={(e) => setSurfaceFinish(e.target.value)}
+                    className="h-11 w-full rounded-xl border border-border bg-surface px-3.5 text-sm text-fg shadow-[var(--shadow-border)] focus:border-accent focus:outline-none"
+                  >
+                    {SURFACE_FINISHES.map((fin) => (
+                      <option key={fin.id} value={fin.id}>
+                        {fin.name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-muted mt-1">{finishMeta?.hint}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
         <div>
           <Label>Colour</Label>
           <ColorSwatches
@@ -589,14 +1062,17 @@ function IdeaForm({
             onChange={setColor}
           />
         </div>
+
         <div>
           <Label>Quantity</Label>
           <QuantityStepper value={qty} onChange={setQty} />
         </div>
+
         <Button type="submit" size="lg">
           Add estimate to cart
         </Button>
       </form>
+
       <div className="md:col-span-5">
         <QuotePanel
           total={quote.total}
@@ -605,6 +1081,13 @@ function IdeaForm({
           days={quote.days}
           volumeCm3={quote.volumeCm3}
           ready={idea.trim().length > 0}
+          specs={{
+            qualityName: qualityMeta?.name,
+            infillLabel: `${infillPct}% ${patternMeta?.name ?? "Gyroid"}`,
+            wallLoops,
+            supports: supports !== "none" ? supportMeta?.name : undefined,
+            surfaceFinish: surfaceFinish !== "standard" ? finishMeta?.name : undefined,
+          }}
         />
       </div>
     </div>
