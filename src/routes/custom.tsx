@@ -27,7 +27,7 @@ import { getAvailableFilaments, type FilamentRecord } from "@/lib/filaments-fns"
 import { uploadCustomFile } from "@/lib/custom-files-fns";
 import { PrintabilityChecker } from "@/components/printability-checker";
 import type { PrintabilityReport } from "@/lib/mesh-analysis";
-import { parseStl } from "@/lib/stl";
+import { parseModelFile } from "@/lib/model-parser";
 import { cn } from "@/lib/utils";
 import { ChevronDown, Sliders, Sparkles, Printer as PrinterIcon, Loader2, Check } from "lucide-react";
 
@@ -470,38 +470,36 @@ function UploadForm({
     reader.readAsDataURL(next);
 
     const ext = next.name.split(".").pop()?.toLowerCase();
-    if (ext !== "stl") {
-      const preset =
-        pricingConfig.sizePresets.find((s) => s.id === fallback) ??
-        pricingConfig.sizePresets[1] ??
-        pricingConfig.sizePresets[0];
-      setVolume(preset.cm3);
-      setSizeLabel("Using size preset — 3MF/OBJ quotes are confirmed by email.");
-      return;
-    }
     setParsing(true);
     try {
-      const est = await parseStl(next);
+      const est = await parseModelFile(next);
       if (est && est.volumeCm3 > 0) {
         setVolume(est.volumeCm3);
-        setSizeLabel(
-          `${est.sizeMm.x.toFixed(0)} × ${est.sizeMm.y.toFixed(0)} × ${est.sizeMm.z.toFixed(0)} mm · ${est.triangles.toLocaleString("en-IN")} triangles`,
-        );
+        if (est.isCad && !est.cadInfo?.hasMesh) {
+          setSizeLabel(
+            `Fusion 360 CAD Model · Direct Bambu Studio Slicing (Est. ${est.volumeCm3.toFixed(1)} cm³)`
+          );
+        } else {
+          setSizeLabel(
+            `${est.sizeMm.x.toFixed(0)} × ${est.sizeMm.y.toFixed(0)} × ${est.sizeMm.z.toFixed(0)} mm · ${est.triangles.toLocaleString("en-IN")} triangles`
+          );
+        }
       } else {
         const preset =
           pricingConfig.sizePresets.find((s) => s.id === fallback) ??
           pricingConfig.sizePresets[1] ??
           pricingConfig.sizePresets[0];
         setVolume(preset.cm3);
-        setSizeLabel("Couldn't read that STL. Using the size preset below.");
+        setSizeLabel(`Could not calculate geometry. Using ${preset.name} size preset.`);
       }
-    } catch {
+    } catch (err) {
+      console.error("Model parse failed:", err);
       const preset =
         pricingConfig.sizePresets.find((s) => s.id === fallback) ??
         pricingConfig.sizePresets[1] ??
         pricingConfig.sizePresets[0];
       setVolume(preset.cm3);
-      setSizeLabel("Couldn't read that STL. Using the size preset below.");
+      setSizeLabel(`Could not calculate geometry. Using ${preset.name} size preset.`);
     } finally {
       setParsing(false);
     }

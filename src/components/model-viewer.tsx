@@ -19,9 +19,11 @@ import {
   Grid,
   Compass,
   ShieldCheck,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { analyzePrintability, type PrintabilityReport } from "@/lib/mesh-analysis";
+import { parseModelFile } from "@/lib/model-parser";
 
 export interface ModelViewerProps {
   file: File;
@@ -441,6 +443,12 @@ export function ModelViewer({
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const [cadPreview, setCadPreview] = useState<{
+    thumbnailUrl?: string;
+    format: string;
+    hasMesh: boolean;
+    previewFound: boolean;
+  } | null>(null);
 
   // Slicer Viewport States
   const [viewMode, setViewMode] = useState<"3d" | "top" | "front">("3d");
@@ -496,89 +504,18 @@ export function ModelViewer({
 
   const printerName = printer?.name ?? "Bambu Lab P1S";
 
-  // Load 3D model (STL, OBJ, 3MF)
+  // Load 3D model (STL, OBJ, 3MF, F3D)
   useEffect(() => {
-    let url = "";
+    let active = true;
+    let fallbackUrl = "";
+    let createdThumbnailUrl: string | undefined;
+
     setLoading(true);
     setError(false);
     setGeometry(null);
     setStats(null);
+    setCadPreview(null);
     setRotation([0, 0, 0]);
-
-    try {
-      url = URL.createObjectURL(file);
-      const ext = file.name.split(".").pop()?.toLowerCase();
-
-      if (ext === "obj") {
-        const loader = new OBJLoader();
-        loader.load(
-          url,
-          (group) => {
-            const geoms: THREE.BufferGeometry[] = [];
-            group.traverse((child) => {
-              if ((child as THREE.Mesh).isMesh && (child as THREE.Mesh).geometry) {
-                geoms.push((child as THREE.Mesh).geometry.clone());
-              }
-            });
-            if (geoms.length > 0) {
-              const merged = geoms[0]; // fallback to primary mesh
-              handleLoadedGeometry(merged);
-            } else {
-              setError(true);
-              setLoading(false);
-            }
-          },
-          undefined,
-          () => {
-            setError(true);
-            setLoading(false);
-          }
-        );
-      } else if (ext === "3mf") {
-        const loader = new ThreeMFLoader();
-        loader.load(
-          url,
-          (group) => {
-            let foundGeom: THREE.BufferGeometry | null = null;
-            group.traverse((child) => {
-              if (!foundGeom && (child as THREE.Mesh).isMesh && (child as THREE.Mesh).geometry) {
-                foundGeom = (child as THREE.Mesh).geometry.clone();
-              }
-            });
-            if (foundGeom) {
-              handleLoadedGeometry(foundGeom);
-            } else {
-              setError(true);
-              setLoading(false);
-            }
-          },
-          undefined,
-          () => {
-            setError(true);
-            setLoading(false);
-          }
-        );
-      } else {
-        // Default STL loader
-        const loader = new STLLoader();
-        loader.load(
-          url,
-          (geo) => {
-            handleLoadedGeometry(geo);
-          },
-          undefined,
-          (err) => {
-            console.error("Failed to load STL file:", err);
-            setError(true);
-            setLoading(false);
-          }
-        );
-      }
-    } catch (e) {
-      console.error("Error creating model URL:", e);
-      setError(true);
-      setLoading(false);
-    }
 
     function handleLoadedGeometry(geo: THREE.BufferGeometry) {
       // Auto-scale if exported in meters (e.g., bounding box < 1mm)
@@ -590,13 +527,132 @@ export function ModelViewer({
       }
 
       const st = computeStats(geo);
-      setStats(st);
-      setGeometry(geo);
-      setLoading(false);
+      if (active) {
+        setStats(st);
+        setGeometry(geo);
+        setLoading(false);
+      }
     }
 
+    async function load() {
+      try {
+        const res = await parseModelFile(file);
+        if (!active) return;
+
+        if (res && res.geometry) {
+          handleLoadedGeometry(res.geometry);
+          return;
+        }
+
+        if (res && res.isCad) {
+          createdThumbnailUrl = res.thumbnailUrl;
+          setCadPreview({
+            thumbnailUrl: res.thumbnailUrl,
+            format: res.cadInfo?.format || "Fusion 360 (.f3d)",
+            hasMesh: res.cadInfo?.hasMesh || false,
+            previewFound: res.cadInfo?.previewFound || false,
+          });
+          setStats({
+            sizeMm: res.sizeMm,
+            triangles: res.triangles,
+            volumeCm3: res.volumeCm3,
+          });
+          setLoading(false);
+          return;
+        }
+
+        // Secondary fallback to three-stdlib loaders if custom parse returned null
+        const ext = file.name.split(".").pop()?.toLowerCase();
+        fallbackUrl = URL.createObjectURL(file);
+
+        if (ext === "obj") {
+          const loader = new OBJLoader();
+          loader.load(
+            fallbackUrl,
+            (group) => {
+              if (!active) return;
+              const geoms: THREE.BufferGeometry[] = [];
+              group.traverse((child) => {
+                if ((child as THREE.Mesh).isMesh && (child as THREE.Mesh).geometry) {
+                  geoms.push((child as THREE.Mesh).geometry.clone());
+                }
+              });
+              if (geoms.length > 0) {
+                handleLoadedGeometry(geoms[0]);
+              } else {
+                setError(true);
+                setLoading(false);
+              }
+            },
+            undefined,
+            () => {
+              if (active) {
+                setError(true);
+                setLoading(false);
+              }
+            }
+          );
+        } else if (ext === "3mf") {
+          const loader = new ThreeMFLoader();
+          loader.load(
+            fallbackUrl,
+            (group) => {
+              if (!active) return;
+              let foundGeom: THREE.BufferGeometry | null = null;
+              group.traverse((child) => {
+                if (!foundGeom && (child as THREE.Mesh).isMesh && (child as THREE.Mesh).geometry) {
+                  foundGeom = (child as THREE.Mesh).geometry.clone();
+                }
+              });
+              if (foundGeom) {
+                handleLoadedGeometry(foundGeom);
+              } else {
+                setError(true);
+                setLoading(false);
+              }
+            },
+            undefined,
+            () => {
+              if (active) {
+                setError(true);
+                setLoading(false);
+              }
+            }
+          );
+        } else if (ext === "stl") {
+          const loader = new STLLoader();
+          loader.load(
+            fallbackUrl,
+            (geo) => {
+              if (active) handleLoadedGeometry(geo);
+            },
+            undefined,
+            () => {
+              if (active) {
+                setError(true);
+                setLoading(false);
+              }
+            }
+          );
+        } else {
+          setError(true);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error("Error loading model file:", err);
+        if (active) {
+          setError(true);
+          setLoading(false);
+        }
+      }
+    }
+
+    load();
+
     return () => {
-      if (url) URL.revokeObjectURL(url);
+      active = false;
+      if (fallbackUrl) URL.revokeObjectURL(fallbackUrl);
+      if (createdThumbnailUrl) URL.revokeObjectURL(createdThumbnailUrl);
     };
   }, [file]);
 
@@ -636,6 +692,94 @@ export function ModelViewer({
     return (
       <div className="flex h-80 w-full animate-pulse items-center justify-center rounded-2xl bg-surface-2 text-sm text-muted">
         Initializing 3D Slicer Plate…
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex h-80 w-full animate-pulse flex-col items-center justify-center gap-2 rounded-2xl border border-border/80 bg-surface-2 text-sm text-muted">
+        <Loader2 className="size-6 animate-spin text-accent" />
+        <span>Loading 3D model & slicing geometry…</span>
+      </div>
+    );
+  }
+
+  if (cadPreview && !geometry) {
+    return (
+      <div
+        className={cn(
+          "relative rounded-2xl border border-border/80 bg-[#14161a] overflow-hidden transition-all shadow-inner p-5 flex flex-col justify-between",
+          expanded
+            ? "fixed inset-3 sm:inset-8 z-50 flex flex-col rounded-3xl shadow-2xl border-accent/40 ring-1 ring-accent/30"
+            : "h-80 sm:h-96 w-full",
+          className
+        )}
+      >
+        {/* Top Floating Badge Bar */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="flex size-2 rounded-full bg-cyan-400 animate-pulse" />
+            <span className="font-semibold text-xs text-white/90">Autodesk Fusion 360 CAD Model</span>
+            <span className="text-white/40">·</span>
+            <span className="rounded bg-cyan-500/10 px-1.5 py-0.5 text-[10px] font-medium text-cyan-300 border border-cyan-500/20">
+              Parametric B-Rep
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 rounded-xl bg-black/60 px-2.5 py-1 text-xs text-emerald-400 border border-emerald-500/30">
+              <ShieldCheck className="size-3.5" />
+              <span>Bambu Studio Native</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setExpanded(!expanded)}
+              className="rounded-lg p-1 text-white/60 hover:text-white hover:bg-white/10"
+              title={expanded ? "Exit Fullscreen" : "Fullscreen"}
+            >
+              {expanded ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Center: Extracted Render or CAD Graphic */}
+        <div className="my-auto flex flex-col items-center justify-center text-center">
+          {cadPreview.thumbnailUrl ? (
+            <div className="relative group max-h-48 sm:max-h-56 max-w-sm overflow-hidden rounded-xl border border-white/10 bg-black/40 shadow-xl">
+              <img
+                src={cadPreview.thumbnailUrl}
+                alt="Fusion 360 CAD Preview"
+                className="max-h-44 sm:max-h-52 w-auto object-contain p-2"
+              />
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2 text-center text-[11px] text-white/80">
+                Extracted Fusion 360 Viewport Render
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center p-6 rounded-2xl border border-white/10 bg-white/[0.02]">
+              <div className="relative mb-3 flex size-14 items-center justify-center rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+                <Box className="size-7" />
+              </div>
+              <p className="font-medium text-sm text-white">Direct Autodesk Fusion 360 Project</p>
+              <p className="mt-1 text-xs text-white/60 max-w-sm">
+                Contains parametric CAD solid geometry. Our printing team will slice directly in Bambu Studio for exact tolerances.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Bottom Specs Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/10 text-xs text-white/60">
+          <div className="flex items-center gap-3">
+            <span className="font-mono text-white/80">{file.name}</span>
+            <span>{(file.size / (1024 * 1024)).toFixed(2)} MB</span>
+          </div>
+          <div className="flex items-center gap-2 text-cyan-300">
+            <Sparkles className="size-3.5" />
+            <span>Ready for slicing on {printerName}</span>
+          </div>
+        </div>
       </div>
     );
   }
