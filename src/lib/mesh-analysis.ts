@@ -36,6 +36,22 @@ export interface SlicerRecommendation {
   actionLabel: string;
 }
 
+export interface BedFaceOption {
+  id: string;
+  name: string;
+  description: string;
+  rotation: [number, number, number];
+  contactAreaMm2: number;
+  contactPercentage: number;
+  overhangAreaMm2: number;
+  overhangPercentage: number;
+  heightMm: number;
+  fitsPrinter: boolean;
+  score: number;
+  isCurrent: boolean;
+  isOptimal: boolean;
+}
+
 export interface PrintabilityReport {
   status: "optimal" | "warning" | "critical";
   score: number; // 0 to 100
@@ -43,6 +59,7 @@ export interface PrintabilityReport {
   metrics: PrintabilityMetrics;
   isCurrentOrientationOptimal: boolean;
   optimalOrientation?: OrientationCandidate;
+  bedFaces: BedFaceOption[];
   recommendations: SlicerRecommendation[];
 }
 
@@ -158,31 +175,27 @@ function evaluateOrientation(
       // Normal pointing downwards (ny < 0)
       const ny = normal.y;
 
-      // Bed contact: all 3 vertices close to bed and normal points downward
-      const onBed =
-        vA.y <= contactYThreshold &&
-        vB.y <= contactYThreshold &&
-        vC.y <= contactYThreshold;
+      // Bed contact: triangle vertices touch the lowest plane and normal points down
+      const avgY = (vA.y + vB.y + vC.y) / 3;
+      const onBed = avgY <= contactYThreshold;
 
-      if (onBed && ny < -0.7) {
+      if (onBed && ny < -0.6) {
         contactArea += triArea;
-      }
-
-      // Overhang analysis: normal points downward
-      if (ny < -0.05) {
-        // Angle from horizontal plane (90 deg = horizontal flat down, 0 deg = vertical wall)
-        // ny = -1 => angleDeg = 90 (completely horizontal downward overhang)
-        // ny = -0.7071 => angleDeg = 45 (45 degree overhang)
+      } else if (!onBed && ny < -0.05) {
+        // Overhang analysis: normal points downward AND surface is not resting on the heated bed.
+        // ny = -1 => angleDeg = 90 (completely horizontal downward overhang ceiling)
+        // ny = -0.7071 => angleDeg = 45 (45 degree chamfer - self-supporting in FDM)
         const angleDeg = Math.asin(Math.min(1, Math.max(0, -ny))) * (180 / Math.PI);
         if (angleDeg > maxAngleDeg) {
           maxAngleDeg = angleDeg;
         }
 
-        // FDM 3D printing requires support when overhang angle exceeds 45°
-        if (angleDeg >= 45) {
+        // FDM 3D printing requires support when overhang angle exceeds 50°
+        // (45° chamfers are standard self-supporting FDM geometry)
+        if (angleDeg > 50) {
           overhangArea += triArea;
         }
-        if (angleDeg >= 60) {
+        if (angleDeg >= 65) {
           steepOverhangArea += triArea;
         }
       }
@@ -216,8 +229,95 @@ function evaluateOrientation(
 }
 
 /**
+ * Calculates the Euler rotation needed to lay a clicked face flat against the build plate (normal pointing down).
+ */
+export function getRotationToLayFaceOnBed(faceNormal: THREE.Vector3): [number, number, number] {
+  const norm = faceNormal.clone().normalize();
+  const target = new THREE.Vector3(0, -1, 0); // Bed normal pointing down
+  const q = new THREE.Quaternion().setFromUnitVectors(norm, target);
+  const euler = new THREE.Euler().setFromQuaternion(q, "XYZ");
+
+  const snap = (rad: number) => {
+    const halfPi = Math.PI / 2;
+    const rounded = Math.round(rad / halfPi) * halfPi;
+    return Math.abs(rad - rounded) < 0.05 ? rounded : rad;
+  };
+
+  return [snap(euler.x), snap(euler.y), snap(euler.z)];
+}
+
+/**
+ * Discovers and benchmarks viable resting faces for the model on the build plate.
+ */
+export function findBedFaceCandidates(
+  geometry: THREE.BufferGeometry,
+  buildLimits: BuildLimits,
+  currentRotation: [number, number, number]
+): BedFaceOption[] {
+  // 6 canonical orthogonal orientations
+  const canonicalFaces: Array<{ rotation: [number, number, number]; name: string; desc: string }> = [
+    { rotation: [0, 0, 0], name: "Default Face", desc: "Original file orientation" },
+    { rotation: [Math.PI, 0, 0], name: "Inverted Face (180°)", desc: "Opposite side flat on bed" },
+    { rotation: [Math.PI / 2, 0, 0], name: "Pitch 90°", desc: "Front/rear flat surface" },
+    { rotation: [-Math.PI / 2, 0, 0], name: "Pitch -90°", desc: "Opposite front/rear surface" },
+    { rotation: [0, 0, Math.PI / 2], name: "Roll 90° (Left Flange)", desc: "Left side flat on bed" },
+    { rotation: [0, 0, -Math.PI / 2], name: "Roll -90° (Right Flange)", desc: "Right side flat on bed" },
+  ];
+
+  const results: BedFaceOption[] = [];
+  let bestScore = -Infinity;
+
+  for (let i = 0; i < canonicalFaces.length; i++) {
+    const cand = canonicalFaces[i];
+    const res = evaluateOrientation(geometry, cand.rotation, buildLimits);
+    const contactPct = res.totalArea > 0 ? (res.contactArea / res.totalArea) * 100 : 0;
+    const overhangPct = res.totalArea > 0 ? (res.overhangArea / res.totalArea) * 100 : 0;
+
+    // Check if this orientation matches current rotation (accounting for modular 2*PI)
+    const isCurrent =
+      Math.abs(Math.cos(cand.rotation[0]) - Math.cos(currentRotation[0])) < 0.1 &&
+      Math.abs(Math.sin(cand.rotation[0]) - Math.sin(currentRotation[0])) < 0.1 &&
+      Math.abs(Math.cos(cand.rotation[2]) - Math.cos(currentRotation[2])) < 0.1;
+
+    results.push({
+      id: `bed-face-${i}`,
+      name: cand.name,
+      description: cand.desc,
+      rotation: cand.rotation,
+      contactAreaMm2: Math.round(res.contactArea),
+      contactPercentage: Math.round(contactPct * 10) / 10,
+      overhangAreaMm2: Math.round(res.overhangArea),
+      overhangPercentage: Math.round(overhangPct * 10) / 10,
+      heightMm: Math.round(res.bbox.height),
+      fitsPrinter: res.fits,
+      score: res.score,
+      isCurrent,
+      isOptimal: false,
+    });
+
+    if (res.score > bestScore) {
+      bestScore = res.score;
+    }
+  }
+
+  // Mark the optimal face(s)
+  for (const f of results) {
+    if (f.score === bestScore) {
+      f.isOptimal = true;
+    }
+  }
+
+  // Sort: optimal first, then by contact area descending
+  return results.sort((a, b) => {
+    if (a.isOptimal && !b.isOptimal) return -1;
+    if (!a.isOptimal && b.isOptimal) return 1;
+    return b.contactAreaMm2 - a.contactAreaMm2;
+  });
+}
+
+/**
  * Runs a comprehensive printability check on a model.
- * Evaluates current orientation and benchmarks the 6 primary orthogonal rotations
+ * Evaluates current orientation and benchmarks alternative face angles
  * to determine if a more stable, printable orientation exists.
  */
 export function analyzePrintability(
@@ -267,56 +367,45 @@ export function analyzePrintability(
     fitsPrinter: current.fits,
   };
 
-  // 2. Search for the optimal orientation among 6 canonical face angles
-  const candidateRotations: Array<{ rotation: [number, number, number]; name: string }> = [
-    { rotation: [0, 0, 0], name: "Default (As Uploaded)" },
-    { rotation: [Math.PI / 2, 0, 0], name: "Lie Flat (Pitch 90°)" },
-    { rotation: [Math.PI, 0, 0], name: "Inverted (Pitch 180°)" },
-    { rotation: [3 * (Math.PI / 2), 0, 0], name: "Lie Flat (Pitch 270°)" },
-    { rotation: [0, 0, Math.PI / 2], name: "On Side (Roll 90°)" },
-    { rotation: [0, 0, 3 * (Math.PI / 2)], name: "On Side (Roll 270°)" },
-  ];
+  // 2. Discover bed face options
+  const bedFaces = findBedFaceCandidates(geometry, buildLimits, currentRotation);
 
+  // 3. Search for the optimal orientation candidate
+  const optimalFace = bedFaces.find((f) => f.isOptimal);
   let bestCandidate: OrientationCandidate | null = null;
-  let bestScore = current.score;
 
-  for (const cand of candidateRotations) {
-    const res = evaluateOrientation(geometry, cand.rotation, buildLimits);
+  if (optimalFace && (!optimalFace.isCurrent || (!current.fits && optimalFace.fitsPrinter))) {
+    // Only recommend alternative if it beats current score by >= 15 points or fixes fit
+    if (optimalFace.score > current.score + 15 || (!current.fits && optimalFace.fitsPrinter)) {
+      let reason = "Balanced adhesion and minimal overhangs.";
+      if (optimalFace.contactAreaMm2 > current.contactArea * 1.3 && optimalFace.overhangAreaMm2 <= current.overhangArea * 1.1) {
+        reason = `Increases bed contact area by ${(
+          (optimalFace.contactAreaMm2 / Math.max(1, current.contactArea) - 1) *
+          100
+        ).toFixed(0)}% for much stronger adhesion.`;
+      } else if (optimalFace.overhangAreaMm2 < current.overhangArea * 0.7) {
+        reason = `Reduces unsupported overhangs by ${(
+          (1 - optimalFace.overhangAreaMm2 / Math.max(1, current.overhangArea)) *
+          100
+        ).toFixed(0)}%, eliminating drooping.`;
+      } else if (!current.fits && optimalFace.fitsPrinter) {
+        reason = "Rotates model to fit within your printer's build volume limits!";
+      }
 
-    let reason = "Balanced adhesion and minimal overhangs.";
-    if (res.contactArea > current.contactArea * 1.3 && res.overhangArea <= current.overhangArea * 1.1) {
-      reason = `Increases bed contact area by ${(
-        (res.contactArea / Math.max(1, current.contactArea) - 1) *
-        100
-      ).toFixed(0)}% for much stronger adhesion.`;
-    } else if (res.overhangArea < current.overhangArea * 0.7) {
-      reason = `Reduces unsupported overhangs by ${(
-        (1 - res.overhangArea / Math.max(1, current.overhangArea)) *
-        100
-      ).toFixed(0)}%, eliminating drooping.`;
-    } else if (!current.fits && res.fits) {
-      reason = "Rotates model to fit within your printer's build volume limits!";
-    }
-
-    const candidateObj: OrientationCandidate = {
-      rotation: cand.rotation,
-      name: cand.name,
-      contactAreaMm2: Math.round(res.contactArea),
-      overhangAreaMm2: Math.round(res.overhangArea),
-      heightMm: Math.round(res.bbox.height),
-      fitsPrinter: res.fits,
-      score: res.score,
-      reason,
-    };
-
-    // Does this orientation beat current by at least 15%?
-    if (res.score > bestScore + 15 || (!current.fits && res.fits)) {
-      bestScore = res.score;
-      bestCandidate = candidateObj;
+      bestCandidate = {
+        rotation: optimalFace.rotation,
+        name: optimalFace.name,
+        contactAreaMm2: optimalFace.contactAreaMm2,
+        overhangAreaMm2: optimalFace.overhangAreaMm2,
+        heightMm: optimalFace.heightMm,
+        fitsPrinter: optimalFace.fitsPrinter,
+        score: optimalFace.score,
+        reason,
+      };
     }
   }
 
-  // 3. Generate Slicer Recommendations
+  // 4. Generate Slicer Recommendations
   const recommendations: SlicerRecommendation[] = [];
 
   // (A) Orientation recommendation
@@ -429,6 +518,7 @@ export function analyzePrintability(
     metrics,
     isCurrentOrientationOptimal,
     optimalOrientation: bestCandidate ?? undefined,
+    bedFaces,
     recommendations,
   };
 }

@@ -53,6 +53,10 @@ export function PrintabilityChecker({
 
   // Check which recommendations are already satisfied by currentSettings
   const isRecApplied = (rec: SlicerRecommendation) => {
+    // Dynamic re-check for orientation: NEVER permanently suppress if orientation changed
+    if (rec.category === "orientation") {
+      return report.isCurrentOrientationOptimal;
+    }
     if (appliedRecIds.has(rec.id)) return true;
     if (rec.category === "supports") {
       return currentSettings.supports !== "none";
@@ -278,7 +282,58 @@ export function PrintabilityChecker({
             </div>
           )}
 
-          {/* Actionable Slicer Recommendations List */}
+          {/* Bed Face Selection Grid (Bambu Studio Style "Lay on Face") */}
+          {report.bedFaces && report.bedFaces.length > 0 && onApplyOrientation && (
+            <div className="space-y-2 pt-1 border-t border-border/40">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-semibold text-fg flex items-center gap-1.5">
+                  <Compass className="size-3.5 text-accent" />
+                  <span>Choose Bed Face ({report.bedFaces.length} detected)</span>
+                </h4>
+                <span className="text-[11px] text-muted hidden sm:inline">Click any face to lay flat on plate</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                {report.bedFaces.slice(0, 6).map((face) => (
+                  <button
+                    key={face.id}
+                    type="button"
+                    onClick={() => onApplyOrientation(face.rotation)}
+                    className={cn(
+                      "rounded-xl p-2.5 text-left border transition-all flex flex-col justify-between gap-2",
+                      face.isCurrent
+                        ? "border-accent bg-accent-soft/40 shadow-xs ring-1 ring-accent"
+                        : "border-border/70 bg-surface-2/40 hover:bg-surface-2/80 hover:border-border-hover cursor-pointer"
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-1.5">
+                      <div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="text-xs font-semibold text-fg">{face.name}</p>
+                          {face.isOptimal && (
+                            <span className="rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-300/40 text-[9px] font-bold px-1.5 py-0.2">
+                              Best Adhesion
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-muted mt-0.5">{face.description}</p>
+                      </div>
+                      {face.isCurrent && (
+                        <span className="rounded-full bg-accent text-ink px-1.5 py-0.5 text-[9px] font-bold shrink-0">
+                          Active
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between text-[10px] font-mono text-muted border-t border-border/30 pt-1.5">
+                      <span>Bed Contact: {(face.contactAreaMm2 / 100).toFixed(1)} cm² ({face.contactPercentage}%)</span>
+                      <span className={face.overhangPercentage > 5 ? "text-amber-500 font-semibold" : "text-emerald-700 dark:text-emerald-400 font-medium"}>
+                        {face.overhangPercentage > 0 ? `${face.overhangPercentage}% overhang` : "0% overhang"}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           {recommendations.length > 0 && (
             <div className="space-y-2 pt-1">
               <h4 className="text-xs font-semibold text-fg uppercase tracking-wider text-muted">

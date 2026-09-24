@@ -229,16 +229,20 @@ function CheckoutPage() {
 
     try {
       if (user && saveAddressToProfile && !savedAddresses?.some(a => a.line1 === address.line1 && a.city === address.city)) {
-        await saveAddressMutation.mutateAsync({ data: {
-          name: address.name,
-          phone: address.phone,
-          line1: address.line1,
-          line2: address.line2 || null,
-          city: address.city,
-          state: address.state,
-          pin: address.pincode,
-          is_default: savedAddresses?.length === 0,
-        }});
+        try {
+          await saveAddressMutation.mutateAsync({ data: {
+            name: address.name,
+            phone: address.phone,
+            line1: address.line1,
+            line2: address.line2 || null,
+            city: address.city,
+            state: address.state,
+            pin: address.pincode,
+            is_default: savedAddresses?.length === 0,
+          }});
+        } catch (addrErr) {
+          console.warn("Address save to profile skipped:", addrErr);
+        }
       }
 
       if (pay === "online") {
@@ -275,8 +279,9 @@ function CheckoutPage() {
         toast.success(`Order confirmed via ${pay === "upi" ? "UPI" : "Cash on Delivery"}`);
         void navigate({ to: "/order/$id", params: { id: internalOrderNumber } });
       }
-    } catch {
-      toast.error("Error creating order.");
+    } catch (err: any) {
+      console.error("Order creation failed:", err);
+      toast.error(err?.message || "Error creating order.");
       setBusy(false);
     }
   }

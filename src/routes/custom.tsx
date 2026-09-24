@@ -27,7 +27,7 @@ import { getAvailableFilaments, type FilamentRecord } from "@/lib/filaments-fns"
 import { uploadCustomFile } from "@/lib/custom-files-fns";
 import { PrintabilityChecker } from "@/components/printability-checker";
 import type { PrintabilityReport } from "@/lib/mesh-analysis";
-import { parseModelFile } from "@/lib/model-parser";
+import { parseModelFile, estimateFdmMaterialVolumeCm3 } from "@/lib/model-parser";
 import { cn } from "@/lib/utils";
 import { ChevronDown, Sliders, Sparkles, Printer as PrinterIcon, Loader2, Check, CheckCircle2, RefreshCcw } from "lucide-react";
 
@@ -238,6 +238,8 @@ function QuotePanel({
   modeling,
   days,
   volumeCm3,
+  solidVolumeCm3,
+  weightGrams,
   ready,
   specs,
 }: {
@@ -246,6 +248,8 @@ function QuotePanel({
   modeling: number;
   days: string;
   volumeCm3: number;
+  solidVolumeCm3?: number;
+  weightGrams?: number;
   ready: boolean;
   specs?: {
     printerName?: string;
@@ -289,8 +293,20 @@ function QuotePanel({
           </div>
           {volumeCm3 > 0 ? (
             <div className="flex justify-between">
-              <dt className="text-muted">Est. volume</dt>
+              <dt className="text-muted">Est. printed volume</dt>
               <dd className="tabular-nums font-mono">{volumeCm3.toFixed(1)} cm³</dd>
+            </div>
+          ) : null}
+          {weightGrams ? (
+            <div className="flex justify-between">
+              <dt className="text-muted">Est. model weight</dt>
+              <dd className="tabular-nums font-mono text-emerald-500 dark:text-emerald-400 font-medium">~{weightGrams.toFixed(0)} g</dd>
+            </div>
+          ) : null}
+          {solidVolumeCm3 && solidVolumeCm3 > volumeCm3 * 1.15 ? (
+            <div className="flex justify-between text-xs text-muted/70">
+              <dt>Solid CAD volume</dt>
+              <dd className="tabular-nums font-mono line-through">{solidVolumeCm3.toFixed(1)} cm³</dd>
             </div>
           ) : null}
           {specs?.dimensions ? (
@@ -383,6 +399,8 @@ function UploadForm({
   const [fileId, setFileId] = useState<string | null>(null);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [volume, setVolume] = useState(0);
+  const [solidVolume, setSolidVolume] = useState<number | null>(null);
+  const [surfaceArea, setSurfaceArea] = useState<number | null>(null);
   const [sizeLabel, setSizeLabel] = useState("");
   const [autoDetected, setAutoDetected] = useState(false);
   const [parsedDimensions, setParsedDimensions] = useState<{ x: number; y: number; z: number } | null>(null);
@@ -447,6 +465,8 @@ function UploadForm({
     setFile(next);
     setFileId(null);
     setVolume(0);
+    setSolidVolume(null);
+    setSurfaceArea(null);
     setSizeLabel("");
     setAutoDetected(false);
     setParsedDimensions(null);
@@ -488,6 +508,8 @@ function UploadForm({
       const est = await parseModelFile(next);
       if (est && est.volumeCm3 > 0) {
         setVolume(est.volumeCm3);
+        setSolidVolume(est.solidVolumeCm3 ?? est.volumeCm3);
+        setSurfaceArea(est.surfaceAreaMm2 ?? null);
         if (est.isCad && !est.cadInfo?.hasMesh) {
           setAutoDetected(false);
           setSizeLabel(
@@ -524,11 +546,25 @@ function UploadForm({
     }
   }
 
+  const dynamicVolume = useMemo(() => {
+    if (solidVolume && surfaceArea) {
+      return estimateFdmMaterialVolumeCm3(
+        solidVolume * 1000,
+        surfaceArea,
+        infillPct,
+        wallLoops,
+      );
+    }
+    return volume;
+  }, [solidVolume, surfaceArea, infillPct, wallLoops, volume]);
+
   const quote = useMemo(
     () =>
       computeQuote(
         {
-          volumeCm3: volume,
+          volumeCm3: dynamicVolume,
+          solidVolumeCm3: solidVolume ?? undefined,
+          surfaceAreaMm2: surfaceArea ?? undefined,
           materialId: material,
           qualityId: quality,
           infillPercentage: infillPct,
@@ -542,7 +578,7 @@ function UploadForm({
         pricingConfig,
         "upload",
       ),
-    [volume, material, quality, infillPct, infillPattern, wallLoops, supports, surfaceFinish, brim, qty, pricingConfig],
+    [dynamicVolume, solidVolume, surfaceArea, material, quality, infillPct, infillPattern, wallLoops, supports, surfaceFinish, brim, qty, pricingConfig],
   );
 
   const materialMeta = pricingConfig.materials.find((m) => m.id === material);
@@ -619,38 +655,38 @@ function UploadForm({
         )}
 
         {autoDetected && parsedDimensions && (
-          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 space-y-2.5 shadow-sm">
+          <div className="rounded-2xl border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50/70 dark:bg-emerald-950/20 p-4 space-y-2.5 shadow-xs">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-emerald-400 font-semibold text-sm">
-                <CheckCircle2 className="size-4 shrink-0" />
+              <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-400 font-semibold text-sm">
+                <CheckCircle2 className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
                 <span>Model Dimensions & Volume Auto-Detected</span>
               </div>
-              <span className="rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-300">
+              <span className="rounded-full bg-emerald-100 dark:bg-emerald-500/20 border border-emerald-200 dark:border-emerald-500/30 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
                 Live Slicer Measurement
               </span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-              <div className="rounded-xl bg-black/40 border border-white/5 p-2.5">
-                <p className="text-white/60">Bounding Dimensions</p>
-                <p className="font-mono font-semibold text-white mt-0.5">
+              <div className="rounded-xl bg-white/80 dark:bg-black/40 border border-emerald-100 dark:border-white/5 p-2.5 shadow-2xs">
+                <p className="text-slate-600 dark:text-white/60">Bounding Dimensions</p>
+                <p className="font-mono font-semibold text-slate-900 dark:text-white mt-0.5">
                   {parsedDimensions.x.toFixed(1)} × {parsedDimensions.y.toFixed(1)} × {parsedDimensions.z.toFixed(1)} mm
                 </p>
               </div>
-              <div className="rounded-xl bg-black/40 border border-white/5 p-2.5">
-                <p className="text-white/60">Actual Solid Volume</p>
-                <p className="font-mono font-semibold text-accent mt-0.5">
-                  {volume.toFixed(1)} cm³
+              <div className="rounded-xl bg-white/80 dark:bg-black/40 border border-emerald-100 dark:border-white/5 p-2.5 shadow-2xs">
+                <p className="text-slate-600 dark:text-white/60">Estimated Printed Volume</p>
+                <p className="font-mono font-semibold text-emerald-700 dark:text-emerald-400 mt-0.5">
+                  {dynamicVolume.toFixed(1)} cm³ {quote.weightGrams ? `(~${quote.weightGrams.toFixed(0)}g)` : ""}
                 </p>
               </div>
-              <div className="rounded-xl bg-black/40 border border-white/5 p-2.5 col-span-2 sm:col-span-1">
-                <p className="text-white/60">Mesh Complexity</p>
-                <p className="font-mono font-semibold text-white mt-0.5">
-                  {parsedTriangles.toLocaleString("en-IN")} triangles
+              <div className="rounded-xl bg-white/80 dark:bg-black/40 border border-emerald-100 dark:border-white/5 p-2.5 col-span-2 sm:col-span-1 shadow-2xs">
+                <p className="text-slate-600 dark:text-white/60">Solid CAD Volume</p>
+                <p className="font-mono font-semibold text-slate-700 dark:text-white/80 mt-0.5">
+                  {(solidVolume ?? volume).toFixed(1)} cm³
                 </p>
               </div>
             </div>
-            <p className="text-[11px] text-emerald-300/80 pt-0.5">
-              Your price is automatically calculated from your model's exact solid volume, not preset size tiers.
+            <p className="text-[11px] text-emerald-800/90 dark:text-emerald-300/80 pt-0.5">
+              Your price is automatically calculated from your model's realistic printed filament volume (~{dynamicVolume.toFixed(1)} cm³ with {infillPct}% infill & {wallLoops} walls), saving over 50% compared to solid volume pricing.
             </p>
           </div>
         )}
@@ -747,10 +783,10 @@ function UploadForm({
         )}
 
         {autoDetected ? (
-          <div className="rounded-xl border border-emerald-500/20 bg-surface/80 p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
-            <span className="flex items-center gap-1.5 text-emerald-400 font-medium">
-              <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Model dimensions active ({volume.toFixed(1)} cm³). Size presets bypassed.</span>
+          <div className="rounded-xl border border-emerald-200 dark:border-emerald-500/20 bg-emerald-50/50 dark:bg-surface/80 p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <span className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-400 font-medium">
+              <span className="size-2 rounded-full bg-emerald-600 dark:bg-emerald-400 animate-pulse" />
+              <span>Model dimensions active ({dynamicVolume.toFixed(1)} cm³ printed / {(solidVolume ?? volume).toFixed(1)} cm³ solid). Size presets bypassed.</span>
             </span>
             <button
               type="button"
@@ -1088,6 +1124,8 @@ function UploadForm({
           modeling={0}
           days={quote.days}
           volumeCm3={quote.volumeCm3}
+          solidVolumeCm3={solidVolume ?? undefined}
+          weightGrams={quote.weightGrams}
           ready={Boolean(file) && quote.total > 0}
           specs={{
             printerName: selectedPrinter?.name,

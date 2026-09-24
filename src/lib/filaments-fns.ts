@@ -9,7 +9,7 @@ export type FilamentStatus = "in_stock" | "low_stock" | "filament_over";
 export interface FilamentRecord {
   id: string;
   name: string;
-  material_id: string; // 'pla' | 'petg' | 'tpu' | 'abs'
+  material_id: string; // 'pla' | 'petg' | 'abs' | 'asa'
   color_id: string; // 'charcoal' | 'teal' | 'bone' | etc.
   color_name: string;
   color_hex: string;
@@ -134,30 +134,80 @@ export const DEFAULT_FILAMENTS: FilamentRecord[] = [
     notes: "Functional industrial brackets",
   },
 
-  // TPU Filaments
+  // ABS Filaments
   {
-    id: "fil-tpu-black",
-    name: "Bambu TPU 95A Black",
-    material_id: "tpu",
+    id: "fil-abs-black",
+    name: "Bambu Basic ABS Black",
+    material_id: "abs",
     color_id: "charcoal",
     color_name: "Charcoal Black",
-    color_hex: "#1f2428",
-    spool_count: 2,
+    color_hex: "#161616",
+    spool_count: 5,
     status: "in_stock",
     brand: "Bambu Lab",
-    notes: "Flexible gaskets and phone bumpers",
+    notes: "High-impact structural & heat-resistant",
   },
   {
-    id: "fil-tpu-teal",
-    name: "Bambu TPU 95A Neon Teal",
-    material_id: "tpu",
-    color_id: "teal",
-    color_name: "Vibrant Teal",
-    color_hex: "#06b6d4",
-    spool_count: 2,
+    id: "fil-abs-white",
+    name: "Bambu Basic ABS White",
+    material_id: "abs",
+    color_id: "bone",
+    color_name: "Bone White",
+    color_hex: "#F5F5F0",
+    spool_count: 4,
     status: "in_stock",
     brand: "Bambu Lab",
-    notes: "Flexible wristbands and accents",
+    notes: "Enclosures & electronic cases",
+  },
+  {
+    id: "fil-abs-grey",
+    name: "Bambu Basic ABS Grey",
+    material_id: "abs",
+    color_id: "stone",
+    color_name: "Stone Grey",
+    color_hex: "#8E9297",
+    spool_count: 4,
+    status: "in_stock",
+    brand: "Bambu Lab",
+    notes: "Mechanical fittings & prototypes",
+  },
+
+  // ASA Filaments
+  {
+    id: "fil-asa-black",
+    name: "Bambu Basic ASA Black",
+    material_id: "asa",
+    color_id: "charcoal",
+    color_name: "Charcoal Black",
+    color_hex: "#161616",
+    spool_count: 5,
+    status: "in_stock",
+    brand: "Bambu Lab",
+    notes: "Weather & UV resistant outdoor pieces",
+  },
+  {
+    id: "fil-asa-white",
+    name: "Bambu Basic ASA White",
+    material_id: "asa",
+    color_id: "bone",
+    color_name: "Bone White",
+    color_hex: "#F5F5F0",
+    spool_count: 4,
+    status: "in_stock",
+    brand: "Bambu Lab",
+    notes: "Automotive & exterior brackets",
+  },
+  {
+    id: "fil-asa-grey",
+    name: "Bambu Basic ASA Grey",
+    material_id: "asa",
+    color_id: "stone",
+    color_name: "Stone Grey",
+    color_hex: "#8E9297",
+    spool_count: 4,
+    status: "in_stock",
+    brand: "Bambu Lab",
+    notes: "Outdoor fixtures & sensor housings",
   },
 ];
 

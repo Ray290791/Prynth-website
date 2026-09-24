@@ -1,23 +1,30 @@
 import { evaluateFormula, type PricingVariables } from "./formula-evaluator";
+import { estimateFdmMaterialVolumeCm3 } from "./model-parser";
 
 export const MATERIALS = [
   {
     id: "pla",
     name: "PLA",
-    rate: 8,
+    rate: 5.5,
     note: "The everyday choice. Stiff, clean finish, fine for home and desk objects.",
   },
   {
     id: "petg",
     name: "PETG",
-    rate: 11,
-    note: "Tougher and a bit more heat-resistant. Good for hooks, kitchen tools, outdoor clips.",
+    rate: 7.2,
+    note: "Tougher and moisture-resistant. Good for hooks, kitchen tools, outdoor clips.",
   },
   {
-    id: "tpu",
-    name: "TPU (flexible)",
-    rate: 15,
-    note: "Rubbery and bendy. Phone bumpers, straps, grips.",
+    id: "abs",
+    name: "ABS",
+    rate: 7.8,
+    note: "High strength, impact and heat-resistant engineering plastic. Great for enclosures and mechanical assemblies.",
+  },
+  {
+    id: "asa",
+    name: "ASA",
+    rate: 8.5,
+    note: "UV and weather-resistant industrial plastic. Ideal for outdoor fixtures and automotive components.",
   },
 ] as const;
 
@@ -215,6 +222,8 @@ export type CustomPricingConfig = {
 
 export type QuoteInput = {
   volumeCm3: number;
+  solidVolumeCm3?: number;
+  surfaceAreaMm2?: number;
   materialId: string;
   qualityId: string;
   infillId?: string;
@@ -235,6 +244,8 @@ export type Quote = {
   total: number;
   days: string;
   volumeCm3: number;
+  solidVolumeCm3?: number;
+  weightGrams?: number;
 };
 
 /**
@@ -305,10 +316,48 @@ export function getPricingConfig(settings?: Record<string, any> | null): CustomP
   const setupFee = Number(settings?.custom_pricing_setup_fee) || DEFAULT_SETUP_FEE;
   const minPrint = Number(settings?.custom_pricing_min_print) || DEFAULT_MIN_PRINT;
 
-  const materials = safeJsonParse<MaterialPricing[]>(
+  let materials = safeJsonParse<MaterialPricing[]>(
     settings?.custom_pricing_materials,
     MATERIALS as unknown as MaterialPricing[],
   );
+  if (Array.isArray(materials) && materials.length > 0) {
+    // Drop TPU if present since it is not offered
+    materials = materials.filter((m) => m.id !== "tpu");
+    // Ensure ABS and ASA are present
+    if (!materials.some((m) => m.id === "abs")) {
+      materials.push({
+        id: "abs",
+        name: "ABS",
+        rate: 7.8,
+        note: "High strength, impact and heat-resistant engineering plastic. Great for enclosures and mechanical assemblies.",
+      });
+    }
+    if (!materials.some((m) => m.id === "asa")) {
+      materials.push({
+        id: "asa",
+        name: "ASA",
+        rate: 8.5,
+        note: "UV and weather-resistant industrial plastic. Ideal for outdoor fixtures and automotive components.",
+      });
+    }
+    materials = materials.map((m) => {
+      if (m.id === "pla" && (m.rate === 8 || m.rate === 5.8)) {
+        return { ...m, rate: 5.5 };
+      }
+      if (m.id === "petg" && (m.rate === 11 || m.rate === 7.5)) {
+        return { ...m, rate: 7.2 };
+      }
+      if (m.id === "abs" && (!m.rate || m.rate > 8.5)) {
+        return { ...m, rate: 7.8 };
+      }
+      if (m.id === "asa" && (!m.rate || m.rate > 9.5)) {
+        return { ...m, rate: 8.5 };
+      }
+      return m;
+    });
+  } else {
+    materials = MATERIALS as unknown as MaterialPricing[];
+  }
   const qualities = safeJsonParse<QualityPricing[]>(
     settings?.custom_pricing_qualities,
     QUALITIES as unknown as QualityPricing[],
@@ -398,18 +447,30 @@ export function computeQuote(
       : (config.infills.find((i) => i.id === input.infillId)?.mult ?? 1.0);
 
   const qty = Math.max(1, Math.round(input.qty) || 1);
-  const volume = Math.max(0, input.volumeCm3);
+  const infillPct = typeof input.infillPercentage === "number" ? input.infillPercentage : 20;
+  const wallLoops = input.wallLoops ?? 2;
+
+  let volume = Math.max(0, input.volumeCm3);
+  if (input.solidVolumeCm3 && input.surfaceAreaMm2 && input.solidVolumeCm3 > 0 && input.surfaceAreaMm2 > 0) {
+    volume = estimateFdmMaterialVolumeCm3(
+      input.solidVolumeCm3 * 1000,
+      input.surfaceAreaMm2,
+      infillPct,
+      wallLoops
+    );
+  }
+
   const modeling = input.modelingFee ?? 0;
 
   // Bambu Slicer fine adjustments
   let slicerExtraPerUnit = 0;
-  if (input.wallLoops && input.wallLoops > 2) {
+  if (wallLoops > 2) {
     // Each additional wall loop above 2 adds slight material
-    slicerExtraPerUnit += (input.wallLoops - 2) * 5;
+    slicerExtraPerUnit += (wallLoops - 2) * 5;
   }
   if (input.supports === "tree" || input.supports === "standard") {
     // Support material usage
-    slicerExtraPerUnit += Math.round(volume * 0.35);
+    slicerExtraPerUnit += Math.round(volume * 0.12);
   }
   if (input.surfaceFinish === "ironing") {
     // Ironing surface pass
@@ -450,13 +511,25 @@ export function computeQuote(
     printUnit = Math.round(batchPrintCost / qty);
   }
 
+  const materialDensity =
+    material.id === "petg"
+      ? 1.27
+      : material.id === "abs"
+      ? 1.04
+      : material.id === "asa"
+      ? 1.07
+      : 1.25;
+  const weightGrams = Math.round(volume * materialDensity * 10) / 10;
+
   return {
     print: printUnit * qty,
     modeling,
     setup: config.setupFee,
     total,
     days: quality.days,
-    volumeCm3: volume,
+    volumeCm3: Math.round(volume * 10) / 10,
+    solidVolumeCm3: input.solidVolumeCm3 ? Math.round(input.solidVolumeCm3 * 10) / 10 : undefined,
+    weightGrams,
   };
 }
 

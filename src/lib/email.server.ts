@@ -86,32 +86,36 @@ export async function sendOrderConfirmationEmail(
     `;
   }
 
-  await resend.emails.send({
-    from: FROM_EMAIL,
-    to: email,
-    subject: `Order Confirmation - ${safeOrderNumber}`,
-    html: `
-      <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333; line-height: 1.6; background-color: #fff;">
-        <div style="padding: 32px 24px; text-align: center; border-bottom: 1px solid #e4e4e7;">
-          <h1 style="margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -0.5px; color: #000;">Prynth!</h1>
-        </div>
-        <div style="padding: 32px 24px;">
-          <h2 style="font-size: 20px; color: #111; margin-top: 0; margin-bottom: 8px;">Order Confirmed</h2>
-          <p style="margin: 0 0 24px; color: #666; font-size: 15px;">Order #${safeOrderNumber}</p>
-          
-          <p style="font-size: 15px;">Hi ${safeName},</p>
-          <p style="font-size: 15px;">Thank you for your order. We're getting it ready and will notify you as soon as it ships.</p>
-          
-          ${itemsHtml}
-          
-          <div style="margin-top: 40px; padding-top: 32px; border-top: 1px solid #e4e4e7; font-size: 14px; color: #666; text-align: center;">
-            <p style="margin: 0 0 8px;">Have questions? Reply to this email or visit our <a href="https://prynth.com/contact" style="color: #000; text-decoration: underline;">help center</a>.</p>
-            <p style="margin: 0;">&copy; ${new Date().getFullYear()} Prynth. All rights reserved.</p>
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: `Order Confirmation - ${safeOrderNumber}`,
+      html: `
+        <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333; line-height: 1.6; background-color: #fff;">
+          <div style="padding: 32px 24px; text-align: center; border-bottom: 1px solid #e4e4e7;">
+            <h1 style="margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -0.5px; color: #000;">Prynth!</h1>
+          </div>
+          <div style="padding: 32px 24px;">
+            <h2 style="font-size: 20px; color: #111; margin-top: 0; margin-bottom: 8px;">Order Confirmed</h2>
+            <p style="margin: 0 0 24px; color: #666; font-size: 15px;">Order #${safeOrderNumber}</p>
+            
+            <p style="font-size: 15px;">Hi ${safeName},</p>
+            <p style="font-size: 15px;">Thank you for your order. We're getting it ready and will notify you as soon as it ships.</p>
+            
+            ${itemsHtml}
+            
+            <div style="margin-top: 40px; padding-top: 32px; border-top: 1px solid #e4e4e7; font-size: 14px; color: #666; text-align: center;">
+              <p style="margin: 0 0 8px;">Have questions? Reply to this email or visit our <a href="https://prynth.com/contact" style="color: #000; text-decoration: underline;">help center</a>.</p>
+              <p style="margin: 0;">&copy; ${new Date().getFullYear()} Prynth. All rights reserved.</p>
+            </div>
           </div>
         </div>
-      </div>
-    `,
-  });
+      `,
+    });
+  } catch (err) {
+    console.error("Failed to send order confirmation email via Resend:", err);
+  }
 }
 
 export async function sendOrderStatusUpdateEmail(orderNumber: string, email: string, status: string) {

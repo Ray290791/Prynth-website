@@ -1,8 +1,11 @@
 import * as THREE from "three";
+import { computeGeometrySurfaceArea, estimateFdmMaterialVolumeCm3 } from "./model-parser";
 
 export type StlEstimate = {
   triangles: number;
   volumeCm3: number;
+  solidVolumeCm3?: number;
+  surfaceAreaMm2?: number;
   sizeMm: { x: number; y: number; z: number };
   geometry?: THREE.BufferGeometry;
 };
@@ -36,11 +39,28 @@ function finish(
     y: Math.max(0, max[1] - min[1]),
     z: Math.max(0, max[2] - min[2]),
   };
-  let volumeCm3 = Math.abs(volumeMm3) / 1000;
-  if (volumeCm3 < 0.2) {
-    volumeCm3 = (sizeMm.x * sizeMm.y * sizeMm.z * 0.28) / 1000;
+  let solidVolumeCm3 = Math.abs(volumeMm3) / 1000;
+  if (solidVolumeCm3 < 0.2) {
+    solidVolumeCm3 = (sizeMm.x * sizeMm.y * sizeMm.z * 0.28) / 1000;
   }
-  return { triangles, volumeCm3: Number(volumeCm3.toFixed(2)), sizeMm, geometry };
+  let surfaceAreaMm2 = 0;
+  if (geometry) {
+    surfaceAreaMm2 = computeGeometrySurfaceArea(geometry);
+  }
+  const materialVolumeCm3 = estimateFdmMaterialVolumeCm3(
+    Math.abs(volumeMm3),
+    surfaceAreaMm2,
+    20,
+    2
+  );
+  return {
+    triangles,
+    volumeCm3: materialVolumeCm3,
+    solidVolumeCm3: Number(solidVolumeCm3.toFixed(2)),
+    surfaceAreaMm2: Math.round(surfaceAreaMm2),
+    sizeMm,
+    geometry,
+  };
 }
 
 function parseBinary(bytes: Uint8Array): StlEstimate | null {

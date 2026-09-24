@@ -20,9 +20,18 @@ import {
   Compass,
   ShieldCheck,
   Loader2,
+  Move,
+  ScanLine,
 } from "lucide-react";
+import { toast } from "sonner";
+import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
-import { analyzePrintability, type PrintabilityReport } from "@/lib/mesh-analysis";
+import {
+  analyzePrintability,
+  getRotationToLayFaceOnBed,
+  type PrintabilityReport,
+  type BedFaceOption,
+} from "@/lib/mesh-analysis";
 import { parseModelFile } from "@/lib/model-parser";
 
 export interface ModelViewerProps {
@@ -45,7 +54,7 @@ export interface ModelViewerProps {
 }
 
 // Generates an authentic Bambu Lab Textured PEI Plate texture on an HTML5 canvas
-function createBambuPlateTexture(widthMm = 256, depthMm = 256, printerName = "Bambu Lab P1S") {
+function createBambuPlateTexture(widthMm = 256, depthMm = 256, printerName = "Bambu Lab P1S", isLight = false) {
   if (typeof document === "undefined") return null;
 
   const size = 1024;
@@ -62,12 +71,12 @@ function createBambuPlateTexture(widthMm = 256, depthMm = 256, printerName = "Ba
   const offsetX = (size - w) / 2;
   const offsetY = (size - h) / 2;
 
-  // 1. Dark Textured Charcoal PEI Background
-  ctx.fillStyle = "#1c1f24";
+  // 1. Textured Background (Clean light plate or Charcoal PEI)
+  ctx.fillStyle = isLight ? "#e2e8f0" : "#1c1f24";
   ctx.fillRect(0, 0, size, size);
 
   // 2. Subtle Powder-coated PEI Stippling / Texture Noise
-  ctx.fillStyle = "rgba(255, 255, 255, 0.025)";
+  ctx.fillStyle = isLight ? "rgba(0, 0, 0, 0.03)" : "rgba(255, 255, 255, 0.025)";
   for (let i = 0; i < 6000; i++) {
     const rx = Math.random() * size;
     const ry = Math.random() * size;
@@ -75,7 +84,7 @@ function createBambuPlateTexture(widthMm = 256, depthMm = 256, printerName = "Ba
   }
 
   // 3. Minor Grid Lines: every 10mm
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.07)";
+  ctx.strokeStyle = isLight ? "rgba(15, 23, 42, 0.08)" : "rgba(255, 255, 255, 0.07)";
   ctx.lineWidth = 1;
   for (let x = 0; x <= widthMm; x += 10) {
     const px = offsetX + x * scale;
@@ -93,7 +102,7 @@ function createBambuPlateTexture(widthMm = 256, depthMm = 256, printerName = "Ba
   }
 
   // 4. Major Grid Lines: every 50mm
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.18)";
+  ctx.strokeStyle = isLight ? "rgba(15, 23, 42, 0.22)" : "rgba(255, 255, 255, 0.18)";
   ctx.lineWidth = 1.5;
   for (let x = 0; x <= widthMm; x += 50) {
     const px = offsetX + x * scale;
@@ -160,17 +169,17 @@ function createBambuPlateTexture(widthMm = 256, depthMm = 256, printerName = "Ba
 
   // 8. Bambu Authentic Plate Typography
   ctx.font = "bold 16px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-  ctx.fillStyle = "rgba(255, 255, 255, 0.45)";
+  ctx.fillStyle = isLight ? "rgba(15, 23, 42, 0.65)" : "rgba(255, 255, 255, 0.45)";
   ctx.textAlign = "center";
   ctx.fillText("BAMBU LAB TEXTURED PEI PLATE", cx, offsetY + 26);
 
   ctx.font = "12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-  ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+  ctx.fillStyle = isLight ? "rgba(15, 23, 42, 0.45)" : "rgba(255, 255, 255, 0.3)";
   ctx.fillText(`${printerName.toUpperCase()} · ${widthMm} × ${depthMm} mm`, cx, offsetY + 44);
 
   // 9. Ruler Measurements along edges
   ctx.font = "10px monospace";
-  ctx.fillStyle = "rgba(255, 255, 255, 0.28)";
+  ctx.fillStyle = isLight ? "rgba(15, 23, 42, 0.4)" : "rgba(255, 255, 255, 0.28)";
   ctx.textAlign = "center";
   for (let x = 50; x < widthMm; x += 50) {
     ctx.fillText(`${x}`, offsetX + x * scale, offsetY + h - 8);
@@ -261,15 +270,17 @@ function computeStats(geometry: THREE.BufferGeometry) {
   return { sizeMm, triangles, volumeCm3 };
 }
 
-// Camera controller supporting smooth viewpoint switches
+// Camera controller supporting smooth viewpoint switches & screen-space panning
 function CameraController({
   viewMode,
   buildVolume,
   autoRotate,
+  resetTrigger,
 }: {
   viewMode: "3d" | "top" | "front";
   buildVolume: { x: number; y: number; z: number };
   autoRotate: boolean;
+  resetTrigger?: number;
 }) {
   const { camera } = useThree();
   const controlsRef = useRef<any>(null);
@@ -291,7 +302,7 @@ function CameraController({
       controlsRef.current?.target.set(0, maxDim * 0.15, 0);
     }
     controlsRef.current?.update();
-  }, [viewMode, camera, buildVolume]);
+  }, [viewMode, camera, buildVolume, resetTrigger]);
 
   return (
     <OrbitControls
@@ -299,14 +310,22 @@ function CameraController({
       makeDefault
       autoRotate={autoRotate}
       autoRotateSpeed={1.5}
-      minDistance={30}
-      maxDistance={1200}
+      minDistance={20}
+      maxDistance={1500}
+      enablePan={true}
+      screenSpacePanning={true}
+      panSpeed={1.2}
+      mouseButtons={{
+        LEFT: THREE.MOUSE.ROTATE,
+        MIDDLE: THREE.MOUSE.DOLLY,
+        RIGHT: THREE.MOUSE.PAN,
+      }}
       maxPolarAngle={Math.PI / 2 + 0.06} // Keep camera naturally above build plate
     />
   );
 }
 
-// Build Plate Component
+// Build Plate Component with anti-Z-fighting offsets and theme awareness
 function BuildPlate({
   width = 256,
   depth = 256,
@@ -314,6 +333,7 @@ function BuildPlate({
   printerName = "Bambu Lab P1S",
   showVolume = false,
   isOutOfBounds = false,
+  isLight = false,
 }: {
   width: number;
   depth: number;
@@ -321,38 +341,42 @@ function BuildPlate({
   printerName: string;
   showVolume: boolean;
   isOutOfBounds: boolean;
+  isLight?: boolean;
 }) {
   const texture = useMemo(() => {
-    return createBambuPlateTexture(width, depth, printerName);
-  }, [width, depth, printerName]);
+    return createBambuPlateTexture(width, depth, printerName, isLight);
+  }, [width, depth, printerName, isLight]);
 
   return (
     <group>
-      {/* 1. Main Textured Spring Steel Plate Surface */}
-      <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+      {/* 1. Main Textured Spring Steel Plate Surface (polygonOffset prevents any coplanar flicker) */}
+      <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[width, depth]} />
         <meshStandardMaterial
           map={texture ?? undefined}
           roughness={0.75}
           metalness={0.12}
+          polygonOffset={true}
+          polygonOffsetFactor={-1}
+          polygonOffsetUnits={-1}
         />
       </mesh>
 
-      {/* 2. Magnetic Heated Bed Base Slab */}
-      <mesh position={[0, -1, 0]} receiveShadow>
-        <boxGeometry args={[width, 2, depth]} />
-        <meshStandardMaterial color="#16181d" roughness={0.65} metalness={0.3} />
+      {/* 2. Magnetic Heated Bed Base Slab (positioned strictly below plate surface) */}
+      <mesh position={[0, -1.05, 0]} receiveShadow>
+        <boxGeometry args={[width, 1.9, depth]} />
+        <meshStandardMaterial color={isLight ? "#cbd5e1" : "#16181d"} roughness={0.65} metalness={0.3} />
       </mesh>
 
       {/* 3. Bambu Front Pull Handle / Notch */}
-      <mesh position={[0, -0.9, depth / 2 + 7]} receiveShadow>
+      <mesh position={[0, -0.95, depth / 2 + 7]} receiveShadow>
         <boxGeometry args={[Math.min(94, width * 0.4), 1.8, 14]} />
-        <meshStandardMaterial color="#24272e" roughness={0.5} metalness={0.25} />
+        <meshStandardMaterial color={isLight ? "#94a3b8" : "#24272e"} roughness={0.5} metalness={0.25} />
       </mesh>
 
       {/* 4. Bambu Green Perimeter Line */}
-      <lineSegments position={[0, 0.06, 0]}>
-        <edgesGeometry args={[new THREE.BoxGeometry(width, 0.08, depth)]} />
+      <lineSegments position={[0, 0.02, 0]}>
+        <edgesGeometry args={[new THREE.BoxGeometry(width, 0.02, depth)]} />
         <lineBasicMaterial color={isOutOfBounds ? "#ef4444" : "#00ae42"} linewidth={2} />
       </lineSegments>
 
@@ -362,7 +386,7 @@ function BuildPlate({
           <lineSegments>
             <edgesGeometry args={[new THREE.BoxGeometry(width, height, depth)]} />
             <lineBasicMaterial
-              color={isOutOfBounds ? "#ef4444" : "#38bdf8"}
+              color={isOutOfBounds ? "#ef4444" : isLight ? "#0284c7" : "#38bdf8"}
               transparent
               opacity={0.32}
             />
@@ -380,12 +404,16 @@ function GroundedModel({
   color,
   wireframe,
   isOutOfBounds,
+  layOnFaceActive,
+  onFaceClick,
 }: {
   geometry: THREE.BufferGeometry;
   rotation: [number, number, number];
   color: string;
   wireframe: boolean;
   isOutOfBounds: boolean;
+  layOnFaceActive?: boolean;
+  onFaceClick?: (normal: THREE.Vector3) => void;
 }) {
   // Compute grounding offset so lowest vertex is precisely on Y = 0, centered on X/Z
   const { offset } = useMemo(() => {
@@ -395,7 +423,7 @@ function GroundedModel({
     const box = new THREE.Box3().setFromObject(tempMesh);
     const center = box.getCenter(new THREE.Vector3());
     return {
-      offset: [-center.x, -box.min.y, -center.z] as [number, number, number],
+      offset: [-center.x, -box.min.y + 0.015, -center.z] as [number, number, number],
       box,
     };
   }, [geometry, rotation]);
@@ -405,11 +433,21 @@ function GroundedModel({
   return (
     <group position={offset}>
       <group rotation={rotation}>
-        <mesh geometry={geometry} castShadow receiveShadow>
+        <mesh
+          geometry={geometry}
+          castShadow
+          receiveShadow
+          onClick={(e) => {
+            if (layOnFaceActive && e.face?.normal) {
+              e.stopPropagation();
+              onFaceClick?.(e.face.normal);
+            }
+          }}
+        >
           <meshStandardMaterial
             color={matColor}
-            roughness={0.38}
-            metalness={0.08}
+            roughness={0.65}
+            metalness={0.04}
             wireframe={wireframe}
           />
         </mesh>
@@ -462,7 +500,13 @@ export function ModelViewer({
     sizeMm: { x: number; y: number; z: number };
     triangles: number;
     volumeCm3: number;
+    solidVolumeCm3?: number;
   } | null>(null);
+
+  const { theme } = useTheme();
+  const isLight = theme === "light";
+  const [resetCamCount, setResetCamCount] = useState(0);
+  const [layOnFaceActive, setLayOnFaceActive] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -517,7 +561,11 @@ export function ModelViewer({
     setCadPreview(null);
     setRotation([0, 0, 0]);
 
-    function handleLoadedGeometry(geo: THREE.BufferGeometry) {
+    function handleLoadedGeometry(
+      geo: THREE.BufferGeometry,
+      overrideVolumeCm3?: number,
+      solidVolumeCm3?: number
+    ) {
       // Auto-scale if exported in meters (e.g., bounding box < 1mm)
       geo.computeBoundingBox();
       const b = geo.boundingBox!;
@@ -527,6 +575,12 @@ export function ModelViewer({
       }
 
       const st = computeStats(geo);
+      if (overrideVolumeCm3 !== undefined && overrideVolumeCm3 > 0) {
+        st.volumeCm3 = overrideVolumeCm3;
+      }
+      if (solidVolumeCm3 !== undefined && solidVolumeCm3 > 0) {
+        (st as any).solidVolumeCm3 = solidVolumeCm3;
+      }
       if (active) {
         setStats(st);
         setGeometry(geo);
@@ -540,7 +594,7 @@ export function ModelViewer({
         if (!active) return;
 
         if (res && res.geometry) {
-          handleLoadedGeometry(res.geometry);
+          handleLoadedGeometry(res.geometry, res.volumeCm3, res.solidVolumeCm3);
           return;
         }
 
@@ -799,7 +853,10 @@ export function ModelViewer({
   return (
     <div
       className={cn(
-        "relative rounded-2xl border border-border/80 bg-[#14161a] overflow-hidden transition-all shadow-inner",
+        "relative rounded-2xl border overflow-hidden transition-all shadow-inner",
+        isLight
+          ? "bg-[#f8fafc] border-border text-slate-900 shadow-slate-200/50"
+          : "bg-[#14161a] border-border/80 text-white",
         expanded
           ? "fixed inset-3 sm:inset-8 z-50 flex flex-col rounded-3xl shadow-2xl border-accent/40 ring-1 ring-accent/30"
           : "h-80 sm:h-96 w-full",
@@ -810,11 +867,18 @@ export function ModelViewer({
       <div className="absolute top-3 inset-x-3 z-10 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
         {/* Left: Printer & Fit Status Badge */}
         <div className="flex items-center gap-2 pointer-events-auto">
-          <div className="flex items-center gap-2 rounded-xl bg-black/75 px-3 py-1.5 backdrop-blur-md border border-white/10 text-xs shadow-md">
+          <div
+            className={cn(
+              "flex items-center gap-2 rounded-xl px-3 py-1.5 backdrop-blur-md border text-xs shadow-md",
+              isLight
+                ? "bg-white/85 text-slate-800 border-slate-200/90 shadow-slate-200/40"
+                : "bg-black/75 text-white/90 border-white/10"
+            )}
+          >
             <span className="size-2 rounded-full bg-[#00ae42]" />
-            <span className="font-semibold text-white/90">{printerName}</span>
-            <span className="text-white/40">·</span>
-            <span className="text-white/60 font-mono text-[11px]">
+            <span className="font-semibold">{printerName}</span>
+            <span className="opacity-40">·</span>
+            <span className="font-mono text-[11px] opacity-75">
               {buildVolume.x}×{buildVolume.y} mm
             </span>
           </div>
@@ -824,7 +888,11 @@ export function ModelViewer({
               className={cn(
                 "hidden sm:flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 backdrop-blur-md border text-xs font-medium shadow-md transition-colors",
                 isOutOfBounds
-                  ? "bg-rose-500/20 text-rose-300 border-rose-500/40"
+                  ? isLight
+                    ? "bg-rose-50 text-rose-700 border-rose-200"
+                    : "bg-rose-500/20 text-rose-300 border-rose-500/40"
+                  : isLight
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                   : "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
               )}
             >
@@ -844,7 +912,14 @@ export function ModelViewer({
         </div>
 
         {/* Right: Camera Presets & Slicer Actions */}
-        <div className="flex items-center gap-1.5 pointer-events-auto rounded-xl bg-black/75 p-1 backdrop-blur-md border border-white/10 shadow-md">
+        <div
+          className={cn(
+            "flex items-center gap-1 pointer-events-auto rounded-xl p-1 backdrop-blur-md border shadow-md",
+            isLight
+              ? "bg-white/85 text-slate-800 border-slate-200/90 shadow-slate-200/40"
+              : "bg-black/75 text-white border-white/10"
+          )}
+        >
           {/* View Modes */}
           <button
             type="button"
@@ -853,7 +928,9 @@ export function ModelViewer({
             className={cn(
               "px-2.5 py-1 rounded-lg text-xs font-medium transition-colors",
               viewMode === "3d"
-                ? "bg-accent text-ink"
+                ? "bg-accent text-ink font-semibold"
+                : isLight
+                ? "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
                 : "text-white/70 hover:text-white hover:bg-white/10"
             )}
           >
@@ -866,7 +943,9 @@ export function ModelViewer({
             className={cn(
               "px-2.5 py-1 rounded-lg text-xs font-medium transition-colors",
               viewMode === "top"
-                ? "bg-accent text-ink"
+                ? "bg-accent text-ink font-semibold"
+                : isLight
+                ? "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
                 : "text-white/70 hover:text-white hover:bg-white/10"
             )}
           >
@@ -879,28 +958,69 @@ export function ModelViewer({
             className={cn(
               "px-2.5 py-1 rounded-lg text-xs font-medium transition-colors",
               viewMode === "front"
-                ? "bg-accent text-ink"
+                ? "bg-accent text-ink font-semibold"
+                : isLight
+                ? "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
                 : "text-white/70 hover:text-white hover:bg-white/10"
             )}
           >
             Front
           </button>
 
-          <div className="h-3.5 w-px bg-white/20 mx-0.5" />
+          <div className={cn("h-3.5 w-px mx-0.5", isLight ? "bg-slate-300" : "bg-white/20")} />
+
+          {/* Reset / Center Camera View */}
+          <button
+            type="button"
+            title="Reset & Center Camera"
+            onClick={() => setResetCamCount((c) => c + 1)}
+            className={cn(
+              "p-1.5 rounded-lg transition-colors",
+              isLight
+                ? "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                : "text-white/70 hover:text-white hover:bg-white/10"
+            )}
+          >
+            <RefreshCcw className="size-3.5" />
+          </button>
+
+          {/* Lay on Face (Bambu Studio Style tool) */}
+          <button
+            type="button"
+            title={layOnFaceActive ? "Lay on Face active: Click any face on 3D model" : "Lay on Face (Orient face to bed)"}
+            onClick={() => {
+              setLayOnFaceActive((prev) => !prev);
+              if (!layOnFaceActive) {
+                toast.info("Click any face on your model to lay it flat on the build plate.");
+              }
+            }}
+            className={cn(
+              "flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-colors",
+              layOnFaceActive
+                ? "bg-accent text-ink font-semibold ring-2 ring-accent/50"
+                : isLight
+                ? "text-slate-700 hover:text-slate-900 hover:bg-slate-200/60"
+                : "text-white/70 hover:text-white hover:bg-white/10"
+            )}
+          >
+            <Compass className="size-3.5" />
+            <span className="hidden sm:inline">Lay on Face</span>
+          </button>
 
           {/* Auto-Orient Button if non-optimal */}
           {printabilityReport && !printabilityReport.isCurrentOrientationOptimal && printabilityReport.optimalOrientation && (
             <button
               type="button"
-              title={`Auto-Orient to ${printabilityReport.optimalOrientation.name} for maximum adhesion`}
+              title={`Auto-Orient to ${printabilityReport.optimalOrientation.name}`}
               onClick={() => {
                 const opt = printabilityReport.optimalOrientation!.rotation;
                 setRotation(opt);
                 onRotationChange?.(opt);
+                toast.success(`Applied ${printabilityReport.optimalOrientation!.name}!`);
               }}
               className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-accent text-ink hover:opacity-90 text-xs font-semibold shadow-sm transition-all animate-pulse"
             >
-              <Compass className="size-3.5" />
+              <Sparkles className="size-3.5" />
               <span>Auto-Orient</span>
             </button>
           )}
@@ -908,7 +1028,7 @@ export function ModelViewer({
           {/* Rotate 90° X */}
           <button
             type="button"
-            title="Rotate 90° (Lay Flat / Turn)"
+            title="Rotate 90°"
             onClick={() => {
               const nextRot: [number, number, number] = [
                 (rotation[0] + Math.PI / 2) % (Math.PI * 2),
@@ -918,7 +1038,12 @@ export function ModelViewer({
               setRotation(nextRot);
               onRotationChange?.(nextRot);
             }}
-            className="p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+            className={cn(
+              "p-1.5 rounded-lg transition-colors",
+              isLight
+                ? "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                : "text-white/70 hover:text-white hover:bg-white/10"
+            )}
           >
             <RotateCw className="size-3.5" />
           </button>
@@ -931,7 +1056,9 @@ export function ModelViewer({
             className={cn(
               "p-1.5 rounded-lg transition-colors",
               showVolume
-                ? "bg-cyan-500/20 text-cyan-400"
+                ? "bg-cyan-500/20 text-cyan-500"
+                : isLight
+                ? "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
                 : "text-white/70 hover:text-white hover:bg-white/10"
             )}
           >
@@ -947,6 +1074,8 @@ export function ModelViewer({
               "p-1.5 rounded-lg transition-colors",
               wireframe
                 ? "bg-accent/20 text-accent"
+                : isLight
+                ? "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
                 : "text-white/70 hover:text-white hover:bg-white/10"
             )}
           >
@@ -958,7 +1087,12 @@ export function ModelViewer({
             type="button"
             title={expanded ? "Minimize Preview" : "Expand Slicer Preview"}
             onClick={() => setExpanded((prev) => !prev)}
-            className="p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+            className={cn(
+              "p-1.5 rounded-lg transition-colors",
+              isLight
+                ? "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                : "text-white/70 hover:text-white hover:bg-white/10"
+            )}
           >
             {expanded ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
           </button>
@@ -966,29 +1100,34 @@ export function ModelViewer({
       </div>
 
       {/* 3D Canvas Area */}
-      <div className="h-full w-full">
+      <div className="h-full w-full" onContextMenu={(e) => e.preventDefault()}>
         {loading ? (
-          <div className="flex h-full w-full items-center justify-center text-sm text-white/70 gap-2">
+          <div className="flex h-full w-full items-center justify-center text-sm text-muted gap-2">
             <span className="size-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />
             Generating build plate preview…
           </div>
         ) : geometry ? (
           <Canvas
             shadows
-            camera={{ position: [200, 180, 240], fov: 45 }}
-            className="h-full w-full cursor-grab active:cursor-grabbing"
+            camera={{ position: [200, 180, 240], fov: 45, near: 1, far: 3000 }}
+            gl={{ antialias: true, alpha: true }}
+            className={cn(
+              "h-full w-full",
+              layOnFaceActive ? "cursor-crosshair" : "cursor-grab active:cursor-grabbing"
+            )}
+            onContextMenu={(e) => e.preventDefault()}
           >
-            <color attach="background" args={["#121417"]} />
+            <color attach="background" args={[isLight ? "#f1f5f9" : "#121417"]} />
 
             {/* Slicer Studio Lights */}
-            <ambientLight intensity={1.15} />
+            <ambientLight intensity={isLight ? 1.45 : 1.15} />
             <directionalLight
               position={[140, 240, 160]}
-              intensity={1.7}
+              intensity={isLight ? 1.9 : 1.7}
               castShadow
               shadow-mapSize={[1024, 1024]}
             />
-            <directionalLight position={[-140, 160, -140]} intensity={0.65} />
+            <directionalLight position={[-140, 160, -140]} intensity={isLight ? 0.8 : 0.65} />
 
             {/* Build Plate */}
             <BuildPlate
@@ -998,6 +1137,7 @@ export function ModelViewer({
               printerName={printerName}
               showVolume={showVolume}
               isOutOfBounds={isOutOfBounds}
+              isLight={isLight}
             />
 
             {/* Grounded Model Sitting on Plate (Y=0) */}
@@ -1007,47 +1147,86 @@ export function ModelViewer({
               color={activeColor}
               wireframe={wireframe}
               isOutOfBounds={isOutOfBounds}
+              layOnFaceActive={layOnFaceActive}
+              onFaceClick={(faceNormal) => {
+                const newRot = getRotationToLayFaceOnBed(faceNormal);
+                setRotation(newRot);
+                onRotationChange?.(newRot);
+                setLayOnFaceActive(false);
+                toast.success("Oriented clicked face flat onto build plate!");
+              }}
             />
 
             {/* Realistic Contact Shadow directly onto Plate */}
             <ContactShadows
-              position={[0, 0.02, 0]}
-              opacity={0.62}
+              position={[0, 0.01, 0]}
+              opacity={isLight ? 0.38 : 0.62}
               scale={Math.max(buildVolume.x, buildVolume.y) * 1.3}
               blur={1.8}
               far={70}
             />
 
-            {/* Camera and Navigation Controller */}
+            {/* Camera and Navigation Controller with Panning support */}
             <CameraController
               viewMode={viewMode}
               buildVolume={buildVolume}
               autoRotate={autoRotate}
+              resetTrigger={resetCamCount}
             />
           </Canvas>
         ) : null}
+      </div>
+
+      {/* Navigation Helper Notice (positioned cleanly ABOVE the bottom bar so it is never cut off) */}
+      <div
+        className={cn(
+          "absolute bottom-13 left-1/2 -translate-x-1/2 text-[10px] pointer-events-none hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full backdrop-blur-md border shadow-2xs transition-colors",
+          isLight
+            ? "bg-white/75 border-slate-200/90 text-slate-500"
+            : "bg-black/50 border-white/10 text-white/40"
+        )}
+      >
+        <span>Left-drag rotate</span>
+        <span className="opacity-40">·</span>
+        <span className="font-semibold text-accent">Right-drag pan</span>
+        <span className="opacity-40">·</span>
+        <span>Scroll zoom</span>
       </div>
 
       {/* Bottom Floating Stats & Quick Swatches Bar */}
       <div className="absolute bottom-3 inset-x-3 z-10 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
         {/* Left: Model Dimension Tags */}
         {stats && (
-          <div className="flex items-center gap-1.5 pointer-events-auto rounded-xl bg-black/75 px-3 py-1.5 backdrop-blur-md border border-white/10 text-[11px] text-white/80 shadow-md">
-            <span className="font-medium text-white/90">
+          <div
+            className={cn(
+              "flex items-center gap-1.5 pointer-events-auto rounded-xl px-3 py-1.5 backdrop-blur-md border text-[11px] shadow-md",
+              isLight
+                ? "bg-white/90 text-slate-800 border-slate-200/90 shadow-slate-200/40"
+                : "bg-black/75 text-white/80 border-white/10"
+            )}
+          >
+            <span className="font-medium text-fg">
               {stats.sizeMm.x.toFixed(1)} × {stats.sizeMm.z.toFixed(1)} × {stats.sizeMm.y.toFixed(1)} mm
             </span>
-            <span className="text-white/30">|</span>
-            <span className="text-white/60">{stats.volumeCm3.toFixed(1)} cm³</span>
-            <span className="text-white/30 hidden sm:inline">|</span>
-            <span className="text-white/60 hidden sm:inline">
+            <span className="opacity-30">|</span>
+            <span className="opacity-75">{stats.volumeCm3.toFixed(1)} cm³</span>
+            <span className="opacity-30 hidden sm:inline">|</span>
+            <span className="opacity-75 hidden sm:inline">
               {stats.triangles.toLocaleString("en-IN")} tris
             </span>
           </div>
         )}
 
         {/* Right: Quick Filament Color Swatches + Turntable Toggle */}
-        <div className="flex items-center gap-2 pointer-events-auto rounded-xl bg-black/75 px-2.5 py-1.5 backdrop-blur-md border border-white/10 shadow-md">
-          <span className="text-[10px] text-white/50 uppercase tracking-wider hidden sm:inline font-medium">
+        <div
+          className={cn(
+            "flex items-center gap-2 pointer-events-auto rounded-xl px-2.5 py-1.5 backdrop-blur-md border shadow-md",
+            isLight
+              ? "bg-white/90 text-slate-800 border-slate-200/90 shadow-slate-200/40"
+              : "bg-black/75 text-white border-white/10"
+          )}
+        >
+          <span className="text-[10px] opacity-50 uppercase tracking-wider hidden sm:inline font-medium">
             Filament:
           </span>
           <div className="flex items-center gap-1">
@@ -1064,6 +1243,8 @@ export function ModelViewer({
                   "size-4 rounded-full border transition-all active:scale-90",
                   activeColor === swatch.hex
                     ? "border-accent scale-110 ring-2 ring-accent/40"
+                    : isLight
+                    ? "border-slate-300 hover:scale-105"
                     : "border-white/20 hover:scale-105"
                 )}
                 style={{ backgroundColor: swatch.hex }}
@@ -1071,7 +1252,7 @@ export function ModelViewer({
             ))}
           </div>
 
-          <div className="h-3 w-px bg-white/20 mx-0.5" />
+          <div className={cn("h-3 w-px mx-0.5", isLight ? "bg-slate-300" : "bg-white/20")} />
 
           {/* Turntable Auto-Rotate Toggle */}
           <button
@@ -1080,17 +1261,16 @@ export function ModelViewer({
             onClick={() => setAutoRotate((prev) => !prev)}
             className={cn(
               "px-2 py-0.5 rounded text-[11px] font-medium transition-colors",
-              autoRotate ? "bg-accent/20 text-accent" : "text-white/60 hover:text-white"
+              autoRotate
+                ? "bg-accent/20 text-accent font-semibold"
+                : isLight
+                ? "text-slate-600 hover:text-slate-900"
+                : "text-white/60 hover:text-white"
             )}
           >
             Turntable
           </button>
         </div>
-      </div>
-
-      {/* Subtle Navigation Helper Notice */}
-      <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[10px] text-white/30 pointer-events-none hidden md:block">
-        Left-drag rotate · Right-drag pan · Scroll zoom
       </div>
     </div>
   );

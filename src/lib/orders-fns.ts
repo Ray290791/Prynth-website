@@ -148,13 +148,17 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
       const email = data.address.email;
       const name = data.address.name;
       if (email) {
-        await sendOrderConfirmationEmail(orderNumber, email, name, {
-          items: data.items,
-          subtotal: data.subtotal,
-          shipping: data.shipping,
-          extra: data.extra,
-          total: data.total
-        });
+        try {
+          await sendOrderConfirmationEmail(orderNumber, email, name, {
+            items: data.items,
+            subtotal: data.subtotal,
+            shipping: data.shipping,
+            extra: data.extra,
+            total: data.total
+          });
+        } catch (emailErr) {
+          console.error("Order placed, but confirmation email failed:", emailErr);
+        }
       }
 
       return { orderId: null, amount: 0, internalOrderNumber: orderNumber };

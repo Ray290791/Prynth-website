@@ -33,8 +33,8 @@ import { cn } from "@/lib/utils";
 const MATERIAL_OPTIONS = [
   { id: "pla", name: "PLA (Standard)" },
   { id: "petg", name: "PETG (Functional / Durable)" },
-  { id: "tpu", name: "TPU (Flexible / Elastomeric)" },
-  { id: "abs", name: "ABS (Engineering)" },
+  { id: "abs", name: "ABS (High-Strength / Heat Resistant)" },
+  { id: "asa", name: "ASA (UV & Outdoor Weatherproof)" },
 ];
 
 export function FilamentsTab() {
@@ -182,7 +182,7 @@ export function FilamentsTab() {
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-          {["all", "pla", "petg", "tpu"].map((mat) => (
+          {["all", "pla", "petg", "abs", "asa"].map((mat) => (
             <button
               key={mat}
               onClick={() => setSelectedMaterial(mat)}

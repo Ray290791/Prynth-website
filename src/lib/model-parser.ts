@@ -4,6 +4,8 @@ import { unzipSync, strFromU8 } from "fflate";
 export interface ModelParseResult {
   geometry?: THREE.BufferGeometry;
   volumeCm3: number;
+  solidVolumeCm3?: number;
+  surfaceAreaMm2?: number;
   sizeMm: { x: number; y: number; z: number };
   triangles: number;
   isCad?: boolean;
@@ -80,6 +82,75 @@ export function computeGeometryVolume(geometry: THREE.BufferGeometry): number {
   }
 
   return Math.abs(totalVolume);
+}
+
+/**
+ * Computes total surface area in mm² of a BufferGeometry.
+ */
+export function computeGeometrySurfaceArea(geometry: THREE.BufferGeometry): number {
+  const pos = geometry.getAttribute("position");
+  if (!pos) return 0;
+
+  let totalArea = 0;
+  const ab = new THREE.Vector3();
+  const ac = new THREE.Vector3();
+  const cross = new THREE.Vector3();
+
+  if (geometry.index) {
+    const index = geometry.index;
+    for (let i = 0; i < index.count; i += 3) {
+      const i1 = index.getX(i);
+      const i2 = index.getX(i + 1);
+      const i3 = index.getX(i + 2);
+
+      const ax = pos.getX(i1), ay = pos.getY(i1), az = pos.getZ(i1);
+      const bx = pos.getX(i2), by = pos.getY(i2), bz = pos.getZ(i2);
+      const cx = pos.getX(i3), cy = pos.getY(i3), cz = pos.getZ(i3);
+
+      ab.set(bx - ax, by - ay, bz - az);
+      ac.set(cx - ax, cy - ay, cz - az);
+      cross.crossVectors(ab, ac);
+      totalArea += 0.5 * cross.length();
+    }
+  } else {
+    for (let i = 0; i < pos.count; i += 3) {
+      const ax = pos.getX(i), ay = pos.getY(i), az = pos.getZ(i);
+      const bx = pos.getX(i + 1), by = pos.getY(i + 1), bz = pos.getZ(i + 1);
+      const cx = pos.getX(i + 2), cy = pos.getY(i + 2), cz = pos.getZ(i + 2);
+
+      ab.set(bx - ax, by - ay, bz - az);
+      ac.set(cx - ax, cy - ay, cz - az);
+      cross.crossVectors(ab, ac);
+      totalArea += 0.5 * cross.length();
+    }
+  }
+
+  return totalArea;
+}
+
+/**
+ * Estimates realistic FDM printed filament material volume (cm³) based on shells and infill.
+ * In FDM 3D printing, models are not solid plastic: they have perimeter walls, solid top/bottom
+ * layers, and sparse interior infill (e.g. 20% gyroid/grid).
+ */
+export function estimateFdmMaterialVolumeCm3(
+  solidVolumeMm3: number,
+  surfaceAreaMm2: number,
+  infillPct = 20,
+  wallLoops = 2,
+): number {
+  if (solidVolumeMm3 <= 0) return 0;
+
+  const wallThickMm = wallLoops * 0.42;
+  const topBottomThickMm = 0.8;
+  const avgShellThickMm = (wallThickMm + topBottomThickMm) / 2;
+  // Shell volume from surface area with internal corner overlap and core extraction coefficient
+  const shellVolMm3 = Math.min(solidVolumeMm3, surfaceAreaMm2 * avgShellThickMm * 0.65);
+  const interiorVolMm3 = Math.max(0, solidVolumeMm3 - shellVolMm3);
+  const infillRatio = Math.max(0.05, Math.min(1.0, infillPct / 100));
+  const materialVolMm3 = shellVolMm3 + interiorVolMm3 * infillRatio;
+
+  return Number((materialVolMm3 / 1000).toFixed(2));
 }
 
 /**
@@ -347,28 +418,46 @@ export async function parse3MF(arrayBuffer: ArrayBuffer): Promise<ModelParseResu
     }
 
     const merged = mergeBufferGeometries(extractedGeometries);
-    merged.computeBoundingBox();
-    merged.computeVertexNormals();
 
-    const bb = merged.boundingBox!;
+    // 3MF specification (ISO/IEC 5143) dictates that positive Z is the upward vertical axis.
+    // Convert 3MF coordinate system (Z-up) to Three.js coordinate system (Y-up):
+    merged.rotateX(-Math.PI / 2);
+
+    // Convert to non-indexed BufferGeometry so flat faces get accurate geometric plane normals
+    // and avoid normal-smoothing leakage across 90-degree hole/crease edges (which caused the false "grid" pattern).
+    const cleanGeom = merged.toNonIndexed();
+    cleanGeom.computeVertexNormals();
+    cleanGeom.computeBoundingBox();
+
+    const bb = cleanGeom.boundingBox!;
     const sizeMm = {
       x: Math.max(0, bb.max.x - bb.min.x),
       y: Math.max(0, bb.max.y - bb.min.y),
       z: Math.max(0, bb.max.z - bb.min.z),
     };
 
-    const volumeMm3 = computeGeometryVolume(merged);
-    let volumeCm3 = Math.abs(volumeMm3) / 1000;
-    if (volumeCm3 < 0.2 && sizeMm.x > 0 && sizeMm.y > 0 && sizeMm.z > 0) {
-      volumeCm3 = (sizeMm.x * sizeMm.y * sizeMm.z * 0.28) / 1000;
+    const solidVolumeMm3 = computeGeometryVolume(cleanGeom);
+    let solidVolumeCm3 = Math.abs(solidVolumeMm3) / 1000;
+    if (solidVolumeCm3 < 0.2 && sizeMm.x > 0 && sizeMm.y > 0 && sizeMm.z > 0) {
+      solidVolumeCm3 = (sizeMm.x * sizeMm.y * sizeMm.z * 0.28) / 1000;
     }
 
-    const pos = merged.getAttribute("position");
-    const triangles = merged.index ? merged.index.count / 3 : (pos ? pos.count / 3 : 0);
+    const surfaceAreaMm2 = computeGeometrySurfaceArea(cleanGeom);
+    const materialVolumeCm3 = estimateFdmMaterialVolumeCm3(
+      solidVolumeMm3,
+      surfaceAreaMm2,
+      20, // default 20% infill
+      2   // default 2 wall loops
+    );
+
+    const pos = cleanGeom.getAttribute("position");
+    const triangles = pos ? pos.count / 3 : 0;
 
     return {
-      geometry: merged,
-      volumeCm3: Number(volumeCm3.toFixed(2)),
+      geometry: cleanGeom,
+      volumeCm3: materialVolumeCm3,
+      solidVolumeCm3: Number(solidVolumeCm3.toFixed(2)),
+      surfaceAreaMm2: Math.round(surfaceAreaMm2),
       sizeMm,
       triangles: Math.round(triangles),
     };
@@ -427,25 +516,36 @@ export function parseOBJ(text: string): ModelParseResult | null {
   const geom = new THREE.BufferGeometry();
   geom.setAttribute("position", new THREE.BufferAttribute(positions, 3));
   geom.setIndex(new THREE.BufferAttribute(new Uint32Array(indices), 1));
-  geom.computeVertexNormals();
-  geom.computeBoundingBox();
+  const cleanGeom = geom.toNonIndexed();
+  cleanGeom.computeVertexNormals();
+  cleanGeom.computeBoundingBox();
 
-  const bb = geom.boundingBox!;
+  const bb = cleanGeom.boundingBox!;
   const sizeMm = {
     x: Math.max(0, bb.max.x - bb.min.x),
     y: Math.max(0, bb.max.y - bb.min.y),
     z: Math.max(0, bb.max.z - bb.min.z),
   };
 
-  const volumeMm3 = computeGeometryVolume(geom);
-  let volumeCm3 = Math.abs(volumeMm3) / 1000;
-  if (volumeCm3 < 0.2 && sizeMm.x > 0 && sizeMm.y > 0 && sizeMm.z > 0) {
-    volumeCm3 = (sizeMm.x * sizeMm.y * sizeMm.z * 0.28) / 1000;
+  const solidVolumeMm3 = computeGeometryVolume(cleanGeom);
+  let solidVolumeCm3 = Math.abs(solidVolumeMm3) / 1000;
+  if (solidVolumeCm3 < 0.2 && sizeMm.x > 0 && sizeMm.y > 0 && sizeMm.z > 0) {
+    solidVolumeCm3 = (sizeMm.x * sizeMm.y * sizeMm.z * 0.28) / 1000;
   }
 
+  const surfaceAreaMm2 = computeGeometrySurfaceArea(cleanGeom);
+  const materialVolumeCm3 = estimateFdmMaterialVolumeCm3(
+    solidVolumeMm3,
+    surfaceAreaMm2,
+    20,
+    2
+  );
+
   return {
-    geometry: geom,
-    volumeCm3: Number(volumeCm3.toFixed(2)),
+    geometry: cleanGeom,
+    volumeCm3: materialVolumeCm3,
+    solidVolumeCm3: Number(solidVolumeCm3.toFixed(2)),
+    surfaceAreaMm2: Math.round(surfaceAreaMm2),
     sizeMm,
     triangles: indices.length / 3,
   };
