@@ -57,6 +57,9 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
     }
 
     // 2. Validate Coupon & Discount Server-Side
+    const isOnline = data.paymentMethod === "razorpay" || data.paymentMethod === "online";
+
+    // 2. Validate Coupon & Discount Server-Side
     let discount = 0;
     if (data.couponCode) {
       const couponRes = await sql`
@@ -69,12 +72,14 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
       if (couponRes.length > 0) {
         const c = couponRes[0];
         discount = Math.round((serverSubtotal * Number(c.discount_percent)) / 100);
-        // Atomically increment coupon usage
-        await sql`
-          UPDATE coupons 
-          SET current_uses = current_uses + 1 
-          WHERE code = ${c.code}
-        `;
+        // Atomically increment coupon usage only for COD/UPI immediately. For online, increment on verified payment.
+        if (!isOnline) {
+          await sql`
+            UPDATE coupons 
+            SET current_uses = current_uses + 1 
+            WHERE code = ${c.code}
+          `;
+        }
       }
     }
 
@@ -92,7 +97,7 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
     const finalSubtotal = serverSubtotal;
     const orderNumber = `PRY-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 5).toUpperCase()}`;
 
-    if (data.paymentMethod === "razorpay" || data.paymentMethod === "online") {
+    if (isOnline) {
       const amountInPaise = Math.round(finalTotal * 100);
 
       const rzpOrder = await rzpCreateOrder({
@@ -101,17 +106,9 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
         receipt: `receipt_${Date.now()}`,
       });
 
-      await sql`
-        INSERT INTO orders (
-          user_id, guest_email, order_number, status, total, subtotal, shipping, extra, 
-          items, shipping_address, shipping_method, payment_method, 
-          razorpay_order_id, payment_status, notes
-        ) VALUES (
-          ${context.userId || null}, ${!context.userId ? data.address.email : null}, ${orderNumber}, 'pending', ${finalTotal}, ${finalSubtotal}, ${shipping}, ${extra},
-          ${JSON.stringify(data.items)}, ${JSON.stringify(data.address)}, ${data.shippingMethod}, ${data.paymentMethod},
-          ${rzpOrder.id}, 'pending', ${data.notes || null}
-        )
-      `;
+      // NOTE: We do NOT insert into `orders` table here!
+      // The order is only created if and when the payment succeeds in `verifyRazorpayPayment`.
+      // This prevents aborted, failed, or cancelled transactions from polluting the orders list.
 
       const rzpKeyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || "rzp_test_TdWyTzFRBBGque";
 
@@ -173,7 +170,24 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
 
 export const verifyRazorpayPayment = createServerFn({ method: "POST" })
   .middleware([optionalAuthMiddleware])
-  .validator((data: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string; internalOrderNumber: string }) => data)
+  .validator((data: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+    internalOrderNumber?: string;
+    orderPayload?: {
+      items: CartItem[];
+      total: number;
+      subtotal: number;
+      shipping: number;
+      extra: number;
+      address: Address;
+      shippingMethod: string;
+      paymentMethod: string;
+      notes?: string;
+      couponCode?: string;
+    };
+  }) => data)
   .handler(async ({ data, context }) => {
     const sql = await getSql();
     
@@ -186,13 +200,72 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
       throw new Error("Invalid signature");
     }
 
-    const orderRes = await sql`SELECT * FROM orders WHERE order_number = ${data.internalOrderNumber}`;
-    const order = orderRes[0] as any;
-    if (!order) throw new Error("Order not found");
+    let orderNumber = data.internalOrderNumber;
+    let order: any = null;
+
+    if (orderNumber) {
+      const orderRes = await sql`SELECT * FROM orders WHERE order_number = ${orderNumber}`;
+      if (orderRes.length > 0) {
+        order = orderRes[0];
+      }
+    }
+
+    if (!order) {
+      if (!data.orderPayload) {
+        throw new Error("Order details missing for verification");
+      }
+      const p = data.orderPayload;
+      orderNumber = orderNumber || `PRY-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 5).toUpperCase()}`;
+
+      // Insert order ONLY upon verified successful payment
+      await sql`
+        INSERT INTO orders (
+          user_id, guest_email, order_number, status, total, subtotal, shipping, extra, 
+          items, shipping_address, shipping_method, payment_method, 
+          razorpay_order_id, razorpay_payment_id, payment_status, notes
+        ) VALUES (
+          ${context.userId || null}, ${!context.userId ? p.address.email : null}, ${orderNumber}, 'processing', ${p.total}, ${p.subtotal}, ${p.shipping}, ${p.extra},
+          ${JSON.stringify(p.items)}, ${JSON.stringify(p.address)}, ${p.shippingMethod}, 'razorpay',
+          ${data.razorpay_order_id}, ${data.razorpay_payment_id}, 'paid', ${p.notes || null}
+        )
+      `;
+
+      // Atomically consume coupon if used
+      if (p.couponCode) {
+        try {
+          await sql`
+            UPDATE coupons 
+            SET current_uses = current_uses + 1 
+            WHERE code = ${p.couponCode.toUpperCase()}
+          `;
+        } catch (cErr) {
+          console.warn("Coupon increment skipped:", cErr);
+        }
+      }
+
+      order = {
+        order_number: orderNumber,
+        items: p.items,
+        shipping_address: p.address,
+        guest_email: p.address.email,
+        subtotal: p.subtotal,
+        shipping: p.shipping,
+        extra: p.extra,
+        total: p.total,
+      };
+    } else {
+      // Existing row (if any) -> update to paid
+      await sql`
+        UPDATE orders 
+        SET payment_status = 'paid', razorpay_payment_id = ${data.razorpay_payment_id}, status = 'processing'
+        WHERE order_number = ${orderNumber}
+      `;
+    }
 
     // Decrement stock upon successful payment
-    if (order.items && Array.isArray(order.items)) {
-      for (const item of order.items) {
+    const orderItems = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+    if (orderItems && Array.isArray(orderItems)) {
+      for (const item of orderItems) {
         if (item.kind === "product" && item.productSlug) {
           const variants = await sql`SELECT * FROM product_variants WHERE product_slug = ${item.productSlug}`;
           const variant = variants.find((v: any) => 
@@ -208,40 +281,43 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
       }
     }
 
-    // Update order status to paid
-    await sql`
-      UPDATE orders 
-      SET payment_status = 'paid', razorpay_payment_id = ${data.razorpay_payment_id}, status = 'processing'
-      WHERE order_number = ${data.internalOrderNumber}
-    `;
-
     // Fetch user email to send confirmation
     let email = order.guest_email;
     let name = "Customer";
 
     if (order.shipping_address) {
-      email = order.shipping_address.email || email;
-      name = order.shipping_address.name || name;
+      const addr = typeof order.shipping_address === 'string' ? JSON.parse(order.shipping_address) : order.shipping_address;
+      email = addr?.email || email;
+      name = addr?.name || name;
     }
 
     if (email) {
-      await sendOrderConfirmationEmail(data.internalOrderNumber, email, name, {
-        items: typeof order.items === 'string' ? JSON.parse(order.items) : order.items,
-        subtotal: Number(order.subtotal),
-        shipping: Number(order.shipping),
-        extra: Number(order.extra),
-        total: Number(order.total)
-      });
+      try {
+        await sendOrderConfirmationEmail(orderNumber!, email, name, {
+          items: orderItems,
+          subtotal: Number(order.subtotal),
+          shipping: Number(order.shipping),
+          extra: Number(order.extra),
+          total: Number(order.total)
+        });
+      } catch (emErr) {
+        console.warn("Failed to send order email:", emErr);
+      }
     }
 
-    return { success: true };
+    return { success: true, orderNumber };
   });
 
 export const getUserOrders = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
     const sql = await getSql();
-    const res = await sql`SELECT * FROM orders WHERE user_id = ${context.userId} ORDER BY created_at DESC`;
+    const res = await sql`
+      SELECT * FROM orders 
+      WHERE user_id = ${context.userId} 
+        AND NOT (payment_method IN ('razorpay', 'online') AND payment_status = 'pending')
+      ORDER BY created_at DESC
+    `;
     return res as any[];
   });
 
@@ -312,10 +388,22 @@ export const getAllOrdersAdmin = createServerFn({ method: "GET" })
       throw new Error(`Unauthorized`);
     }
 
+    // Clean up any failed or abandoned pending Razorpay checkout attempts
+    try {
+      await sql`
+        DELETE FROM orders 
+        WHERE payment_method IN ('razorpay', 'online') 
+          AND payment_status = 'pending'
+      `;
+    } catch (e) {
+      console.warn("Failed to cleanup pending razorpay orders:", e);
+    }
+
     const res = await sql`
       SELECT orders.*, "user".email as user_email, "user".name as user_name 
       FROM orders 
       LEFT JOIN "user" ON orders.user_id = "user".id 
+      WHERE NOT (orders.payment_method IN ('razorpay', 'online') AND orders.payment_status = 'pending')
       ORDER BY created_at DESC
     `;
     return (res as any[]) || [];

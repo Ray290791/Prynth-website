@@ -226,7 +226,11 @@ function CheckoutPage() {
     });
   }
 
-  async function handleRazorpayPayment(orderData: any, internalOrderNumber: string) {
+  async function handleRazorpayPayment(
+    orderData: any,
+    internalOrderNumber: string,
+    orderPayload: any
+  ) {
     const res = await loadRazorpay();
     if (!res) {
       toast.error("Razorpay SDK failed to load. Are you online?");
@@ -248,18 +252,20 @@ function CheckoutPage() {
       order_id: orderData.orderId,
       handler: async function (response: any) {
         try {
-          await verifyRazorpayPayment({
+          const verifyRes = await verifyRazorpayPayment({
             data: {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
               internalOrderNumber,
+              orderPayload,
             }
           });
           toast.success("Payment successful! Order confirmed.");
           clear();
           restoreScrollAndCleanup();
-          void navigate({ to: "/order/$id", params: { id: internalOrderNumber } });
+          const targetNumber = (verifyRes as any)?.orderNumber || internalOrderNumber;
+          void navigate({ to: "/order/$id", params: { id: targetNumber } });
         } catch {
           toast.error("Payment verification failed.");
           restoreScrollAndCleanup();
@@ -323,20 +329,23 @@ function CheckoutPage() {
       }
 
       if (pay === "online") {
+        const orderPayload = {
+          items,
+          total,
+          subtotal,
+          shipping,
+          extra,
+          address: { ...address, phone: address.phone.replace(/\s/g, "") },
+          shippingMethod: ship,
+          paymentMethod: "razorpay",
+          notes: notes.trim() || undefined,
+          couponCode: appliedCoupon?.code,
+        };
+
         const { orderId, amount, internalOrderNumber, keyId } = await createRazorpayOrder({
-          data: {
-            items,
-            total,
-            subtotal,
-            shipping,
-            extra,
-            address: { ...address, phone: address.phone.replace(/\s/g, "") },
-            shippingMethod: ship,
-            paymentMethod: "razorpay",
-            notes: notes.trim() || undefined,
-          }
+          data: orderPayload
         });
-        await handleRazorpayPayment({ orderId, amount, keyId }, internalOrderNumber);
+        await handleRazorpayPayment({ orderId, amount, keyId }, internalOrderNumber, orderPayload);
       } else {
         const { internalOrderNumber } = await createRazorpayOrder({
           data: {
