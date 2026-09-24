@@ -99,6 +99,17 @@ function CheckoutPage() {
     }
   }, [settings?.payment_online_enabled]);
 
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.height = "";
+      document.body.style.width = "";
+      document.documentElement.style.overflow = "";
+      document.documentElement.style.position = "";
+    };
+  }, []);
+
   const { data: savedAddresses } = useQuery({
     queryKey: ["userAddresses"],
     queryFn: () => getAddresses(),
@@ -196,16 +207,40 @@ function CheckoutPage() {
     }
   }
 
+  function restoreScrollAndCleanup() {
+    setBusy(false);
+    document.body.style.overflow = "";
+    document.body.style.position = "";
+    document.body.style.height = "";
+    document.body.style.width = "";
+    document.documentElement.style.overflow = "";
+    document.documentElement.style.position = "";
+    
+    // Clean up any empty/closed Razorpay containers that might remain
+    const containers = document.querySelectorAll(".razorpay-container");
+    containers.forEach((el) => {
+      const iframe = el.querySelector("iframe");
+      if (!iframe || iframe.style.display === "none") {
+        el.remove();
+      }
+    });
+  }
+
   async function handleRazorpayPayment(orderData: any, internalOrderNumber: string) {
     const res = await loadRazorpay();
     if (!res) {
       toast.error("Razorpay SDK failed to load. Are you online?");
-      setBusy(false);
+      restoreScrollAndCleanup();
       return;
     }
 
+    const razorpayKey =
+      orderData.keyId ||
+      import.meta.env.VITE_RAZORPAY_KEY_ID ||
+      "rzp_test_TdWyTzFRBBGque";
+
     const options = {
-      key: import.meta.env.VITE_RAZORPAY_KEY_ID || "",
+      key: razorpayKey,
       amount: orderData.amount,
       currency: "INR",
       name: "Prynth!",
@@ -223,10 +258,20 @@ function CheckoutPage() {
           });
           toast.success("Payment successful! Order confirmed.");
           clear();
+          restoreScrollAndCleanup();
           void navigate({ to: "/order/$id", params: { id: internalOrderNumber } });
         } catch {
           toast.error("Payment verification failed.");
+          restoreScrollAndCleanup();
         }
+      },
+      modal: {
+        ondismiss: function () {
+          restoreScrollAndCleanup();
+          toast.info("Payment window closed.");
+        },
+        escape: true,
+        backdropclose: true,
       },
       prefill: {
         name: address.name,
@@ -234,16 +279,21 @@ function CheckoutPage() {
         contact: address.phone,
       },
       theme: {
-        color: "#161616",
+        color: "#00B8A9",
       },
     };
 
-    const rzp1 = new window.Razorpay(options);
-    rzp1.on("payment.failed", function () {
-      toast.error("Payment failed. Please try again.");
-    });
-    rzp1.open();
-    setBusy(false);
+    try {
+      const rzp1 = new window.Razorpay(options);
+      rzp1.on("payment.failed", function (response: any) {
+        restoreScrollAndCleanup();
+        toast.error(response?.error?.description || "Payment failed. Please try again.");
+      });
+      rzp1.open();
+    } catch (err: any) {
+      restoreScrollAndCleanup();
+      toast.error(err?.message || "Failed to initialize payment gateway.");
+    }
   }
 
   async function placeOrder(e: React.FormEvent) {
@@ -273,7 +323,7 @@ function CheckoutPage() {
       }
 
       if (pay === "online") {
-        const { orderId, amount, internalOrderNumber } = await createRazorpayOrder({
+        const { orderId, amount, internalOrderNumber, keyId } = await createRazorpayOrder({
           data: {
             items,
             total,
@@ -286,7 +336,7 @@ function CheckoutPage() {
             notes: notes.trim() || undefined,
           }
         });
-        await handleRazorpayPayment({ orderId, amount }, internalOrderNumber);
+        await handleRazorpayPayment({ orderId, amount, keyId }, internalOrderNumber);
       } else {
         const { internalOrderNumber } = await createRazorpayOrder({
           data: {
@@ -302,14 +352,14 @@ function CheckoutPage() {
           }
         });
         clear();
-        setBusy(false);
+        restoreScrollAndCleanup();
         toast.success(`Order confirmed via ${pay === "upi" ? "UPI" : "Cash on Delivery"}`);
         void navigate({ to: "/order/$id", params: { id: internalOrderNumber } });
       }
     } catch (err: any) {
       console.error("Order creation failed:", err);
       toast.error(err?.message || "Error creating order.");
-      setBusy(false);
+      restoreScrollAndCleanup();
     }
   }
 

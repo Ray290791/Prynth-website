@@ -113,7 +113,14 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
         )
       `;
 
-      return { orderId: rzpOrder.id, amount: rzpOrder.amount, internalOrderNumber: orderNumber };
+      const rzpKeyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || "rzp_test_TdWyTzFRBBGque";
+
+      return {
+        orderId: rzpOrder.id,
+        amount: rzpOrder.amount,
+        internalOrderNumber: orderNumber,
+        keyId: rzpKeyId,
+      };
     } else {
       // COD or UPI
       await sql`
