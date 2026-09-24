@@ -1169,7 +1169,7 @@ export function CustomPricingSettings({
                         <input
                           type="number"
                           min="0"
-                          step="50"
+                          step="1"
                           value={c.fee}
                           onChange={(e) => {
                             const next = [...complexities];
