@@ -6,9 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useState, useEffect, useId } from "react";
 import { cn } from "@/lib/utils";
-import { Package, Box, X, Settings, Image as ImageIcon, BarChart3, Tag, ClipboardList, Shield, UserCog, HelpCircle, Users, Search, Trash2, Layers, Edit2, Plus, Eye, EyeOff, Printer as PrinterIcon, Disc } from "lucide-react";
+import { Package, Box, X, Settings, Image as ImageIcon, BarChart3, Tag, ClipboardList, Shield, UserCog, HelpCircle, Users, Search, Trash2, Layers, Edit2, Plus, Eye, EyeOff, Printer as PrinterIcon, Disc, CreditCard } from "lucide-react";
 import { PrintersTab } from "@/components/printers-tab";
 import { FilamentsTab } from "@/components/filaments-tab";
+import { PaymentOptionsTab } from "@/components/payment-options-tab";
 import { OrderDetailsDialog } from "@/components/order-details-dialog";
 import { getMaterialsAdmin, createMaterial, updateMaterial, deleteMaterial, type Material, type MaterialInput } from "@/lib/materials-fns";
 import { getAllProductsAdmin, deleteProduct, updateProduct, createProduct, updateProductInventory } from "@/lib/products-fns";
@@ -107,6 +108,7 @@ function AdminPage() {
     { id: "admin-team", label: "Admin Team", icon: Shield },
     { id: "admin-profile", label: "Admin Profile", icon: UserCog },
     { id: "users", label: "Users", icon: Users },
+    { id: "payments", label: "Payment Options", icon: CreditCard },
     { id: "settings", label: "Site Settings", icon: Settings },
   ];
 
@@ -231,34 +233,36 @@ function AdminPage() {
                           </Badge>
                           <div className="text-xs text-muted mt-1">Payment: {order.payment_status}</div>
                         </td>
-                        <td className="p-4 text-right space-x-2" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            type="button"
-                            onClick={() => setSelectedOrder(order)}
-                            className="text-xs px-2.5 py-1 rounded bg-surface-2 hover:bg-surface-3 transition-colors border border-border font-medium"
-                          >
-                            Details
-                          </button>
-                          <select
-                            className="text-sm rounded border border-border bg-surface p-1 focus:ring-1 focus:ring-accent"
-                            value={order.status}
-                            onChange={(e) => updateMutation.mutate({ order_number: order.order_number, status: e.target.value })}
-                            disabled={updatingId === order.order_number}
-                          >
-                            <option value="pending">Pending</option>
-                            <option value="processing">Processing</option>
-                            <option value="printing">Printing</option>
-                            <option value="shipped">Shipped</option>
-                            <option value="delivered">Delivered</option>
-                            <option value="cancelled">Cancelled</option>
-                          </select>
-                          <button
-                            type="button"
-                            onClick={() => setDeletingOrder(order.order_number)}
-                            className="text-xs px-2 py-1 rounded bg-danger/10 text-danger hover:bg-danger/20 transition-colors border border-danger/20"
-                          >
-                            Delete
-                          </button>
+                        <td className="p-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                          <div className="inline-flex items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedOrder(order)}
+                              className="text-xs px-2.5 py-1.5 rounded-lg bg-surface-2 hover:bg-surface-3 transition-colors border border-border font-medium shadow-2xs"
+                            >
+                              Details
+                            </button>
+                            <select
+                              className="text-xs rounded-lg border border-border bg-surface px-2 py-1.5 focus:ring-1 focus:ring-accent font-medium"
+                              value={order.status}
+                              onChange={(e) => updateMutation.mutate({ order_number: order.order_number, status: e.target.value })}
+                              disabled={updatingId === order.order_number}
+                            >
+                              <option value="pending">Pending</option>
+                              <option value="processing">Processing</option>
+                              <option value="printing">Printing</option>
+                              <option value="shipped">Shipped</option>
+                              <option value="delivered">Delivered</option>
+                              <option value="cancelled">Cancelled</option>
+                            </select>
+                            <button
+                              type="button"
+                              onClick={() => setDeletingOrder(order.order_number)}
+                              className="text-xs px-2.5 py-1.5 rounded-lg bg-danger/10 text-danger hover:bg-danger/20 transition-colors border border-danger/20 font-medium"
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -283,6 +287,7 @@ function AdminPage() {
           isLoading={deleteMutation.isPending}
         />
 
+        {activeTab === "payments" && <PaymentOptionsTab />}
         {activeTab === "settings" && <SettingsTab />}
         {activeTab === "faqs" && <FaqsTab />}
         {activeTab === "admin-team" && <AdminTeamTab />}

@@ -1,4 +1,4 @@
-﻿import { defineEventHandler, setResponseHeader } from "h3";
+import { defineEventHandler, setResponseHeader } from "h3";
 
 /**
  * Security-headers middleware — runs on every Nitro HTTP response.
@@ -18,18 +18,18 @@ export default defineEventHandler((event) => {
   // Tailwind @layer injected CSS. Without it, the app cannot boot.
   const csp = [
     "default-src 'self'",
-    // Own scripts + Grok platform extension (branding pill)
-    "script-src 'self' 'unsafe-inline' https://grok.com",
+    // Own scripts + Grok platform extension + Razorpay checkout SDK
+    "script-src 'self' 'unsafe-inline' https://grok.com https://checkout.razorpay.com https://*.razorpay.com",
     // Own styles + Google Fonts + Tailwind inline
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     // Font files
     "font-src 'self' https://fonts.gstatic.com",
-    // Images: own origin, base64 data URIs (thumbnails), blob (canvas)
-    "img-src 'self' data: blob:",
+    // Images: own origin, base64 data URIs (thumbnails), blob (canvas) + Razorpay
+    "img-src 'self' data: blob: https://*.razorpay.com",
     // API / WebSocket calls: own origin + Razorpay (payments) + Neon (DB)
     "connect-src 'self' https://*.razorpay.com https://*.neon.tech wss://*.neon.tech",
-    // No frames or objects allowed
-    "frame-src 'none'",
+    // Razorpay checkout modal runs inside an iframe
+    "frame-src 'self' https://api.razorpay.com https://*.razorpay.com",
     "object-src 'none'",
     // Force HTTPS for all requests made by the page
     "upgrade-insecure-requests",
@@ -54,7 +54,7 @@ export default defineEventHandler((event) => {
       "camera=()",       // deny camera
       "microphone=()",   // deny mic
       "geolocation=()",  // deny location
-      "payment=(self)",  // allow payment API only from own origin (Razorpay)
+      "payment=*",       // allow payment API for Razorpay
       "usb=()",          // deny USB
     ].join(", "),
   );

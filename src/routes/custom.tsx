@@ -24,20 +24,23 @@ import {
 } from "@/lib/quote";
 import { getPrinters, type Printer } from "@/lib/printers-fns";
 import { getAvailableFilaments, type FilamentRecord } from "@/lib/filaments-fns";
-import { uploadCustomFile } from "@/lib/custom-files-fns";
+import { uploadCustomFile, getCustomFileRecord } from "@/lib/custom-files-fns";
+import { setCachedModelFile, getCachedModelFile } from "@/lib/custom-file-cache";
+import type { CartItem, CustomSpec } from "@/lib/cart-store";
 import { PrintabilityChecker } from "@/components/printability-checker";
 import type { PrintabilityReport } from "@/lib/mesh-analysis";
 import { parseModelFile, estimateFdmMaterialVolumeCm3 } from "@/lib/model-parser";
 import { cn } from "@/lib/utils";
-import { ChevronDown, Sliders, Sparkles, Printer as PrinterIcon, Loader2, Check, CheckCircle2, RefreshCcw } from "lucide-react";
+import { ChevronDown, Sliders, Sparkles, Printer as PrinterIcon, Loader2, Check, CheckCircle2, RefreshCcw, Save, ArrowLeft } from "lucide-react";
 
 const rootRoute = getRouteApi("__root__");
 
 type Path = "upload" | "idea";
 
 export const Route = createFileRoute("/custom")({
-  validateSearch: (s: Record<string, unknown>): { path?: Path } => ({
+  validateSearch: (s: Record<string, unknown>): { path?: Path; edit?: string } => ({
     path: s.path === "idea" ? "idea" : s.path === "upload" ? "upload" : undefined,
+    edit: typeof s.edit === "string" ? s.edit : undefined,
   }),
   component: CustomPage,
 });
@@ -156,9 +159,16 @@ function PrinterSelector({
 }
 
 function CustomPage() {
-  const { path } = Route.useSearch();
+  const { path, edit } = Route.useSearch();
   const navigate = useNavigate({ from: "/custom" });
   const add = useCart((s) => s.add);
+  const updateItem = useCart((s) => s.updateItem);
+  const cartItems = useCart((s) => s.items);
+
+  const editItem = useMemo(() => {
+    if (!edit) return null;
+    return cartItems.find((i) => i.id === edit && i.kind === "custom") ?? null;
+  }, [edit, cartItems]);
 
   const { settings } = rootRoute.useLoaderData();
   const pricingConfig = useMemo(() => getPricingConfig(settings), [settings]);
@@ -173,24 +183,66 @@ function CustomPage() {
     queryFn: () => getAvailableFilaments(),
   });
 
-  const tab = path ?? "upload";
+  const tab = path ?? (editItem?.custom?.path === "idea" ? "idea" : "upload");
 
   function switchTab(next: Path) {
-    void navigate({ search: { path: next } });
+    void navigate({ search: { path: next, edit } });
   }
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-16">
-      <p className="text-[11px] font-medium tracking-[0.18em] text-subtle uppercase">
-        Custom Studio
-      </p>
-      <h1 className="mt-2 font-display text-4xl font-semibold tracking-tight md:text-5xl">
-        Print it your way
-      </h1>
-      <p className="mt-3 max-w-2xl text-muted">
-        Precision 3D printing on our high-speed Bambu Lab fleet. Choose your machine, upload your 3D model, or describe
-        your concept and we'll model it first.
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p className="text-[11px] font-medium tracking-[0.18em] text-subtle uppercase">
+            Custom Studio
+          </p>
+          <h1 className="mt-2 font-display text-4xl font-semibold tracking-tight md:text-5xl">
+            {editItem ? "Edit custom order" : "Print it your way"}
+          </h1>
+          <p className="mt-3 max-w-2xl text-muted">
+            {editItem
+              ? "Modify your print specifications, material, quality, or model settings below. Your changes will update directly in the cart."
+              : "Precision 3D printing on our high-speed Bambu Lab fleet. Choose your machine, upload your 3D model, or describe your concept and we'll model it first."}
+          </p>
+        </div>
+
+        {editItem && (
+          <Link
+            to="/cart"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface px-4 py-2 text-sm font-medium text-muted hover:text-fg shadow-xs transition-colors"
+          >
+            <ArrowLeft className="size-4" />
+            Back to Cart
+          </Link>
+        )}
+      </div>
+
+      {editItem && (
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-accent/40 bg-accent/10 p-4 sm:p-5 shadow-xs animate-in fade-in duration-200">
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-accent text-ink shadow-xs">
+              <Sliders className="size-5" />
+            </div>
+            <div>
+              <p className="font-semibold text-sm sm:text-base text-fg">
+                Editing: <span className="text-accent">{editItem.name}</span>
+              </p>
+              <p className="text-xs text-muted mt-0.5">
+                Adjust material, infill, quality, or orientation below. Click &quot;Update in cart&quot; when done.
+              </p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => void navigate({ search: { edit: undefined } })}
+            className="text-xs h-9"
+          >
+            Cancel editing
+          </Button>
+        </div>
+      )}
 
       <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <button
@@ -223,9 +275,23 @@ function CustomPage() {
 
       <div className="mt-10">
         {tab === "upload" ? (
-          <UploadForm add={add} pricingConfig={pricingConfig} printers={printers} filaments={filaments} />
+          <UploadForm
+            add={add}
+            pricingConfig={pricingConfig}
+            printers={printers}
+            filaments={filaments}
+            editItem={editItem}
+            onUpdateItem={updateItem}
+          />
         ) : (
-          <IdeaForm add={add} pricingConfig={pricingConfig} printers={printers} filaments={filaments} />
+          <IdeaForm
+            add={add}
+            pricingConfig={pricingConfig}
+            printers={printers}
+            filaments={filaments}
+            editItem={editItem}
+            onUpdateItem={updateItem}
+          />
         )}
       </div>
     </div>
@@ -375,13 +441,19 @@ function UploadForm({
   pricingConfig,
   printers,
   filaments,
+  editItem,
+  onUpdateItem,
 }: {
   add: ReturnType<typeof useCart.getState>["add"];
   pricingConfig: CustomPricingConfig;
   printers: Printer[];
   filaments: FilamentRecord[];
+  editItem?: CartItem | null;
+  onUpdateItem?: (id: string, updated: Partial<CartItem>) => void;
 }) {
+  const navigate = useNavigate();
   const [selectedPrinterId, setSelectedPrinterId] = useState(() => {
+    if (editItem?.custom?.printerId) return editItem.custom.printerId;
     const firstAvail = printers.find((p) => p.status === "available");
     return firstAvail?.id || printers[0]?.id || "p1s-01";
   });
@@ -395,32 +467,76 @@ function UploadForm({
 
   const selectedPrinter = printers.find((p) => p.id === selectedPrinterId) ?? printers[0];
 
-  const [file, setFile] = useState<File | null>(null);
-  const [fileId, setFileId] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(() => {
+    if (editItem) {
+      const cached = getCachedModelFile(editItem.custom?.fileId || editItem.id);
+      if (cached) return cached;
+    }
+    return null;
+  });
+  const [fileId, setFileId] = useState<string | null>(() => editItem?.custom?.fileId || null);
   const [uploadingFile, setUploadingFile] = useState(false);
-  const [volume, setVolume] = useState(0);
-  const [solidVolume, setSolidVolume] = useState<number | null>(null);
-  const [surfaceArea, setSurfaceArea] = useState<number | null>(null);
+  const [volume, setVolume] = useState(() => editItem?.custom?.volumeCm3 || 0);
+  const [solidVolume, setSolidVolume] = useState<number | null>(() => editItem?.custom?.solidVolumeCm3 ?? null);
+  const [surfaceArea, setSurfaceArea] = useState<number | null>(() => editItem?.custom?.surfaceAreaMm2 ?? null);
   const [sizeLabel, setSizeLabel] = useState("");
-  const [autoDetected, setAutoDetected] = useState(false);
-  const [parsedDimensions, setParsedDimensions] = useState<{ x: number; y: number; z: number } | null>(null);
+  const [autoDetected, setAutoDetected] = useState(() => Boolean(editItem?.custom?.dimensionsMm || editItem?.custom?.dimensions));
+  const [parsedDimensions, setParsedDimensions] = useState<{ x: number; y: number; z: number } | null>(
+    () => editItem?.custom?.dimensionsMm ?? null,
+  );
   const [parsedTriangles, setParsedTriangles] = useState(0);
   const [parsing, setParsing] = useState(false);
-  const [material, setMaterial] = useState("pla");
-  const [quality, setQuality] = useState("standard");
-  const [infillPct, setInfillPct] = useState(20);
-  const [infillPattern, setInfillPattern] = useState("gyroid");
-  const [wallLoops, setWallLoops] = useState(2);
-  const [supports, setSupports] = useState("none");
-  const [surfaceFinish, setSurfaceFinish] = useState("standard");
-  const [brim, setBrim] = useState("auto");
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [color, setColor] = useState("charcoal");
-  const [qty, setQty] = useState(1);
-  const [notes, setNotes] = useState("");
+  const [material, setMaterial] = useState(() => editItem?.custom?.materialId || "pla");
+  const [quality, setQuality] = useState(() => editItem?.custom?.qualityId || "standard");
+  const [infillPct, setInfillPct] = useState(() => editItem?.custom?.infillPercentage ?? 20);
+  const [infillPattern, setInfillPattern] = useState(() => editItem?.custom?.infillPattern || "gyroid");
+  const [wallLoops, setWallLoops] = useState(() => editItem?.custom?.wallLoops ?? 2);
+  const [supports, setSupports] = useState(() => editItem?.custom?.supports || "none");
+  const [surfaceFinish, setSurfaceFinish] = useState(() => editItem?.custom?.surfaceFinish || "standard");
+  const [brim, setBrim] = useState(() => editItem?.custom?.brim || "auto");
+  const [showAdvanced, setShowAdvanced] = useState(() => {
+    if (!editItem?.custom) return false;
+    return (
+      (editItem.custom.infillPattern && editItem.custom.infillPattern !== "gyroid") ||
+      (editItem.custom.wallLoops && editItem.custom.wallLoops !== 2) ||
+      (editItem.custom.supports && editItem.custom.supports !== "none") ||
+      (editItem.custom.surfaceFinish && editItem.custom.surfaceFinish !== "standard") ||
+      (editItem.custom.brim && editItem.custom.brim !== "auto")
+    );
+  });
+  const [color, setColor] = useState(() => editItem?.custom?.colorId || editItem?.color || "charcoal");
+  const [qty, setQty] = useState(() => editItem?.qty || 1);
+  const [notes, setNotes] = useState(() => editItem?.custom?.notes || "");
   const [fallback, setFallback] = useState("desk");
-  const [modelRotation, setModelRotation] = useState<[number, number, number]>([0, 0, 0]);
+  const [modelRotation, setModelRotation] = useState<[number, number, number]>(
+    () => editItem?.custom?.modelRotation || [0, 0, 0],
+  );
   const [printabilityReport, setPrintabilityReport] = useState<PrintabilityReport | null>(null);
+
+  // Restore file from server if editing and not in client memory cache
+  useEffect(() => {
+    if (!editItem || file) return;
+    const fid = editItem.custom?.fileId;
+    if (fid) {
+      setParsing(true);
+      getCustomFileRecord({ data: { id: fid } })
+        .then((rec) => {
+          if (rec?.file_data) {
+            const binary = atob(rec.file_data);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+              bytes[i] = binary.charCodeAt(i);
+            }
+            const restored = new File([bytes], rec.file_name, { type: rec.mime_type });
+            setFile(restored);
+            setCachedModelFile(fid, restored);
+            setCachedModelFile(editItem.id, restored);
+          }
+        })
+        .catch((err) => console.error("Could not restore custom model file:", err))
+        .finally(() => setParsing(false));
+    }
+  }, [editItem, file]);
 
   // Filter filaments dynamically by selected material
   const materialFilaments = useMemo(() => {
@@ -463,6 +579,10 @@ function UploadForm({
 
   async function handleFile(next: File | null) {
     setFile(next);
+    if (next) {
+      setCachedModelFile(next.name, next);
+      if (editItem?.id) setCachedModelFile(editItem.id, next);
+    }
     setFileId(null);
     setVolume(0);
     setSolidVolume(null);
@@ -492,6 +612,7 @@ function UploadForm({
           });
           if (res?.fileId) {
             setFileId(res.fileId);
+            setCachedModelFile(res.fileId, next);
           }
         } catch (err) {
           console.error("Failed to upload model file:", err);
@@ -588,45 +709,71 @@ function UploadForm({
   const finishMeta = SURFACE_FINISHES.find((f) => f.id === surfaceFinish);
 
   function addEstimate() {
-    if (!file || quote.total <= 0) {
+    if ((!file && !editItem?.custom?.fileName) || quote.total <= 0) {
       toast.error("Upload a model first.");
       return;
     }
+    const fileName = file ? file.name : (editItem?.custom?.fileName || "Model");
+    const fileSize = file ? file.size : (editItem?.custom?.fileSize || 0);
+
+    const customData: CustomSpec = {
+      path: "upload",
+      fileName,
+      fileSize,
+      fileId: fileId ?? editItem?.custom?.fileId ?? undefined,
+      printerId: selectedPrinter?.id,
+      printerName: selectedPrinter?.name,
+      printerModel: selectedPrinter?.model,
+      material: materialMeta?.name ?? material,
+      materialId: material,
+      quality: qualityMeta?.name ?? quality,
+      qualityId: quality,
+      infill: `${infillPct}% (${patternMeta?.name ?? "Gyroid"})`,
+      infillPercentage: infillPct,
+      infillPattern,
+      wallLoops,
+      supports: supportMeta?.name ?? supports,
+      surfaceFinish: finishMeta?.name ?? surfaceFinish,
+      brim,
+      orientation:
+        modelRotation[0] !== 0 || modelRotation[2] !== 0
+          ? `Rotated (${Math.round((modelRotation[0] * 180) / Math.PI)}°, ${Math.round((modelRotation[2] * 180) / Math.PI)}°)`
+          : "Default (As Uploaded)",
+      modelRotation,
+      preflightScore: printabilityReport ? `${printabilityReport.score}% (${printabilityReport.status})` : editItem?.custom?.preflightScore,
+      color: selectedColorName,
+      colorId: color,
+      colorHex: selectedColorHex,
+      dimensions: parsedDimensions
+        ? `${parsedDimensions.x.toFixed(1)} × ${parsedDimensions.y.toFixed(1)} × ${parsedDimensions.z.toFixed(1)} mm`
+        : editItem?.custom?.dimensions,
+      dimensionsMm: parsedDimensions ?? editItem?.custom?.dimensionsMm,
+      notes,
+      volumeCm3: quote.volumeCm3,
+      solidVolumeCm3: solidVolume ?? editItem?.custom?.solidVolumeCm3,
+      surfaceAreaMm2: surfaceArea ?? editItem?.custom?.surfaceAreaMm2,
+    };
+
+    if (editItem && onUpdateItem) {
+      onUpdateItem(editItem.id, {
+        name: `Custom print · ${fileName}`,
+        color: selectedColorName,
+        unitPrice: quote.total,
+        qty,
+        custom: customData,
+      });
+      toast.success("Custom order settings updated in cart!");
+      void navigate({ to: "/cart" });
+      return;
+    }
+
     add({
       kind: "custom",
-      name: `Custom print · ${file.name}`,
+      name: `Custom print · ${fileName}`,
       color: selectedColorName,
       unitPrice: quote.total,
-      qty: 1,
-      custom: {
-        path: "upload",
-        fileName: file.name,
-        fileSize: file.size,
-        fileId: fileId ?? undefined,
-        printerId: selectedPrinter?.id,
-        printerName: selectedPrinter?.name,
-        printerModel: selectedPrinter?.model,
-        material: materialMeta?.name ?? material,
-        quality: qualityMeta?.name ?? quality,
-        infill: `${infillPct}% (${patternMeta?.name ?? "Gyroid"})`,
-        infillPercentage: infillPct,
-        infillPattern,
-        wallLoops,
-        supports: supportMeta?.name ?? supports,
-        surfaceFinish: finishMeta?.name ?? surfaceFinish,
-        brim,
-        orientation:
-          modelRotation[0] !== 0 || modelRotation[2] !== 0
-            ? `Rotated (${Math.round((modelRotation[0] * 180) / Math.PI)}°, ${Math.round((modelRotation[2] * 180) / Math.PI)}°)`
-            : "Default (As Uploaded)",
-        preflightScore: printabilityReport ? `${printabilityReport.score}% (${printabilityReport.status})` : undefined,
-        color: selectedColorName,
-        dimensions: parsedDimensions
-          ? `${parsedDimensions.x.toFixed(1)} × ${parsedDimensions.y.toFixed(1)} × ${parsedDimensions.z.toFixed(1)} mm`
-          : undefined,
-        notes,
-        volumeCm3: quote.volumeCm3,
-      },
+      qty,
+      custom: customData,
     });
     toast.success("Estimate added to cart");
   }
@@ -1112,8 +1259,22 @@ function UploadForm({
           />
         </div>
 
-        <Button type="submit" size="lg" disabled={!file}>
-          Add estimate to cart
+        <Button
+          type="submit"
+          size="lg"
+          disabled={!file && !editItem?.custom?.fileName}
+          className="gap-2"
+        >
+          {editItem ? (
+            <>
+              <Save className="size-4" />
+              Update in cart · {formatINR(quote.total * qty)}
+            </>
+          ) : (
+            <>
+              Add estimate to cart · {quote.total > 0 ? formatINR(quote.total * qty) : ""}
+            </>
+          )}
         </Button>
       </form>
 
@@ -1126,7 +1287,7 @@ function UploadForm({
           volumeCm3={quote.volumeCm3}
           solidVolumeCm3={solidVolume ?? undefined}
           weightGrams={quote.weightGrams}
-          ready={Boolean(file) && quote.total > 0}
+          ready={Boolean(file || editItem?.custom?.fileName) && quote.total > 0}
           specs={{
             printerName: selectedPrinter?.name,
             qualityName: qualityMeta?.name,
@@ -1153,13 +1314,19 @@ function IdeaForm({
   pricingConfig,
   printers,
   filaments,
+  editItem,
+  onUpdateItem,
 }: {
   add: ReturnType<typeof useCart.getState>["add"];
   pricingConfig: CustomPricingConfig;
   printers: Printer[];
   filaments: FilamentRecord[];
+  editItem?: CartItem | null;
+  onUpdateItem?: (id: string, updated: Partial<CartItem>) => void;
 }) {
+  const navigate = useNavigate();
   const [selectedPrinterId, setSelectedPrinterId] = useState(() => {
+    if (editItem?.custom?.printerId) return editItem.custom.printerId;
     const firstAvail = printers.find((p) => p.status === "available");
     return firstAvail?.id || printers[0]?.id || "p1s-01";
   });
@@ -1173,20 +1340,36 @@ function IdeaForm({
 
   const selectedPrinter = printers.find((p) => p.id === selectedPrinterId) ?? printers[0];
 
-  const [idea, setIdea] = useState("");
-  const [size, setSize] = useState("desk");
-  const [complexity, setComplexity] = useState("basic");
-  const [material, setMaterial] = useState("pla");
-  const [quality, setQuality] = useState("standard");
-  const [infillPct, setInfillPct] = useState(20);
-  const [infillPattern, setInfillPattern] = useState("gyroid");
-  const [wallLoops, setWallLoops] = useState(2);
-  const [supports, setSupports] = useState("none");
-  const [surfaceFinish, setSurfaceFinish] = useState("standard");
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [color, setColor] = useState("charcoal");
-  const [qty, setQty] = useState(1);
-  const [email, setEmail] = useState("");
+  const [idea, setIdea] = useState(() => {
+    if (editItem?.custom?.idea) return editItem.custom.idea;
+    if (editItem?.custom?.notes) return editItem.custom.notes.split(" · ")[0] || "";
+    return "";
+  });
+  const [size, setSize] = useState(() => editItem?.custom?.sizeId || "desk");
+  const [complexity, setComplexity] = useState(() => editItem?.custom?.complexityId || "basic");
+  const [material, setMaterial] = useState(() => editItem?.custom?.materialId || "pla");
+  const [quality, setQuality] = useState(() => editItem?.custom?.qualityId || "standard");
+  const [infillPct, setInfillPct] = useState(() => editItem?.custom?.infillPercentage ?? 20);
+  const [infillPattern, setInfillPattern] = useState(() => editItem?.custom?.infillPattern || "gyroid");
+  const [wallLoops, setWallLoops] = useState(() => editItem?.custom?.wallLoops ?? 2);
+  const [supports, setSupports] = useState(() => editItem?.custom?.supports || "none");
+  const [surfaceFinish, setSurfaceFinish] = useState(() => editItem?.custom?.surfaceFinish || "standard");
+  const [showAdvanced, setShowAdvanced] = useState(() => {
+    if (!editItem?.custom) return false;
+    return (
+      (editItem.custom.infillPattern && editItem.custom.infillPattern !== "gyroid") ||
+      (editItem.custom.wallLoops && editItem.custom.wallLoops !== 2) ||
+      (editItem.custom.supports && editItem.custom.supports !== "none") ||
+      (editItem.custom.surfaceFinish && editItem.custom.surfaceFinish !== "standard")
+    );
+  });
+  const [color, setColor] = useState(() => editItem?.custom?.colorId || editItem?.color || "charcoal");
+  const [qty, setQty] = useState(() => editItem?.qty || 1);
+  const [email, setEmail] = useState(() => {
+    if (editItem?.custom?.email) return editItem.custom.email;
+    const parts = editItem?.custom?.notes?.split(" · ");
+    return parts && parts.length > 1 ? parts[1] : "";
+  });
 
   // Filter filaments dynamically by selected material
   const materialFilaments = useMemo(() => {
@@ -1268,30 +1451,53 @@ function IdeaForm({
       toast.error("Tell us a little more about the piece.");
       return;
     }
+
+    const customData: CustomSpec = {
+      path: "idea",
+      printerId: selectedPrinter?.id,
+      printerName: selectedPrinter?.name,
+      printerModel: selectedPrinter?.model,
+      material: materialMeta?.name ?? material,
+      materialId: material,
+      quality: qualityMeta?.name ?? quality,
+      qualityId: quality,
+      infill: `${infillPct}% (${patternMeta?.name ?? "Gyroid"})`,
+      infillPercentage: infillPct,
+      infillPattern,
+      wallLoops,
+      supports: supportMeta?.name ?? supports,
+      surfaceFinish: finishMeta?.name ?? surfaceFinish,
+      color: selectedColorName,
+      colorId: color,
+      notes: `${idea}${email ? ` · ${email}` : ""}`,
+      idea,
+      email,
+      sizeId: size,
+      complexityId: complexity,
+      volumeCm3: quote.volumeCm3,
+      modeling: cx.name,
+    };
+
+    if (editItem && onUpdateItem) {
+      onUpdateItem(editItem.id, {
+        name: `Custom design · ${preset.name}`,
+        color: selectedColorName,
+        unitPrice: quote.total,
+        qty,
+        custom: customData,
+      });
+      toast.success("Custom design settings updated in cart!");
+      void navigate({ to: "/cart" });
+      return;
+    }
+
     add({
       kind: "custom",
       name: `Custom design · ${preset.name}`,
       color: selectedColorName,
       unitPrice: quote.total,
       qty: 1,
-      custom: {
-        path: "idea",
-        printerId: selectedPrinter?.id,
-        printerName: selectedPrinter?.name,
-        printerModel: selectedPrinter?.model,
-        material: materialMeta?.name ?? material,
-        quality: qualityMeta?.name ?? quality,
-        infill: `${infillPct}% (${patternMeta?.name ?? "Gyroid"})`,
-        infillPercentage: infillPct,
-        infillPattern,
-        wallLoops,
-        supports: supportMeta?.name ?? supports,
-        surfaceFinish: finishMeta?.name ?? surfaceFinish,
-        color: selectedColorName,
-        notes: `${idea}${email ? ` · ${email}` : ""}`,
-        volumeCm3: quote.volumeCm3,
-        modeling: cx.name,
-      },
+      custom: customData,
     });
     toast.success("Estimate added to cart");
   }
@@ -1605,8 +1811,15 @@ function IdeaForm({
           <QuantityStepper value={qty} onChange={setQty} />
         </div>
 
-        <Button type="submit" size="lg">
-          Add estimate to cart
+        <Button type="submit" size="lg" className="gap-2">
+          {editItem ? (
+            <>
+              <Save className="size-4" />
+              Update in cart · {formatINR(quote.total * qty)}
+            </>
+          ) : (
+            "Add estimate to cart"
+          )}
         </Button>
       </form>
 

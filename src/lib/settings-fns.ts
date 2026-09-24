@@ -47,6 +47,11 @@ export type SiteSettings = {
   custom_pricing_infills?: string;
   custom_pricing_size_presets?: string;
   custom_pricing_complexities?: string;
+  // Payment methods toggles
+  payment_online_enabled?: string;
+  payment_cod_enabled?: string;
+  payment_upi_enabled?: string;
+  payment_upi_id?: string;
 };
 
 export const getSiteSettings = createServerFn({ method: "GET" }).handler(
@@ -76,6 +81,10 @@ export const getSiteSettings = createServerFn({ method: "GET" }).handler(
       express_shipping_fee: "129",
       cod_fee: "40",
       promo_banner: "Free delivery across India on orders over ₹799",
+      payment_online_enabled: "true",
+      payment_cod_enabled: "true",
+      payment_upi_enabled: "true",
+      payment_upi_id: "",
       hero_featured_slots: JSON.stringify([
         { slug: "catch-bowl", image: "/products/catch-bowl.jpg" },
         { slug: "desk-tray", image: "/products/desk-tray.jpg" },
@@ -140,6 +149,10 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
     express_shipping_fee: z.string().optional(),
     cod_fee: z.string().optional(),
     promo_banner: z.string().optional(),
+    payment_online_enabled: z.string().optional(),
+    payment_cod_enabled: z.string().optional(),
+    payment_upi_enabled: z.string().optional(),
+    payment_upi_id: z.string().optional(),
     hero_featured_slots: z.string().optional(),
     custom_pricing_upload_formula: z.string().optional(),
     custom_pricing_idea_formula: z.string().optional(),
@@ -150,7 +163,7 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
     custom_pricing_infills: z.string().optional(),
     custom_pricing_size_presets: z.string().optional(),
     custom_pricing_complexities: z.string().optional(),
-  }))
+  }).partial())
   .handler(async ({ data, context }) => {
     if (!context.userId) throw new Error("Unauthorized");
 

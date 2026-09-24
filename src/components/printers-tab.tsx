@@ -312,8 +312,8 @@ export function PrintersTab() {
 
       {/* Add / Edit Modal */}
       {(showAddModal || editingPrinter) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-150">
-          <div className="w-full max-w-lg rounded-3xl border border-border bg-surface p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-5 overflow-hidden animate-in fade-in duration-150">
+          <div className="w-full max-w-lg my-auto rounded-3xl border border-border bg-surface p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200 max-h-[calc(100dvh-2.5rem)] overflow-y-auto">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-display text-xl font-semibold">

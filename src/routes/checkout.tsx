@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate, getRouteApi } from "@tanstack/react-router";
-import { useState, useEffect, type ChangeEvent } from "react";
+import { useState, useEffect, useMemo, type ChangeEvent } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,6 +71,33 @@ function CheckoutPage() {
 
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<{code: string, discount_percent: number} | null>(null);
+
+  const availablePaymentOptions = useMemo(() => {
+    const options: { id: Pay; label: string }[] = [];
+    if (settings?.payment_online_enabled !== "false") {
+      options.push({ id: "online", label: "Online" });
+    }
+    if (settings?.payment_cod_enabled !== "false") {
+      options.push({ id: "cod", label: "Cash on delivery" });
+    }
+    if (settings?.payment_upi_enabled !== "false") {
+      options.push({ id: "upi", label: "UPI / QR Code" });
+    }
+    return options.length > 0 ? options : [{ id: "online" as const, label: "Online" }];
+  }, [settings?.payment_online_enabled, settings?.payment_cod_enabled, settings?.payment_upi_enabled]);
+
+  useEffect(() => {
+    if (availablePaymentOptions.length > 0 && !availablePaymentOptions.some((o: { id: Pay; label: string }) => o.id === pay)) {
+      setPay(availablePaymentOptions[0].id);
+    }
+  }, [availablePaymentOptions, pay]);
+
+  // Preload Razorpay checkout script when visiting checkout
+  useEffect(() => {
+    if (settings?.payment_online_enabled !== "false") {
+      void loadRazorpay();
+    }
+  }, [settings?.payment_online_enabled]);
 
   const { data: savedAddresses } = useQuery({
     queryKey: ["userAddresses"],
@@ -440,21 +467,18 @@ function CheckoutPage() {
 
           <section>
             <h2 className="font-display text-xl font-semibold">Payment</h2>
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              {(
-                [
-                  { id: "online" as const, label: "Online" },
-                  { id: "cod" as const, label: "Cash on delivery" },
-                  { id: "upi" as const, label: "UPI / QR Code" },
-                ]
-              ).map((opt) => (
+            <div className={cn(
+              "mt-4 grid gap-3",
+              availablePaymentOptions.length === 1 ? "grid-cols-1" : availablePaymentOptions.length === 2 ? "sm:grid-cols-2" : "sm:grid-cols-3"
+            )}>
+              {availablePaymentOptions.map((opt: { id: Pay; label: string }) => (
                 <button
                   key={opt.id}
                   type="button"
                   onClick={() => setPay(opt.id)}
                   className={cn(
-                    "h-12 rounded-2xl text-sm font-medium shadow-[var(--shadow-border)]",
-                    pay === opt.id ? "bg-accent text-ink" : "bg-surface text-fg",
+                    "h-12 rounded-2xl text-sm font-medium shadow-[var(--shadow-border)] transition-colors",
+                    pay === opt.id ? "bg-accent text-ink" : "bg-surface text-fg hover:bg-surface-2",
                   )}
                 >
                   {opt.label}
@@ -469,6 +493,11 @@ function CheckoutPage() {
             {pay === "upi" && (
               <div className="mt-4 rounded-xl border border-border p-4 bg-surface text-center">
                 <p className="text-sm font-medium">Scan QR code using any UPI app</p>
+                {settings?.payment_upi_id && (
+                  <p className="mt-1 text-xs text-muted">
+                    UPI ID: <span className="font-semibold text-fg font-mono">{settings.payment_upi_id}</span>
+                  </p>
+                )}
                 <div className="mx-auto mt-4 mb-4 flex size-40 items-center justify-center rounded border-2 border-dashed border-border bg-secondary">
                   <span className="text-xs text-muted">[ UPI QR Placeholder ]</span>
                 </div>

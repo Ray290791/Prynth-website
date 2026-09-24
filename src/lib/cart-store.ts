@@ -11,7 +11,9 @@ export type CustomSpec = {
   printerName?: string;
   printerModel?: string;
   material: string;
+  materialId?: string;
   quality: string;
+  qualityId?: string;
   infill: string;
   infillPercentage?: number;
   infillPattern?: string;
@@ -22,10 +24,20 @@ export type CustomSpec = {
   orientation?: string;
   preflightScore?: string;
   color: string;
+  colorId?: string;
+  colorHex?: string;
   dimensions?: string;
+  dimensionsMm?: { x: number; y: number; z: number };
   notes?: string;
   volumeCm3?: number;
+  solidVolumeCm3?: number;
+  surfaceAreaMm2?: number;
   modeling?: string;
+  idea?: string;
+  email?: string;
+  sizeId?: string;
+  complexityId?: string;
+  modelRotation?: [number, number, number];
 };
 
 export type CartItem = {
@@ -45,6 +57,7 @@ export type CartItem = {
 type CartState = {
   items: CartItem[];
   add: (item: Omit<CartItem, "id"> & { id?: string }) => void;
+  updateItem: (id: string, updated: Partial<CartItem>) => void;
   remove: (id: string) => void;
   setQty: (id: string, qty: number) => void;
   clear: () => void;
@@ -77,6 +90,13 @@ export const useCart = create<CartState>()(
           item.id ??
           `${item.kind}-${item.productSlug ?? "c"}-${item.color}-${Date.now()}`;
         set({ items: [...items, { ...item, id }] });
+      },
+      updateItem: (id, updated) => {
+        set({
+          items: get().items.map((i) =>
+            i.id === id ? { ...i, ...updated, custom: { ...i.custom, ...updated.custom } as CustomSpec } : i,
+          ),
+        });
       },
       remove: (id) => set({ items: get().items.filter((i) => i.id !== id) }),
       setQty: (id, qty) => {

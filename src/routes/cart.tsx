@@ -1,5 +1,5 @@
 import { createFileRoute, Link, getRouteApi } from "@tanstack/react-router";
-import { ShoppingBag, Trash2 } from "lucide-react";
+import { ShoppingBag, Trash2, Sliders } from "lucide-react";
 import { QuantityStepper } from "@/components/quantity-stepper";
 import { Button } from "@/components/ui/button";
 import {
@@ -131,6 +131,16 @@ function CartPage() {
                     value={item.qty}
                     onChange={(n) => setQty(item.id, n)}
                   />
+                  {item.kind === "custom" && (
+                    <Link
+                      to="/custom"
+                      search={{ edit: item.id }}
+                      className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-accent/20 bg-accent/5 px-3 text-sm font-medium text-accent hover:bg-accent/15 transition-colors"
+                    >
+                      <Sliders className="size-4" strokeWidth={1.75} />
+                      Edit settings
+                    </Link>
+                  )}
                   <button
                     type="button"
                     onClick={() => remove(item.id)}

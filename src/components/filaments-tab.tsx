@@ -451,8 +451,8 @@ function FilamentModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-3xl bg-surface p-6 sm:p-8 shadow-2xl border border-border">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-5 backdrop-blur-sm overflow-hidden">
+      <div className="w-full max-w-lg my-auto rounded-3xl bg-surface p-6 sm:p-8 shadow-2xl border border-border max-h-[calc(100dvh-2.5rem)] overflow-y-auto">
         <h3 className="font-display text-xl font-bold text-fg">
           {filament ? "Edit Filament" : "Add New Filament"}
         </h3>
