@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -26,6 +26,7 @@ import {
   PowerOff,
   Sliders,
   Sparkles,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -49,6 +50,15 @@ export function PrintersTab() {
   const [buildVolume, setBuildVolume] = useState("256 × 256 × 256 mm");
   const [nozzleSize, setNozzleSize] = useState("0.4 mm Hardened Steel");
   const [description, setDescription] = useState("");
+
+  useEffect(() => {
+    if (!showAddModal && !editingPrinter) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [showAddModal, editingPrinter]);
 
   const { data: printers = [], isLoading } = useQuery({
     queryKey: ["admin-printers"],
@@ -312,9 +322,10 @@ export function PrintersTab() {
 
       {/* Add / Edit Modal */}
       {(showAddModal || editingPrinter) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-5 overflow-hidden animate-in fade-in duration-150">
-          <div className="w-full max-w-lg my-auto rounded-3xl border border-border bg-surface p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200 max-h-[calc(100dvh-2.5rem)] overflow-y-auto">
-            <div className="flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-150">
+          <div className="relative w-full max-w-lg max-h-[min(88vh,calc(100dvh-4rem))] flex flex-col rounded-2xl sm:rounded-3xl border border-border bg-surface shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Fixed Header */}
+            <div className="shrink-0 flex items-start justify-between border-b border-border p-5 sm:p-6 bg-surface/90 backdrop-blur-xs">
               <div>
                 <h3 className="font-display text-xl font-semibold">
                   {editingPrinter ? "Edit Printer" : "Add Printer to Fleet"}
@@ -329,108 +340,112 @@ export function PrintersTab() {
                   setShowAddModal(false);
                   setEditingPrinter(null);
                 }}
-                className="size-8 rounded-full flex items-center justify-center text-muted hover:bg-surface-2 hover:text-fg"
+                className="size-8 rounded-full flex items-center justify-center text-muted hover:bg-surface-2 hover:text-fg transition-colors"
               >
-                ✕
+                <X className="size-5" />
               </button>
             </div>
 
-            {/* Quick Model Presets */}
-            <div>
-              <Label className="text-xs text-muted mb-1.5 block">Quick Bambu Presets</Label>
-              <div className="flex flex-wrap gap-1.5">
-                {MODEL_PRESETS.map((preset) => (
-                  <button
-                    key={preset.name}
-                    type="button"
-                    onClick={() => handleModelSelect(preset)}
-                    className={cn(
-                      "rounded-lg px-2.5 py-1 text-xs font-medium border transition-colors",
-                      model === preset.name
-                        ? "border-accent bg-accent-soft text-accent"
-                        : "border-border bg-surface-2 text-muted hover:text-fg"
-                    )}
+            {/* Scrollable Body */}
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5 overscroll-contain">
+              {/* Quick Model Presets */}
+              <div>
+                <Label className="text-xs text-muted mb-1.5 block">Quick Bambu Presets</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {MODEL_PRESETS.map((preset) => (
+                    <button
+                      key={preset.name}
+                      type="button"
+                      onClick={() => handleModelSelect(preset)}
+                      className={cn(
+                        "rounded-lg px-2.5 py-1 text-xs font-medium border transition-colors",
+                        model === preset.name
+                          ? "border-accent bg-accent-soft text-accent"
+                          : "border-border bg-surface-2 text-muted hover:text-fg"
+                      )}
+                    >
+                      {preset.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="printer-name">Friendly Name</Label>
+                  <Input
+                    id="printer-name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="e.g. Bambu Lab P1S #3"
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="printer-model">Model Series</Label>
+                  <Input
+                    id="printer-model"
+                    value={model}
+                    onChange={(e) => setModel(e.target.value)}
+                    placeholder="e.g. Bambu Lab P1S"
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="printer-volume">Build Volume</Label>
+                  <Input
+                    id="printer-volume"
+                    value={buildVolume}
+                    onChange={(e) => setBuildVolume(e.target.value)}
+                    placeholder="256 × 256 × 256 mm"
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="printer-nozzle">Nozzle Specification</Label>
+                  <Input
+                    id="printer-nozzle"
+                    value={nozzleSize}
+                    onChange={(e) => setNozzleSize(e.target.value)}
+                    placeholder="0.4 mm Hardened Steel"
+                    className="mt-1"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <Label htmlFor="printer-status">Operational Status</Label>
+                  <select
+                    id="printer-status"
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value as PrinterStatus)}
+                    className="mt-1 h-10 w-full rounded-xl border border-border bg-surface px-3 text-sm text-fg focus:border-accent focus:outline-none"
                   >
-                    {preset.name}
-                  </button>
-                ))}
+                    <option value="available">🟢 Available (Ready to print orders)</option>
+                    <option value="busy">🟡 In Queue / Busy (Accepts prints with queue delay)</option>
+                    <option value="maintenance">🔴 Maintenance (Disabled on /custom)</option>
+                    <option value="offline">⚪ Offline (Not operating)</option>
+                  </select>
+                </div>
+
+                <div className="sm:col-span-2">
+                  <Label htmlFor="printer-desc">Description / Notes</Label>
+                  <Textarea
+                    id="printer-desc"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="e.g. Equipped with 4-spool AMS multi-color unit, high flow nozzle…"
+                    className="mt-1"
+                    rows={2}
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <Label htmlFor="printer-name">Friendly Name</Label>
-                <Input
-                  id="printer-name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Bambu Lab P1S #3"
-                  className="mt-1"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="printer-model">Model Series</Label>
-                <Input
-                  id="printer-model"
-                  value={model}
-                  onChange={(e) => setModel(e.target.value)}
-                  placeholder="e.g. Bambu Lab P1S"
-                  className="mt-1"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="printer-volume">Build Volume</Label>
-                <Input
-                  id="printer-volume"
-                  value={buildVolume}
-                  onChange={(e) => setBuildVolume(e.target.value)}
-                  placeholder="256 × 256 × 256 mm"
-                  className="mt-1"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="printer-nozzle">Nozzle Specification</Label>
-                <Input
-                  id="printer-nozzle"
-                  value={nozzleSize}
-                  onChange={(e) => setNozzleSize(e.target.value)}
-                  placeholder="0.4 mm Hardened Steel"
-                  className="mt-1"
-                />
-              </div>
-
-              <div className="sm:col-span-2">
-                <Label htmlFor="printer-status">Operational Status</Label>
-                <select
-                  id="printer-status"
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value as PrinterStatus)}
-                  className="mt-1 h-10 w-full rounded-xl border border-border bg-surface px-3 text-sm text-fg focus:border-accent focus:outline-none"
-                >
-                  <option value="available">🟢 Available (Ready to print orders)</option>
-                  <option value="busy">🟡 In Queue / Busy (Accepts prints with queue delay)</option>
-                  <option value="maintenance">🔴 Maintenance (Disabled on /custom)</option>
-                  <option value="offline">⚪ Offline (Not operating)</option>
-                </select>
-              </div>
-
-              <div className="sm:col-span-2">
-                <Label htmlFor="printer-desc">Description / Notes</Label>
-                <Textarea
-                  id="printer-desc"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="e.g. Equipped with 4-spool AMS multi-color unit, high flow nozzle…"
-                  className="mt-1"
-                  rows={2}
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2 border-t border-border">
+            {/* Fixed Footer */}
+            <div className="shrink-0 flex justify-end gap-2 p-4 sm:p-5 border-t border-border bg-surface-2/40">
               <Button
                 variant="outline"
                 onClick={() => {

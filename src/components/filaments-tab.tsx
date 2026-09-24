@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getAllFilamentsAdmin,
@@ -27,6 +27,7 @@ import {
   Search,
   Filter,
   Minus,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -398,7 +399,6 @@ export function FilamentsTab() {
   );
 }
 
-// Modal Component for Add / Edit Filament
 function FilamentModal({
   filament,
   isOpen,
@@ -421,6 +421,15 @@ function FilamentModal({
   const [status, setStatus] = useState<FilamentStatus>(filament?.status || "in_stock");
   const [brand, setBrand] = useState(filament?.brand || "Bambu Lab");
   const [notes, setNotes] = useState(filament?.notes || "");
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isOpen]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -451,141 +460,157 @@ function FilamentModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-5 backdrop-blur-sm overflow-hidden">
-      <div className="w-full max-w-lg my-auto rounded-3xl bg-surface p-6 sm:p-8 shadow-2xl border border-border max-h-[calc(100dvh-2.5rem)] overflow-y-auto">
-        <h3 className="font-display text-xl font-bold text-fg">
-          {filament ? "Edit Filament" : "Add New Filament"}
-        </h3>
-        <p className="text-xs text-muted mt-1">
-          Configure spool stock, material category, and customer-facing color.
-        </p>
-
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          <div>
-            <Label htmlFor="fil-name">Filament Name</Label>
-            <Input
-              id="fil-name"
-              placeholder="e.g. Bambu Matte Bone White PLA"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="mt-1.5"
-              required
-            />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 sm:p-6 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-150">
+      <div className="relative w-full max-w-lg max-h-[min(88vh,calc(100dvh-4rem))] flex flex-col rounded-2xl sm:rounded-3xl bg-surface shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 duration-200">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          {/* Fixed Header */}
+          <div className="shrink-0 flex items-start justify-between border-b border-border p-5 sm:p-6 bg-surface/90 backdrop-blur-xs">
+            <div>
+              <h3 className="font-display text-xl font-bold text-fg">
+                {filament ? "Edit Filament" : "Add New Filament"}
+              </h3>
+              <p className="text-xs text-muted mt-1">
+                Configure spool stock, material category, and customer-facing color.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="size-8 rounded-full flex items-center justify-center text-muted hover:bg-surface-2 hover:text-fg transition-colors"
+            >
+              <X className="size-5" />
+            </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          {/* Scrollable Body */}
+          <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4 overscroll-contain">
             <div>
-              <Label htmlFor="fil-material">Material</Label>
-              <select
-                id="fil-material"
-                value={materialId}
-                onChange={(e) => setMaterialId(e.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-border bg-surface-2 px-3 py-2 text-sm outline-none"
-              >
-                {MATERIAL_OPTIONS.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <Label htmlFor="fil-brand">Brand</Label>
+              <Label htmlFor="fil-name">Filament Name</Label>
               <Input
-                id="fil-brand"
-                placeholder="e.g. Bambu Lab, eSUN"
-                value={brand}
-                onChange={(e) => setBrand(e.target.value)}
-                className="mt-1.5"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="fil-color-name">Color Name</Label>
-              <Input
-                id="fil-color-name"
-                placeholder="e.g. Bone White"
-                value={colorName}
-                onChange={(e) => {
-                  setColorName(e.target.value);
-                  if (!filament && !colorId) {
-                    setColorId(
-                      e.target.value
-                        .toLowerCase()
-                        .replace(/[^a-z0-9]/g, "_")
-                        .replace(/^_+|_+$/g, "")
-                    );
-                  }
-                }}
+                id="fil-name"
+                placeholder="e.g. Bambu Matte Bone White PLA"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 className="mt-1.5"
                 required
               />
             </div>
 
-            <div>
-              <Label htmlFor="fil-hex">Color Swatch (Hex)</Label>
-              <div className="mt-1.5 flex items-center gap-2">
-                <input
-                  type="color"
-                  value={colorHex}
-                  onChange={(e) => setColorHex(e.target.value)}
-                  className="size-9 rounded-lg border border-border cursor-pointer bg-transparent p-0.5"
-                />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="fil-material">Material</Label>
+                <select
+                  id="fil-material"
+                  value={materialId}
+                  onChange={(e) => setMaterialId(e.target.value)}
+                  className="mt-1.5 w-full rounded-xl border border-border bg-surface-2 px-3 py-2 text-sm outline-none"
+                >
+                  {MATERIAL_OPTIONS.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <Label htmlFor="fil-brand">Brand</Label>
                 <Input
-                  id="fil-hex"
-                  value={colorHex}
-                  onChange={(e) => setColorHex(e.target.value)}
-                  className="font-mono text-xs"
-                  placeholder="#00B8A9"
+                  id="fil-brand"
+                  placeholder="e.g. Bambu Lab, eSUN"
+                  value={brand}
+                  onChange={(e) => setBrand(e.target.value)}
+                  className="mt-1.5"
                 />
               </div>
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="fil-color-name">Color Name</Label>
+                <Input
+                  id="fil-color-name"
+                  placeholder="e.g. Bone White"
+                  value={colorName}
+                  onChange={(e) => {
+                    setColorName(e.target.value);
+                    if (!filament && !colorId) {
+                      setColorId(
+                        e.target.value
+                          .toLowerCase()
+                          .replace(/[^a-z0-9]/g, "_")
+                          .replace(/^_+|_+$/g, "")
+                      );
+                    }
+                  }}
+                  className="mt-1.5"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="fil-hex">Color Swatch (Hex)</Label>
+                <div className="mt-1.5 flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={colorHex}
+                    onChange={(e) => setColorHex(e.target.value)}
+                    className="size-9 rounded-lg border border-border cursor-pointer bg-transparent p-0.5"
+                  />
+                  <Input
+                    id="fil-hex"
+                    value={colorHex}
+                    onChange={(e) => setColorHex(e.target.value)}
+                    className="font-mono text-xs"
+                    placeholder="#00B8A9"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="fil-spools">Spools In Stock</Label>
+                <Input
+                  id="fil-spools"
+                  type="number"
+                  min={0}
+                  value={spoolCount}
+                  onChange={(e) => setSpoolCount(parseInt(e.target.value, 10) || 0)}
+                  className="mt-1.5"
+                />
+                <span className="text-[10px] text-muted mt-1 block">Private (for your eyes only)</span>
+              </div>
+
+              <div>
+                <Label htmlFor="fil-status">Live Status</Label>
+                <select
+                  id="fil-status"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as FilamentStatus)}
+                  className="mt-1.5 w-full rounded-xl border border-border bg-surface-2 px-3 py-2 text-sm outline-none"
+                >
+                  <option value="in_stock">🟢 In Stock (Visible)</option>
+                  <option value="low_stock">🟡 Low Stock (Visible)</option>
+                  <option value="filament_over">🔴 Filament Over (Hidden from user)</option>
+                </select>
+              </div>
+            </div>
+
             <div>
-              <Label htmlFor="fil-spools">Spools In Stock</Label>
-              <Input
-                id="fil-spools"
-                type="number"
-                min={0}
-                value={spoolCount}
-                onChange={(e) => setSpoolCount(parseInt(e.target.value, 10) || 0)}
-                className="mt-1.5"
+              <Label htmlFor="fil-notes">Internal Notes</Label>
+              <Textarea
+                id="fil-notes"
+                placeholder="e.g. Drying required before print, 210°C nozzle / 55°C bed"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="mt-1.5 text-xs h-20"
               />
-              <span className="text-[10px] text-muted mt-1 block">Private (for your eyes only)</span>
-            </div>
-
-            <div>
-              <Label htmlFor="fil-status">Live Status</Label>
-              <select
-                id="fil-status"
-                value={status}
-                onChange={(e) => setStatus(e.target.value as FilamentStatus)}
-                className="mt-1.5 w-full rounded-xl border border-border bg-surface-2 px-3 py-2 text-sm outline-none"
-              >
-                <option value="in_stock">🟢 In Stock (Visible)</option>
-                <option value="low_stock">🟡 Low Stock (Visible)</option>
-                <option value="filament_over">🔴 Filament Over (Hidden from user)</option>
-              </select>
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="fil-notes">Internal Notes</Label>
-            <Textarea
-              id="fil-notes"
-              placeholder="e.g. Drying required before print, 210°C nozzle / 55°C bed"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="mt-1.5 text-xs h-20"
-            />
-          </div>
-
-          <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-border">
+          {/* Fixed Footer */}
+          <div className="shrink-0 flex justify-end gap-3 p-4 sm:p-5 border-t border-border bg-surface-2/40">
             <Button type="button" variant="ghost" onClick={onClose}>
               Cancel
             </Button>

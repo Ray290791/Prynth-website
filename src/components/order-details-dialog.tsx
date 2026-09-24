@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { formatINR, formatDate } from "@/lib/format";
 import { productColor } from "@/lib/products";
@@ -36,6 +36,14 @@ export function OrderDetailsDialog({
   onUpdateStatus: (status: string) => void;
 }) {
   const [copiedSettings, setCopiedSettings] = useState<string | null>(null);
+
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, []);
 
   if (!order) return null;
 
@@ -137,10 +145,10 @@ export function OrderDetailsDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-5 overflow-hidden animate-in fade-in duration-150">
-      <div className="relative w-full max-w-3xl my-auto rounded-3xl border border-border bg-surface p-5 sm:p-6 shadow-2xl space-y-6 animate-in zoom-in-95 duration-200 max-h-[calc(100dvh-2.5rem)] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-start justify-between border-b border-border pb-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-150">
+      <div className="relative w-full max-w-3xl max-h-[min(88vh,calc(100dvh-4rem))] flex flex-col rounded-2xl sm:rounded-3xl border border-border bg-surface shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        {/* Fixed Header */}
+        <div className="shrink-0 flex items-start justify-between border-b border-border p-5 sm:p-6 bg-surface/90 backdrop-blur-xs z-10">
           <div>
             <div className="flex items-center gap-2.5">
               <h2 className="font-display text-2xl font-bold">#{order.order_number}</h2>
@@ -165,295 +173,302 @@ export function OrderDetailsDialog({
           <button
             type="button"
             onClick={onClose}
-            className="size-8 rounded-full flex items-center justify-center text-muted hover:bg-surface-2 hover:text-fg"
+            className="size-8 rounded-full flex items-center justify-center text-muted hover:bg-surface-2 hover:text-fg transition-colors"
           >
             <X className="size-5" />
           </button>
         </div>
 
-        {/* Quick Status Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-surface-2/60 p-4 border border-border/60">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-muted">Update Status:</span>
-            <select
-              value={order.status}
-              onChange={(e) => onUpdateStatus(e.target.value)}
-              className="h-8 rounded-lg border border-border bg-surface px-2.5 text-xs font-medium text-fg focus:border-accent focus:outline-none"
-            >
-              <option value="pending">Pending</option>
-              <option value="processing">Processing</option>
-              <option value="printing">🖨️ Printing</option>
-              <option value="shipped">Shipped</option>
-              <option value="delivered">Delivered</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-          </div>
-
-          <div className="flex items-center gap-4 text-xs text-muted">
-            <span>Payment: <strong className="text-fg capitalize">{order.payment_status}</strong></span>
-            <span>Method: <strong className="text-fg uppercase">{order.payment_method}</strong></span>
-            {order.razorpay_order_id && (
-              <span className="font-mono text-[11px] truncate max-w-[150px]">{order.razorpay_order_id}</span>
-            )}
-          </div>
-        </div>
-
-        {/* Customer & Shipping Information */}
-        <div className="grid gap-4 sm:grid-cols-2 text-xs">
-          <div className="rounded-2xl border border-border p-4 bg-surface space-y-2">
-            <div className="flex items-center gap-2 font-semibold text-fg">
-              <User className="size-4 text-accent" /> Customer Details
+        {/* Scrollable Body */}
+        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6 overscroll-contain">
+          {/* Quick Status Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-surface-2/60 p-4 border border-border/60">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-muted">Update Status:</span>
+              <select
+                value={order.status}
+                onChange={(e) => onUpdateStatus(e.target.value)}
+                className="h-8 rounded-lg border border-border bg-surface px-2.5 text-xs font-medium text-fg focus:border-accent focus:outline-none"
+              >
+                <option value="pending">Pending</option>
+                <option value="processing">Processing</option>
+                <option value="printing">🖨️ Printing</option>
+                <option value="shipped">Shipped</option>
+                <option value="delivered">Delivered</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
             </div>
-            <p className="font-medium text-sm text-fg">{order.user_name || address?.name || "Guest Customer"}</p>
-            <p className="text-muted">{order.user_email || order.guest_email || address?.email}</p>
-            {address?.phone && <p className="text-muted font-mono">{address.phone}</p>}
+
+            <div className="flex items-center gap-4 text-xs text-muted">
+              <span>Payment: <strong className="text-fg capitalize">{order.payment_status}</strong></span>
+              <span>Method: <strong className="text-fg uppercase">{order.payment_method}</strong></span>
+              {order.razorpay_order_id && (
+                <span className="font-mono text-[11px] truncate max-w-[150px]">{order.razorpay_order_id}</span>
+              )}
+            </div>
           </div>
 
-          <div className="rounded-2xl border border-border p-4 bg-surface space-y-2">
-            <div className="flex items-center gap-2 font-semibold text-fg">
-              <MapPin className="size-4 text-accent" /> Shipping Address
-            </div>
-            {address ? (
-              <div className="text-muted leading-relaxed">
-                <p>{address.line1}</p>
-                {address.line2 && <p>{address.line2}</p>}
-                <p>
-                  {address.city}, {address.state} — {address.pincode || (address as any).pin}
-                </p>
-                <p className="text-[11px] font-medium text-accent mt-1">Method: {order.shipping_method || "Standard"}</p>
+          {/* Customer & Shipping Information */}
+          <div className="grid gap-4 sm:grid-cols-2 text-xs">
+            <div className="rounded-2xl border border-border p-4 bg-surface space-y-2">
+              <div className="flex items-center gap-2 font-semibold text-fg">
+                <User className="size-4 text-accent" /> Customer Details
               </div>
-            ) : (
-              <p className="text-muted">No address provided</p>
-            )}
+              <p className="font-medium text-sm text-fg">{order.user_name || address?.name || "Guest Customer"}</p>
+              <p className="text-muted">{order.user_email || order.guest_email || address?.email}</p>
+              {address?.phone && <p className="text-muted font-mono">{address.phone}</p>}
+            </div>
+
+            <div className="rounded-2xl border border-border p-4 bg-surface space-y-2">
+              <div className="flex items-center gap-2 font-semibold text-fg">
+                <MapPin className="size-4 text-accent" /> Shipping Address
+              </div>
+              {address ? (
+                <div className="text-muted leading-relaxed">
+                  <p>{address.line1}</p>
+                  {address.line2 && <p>{address.line2}</p>}
+                  <p>
+                    {address.city}, {address.state} — {address.pincode || (address as any).pin}
+                  </p>
+                  <p className="text-[11px] font-medium text-accent mt-1">Method: {order.shipping_method || "Standard"}</p>
+                </div>
+              ) : (
+                <p className="text-muted">No address provided</p>
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* Order Items & Custom Production Specs */}
-        <div className="space-y-3">
-          <h3 className="font-display font-semibold text-base flex items-center gap-2">
-            <Package className="size-4 text-accent" /> Order Items ({items.length})
-          </h3>
+          {/* Order Items & Custom Production Specs */}
+          <div className="space-y-3">
+            <h3 className="font-display font-semibold text-base flex items-center gap-2">
+              <Package className="size-4 text-accent" /> Order Items ({items.length})
+            </h3>
 
-          <div className="divide-y divide-border border border-border rounded-2xl overflow-hidden bg-surface">
-            {items.map((item, idx) => {
-              const isCustom = Boolean(item.custom);
-              const custom = item.custom;
+            <div className="divide-y divide-border border border-border rounded-2xl overflow-hidden bg-surface">
+              {items.map((item, idx) => {
+                const isCustom = Boolean(item.custom);
+                const custom = item.custom;
 
-              return (
-                <div key={item.id || idx} className="p-4 space-y-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold text-sm text-fg">{item.name}</p>
-                        {isCustom && (
-                          <Badge className="bg-accent/15 text-accent border-accent/30 text-[10px] uppercase font-bold tracking-wider">
-                            Custom 3D Print
-                          </Badge>
-                        )}
+                return (
+                  <div key={item.id || idx} className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-sm text-fg">{item.name}</p>
+                          {isCustom && (
+                            <Badge className="bg-accent/15 text-accent border-accent/30 text-[10px] uppercase font-bold tracking-wider">
+                              Custom 3D Print
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted mt-0.5">
+                          Color: <strong className="text-fg">{productColor(item.color).name}</strong>
+                          {item.size && ` · Size: ${item.size}`}
+                          {" · "}Qty: <strong className="text-fg">{item.qty}</strong>
+                        </p>
                       </div>
-                      <p className="text-xs text-muted mt-0.5">
-                        Color: <strong className="text-fg">{productColor(item.color).name}</strong>
-                        {item.size && ` · Size: ${item.size}`}
-                        {" · "}Qty: <strong className="text-fg">{item.qty}</strong>
+                      <p className="font-semibold tabular-nums text-sm">
+                        {formatINR(item.unitPrice * item.qty)}
                       </p>
                     </div>
-                    <p className="font-semibold tabular-nums text-sm">
-                      {formatINR(item.unitPrice * item.qty)}
-                    </p>
-                  </div>
 
-                  {/* Highlighted Bambu Slicer Specifications Card */}
-                  {isCustom && custom && (
-                    <div className="rounded-2xl border border-accent/30 bg-accent-soft/30 p-4 space-y-3">
-                      <div className="flex items-center justify-between border-b border-accent/20 pb-2">
-                        <div className="flex items-center gap-2">
-                          <PrinterIcon className="size-4 text-accent" />
-                          <span className="text-xs font-semibold text-fg">
-                            Target Fleet Machine: {custom.printerName || "Bambu Lab P1S"}
-                          </span>
-                        </div>
-                        {custom.fileName && (
-                          <span className="font-mono text-[11px] text-muted truncate max-w-[200px]">
-                            {custom.fileName}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                        <div className="rounded-xl bg-surface/80 p-2 border border-border/40">
-                          <span className="text-muted block text-[10px]">Layer Profile</span>
-                          <span className="font-semibold text-fg">{custom.quality || "0.20 mm Standard"}</span>
-                        </div>
-
-                        <div className="rounded-xl bg-surface/80 p-2 border border-border/40">
-                          <span className="text-muted block text-[10px]">Infill Density</span>
-                          <span className="font-semibold text-fg">
-                            {custom.infillPercentage ?? 20}% {custom.infillPattern ? `(${custom.infillPattern})` : ""}
-                          </span>
-                        </div>
-
-                        <div className="rounded-xl bg-surface/80 p-2 border border-border/40">
-                          <span className="text-muted block text-[10px]">Perimeter Walls</span>
-                          <span className="font-semibold text-fg">{custom.wallLoops ?? 2} loops</span>
-                        </div>
-
-                        <div className="rounded-xl bg-surface/80 p-2 border border-border/40">
-                          <span className="text-muted block text-[10px]">Supports</span>
-                          <span className="font-semibold text-accent">{custom.supports || "None"}</span>
-                        </div>
-
-                        <div className="rounded-xl bg-surface/80 p-2 border border-border/40">
-                          <span className="text-muted block text-[10px]">Surface Finish</span>
-                          <span className="font-semibold text-fg capitalize">{custom.surfaceFinish || "Standard"}</span>
-                        </div>
-
-                        <div className="rounded-xl bg-surface/80 p-2 border border-border/40">
-                          <span className="text-muted block text-[10px]">Bed Adhesion</span>
-                          <span className="font-semibold text-fg">{custom.brim || "Auto"}</span>
-                        </div>
-
-                        <div className="rounded-xl bg-surface/80 p-2 border border-border/40">
-                          <span className="text-muted block text-[10px]">Material</span>
-                          <span className="font-semibold text-fg">{custom.material || "PLA"}</span>
-                        </div>
-
-                        <div className="rounded-xl bg-surface/80 p-2 border border-border/40">
-                          <span className="text-muted block text-[10px]">Est. Volume</span>
-                          <span className="font-semibold text-fg">
-                            {custom.volumeCm3 ? `${custom.volumeCm3.toFixed(1)} cm³` : "Preset"}
-                          </span>
-                        </div>
-
-                        {custom.orientation && (
-                          <div className="rounded-xl bg-surface/80 p-2 border border-border/40">
-                            <span className="text-muted block text-[10px]">Orientation</span>
-                            <span className="font-semibold text-accent">{custom.orientation}</span>
+                    {/* Highlighted Bambu Slicer Specifications Card */}
+                    {isCustom && custom && (
+                      <div className="rounded-2xl border border-accent/30 bg-accent-soft/30 p-4 space-y-3">
+                        <div className="flex items-center justify-between border-b border-accent/20 pb-2">
+                          <div className="flex items-center gap-2">
+                            <PrinterIcon className="size-4 text-accent" />
+                            <span className="text-xs font-semibold text-fg">
+                              Target Fleet Machine: {custom.printerName || "Bambu Lab P1S"}
+                            </span>
                           </div>
-                        )}
-
-                        {custom.preflightScore && (
-                          <div className="rounded-xl bg-surface/80 p-2 border border-border/40">
-                            <span className="text-muted block text-[10px]">Pre-Flight Slicer Score</span>
-                            <span className="font-semibold text-emerald-500">{custom.preflightScore}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {custom.notes && (
-                        <div className="rounded-xl bg-surface/60 p-2.5 text-xs border border-border/40">
-                          <span className="font-medium text-fg">Customer Notes: </span>
-                          <span className="text-muted">{custom.notes}</span>
-                        </div>
-                      )}
-
-                      {/* Bambu Slicer Action Bar */}
-                      <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-accent/20">
-                        {custom.fileId ? (
-                          <>
-                            {/* Primary Button: Open in Bambu Studio */}
-                            <Button
-                              size="sm"
-                              onClick={() => handleOpenInBambu(custom.fileId, custom.fileName)}
-                              className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-sm"
-                            >
-                              <PrinterIcon className="size-4" />
-                              Open in Bambu Studio
-                            </Button>
-
-                            {/* Secondary Button: Open in Orca */}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleOpenInOrca(custom.fileId)}
-                              className="gap-1.5 text-xs"
-                            >
-                              <ExternalLink className="size-3.5" />
-                              Open in Orca
-                            </Button>
-
-                            {/* Download Raw 3D Model */}
-                            <Button
-                              asChild
-                              variant="outline"
-                              size="sm"
-                              className="gap-1.5 text-xs"
-                            >
-                              <a
-                                href={getModelDownloadUrl(custom.fileId)}
-                                download={custom.fileName || "model.stl"}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                <Download className="size-3.5" />
-                                Download 3D File
-                              </a>
-                            </Button>
-                          </>
-                        ) : null}
-
-                        {/* Copy Slicer Checklist */}
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => handleCopySlicerSettings(item)}
-                          className="gap-1.5 text-xs ml-auto"
-                        >
-                          {copiedSettings === item.id ? (
-                            <>
-                              <Check className="size-3.5 text-emerald-500" /> Copied!
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="size-3.5" /> Copy Slicer Settings
-                            </>
+                          {custom.fileName && (
+                            <span className="font-mono text-[11px] text-muted truncate max-w-[200px]">
+                              {custom.fileName}
+                            </span>
                           )}
-                        </Button>
+                        </div>
 
-                        {/* Export Bambu Slicer JSON Preset */}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleExportBambuJson(item)}
-                          className="gap-1.5 text-xs"
-                        >
-                          <FileCode className="size-3.5" /> Preset JSON
-                        </Button>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                          <div className="rounded-xl bg-surface/80 p-2 border border-border/40">
+                            <span className="text-muted block text-[10px]">Layer Profile</span>
+                            <span className="font-semibold text-fg">{custom.quality || "0.20 mm Standard"}</span>
+                          </div>
+
+                          <div className="rounded-xl bg-surface/80 p-2 border border-border/40">
+                            <span className="text-muted block text-[10px]">Infill Density</span>
+                            <span className="font-semibold text-fg">
+                              {custom.infillPercentage ?? 20}% {custom.infillPattern ? `(${custom.infillPattern})` : ""}
+                            </span>
+                          </div>
+
+                          <div className="rounded-xl bg-surface/80 p-2 border border-border/40">
+                            <span className="text-muted block text-[10px]">Perimeter Walls</span>
+                            <span className="font-semibold text-fg">{custom.wallLoops ?? 2} loops</span>
+                          </div>
+
+                          <div className="rounded-xl bg-surface/80 p-2 border border-border/40">
+                            <span className="text-muted block text-[10px]">Supports</span>
+                            <span className="font-semibold text-accent">{custom.supports || "None"}</span>
+                          </div>
+
+                          <div className="rounded-xl bg-surface/80 p-2 border border-border/40">
+                            <span className="text-muted block text-[10px]">Surface Finish</span>
+                            <span className="font-semibold text-fg capitalize">{custom.surfaceFinish || "Standard"}</span>
+                          </div>
+
+                          <div className="rounded-xl bg-surface/80 p-2 border border-border/40">
+                            <span className="text-muted block text-[10px]">Bed Adhesion</span>
+                            <span className="font-semibold text-fg">{custom.brim || "Auto"}</span>
+                          </div>
+
+                          <div className="rounded-xl bg-surface/80 p-2 border border-border/40">
+                            <span className="text-muted block text-[10px]">Material</span>
+                            <span className="font-semibold text-fg">{custom.material || "PLA"}</span>
+                          </div>
+
+                          <div className="rounded-xl bg-surface/80 p-2 border border-border/40">
+                            <span className="text-muted block text-[10px]">Est. Volume</span>
+                            <span className="font-semibold text-fg">
+                              {custom.volumeCm3 ? `${custom.volumeCm3.toFixed(1)} cm³` : "Preset"}
+                            </span>
+                          </div>
+
+                          {custom.orientation && (
+                            <div className="rounded-xl bg-surface/80 p-2 border border-border/40">
+                              <span className="text-muted block text-[10px]">Orientation</span>
+                              <span className="font-semibold text-accent">{custom.orientation}</span>
+                            </div>
+                          )}
+
+                          {custom.preflightScore && (
+                            <div className="rounded-xl bg-surface/80 p-2 border border-border/40">
+                              <span className="text-muted block text-[10px]">Pre-Flight Slicer Score</span>
+                              <span className="font-semibold text-emerald-500">{custom.preflightScore}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {custom.notes && (
+                          <div className="rounded-xl bg-surface/60 p-2.5 text-xs border border-border/40">
+                            <span className="font-medium text-fg">Customer Notes: </span>
+                            <span className="text-muted">{custom.notes}</span>
+                          </div>
+                        )}
+
+                        {/* Bambu Slicer Action Bar */}
+                        <div className="pt-2 border-t border-accent/20 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+                          <div className="flex flex-wrap items-center gap-2">
+                            {custom.fileId ? (
+                              <>
+                                {/* Primary Button: Open in Bambu Studio */}
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleOpenInBambu(custom.fileId, custom.fileName)}
+                                  className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-sm text-xs h-8 whitespace-nowrap"
+                                >
+                                  <PrinterIcon className="size-3.5" />
+                                  Open in Bambu Studio
+                                </Button>
+
+                                {/* Secondary Button: Open in Orca */}
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleOpenInOrca(custom.fileId)}
+                                  className="gap-1.5 text-xs h-8 whitespace-nowrap"
+                                >
+                                  <ExternalLink className="size-3.5" />
+                                  Orca
+                                </Button>
+
+                                {/* Download Raw 3D Model */}
+                                <Button
+                                  asChild
+                                  variant="outline"
+                                  size="sm"
+                                  className="gap-1.5 text-xs h-8 whitespace-nowrap"
+                                >
+                                  <a
+                                    href={getModelDownloadUrl(custom.fileId)}
+                                    download={custom.fileName || "model.stl"}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    <Download className="size-3.5" />
+                                    Download 3D
+                                  </a>
+                                </Button>
+                              </>
+                            ) : null}
+                          </div>
+
+                          <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                            {/* Copy Slicer Checklist */}
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => handleCopySlicerSettings(item)}
+                              className="gap-1.5 text-xs h-8 whitespace-nowrap"
+                            >
+                              {copiedSettings === item.id ? (
+                                <>
+                                  <Check className="size-3.5 text-emerald-500" /> Copied!
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="size-3.5" /> Copy Settings
+                                </>
+                              )}
+                            </Button>
+
+                            {/* Export Bambu Slicer JSON Preset */}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleExportBambuJson(item)}
+                              className="gap-1.5 text-xs h-8 whitespace-nowrap"
+                            >
+                              <FileCode className="size-3.5" /> Preset JSON
+                            </Button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Pricing Summary */}
-        <div className="border-t border-border pt-4 text-xs space-y-1.5">
-          <div className="flex justify-between text-muted">
-            <span>Subtotal</span>
-            <span className="tabular-nums font-medium text-fg">{formatINR(order.subtotal)}</span>
-          </div>
-          <div className="flex justify-between text-muted">
-            <span>Shipping ({order.shipping_method || "Standard"})</span>
-            <span className="tabular-nums font-medium text-fg">
-              {Number(order.shipping) === 0 ? "Free" : formatINR(order.shipping)}
-            </span>
-          </div>
-          {Number(order.extra) > 0 && (
-            <div className="flex justify-between text-muted">
-              <span>COD Collection Fee</span>
-              <span className="tabular-nums font-medium text-fg">{formatINR(order.extra)}</span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-          )}
-          <div className="flex justify-between text-sm font-bold border-t border-border pt-2 text-fg">
-            <span>Total Paid / Payable</span>
-            <span className="tabular-nums font-display text-base text-accent">{formatINR(order.total)}</span>
+          </div>
+
+          {/* Pricing Summary */}
+          <div className="border-t border-border pt-4 text-xs space-y-1.5">
+            <div className="flex justify-between text-muted">
+              <span>Subtotal</span>
+              <span className="tabular-nums font-medium text-fg">{formatINR(order.subtotal)}</span>
+            </div>
+            <div className="flex justify-between text-muted">
+              <span>Shipping ({order.shipping_method || "Standard"})</span>
+              <span className="tabular-nums font-medium text-fg">
+                {Number(order.shipping) === 0 ? "Free" : formatINR(order.shipping)}
+              </span>
+            </div>
+            {Number(order.extra) > 0 && (
+              <div className="flex justify-between text-muted">
+                <span>COD Collection Fee</span>
+                <span className="tabular-nums font-medium text-fg">{formatINR(order.extra)}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-sm font-bold border-t border-border pt-2 text-fg">
+              <span>Total Paid / Payable</span>
+              <span className="tabular-nums font-display text-base text-accent">{formatINR(order.total)}</span>
+            </div>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex justify-end gap-2 border-t border-border pt-4">
-          <Button variant="outline" onClick={onClose}>
+        {/* Fixed Footer */}
+        <div className="shrink-0 flex items-center justify-end gap-3 border-t border-border p-4 sm:p-5 bg-surface-2/40 z-10">
+          <Button variant="outline" onClick={onClose} className="px-5">
             Close
           </Button>
         </div>

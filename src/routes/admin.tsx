@@ -199,7 +199,7 @@ function AdminPage() {
                     <th className="p-4 font-medium">Date</th>
                     <th className="p-4 font-medium">Total</th>
                     <th className="p-4 font-medium">Status</th>
-                    <th className="p-4 font-medium text-right">Actions</th>
+                    <th className="p-4 font-medium text-right w-64 min-w-[240px]">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -233,7 +233,7 @@ function AdminPage() {
                           </Badge>
                           <div className="text-xs text-muted mt-1">Payment: {order.payment_status}</div>
                         </td>
-                        <td className="p-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                        <td className="p-4 text-right whitespace-nowrap w-64 min-w-[240px]" onClick={(e) => e.stopPropagation()}>
                           <div className="inline-flex items-center justify-end gap-2">
                             <button
                               type="button"
@@ -364,18 +364,27 @@ function PinConfirmModal({
 }) {
   const [pin, setPin] = useState("");
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-surface border border-border rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-        <div className="flex items-center justify-between border-b border-border p-4 bg-surface shrink-0">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 sm:p-6 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-150">
+      <div className="relative w-full max-w-md max-h-[min(88vh,calc(100dvh-4rem))] flex flex-col rounded-2xl sm:rounded-3xl border border-border bg-surface shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="flex items-center justify-between border-b border-border p-5 bg-surface shrink-0">
           <h2 className="text-lg font-bold">Confirm Deletion</h2>
           <button onClick={onClose} className="rounded-full p-2 hover:bg-surface-2 transition-colors text-muted hover:text-ink">
             <X className="w-4 h-4" />
           </button>
         </div>
-        <div className="p-6">
+        <div className="p-6 overflow-y-auto flex-1">
           <p className="text-sm text-muted mb-4">
             Are you sure you want to permanently delete this order? This action cannot be undone.
             Please enter your 6-digit Admin PIN to confirm.
@@ -458,7 +467,7 @@ function ProductsTable() {
             <th className="p-4 font-medium">Product</th>
             <th className="p-4 font-medium">Price</th>
             <th className="p-4 font-medium">Category</th>
-            <th className="p-4 font-medium text-right">Actions</th>
+            <th className="p-4 font-medium text-right w-44 min-w-[150px]">Actions</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
@@ -475,26 +484,28 @@ function ProductsTable() {
               </td>
               <td className="p-4 tabular-nums font-medium">{formatINR(p.price)}</td>
               <td className="p-4 capitalize">{Array.isArray(p.categories) ? p.categories.join(", ") : p.category}</td>
-              <td className="p-4 text-right space-x-2">
-                <button
-                  onClick={() => {
-                    setEditingProduct(p);
-                    setIsModalOpen(true);
-                  }}
-                  className="text-xs px-2 py-1 rounded bg-surface hover:bg-surface-2 transition-colors border border-border"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => {
-                    if (confirm(`Are you sure you want to delete ${p.name}?`)) {
-                      deleteMutation.mutate(p.slug);
-                    }
-                  }}
-                  className="text-xs px-2 py-1 rounded bg-danger/10 text-danger hover:bg-danger/20 transition-colors border border-danger/20"
-                >
-                  Delete
-                </button>
+              <td className="p-4 text-right whitespace-nowrap w-44 min-w-[150px]">
+                <div className="inline-flex items-center justify-end gap-2">
+                  <button
+                    onClick={() => {
+                      setEditingProduct(p);
+                      setIsModalOpen(true);
+                    }}
+                    className="text-xs px-2.5 py-1.5 rounded-lg bg-surface hover:bg-surface-2 transition-colors border border-border font-medium"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (confirm(`Are you sure you want to delete ${p.name}?`)) {
+                        deleteMutation.mutate(p.slug);
+                      }
+                    }}
+                    className="text-xs px-2.5 py-1.5 rounded-lg bg-danger/10 text-danger hover:bg-danger/20 transition-colors border border-danger/20 font-medium"
+                  >
+                    Delete
+                  </button>
+                </div>
               </td>
             </tr>
           ))}
@@ -650,11 +661,20 @@ function ProductModal({
     onSettled: () => setBusy(false)
   });
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-surface/85 backdrop-blur-2xl border border-white/10 dark:border-white/5 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-150">
+      <div className="relative w-full max-w-2xl max-h-[min(88vh,calc(100dvh-4rem))] flex flex-col rounded-2xl sm:rounded-3xl border border-border bg-surface shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between border-b border-border/50 p-6 bg-transparent shrink-0">
           <h2 className="text-xl font-bold">{product ? "Edit Product" : "Add Product"}</h2>
           <button onClick={onClose} className="rounded-full p-2 hover:bg-surface-2 transition-colors text-muted hover:text-ink">
