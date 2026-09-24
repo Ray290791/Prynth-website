@@ -2,8 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getSql } from "./db";
 import { authMiddleware, optionalAuthMiddleware } from "./auth/middleware";
 import { verifyAdminRole, verifyAdminPIN } from "./admin-fns";
-import { razorpay } from "./razorpay.server";
-import crypto from "crypto";
+import { createRazorpayOrder as rzpCreateOrder, verifyRazorpaySignature } from "./razorpay.server";
 import { sendOrderConfirmationEmail, sendOrderStatusUpdateEmail } from "./email.server";
 import type { CartItem } from "./cart-store";
 import type { Address } from "./orders-store";
@@ -96,7 +95,7 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
     if (data.paymentMethod === "razorpay" || data.paymentMethod === "online") {
       const amountInPaise = Math.round(finalTotal * 100);
 
-      const rzpOrder = await razorpay.orders.create({
+      const rzpOrder = await rzpCreateOrder({
         amount: amountInPaise,
         currency: "INR",
         receipt: `receipt_${Date.now()}`,
@@ -171,11 +170,12 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const sql = await getSql();
     
-    const hmac = crypto.createHmac("sha256", process.env.RAZORPAY_KEY_SECRET || "");
-    hmac.update(data.razorpay_order_id + "|" + data.razorpay_payment_id);
-    const generatedSignature = hmac.digest("hex");
-
-    if (generatedSignature !== data.razorpay_signature) {
+    const isValid = await verifyRazorpaySignature(
+      data.razorpay_order_id,
+      data.razorpay_payment_id,
+      data.razorpay_signature,
+    );
+    if (!isValid) {
       throw new Error("Invalid signature");
     }
 
