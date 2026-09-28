@@ -37,7 +37,6 @@ function initAuth() {
   const trustedOrigins: string[] = [
     "https://prynth.in",
     "https://www.prynth.in",
-    "https://prynth.prynth07.workers.dev",
     ...(explicitBaseURL ? [explicitBaseURL] : []),
     ...LOCAL_DEV_ORIGINS,
   ];

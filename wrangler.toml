@@ -2,6 +2,8 @@ name = "prynth"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat", "nodejs_compat_populate_process_env", "global_navigator"]
 
+workers_dev = false
+
 routes = [
   { pattern = "prynth.in", custom_domain = true },
   { pattern = "www.prynth.in", custom_domain = true }
