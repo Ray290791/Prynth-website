@@ -121,7 +121,7 @@ export async function sendOrderConfirmationEmail(
             ${itemsHtml}
             
             <div style="margin-top: 40px; padding-top: 32px; border-top: 1px solid #e4e4e7; font-size: 14px; color: #666; text-align: center;">
-              <p style="margin: 0 0 8px;">Have questions? Reply to this email or visit our <a href="https://prynth.com/contact" style="color: #000; text-decoration: underline;">help center</a>.</p>
+              <p style="margin: 0 0 8px;">Have questions? Reply to this email or visit our <a href="https://prynth.in/contact" style="color: #000; text-decoration: underline;">help center</a>.</p>
               <p style="margin: 0;">&copy; ${new Date().getFullYear()} Prynth. All rights reserved.</p>
             </div>
           </div>

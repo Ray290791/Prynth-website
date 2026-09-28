@@ -32,11 +32,15 @@ function initAuth() {
     "http://[::1]:8080",
   ];
 
-  const baseURL = explicitBaseURL ?? (isCloudflare ? "https://prynth.prynth07.workers.dev" : "http://localhost:8080");
+  const baseURL = explicitBaseURL ?? (isCloudflare ? "https://prynth.in" : "http://localhost:8080");
 
-  const trustedOrigins: string[] = explicitBaseURL
-    ? [explicitBaseURL, ...LOCAL_DEV_ORIGINS]
-    : [baseURL, ...LOCAL_DEV_ORIGINS];
+  const trustedOrigins: string[] = [
+    "https://prynth.in",
+    "https://www.prynth.in",
+    "https://prynth.prynth07.workers.dev",
+    ...(explicitBaseURL ? [explicitBaseURL] : []),
+    ...LOCAL_DEV_ORIGINS,
+  ];
 
   const databaseUrl = getDatabaseUrl();
 
