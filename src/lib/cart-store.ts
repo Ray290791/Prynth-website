@@ -19,6 +19,12 @@ export type CustomSpec = {
   infillPattern?: string;
   wallLoops?: number;
   supports?: string;
+  supportEnabled?: boolean;
+  supportType?: string;
+  supportThresholdAngle?: number;
+  supportOnBuildPlateOnly?: boolean;
+  supportBaseFilament?: string;
+  supportInterfaceFilament?: string;
   surfaceFinish?: string;
   brim?: string;
   orientation?: string;

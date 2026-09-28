@@ -195,9 +195,13 @@ function OrderPage() {
                         {item.custom.wallLoops} walls
                       </span>
                     ) : null}
-                    {item.custom.supports && item.custom.supports !== "none" ? (
+                    {item.custom.supports && item.custom.supports !== "none" && item.custom.supports !== "None" ? (
                       <span className="rounded bg-surface-2 px-1.5 py-0.5">
-                        {item.custom.supports === "tree" ? "Tree supports" : "Supports"}
+                        {item.custom.supports.toLowerCase().includes("tree")
+                          ? "Tree supports"
+                          : item.custom.supports.toLowerCase().includes("normal")
+                            ? "Normal supports"
+                            : item.custom.supports}
                       </span>
                     ) : null}
                     {item.custom.surfaceFinish && item.custom.surfaceFinish !== "standard" ? (

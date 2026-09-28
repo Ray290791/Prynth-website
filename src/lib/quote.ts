@@ -91,6 +91,23 @@ export const SUPPORT_TYPES = [
   { id: "standard", name: "Standard (Normal)", hint: "Traditional accordion support pillars" },
 ] as const;
 
+export const BAMBU_SUPPORT_TYPES = [
+  { id: "tree(auto)", name: "tree(auto)", label: "Tree (Auto)", hint: "Bambu organic branches, automatically placed with minimal contact marks" },
+  { id: "tree(slim)", name: "tree(slim)", label: "Tree (Slim)", hint: "Narrow tree branches for quick removal and faster print speed" },
+  { id: "tree(strong)", name: "tree(strong)", label: "Tree (Strong)", hint: "Reinforced thick tree trunks for heavy cantilevered sections" },
+  { id: "tree(manual)", name: "tree(manual)", label: "Tree (Manual)", hint: "Tree branches generated only on manually painted support enforcers" },
+  { id: "normal(auto)", name: "normal(auto)", label: "Normal (Auto)", hint: "Traditional accordion support grid automatically placed under steep overhangs" },
+  { id: "normal(manual)", name: "normal(manual)", label: "Normal (Manual)", hint: "Standard support grid placed only on painted support enforcers" },
+] as const;
+
+export const BAMBU_SUPPORT_FILAMENTS = [
+  { id: "Default", name: "Default", label: "Default (Model Material)", hint: "Uses the same spool as the primary model" },
+  { id: "PETG", name: "PETG", label: "PETG (Zero-gap interface for PLA)", hint: "Does not bond to PLA, giving smooth, mirror-like overhang bottoms" },
+  { id: "PLA", name: "PLA", label: "PLA (Zero-gap interface for PETG)", hint: "Does not bond to PETG, yielding ultra-clean detachment" },
+  { id: "Support for PLA", name: "Support for PLA", label: "Bambu Support for PLA", hint: "Specialized breakaway support polymer formulated for clean releases" },
+  { id: "PVA", name: "PVA", label: "PVA (Water-Soluble)", hint: "100% water-soluble polymer for complex enclosed cavities" },
+] as const;
+
 export const SURFACE_FINISHES = [
   { id: "standard", name: "Standard Smooth", hint: "Standard clean layer finish" },
   { id: "fuzzy", name: "Fuzzy Skin", hint: "Bambu tactile textured matte grip on outer perimeters" },
@@ -231,6 +248,12 @@ export type QuoteInput = {
   infillPattern?: string;
   wallLoops?: number;
   supports?: string;
+  supportEnabled?: boolean;
+  supportType?: string;
+  supportThresholdAngle?: number;
+  supportOnBuildPlateOnly?: boolean;
+  supportBaseFilament?: string;
+  supportInterfaceFilament?: string;
   surfaceFinish?: string;
   brim?: string;
   qty: number;
@@ -468,9 +491,19 @@ export function computeQuote(
     // Each additional wall loop above 2 adds slight material
     slicerExtraPerUnit += (wallLoops - 2) * 5;
   }
-  if (input.supports === "tree" || input.supports === "standard") {
-    // Support material usage
-    slicerExtraPerUnit += Math.round(volume * 0.12);
+  const hasSupport = input.supportEnabled !== undefined
+    ? input.supportEnabled
+    : (Boolean(input.supports) && input.supports !== "none" && input.supports !== "None");
+
+  if (hasSupport) {
+    // Tree supports use slightly less material (~10%) than traditional normal accordion grid (~14%)
+    const isTree = (input.supportType || input.supports || "").toLowerCase().includes("tree");
+    slicerExtraPerUnit += Math.round(volume * (isTree ? 0.10 : 0.14));
+
+    // Multi-material support interface swap
+    if (input.supportInterfaceFilament && input.supportInterfaceFilament !== "Default") {
+      slicerExtraPerUnit += 39;
+    }
   }
   if (input.surfaceFinish === "ironing") {
     // Ironing surface pass

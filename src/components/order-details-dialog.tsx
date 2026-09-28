@@ -93,7 +93,15 @@ export function OrderDetailsDialog({
       `Infill Percentage: ${custom.infillPercentage ?? 20}%`,
       `Infill Pattern: ${custom.infillPattern || "Gyroid"}`,
       `Perimeter Wall Loops: ${custom.wallLoops || 2}`,
-      `Support Type: ${custom.supports || "None"}`,
+      custom.supportEnabled !== undefined
+        ? `Enable Support: ${custom.supportEnabled ? "Yes" : "No"}`
+        : null,
+      `Support: ${custom.supports || "None"}`,
+      custom.supportType ? `Support Type: ${custom.supportType}` : null,
+      custom.supportThresholdAngle != null ? `Threshold Angle: ${custom.supportThresholdAngle}°` : null,
+      custom.supportOnBuildPlateOnly != null ? `On Build Plate Only: ${custom.supportOnBuildPlateOnly ? "Yes" : "No"}` : null,
+      custom.supportBaseFilament ? `Support Base Filament: ${custom.supportBaseFilament}` : null,
+      custom.supportInterfaceFilament ? `Support Interface Filament: ${custom.supportInterfaceFilament}` : null,
       `Surface Finish: ${custom.surfaceFinish || "Standard"}`,
       `Bed Brim: ${custom.brim || "Auto"}`,
       custom.orientation ? `Print Orientation: ${custom.orientation}` : null,
@@ -124,8 +132,14 @@ export function OrderDetailsDialog({
       sparse_infill_density: `${custom.infillPercentage ?? 20}%`,
       sparse_infill_pattern: custom.infillPattern || "gyroid",
       wall_loops: custom.wallLoops || 2,
-      enable_support: custom.supports && custom.supports !== "none" ? 1 : 0,
-      support_type: custom.supports || "none",
+      enable_support: custom.supportEnabled !== undefined
+        ? (custom.supportEnabled ? 1 : 0)
+        : (custom.supports && custom.supports !== "none" ? 1 : 0),
+      support_type: custom.supportType || (custom.supports && custom.supports !== "none" ? custom.supports : "tree(auto)"),
+      support_threshold_angle: custom.supportThresholdAngle ?? 30,
+      support_on_build_plate_only: custom.supportOnBuildPlateOnly ? 1 : 0,
+      support_base_filament: custom.supportBaseFilament || "Default",
+      support_interface_filament: custom.supportInterfaceFilament || "Default",
       fuzzy_skin: custom.surfaceFinish === "fuzzy" ? "all_walls" : "none",
       ironing_type: custom.surfaceFinish === "ironing" ? "top" : "no",
       brim_type: custom.brim || "auto",
@@ -310,6 +324,11 @@ export function OrderDetailsDialog({
                           <div className="rounded-xl bg-surface/80 p-2 border border-border/40">
                             <span className="text-muted block text-[10px]">Supports</span>
                             <span className="font-semibold text-accent">{custom.supports || "None"}</span>
+                            {custom.supportInterfaceFilament && custom.supportInterfaceFilament !== "Default" && (
+                              <span className="text-[10px] text-muted block mt-0.5">
+                                Interface: {custom.supportInterfaceFilament}
+                              </span>
+                            )}
                           </div>
 
                           <div className="rounded-xl bg-surface/80 p-2 border border-border/40">

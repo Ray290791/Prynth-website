@@ -18,10 +18,12 @@ import {
   getPricingConfig,
   INFILL_PATTERNS,
   SUPPORT_TYPES,
+  BAMBU_SUPPORT_TYPES,
   SURFACE_FINISHES,
   BRIM_TYPES,
   type CustomPricingConfig,
 } from "@/lib/quote";
+import { BambuSupportSettings, type BambuSupportState } from "@/components/bambu-support-settings";
 import { getPrinters, type Printer } from "@/lib/printers-fns";
 import { getAvailableFilaments, type FilamentRecord } from "@/lib/filaments-fns";
 import { uploadCustomFile, getCustomFileRecord } from "@/lib/custom-files-fns";
@@ -491,7 +493,29 @@ function UploadForm({
   const [infillPct, setInfillPct] = useState(() => editItem?.custom?.infillPercentage ?? 20);
   const [infillPattern, setInfillPattern] = useState(() => editItem?.custom?.infillPattern || "gyroid");
   const [wallLoops, setWallLoops] = useState(() => editItem?.custom?.wallLoops ?? 2);
-  const [supports, setSupports] = useState(() => editItem?.custom?.supports || "none");
+  const [supportState, setSupportState] = useState<BambuSupportState>(() => {
+    if (editItem?.custom?.supportEnabled !== undefined) {
+      return {
+        enabled: editItem.custom.supportEnabled,
+        type: editItem.custom.supportType || "tree(auto)",
+        thresholdAngle: editItem.custom.supportThresholdAngle ?? 30,
+        onBuildPlateOnly: editItem.custom.supportOnBuildPlateOnly ?? false,
+        baseFilament: editItem.custom.supportBaseFilament || "Default",
+        interfaceFilament: editItem.custom.supportInterfaceFilament || "Default",
+      };
+    }
+    const legacy = editItem?.custom?.supports;
+    const isLegacyEnabled = Boolean(legacy && legacy !== "none" && legacy !== "None");
+    const legacyIsTree = (legacy || "").toLowerCase().includes("tree");
+    return {
+      enabled: isLegacyEnabled,
+      type: legacyIsTree ? "tree(auto)" : "normal(auto)",
+      thresholdAngle: 30,
+      onBuildPlateOnly: false,
+      baseFilament: "Default",
+      interfaceFilament: "Default",
+    };
+  });
   const [surfaceFinish, setSurfaceFinish] = useState(() => editItem?.custom?.surfaceFinish || "standard");
   const [brim, setBrim] = useState(() => editItem?.custom?.brim || "auto");
   const [showAdvanced, setShowAdvanced] = useState(() => {
@@ -499,7 +523,7 @@ function UploadForm({
     return (
       (editItem.custom.infillPattern && editItem.custom.infillPattern !== "gyroid") ||
       (editItem.custom.wallLoops && editItem.custom.wallLoops !== 2) ||
-      (editItem.custom.supports && editItem.custom.supports !== "none") ||
+      (editItem.custom.supportEnabled || (editItem.custom.supports && editItem.custom.supports !== "none")) ||
       (editItem.custom.surfaceFinish && editItem.custom.surfaceFinish !== "standard") ||
       (editItem.custom.brim && editItem.custom.brim !== "auto")
     );
@@ -691,7 +715,13 @@ function UploadForm({
           infillPercentage: infillPct,
           infillPattern,
           wallLoops,
-          supports,
+          supports: supportState.enabled ? supportState.type : "none",
+          supportEnabled: supportState.enabled,
+          supportType: supportState.type,
+          supportThresholdAngle: supportState.thresholdAngle,
+          supportOnBuildPlateOnly: supportState.onBuildPlateOnly,
+          supportBaseFilament: supportState.baseFilament,
+          supportInterfaceFilament: supportState.interfaceFilament,
           surfaceFinish,
           brim,
           qty,
@@ -699,14 +729,33 @@ function UploadForm({
         pricingConfig,
         "upload",
       ),
-    [dynamicVolume, solidVolume, surfaceArea, material, quality, infillPct, infillPattern, wallLoops, supports, surfaceFinish, brim, qty, pricingConfig],
+    [
+      dynamicVolume,
+      solidVolume,
+      surfaceArea,
+      material,
+      quality,
+      infillPct,
+      infillPattern,
+      wallLoops,
+      supportState,
+      surfaceFinish,
+      brim,
+      qty,
+      pricingConfig,
+    ],
   );
 
   const materialMeta = pricingConfig.materials.find((m) => m.id === material);
   const qualityMeta = pricingConfig.qualities.find((q) => q.id === quality);
   const patternMeta = INFILL_PATTERNS.find((p) => p.id === infillPattern);
-  const supportMeta = SUPPORT_TYPES.find((s) => s.id === supports);
   const finishMeta = SURFACE_FINISHES.find((f) => f.id === surfaceFinish);
+  const supportTypeMeta = BAMBU_SUPPORT_TYPES.find((t) => t.id === supportState.type);
+  const supportDisplayLabel = supportState.enabled
+    ? `${supportTypeMeta?.label ?? supportState.type} · ${supportState.thresholdAngle}°${
+        supportState.onBuildPlateOnly ? " · Plate only" : ""
+      }${supportState.interfaceFilament !== "Default" ? ` · ${supportState.interfaceFilament}` : ""}`
+    : "None";
 
   function addEstimate() {
     if ((!file && !editItem?.custom?.fileName) || quote.total <= 0) {
@@ -732,7 +781,13 @@ function UploadForm({
       infillPercentage: infillPct,
       infillPattern,
       wallLoops,
-      supports: supportMeta?.name ?? supports,
+      supports: supportDisplayLabel,
+      supportEnabled: supportState.enabled,
+      supportType: supportState.type,
+      supportThresholdAngle: supportState.thresholdAngle,
+      supportOnBuildPlateOnly: supportState.onBuildPlateOnly,
+      supportBaseFilament: supportState.baseFilament,
+      supportInterfaceFilament: supportState.interfaceFilament,
       surfaceFinish: finishMeta?.name ?? surfaceFinish,
       brim,
       orientation:
@@ -872,7 +927,7 @@ function UploadForm({
             <PrintabilityChecker
               report={printabilityReport}
               currentSettings={{
-                supports,
+                supports: supportState.enabled ? supportState.type : "none",
                 brim,
                 quality,
                 infillPct,
@@ -887,9 +942,13 @@ function UploadForm({
                   setModelRotation(rec.suggestedValue);
                   toast.success("Applied optimal orientation!");
                 } else if (rec.category === "supports") {
-                  setSupports(rec.suggestedValue);
+                  setSupportState((prev) => ({
+                    ...prev,
+                    enabled: true,
+                    type: rec.suggestedValue === "tree" ? "tree(auto)" : "normal(auto)",
+                  }));
                   setShowAdvanced(true);
-                  toast.success(`Enabled ${rec.suggestedValue === "tree" ? "Tree" : "Standard"} Supports!`);
+                  toast.success(`Enabled ${rec.suggestedValue === "tree" ? "Tree" : "Normal"} Supports!`);
                 } else if (rec.category === "brim") {
                   setBrim(rec.suggestedValue);
                   setShowAdvanced(true);
@@ -911,7 +970,11 @@ function UploadForm({
                   if (rec.category === "orientation" && rec.suggestedValue) {
                     setModelRotation(rec.suggestedValue);
                   } else if (rec.category === "supports") {
-                    setSupports(rec.suggestedValue);
+                    setSupportState((prev) => ({
+                      ...prev,
+                      enabled: true,
+                      type: rec.suggestedValue === "tree" ? "tree(auto)" : "normal(auto)",
+                    }));
                   } else if (rec.category === "brim") {
                     setBrim(rec.suggestedValue);
                   } else if (rec.category === "quality") {
@@ -1114,7 +1177,7 @@ function UploadForm({
                   </span>
                 </p>
                 <p className="text-xs text-muted mt-0.5">
-                  Pattern ({patternMeta?.name}), {wallLoops} wall loops, supports ({supportMeta?.name})
+                  Pattern ({patternMeta?.name}), {wallLoops} wall loops, supports ({supportState.enabled ? supportTypeMeta?.label ?? supportState.type : "None"})
                 </p>
               </div>
             </div>
@@ -1174,25 +1237,10 @@ function UploadForm({
                 </div>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                {/* Supports */}
-                <div>
-                  <Label htmlFor="supports">Support Structure</Label>
-                  <select
-                    id="supports"
-                    value={supports}
-                    onChange={(e) => setSupports(e.target.value)}
-                    className="h-11 w-full rounded-xl border border-border bg-surface px-3.5 text-sm text-fg shadow-[var(--shadow-border)] focus:border-accent focus:outline-none"
-                  >
-                    {SUPPORT_TYPES.map((sup) => (
-                      <option key={sup.id} value={sup.id}>
-                        {sup.name}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-muted mt-1">{supportMeta?.hint}</p>
-                </div>
+              {/* Bambu Support Settings */}
+              <BambuSupportSettings value={supportState} onChange={setSupportState} />
 
+              <div className="grid gap-4 sm:grid-cols-2">
                 {/* Surface Finish / Texture */}
                 <div>
                   <Label htmlFor="finish">Surface Finish</Label>
@@ -1210,23 +1258,24 @@ function UploadForm({
                   </select>
                   <p className="text-xs text-muted mt-1">{finishMeta?.hint}</p>
                 </div>
-              </div>
 
-              {/* Brim */}
-              <div>
-                <Label htmlFor="brim">Build Plate Adhesion</Label>
-                <select
-                  id="brim"
-                  value={brim}
-                  onChange={(e) => setBrim(e.target.value)}
-                  className="h-11 w-full rounded-xl border border-border bg-surface px-3.5 text-sm text-fg shadow-[var(--shadow-border)] focus:border-accent focus:outline-none"
-                >
-                  {BRIM_TYPES.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
+                {/* Brim */}
+                <div>
+                  <Label htmlFor="brim">Build Plate Adhesion</Label>
+                  <select
+                    id="brim"
+                    value={brim}
+                    onChange={(e) => setBrim(e.target.value)}
+                    className="h-11 w-full rounded-xl border border-border bg-surface px-3.5 text-sm text-fg shadow-[var(--shadow-border)] focus:border-accent focus:outline-none"
+                  >
+                    {BRIM_TYPES.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-muted mt-1">Outer brim to prevent corner warp</p>
+                </div>
               </div>
             </div>
           )}
@@ -1296,7 +1345,7 @@ function UploadForm({
             qualityName: qualityMeta?.name,
             infillLabel: `${infillPct}% ${patternMeta?.name ?? "Gyroid"}`,
             wallLoops,
-            supports: supports !== "none" ? supportMeta?.name : undefined,
+            supports: supportState.enabled ? supportDisplayLabel : undefined,
             surfaceFinish: surfaceFinish !== "standard" ? finishMeta?.name : undefined,
             orientation:
               modelRotation[0] !== 0 || modelRotation[2] !== 0
@@ -1355,14 +1404,36 @@ function IdeaForm({
   const [infillPct, setInfillPct] = useState(() => editItem?.custom?.infillPercentage ?? 20);
   const [infillPattern, setInfillPattern] = useState(() => editItem?.custom?.infillPattern || "gyroid");
   const [wallLoops, setWallLoops] = useState(() => editItem?.custom?.wallLoops ?? 2);
-  const [supports, setSupports] = useState(() => editItem?.custom?.supports || "none");
+  const [supportState, setSupportState] = useState<BambuSupportState>(() => {
+    if (editItem?.custom?.supportEnabled !== undefined) {
+      return {
+        enabled: editItem.custom.supportEnabled,
+        type: editItem.custom.supportType || "tree(auto)",
+        thresholdAngle: editItem.custom.supportThresholdAngle ?? 30,
+        onBuildPlateOnly: editItem.custom.supportOnBuildPlateOnly ?? false,
+        baseFilament: editItem.custom.supportBaseFilament || "Default",
+        interfaceFilament: editItem.custom.supportInterfaceFilament || "Default",
+      };
+    }
+    const legacy = editItem?.custom?.supports;
+    const isLegacyEnabled = Boolean(legacy && legacy !== "none" && legacy !== "None");
+    const legacyIsTree = (legacy || "").toLowerCase().includes("tree");
+    return {
+      enabled: isLegacyEnabled,
+      type: legacyIsTree ? "tree(auto)" : "normal(auto)",
+      thresholdAngle: 30,
+      onBuildPlateOnly: false,
+      baseFilament: "Default",
+      interfaceFilament: "Default",
+    };
+  });
   const [surfaceFinish, setSurfaceFinish] = useState(() => editItem?.custom?.surfaceFinish || "standard");
   const [showAdvanced, setShowAdvanced] = useState(() => {
     if (!editItem?.custom) return false;
     return (
       (editItem.custom.infillPattern && editItem.custom.infillPattern !== "gyroid") ||
       (editItem.custom.wallLoops && editItem.custom.wallLoops !== 2) ||
-      (editItem.custom.supports && editItem.custom.supports !== "none") ||
+      (editItem.custom.supportEnabled || (editItem.custom.supports && editItem.custom.supports !== "none")) ||
       (editItem.custom.surfaceFinish && editItem.custom.surfaceFinish !== "standard")
     );
   });
@@ -1432,7 +1503,13 @@ function IdeaForm({
           infillPercentage: infillPct,
           infillPattern,
           wallLoops,
-          supports,
+          supports: supportState.enabled ? supportState.type : "none",
+          supportEnabled: supportState.enabled,
+          supportType: supportState.type,
+          supportThresholdAngle: supportState.thresholdAngle,
+          supportOnBuildPlateOnly: supportState.onBuildPlateOnly,
+          supportBaseFilament: supportState.baseFilament,
+          supportInterfaceFilament: supportState.interfaceFilament,
           surfaceFinish,
           qty,
           modelingFee: cx.fee,
@@ -1440,14 +1517,31 @@ function IdeaForm({
         pricingConfig,
         "idea",
       ),
-    [preset.cm3, material, quality, infillPct, infillPattern, wallLoops, supports, surfaceFinish, qty, cx.fee, pricingConfig],
+    [
+      preset.cm3,
+      material,
+      quality,
+      infillPct,
+      infillPattern,
+      wallLoops,
+      supportState,
+      surfaceFinish,
+      qty,
+      cx.fee,
+      pricingConfig,
+    ],
   );
 
   const materialMeta = pricingConfig.materials.find((m) => m.id === material);
   const qualityMeta = pricingConfig.qualities.find((q) => q.id === quality);
   const patternMeta = INFILL_PATTERNS.find((p) => p.id === infillPattern);
-  const supportMeta = SUPPORT_TYPES.find((s) => s.id === supports);
   const finishMeta = SURFACE_FINISHES.find((f) => f.id === surfaceFinish);
+  const supportTypeMeta = BAMBU_SUPPORT_TYPES.find((t) => t.id === supportState.type);
+  const supportDisplayLabel = supportState.enabled
+    ? `${supportTypeMeta?.label ?? supportState.type} · ${supportState.thresholdAngle}°${
+        supportState.onBuildPlateOnly ? " · Plate only" : ""
+      }${supportState.interfaceFilament !== "Default" ? ` · ${supportState.interfaceFilament}` : ""}`
+    : "None";
 
   function addEstimate() {
     if (idea.trim().length < 12) {
@@ -1468,7 +1562,13 @@ function IdeaForm({
       infillPercentage: infillPct,
       infillPattern,
       wallLoops,
-      supports: supportMeta?.name ?? supports,
+      supports: supportDisplayLabel,
+      supportEnabled: supportState.enabled,
+      supportType: supportState.type,
+      supportThresholdAngle: supportState.thresholdAngle,
+      supportOnBuildPlateOnly: supportState.onBuildPlateOnly,
+      supportBaseFilament: supportState.baseFilament,
+      supportInterfaceFilament: supportState.interfaceFilament,
       surfaceFinish: finishMeta?.name ?? surfaceFinish,
       color: selectedColorName,
       colorId: color,
@@ -1699,7 +1799,7 @@ function IdeaForm({
                   </span>
                 </p>
                 <p className="text-xs text-muted mt-0.5">
-                  Pattern ({patternMeta?.name}), {wallLoops} walls, {supportMeta?.name}
+                  Pattern ({patternMeta?.name}), {wallLoops} walls, supports ({supportState.enabled ? supportTypeMeta?.label ?? supportState.type : "None"})
                 </p>
               </div>
             </div>
@@ -1757,40 +1857,24 @@ function IdeaForm({
                 </div>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <Label htmlFor="idea-supports">Support Structure</Label>
-                  <select
-                    id="idea-supports"
-                    value={supports}
-                    onChange={(e) => setSupports(e.target.value)}
-                    className="h-11 w-full rounded-xl border border-border bg-surface px-3.5 text-sm text-fg shadow-[var(--shadow-border)] focus:border-accent focus:outline-none"
-                  >
-                    {SUPPORT_TYPES.map((sup) => (
-                      <option key={sup.id} value={sup.id}>
-                        {sup.name}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-muted mt-1">{supportMeta?.hint}</p>
-                </div>
+              {/* Bambu Support Settings */}
+              <BambuSupportSettings value={supportState} onChange={setSupportState} />
 
-                <div>
-                  <Label htmlFor="idea-finish">Surface Finish</Label>
-                  <select
-                    id="idea-finish"
-                    value={surfaceFinish}
-                    onChange={(e) => setSurfaceFinish(e.target.value)}
-                    className="h-11 w-full rounded-xl border border-border bg-surface px-3.5 text-sm text-fg shadow-[var(--shadow-border)] focus:border-accent focus:outline-none"
-                  >
-                    {SURFACE_FINISHES.map((fin) => (
-                      <option key={fin.id} value={fin.id}>
-                        {fin.name}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-muted mt-1">{finishMeta?.hint}</p>
-                </div>
+              <div>
+                <Label htmlFor="idea-finish">Surface Finish</Label>
+                <select
+                  id="idea-finish"
+                  value={surfaceFinish}
+                  onChange={(e) => setSurfaceFinish(e.target.value)}
+                  className="h-11 w-full rounded-xl border border-border bg-surface px-3.5 text-sm text-fg shadow-[var(--shadow-border)] focus:border-accent focus:outline-none"
+                >
+                  {SURFACE_FINISHES.map((fin) => (
+                    <option key={fin.id} value={fin.id}>
+                      {fin.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted mt-1">{finishMeta?.hint}</p>
               </div>
             </div>
           )}
@@ -1841,7 +1925,7 @@ function IdeaForm({
             qualityName: qualityMeta?.name,
             infillLabel: `${infillPct}% ${patternMeta?.name ?? "Gyroid"}`,
             wallLoops,
-            supports: supports !== "none" ? supportMeta?.name : undefined,
+            supports: supportState.enabled ? supportDisplayLabel : undefined,
             surfaceFinish: surfaceFinish !== "standard" ? finishMeta?.name : undefined,
           }}
         />
