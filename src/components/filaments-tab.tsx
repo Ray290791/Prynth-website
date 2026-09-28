@@ -503,7 +503,7 @@ function FilamentModal({
                   id="fil-material"
                   value={materialId}
                   onChange={(e) => setMaterialId(e.target.value)}
-                  className="mt-1.5 w-full rounded-xl border border-border bg-surface-2 px-3 py-2 text-sm outline-none"
+                  className="mt-1.5 h-11 w-full rounded-xl border border-border bg-surface px-3.5 text-sm text-fg focus:border-accent focus:ring-2 focus:ring-ring/30 focus:outline-none"
                 >
                   {MATERIAL_OPTIONS.map((m) => (
                     <option key={m.id} value={m.id}>
@@ -555,7 +555,7 @@ function FilamentModal({
                     type="color"
                     value={colorHex}
                     onChange={(e) => setColorHex(e.target.value)}
-                    className="size-9 rounded-lg border border-border cursor-pointer bg-transparent p-0.5"
+                    className="size-11 shrink-0 rounded-xl border border-border cursor-pointer bg-surface p-1 shadow-[var(--shadow-border)]"
                   />
                   <Input
                     id="fil-hex"
@@ -588,7 +588,7 @@ function FilamentModal({
                   id="fil-status"
                   value={status}
                   onChange={(e) => setStatus(e.target.value as FilamentStatus)}
-                  className="mt-1.5 w-full rounded-xl border border-border bg-surface-2 px-3 py-2 text-sm outline-none"
+                  className="mt-1.5 h-11 w-full rounded-xl border border-border bg-surface px-3.5 text-sm text-fg focus:border-accent focus:ring-2 focus:ring-ring/30 focus:outline-none"
                 >
                   <option value="in_stock">🟢 In Stock (Visible)</option>
                   <option value="low_stock">🟡 Low Stock (Visible)</option>
@@ -610,11 +610,11 @@ function FilamentModal({
           </div>
 
           {/* Fixed Footer */}
-          <div className="shrink-0 flex justify-end gap-3 p-4 sm:p-5 border-t border-border bg-surface-2/40">
-            <Button type="button" variant="ghost" onClick={onClose}>
+          <div className="shrink-0 flex items-center justify-end gap-3 p-4 sm:p-5 border-t border-border bg-surface-2/40">
+            <Button type="button" variant="outline" size="md" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSaving}>
+            <Button type="submit" size="md" disabled={isSaving}>
               {isSaving ? "Saving…" : filament ? "Save Changes" : "Add Filament"}
             </Button>
           </div>

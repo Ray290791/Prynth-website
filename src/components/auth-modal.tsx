@@ -59,12 +59,12 @@ export function AuthModal({
       {trigger && <Dialog.Trigger asChild>{trigger}</Dialog.Trigger>}
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-xl border border-glass-border bg-glass backdrop-blur-2xl backdrop-saturate-150 p-6 shadow-xl shadow-black/5 duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-2xl">
-          <div className="flex flex-col space-y-2 text-center sm:text-left mb-6">
-            <Dialog.Title className="text-xl font-bold tracking-tight">
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-glass-border bg-surface p-6 sm:p-7 shadow-2xl shadow-black/10 duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]">
+          <div className="flex flex-col space-y-1.5 text-left mb-6 pr-8">
+            <Dialog.Title className="text-xl font-bold tracking-tight text-fg">
               {mode === "login" ? "Welcome back" : "Create an account"}
             </Dialog.Title>
-            <Dialog.Description className="text-sm text-muted">
+            <Dialog.Description className="text-xs text-muted leading-relaxed">
               {mode === "login"
                 ? "Enter your email to sign in to your account"
                 : "Enter your email below to create your account"}
@@ -72,9 +72,9 @@ export function AuthModal({
           </div>
 
           <div className="space-y-4">
-            <form onSubmit={handleEmailAuth} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+            <form onSubmit={handleEmailAuth} className="space-y-3.5">
+              <div className="space-y-1.5">
+                <Label htmlFor="email" className="text-xs font-medium">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -85,8 +85,8 @@ export function AuthModal({
                   disabled={loading}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="password" className="text-xs font-medium">Password</Label>
                 <Input
                   id="password"
                   type="password"
@@ -97,7 +97,7 @@ export function AuthModal({
                   minLength={8}
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" size="md" className="w-full mt-2" disabled={loading}>
                 {loading
                   ? "Please wait..."
                   : mode === "login"
@@ -106,12 +106,12 @@ export function AuthModal({
               </Button>
             </form>
 
-            <div className="relative">
+            <div className="relative my-3">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t border-border" />
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-transparent px-2 text-muted">Or continue with</span>
+              <div className="relative flex justify-center text-[10px] uppercase tracking-wider">
+                <span className="bg-surface px-2.5 text-muted font-medium">Or continue with</span>
               </div>
             </div>
 
@@ -122,6 +122,7 @@ export function AuthModal({
                     key={p.providerId}
                     type="button"
                     variant="outline"
+                    size="md"
                     disabled={loading || socialLoading}
                     onClick={async () => {
                       try {
@@ -139,24 +140,24 @@ export function AuthModal({
                   </Button>
                 ))
               ) : (
-                <p className="text-sm text-muted text-center">Auth disabled</p>
+                <p className="text-xs text-muted text-center py-1">Auth disabled</p>
               )}
             </div>
 
-            <div className="text-center text-sm text-muted mt-4">
+            <div className="text-center text-xs text-muted pt-2 border-t border-border/50">
               {mode === "login" ? "Don't have an account? " : "Already have an account? "}
               <button
                 type="button"
                 onClick={() => setMode(mode === "login" ? "signup" : "login")}
-                className="underline underline-offset-4 hover:text-fg"
+                className="font-medium text-accent underline underline-offset-4 hover:text-accent-hover cursor-pointer"
               >
                 {mode === "login" ? "Sign up" : "Sign in"}
               </button>
             </div>
           </div>
 
-          <Dialog.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-bg transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted">
-            <X className="h-4 w-4" />
+          <Dialog.Close className="absolute right-4 top-4 size-8 rounded-full flex items-center justify-center text-muted hover:bg-surface-2 hover:text-fg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <X className="size-4" />
             <span className="sr-only">Close</span>
           </Dialog.Close>
         </Dialog.Content>

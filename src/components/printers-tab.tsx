@@ -350,17 +350,17 @@ export function PrintersTab() {
             <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5 overscroll-contain">
               {/* Quick Model Presets */}
               <div>
-                <Label className="text-xs text-muted mb-1.5 block">Quick Bambu Presets</Label>
-                <div className="flex flex-wrap gap-1.5">
+                <Label className="text-xs text-muted mb-2 block">Quick Bambu Presets</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full">
                   {MODEL_PRESETS.map((preset) => (
                     <button
                       key={preset.name}
                       type="button"
                       onClick={() => handleModelSelect(preset)}
                       className={cn(
-                        "rounded-lg px-2.5 py-1 text-xs font-medium border transition-colors",
+                        "h-9 rounded-xl px-2 text-xs font-medium border transition-colors flex items-center justify-center text-center leading-none",
                         model === preset.name
-                          ? "border-accent bg-accent-soft text-accent"
+                          ? "border-accent bg-accent-soft text-accent font-semibold"
                           : "border-border bg-surface-2 text-muted hover:text-fg"
                       )}
                     >
@@ -421,7 +421,7 @@ export function PrintersTab() {
                     id="printer-status"
                     value={status}
                     onChange={(e) => setStatus(e.target.value as PrinterStatus)}
-                    className="mt-1 h-10 w-full rounded-xl border border-border bg-surface px-3 text-sm text-fg focus:border-accent focus:outline-none"
+                    className="mt-1 h-11 w-full rounded-xl border border-border bg-surface px-3.5 text-sm text-fg focus:border-accent focus:ring-2 focus:ring-ring/30 focus:outline-none"
                   >
                     <option value="available">🟢 Available (Ready to print orders)</option>
                     <option value="busy">🟡 In Queue / Busy (Accepts prints with queue delay)</option>
@@ -445,9 +445,10 @@ export function PrintersTab() {
             </div>
 
             {/* Fixed Footer */}
-            <div className="shrink-0 flex justify-end gap-2 p-4 sm:p-5 border-t border-border bg-surface-2/40">
+            <div className="shrink-0 flex items-center justify-end gap-3 p-4 sm:p-5 border-t border-border bg-surface-2/40">
               <Button
                 variant="outline"
+                size="md"
                 onClick={() => {
                   setShowAddModal(false);
                   setEditingPrinter(null);
@@ -456,6 +457,7 @@ export function PrintersTab() {
                 Cancel
               </Button>
               <Button
+                size="md"
                 disabled={!name.trim() || createMutation.isPending || updateMutation.isPending}
                 onClick={() => {
                   if (editingPrinter) {

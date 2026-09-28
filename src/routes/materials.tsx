@@ -74,8 +74,9 @@ export default function MaterialsPage() {
 
         <div className="flex items-center gap-1.5 p-1 rounded-2xl border border-white/20 dark:border-white/10 bg-surface/30 backdrop-blur-xl shadow-sm overflow-x-auto max-w-full">
           <button
+            type="button"
             onClick={() => setActiveTab("all")}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all ${
+            className={`inline-flex h-9 items-center justify-center shrink-0 px-3.5 rounded-xl text-xs font-medium transition-all leading-none ${
               activeTab === "all" 
                 ? "bg-accent text-ink font-semibold shadow-md shadow-accent/20" 
                 : "text-muted hover:text-fg hover:bg-surface/50"
@@ -86,8 +87,9 @@ export default function MaterialsPage() {
           {materials.map((m) => (
             <button
               key={m.id}
+              type="button"
               onClick={() => setActiveTab(m.code)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all uppercase tracking-wider ${
+              className={`inline-flex h-9 items-center justify-center shrink-0 px-3.5 rounded-xl text-xs font-medium transition-all uppercase tracking-wider leading-none ${
                 activeTab === m.code 
                   ? "bg-accent text-ink font-semibold shadow-md shadow-accent/20" 
                   : "text-muted hover:text-fg hover:bg-surface/50"

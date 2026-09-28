@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useState, useEffect, useId } from "react";
 import { cn } from "@/lib/utils";
-import { Package, Box, X, Settings, Image as ImageIcon, BarChart3, Tag, ClipboardList, Shield, UserCog, HelpCircle, Users, Search, Trash2, Layers, Edit2, Plus, Eye, EyeOff, Printer as PrinterIcon, Disc, CreditCard } from "lucide-react";
+import { Package, Box, X, Settings, Image as ImageIcon, BarChart3, Tag, ClipboardList, Shield, UserCog, HelpCircle, Users, Search, Trash2, Layers, Edit2, Plus, Eye, EyeOff, Printer as PrinterIcon, Disc, CreditCard, Mail } from "lucide-react";
+import { InquiriesTab } from "@/components/inquiries-tab";
 import { PrintersTab } from "@/components/printers-tab";
 import { FilamentsTab } from "@/components/filaments-tab";
 import { PaymentOptionsTab } from "@/components/payment-options-tab";
@@ -98,6 +99,7 @@ function AdminPage() {
   const navItems = [
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     { id: "orders", label: "Orders", icon: Package },
+    { id: "inquiries", label: "Inquiries", icon: Mail },
     { id: "printers", label: "Printers", icon: PrinterIcon },
     { id: "filaments", label: "Filaments", icon: Disc },
     { id: "products", label: "Products", icon: Box },
@@ -126,9 +128,9 @@ function AdminPage() {
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors",
+                  "flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors leading-none",
                   isActive
-                    ? "bg-accent text-accent-foreground"
+                    ? "bg-accent text-ink font-semibold shadow-xs"
                     : "text-muted hover:bg-surface-2 hover:text-fg"
                 )}
               >
@@ -273,6 +275,7 @@ function AdminPage() {
           </div>
         )}
 
+        {activeTab === "inquiries" && <InquiriesTab />}
         {activeTab === "printers" && <PrintersTab />}
         {activeTab === "filaments" && <FilamentsTab />}
 
@@ -891,7 +894,9 @@ function SettingsTab() {
         const parsed = JSON.parse(settings.hero_featured_slots);
         if (Array.isArray(parsed) && parsed.length === 4) return parsed;
       }
-    } catch {}
+    } catch (_e) {
+      // Fallback to default slots on parse error
+    }
     return [
       { slug: "catch-bowl", image: "/products/catch-bowl.jpg" },
       { slug: "desk-tray", image: "/products/desk-tray.jpg" },
@@ -907,7 +912,9 @@ function SettingsTab() {
         if (Array.isArray(parsed) && parsed.length === 4) {
           setHeroSlots(parsed);
         }
-      } catch {}
+      } catch (_e) {
+        // Ignore JSON parse error on setting update
+      }
     }
   }, [settings?.hero_featured_slots]);
 

@@ -52,3 +52,96 @@ export const submitContactMessage = createServerFn({ method: "POST" })
 
     return { success: true };
   });
+
+import { authMiddleware } from "./auth/middleware";
+import { verifyAdminRole } from "./admin-fns";
+
+export interface Ticket {
+  id: number;
+  user_id: string;
+  title: string;
+  description: string;
+  status: "open" | "resolved" | "closed";
+  created_at: string;
+}
+
+export const getTicketsAdmin = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => {
+    const sql = await getSql();
+    const admin = await verifyAdminRole(context.userId, sql);
+    if (!admin) {
+      throw new Error("Unauthorized");
+    }
+
+    const tickets = await sql<Ticket>`
+      SELECT id, user_id, title, description, status, created_at
+      FROM tickets
+      ORDER BY created_at DESC
+    `;
+    return tickets;
+  });
+
+export const updateTicketStatusAdmin = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator((data: { id: number; status: string }) => data)
+  .handler(async ({ data, context }) => {
+    const sql = await getSql();
+    const admin = await verifyAdminRole(context.userId, sql);
+    if (!admin) {
+      throw new Error("Unauthorized");
+    }
+
+    await sql`
+      UPDATE tickets
+      SET status = ${data.status}
+      WHERE id = ${data.id}
+    `;
+    return { success: true };
+  });
+
+export const deleteTicketAdmin = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator((data: { id: number }) => data)
+  .handler(async ({ data, context }) => {
+    const sql = await getSql();
+    const admin = await verifyAdminRole(context.userId, sql);
+    if (!admin) {
+      throw new Error("Unauthorized");
+    }
+
+    await sql`
+      DELETE FROM tickets
+      WHERE id = ${data.id}
+    `;
+    return { success: true };
+  });
+
+export const replyToTicketAdmin = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator((data: { id: number; toEmail: string; customerName: string; originalMessage: string; replyMessage: string; markResolved?: boolean }) => data)
+  .handler(async ({ data, context }) => {
+    const sql = await getSql();
+    const admin = await verifyAdminRole(context.userId, sql);
+    if (!admin) {
+      throw new Error("Unauthorized");
+    }
+
+    if (!data.replyMessage.trim()) {
+      throw new Error("Reply message cannot be empty.");
+    }
+
+    const { sendTicketReplyEmail } = await import("./email.server");
+    await sendTicketReplyEmail(data.customerName, data.toEmail, data.originalMessage, data.replyMessage);
+
+    if (data.markResolved !== false) {
+      await sql`
+        UPDATE tickets
+        SET status = 'resolved'
+        WHERE id = ${data.id}
+      `;
+    }
+
+    return { success: true };
+  });
+

@@ -19,7 +19,7 @@ export function ColorSwatches({
   colorMap?: Record<string, ColorItem>;
 }) {
   return (
-    <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Colour">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 w-full" role="radiogroup" aria-label="Colour">
       {colors.map((id) => {
         const c = colorMap?.[id] ?? productColor(id);
         const selected = value === id;
@@ -32,17 +32,17 @@ export function ColorSwatches({
             aria-label={c.name}
             onClick={() => onChange(id)}
             className={cn(
-              "flex h-11 items-center gap-2 rounded-full border px-3 text-sm transition-[box-shadow,border-color] duration-150",
+              "inline-flex h-10 items-center justify-center gap-2 rounded-full border px-3.5 text-xs font-medium whitespace-nowrap leading-none transition-all cursor-pointer active:scale-[0.98]",
               selected
-                ? "border-accent bg-accent-soft text-fg"
-                : "border-border bg-surface text-muted hover:border-fg/30",
+                ? "border-accent bg-accent-soft text-fg ring-1 ring-accent font-semibold shadow-xs"
+                : "border-border bg-surface text-muted hover:border-fg/30 hover:text-fg",
             )}
           >
             <span
-              className="size-4 rounded-full ring-1 ring-black/10 dark:ring-white/15"
+              className="size-3.5 rounded-full shrink-0 ring-1 ring-black/10 dark:ring-white/20"
               style={{ backgroundColor: c.hex }}
             />
-            {c.name}
+            <span className="truncate">{c.name}</span>
           </button>
         );
       })}

@@ -16,6 +16,7 @@ import { getRecentlyViewed, trackProductView, toggleWishlist } from "@/lib/ecomm
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useCurrentUser } from "@/lib/auth/use-current-user";
 import { Star } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/shop/$slug")({
   loader: async ({ params }) => {
@@ -287,10 +288,14 @@ function ProductPage() {
                 {product.sizes.map((s: string) => (
                   <button
                     key={s}
+                    type="button"
                     onClick={() => setSize(s)}
-                    className={`rounded-md border px-4 py-2 text-sm font-medium transition-colors active:scale-95 ${
-                      size === s ? "border-primary bg-primary text-primary-foreground shadow-md" : "border-border hover:bg-secondary text-muted hover:text-fg"
-                    }`}
+                    className={cn(
+                      "inline-flex h-10 items-center justify-center rounded-xl border px-4 text-xs sm:text-sm font-medium transition-all active:scale-95 leading-none",
+                      size === s
+                        ? "border-accent bg-accent-soft text-fg ring-1 ring-accent font-semibold shadow-xs"
+                        : "border-border bg-surface text-muted hover:border-accent/40 hover:text-fg"
+                    )}
                   >
                     {s}
                   </button>
@@ -306,10 +311,14 @@ function ProductPage() {
                 {product.materials.map((m: string) => (
                   <button
                     key={m}
+                    type="button"
                     onClick={() => setMaterial(m)}
-                    className={`rounded-md border px-4 py-2 text-sm font-medium transition-colors active:scale-95 ${
-                      material === m ? "border-primary bg-primary text-primary-foreground shadow-md" : "border-border hover:bg-secondary text-muted hover:text-fg"
-                    }`}
+                    className={cn(
+                      "inline-flex h-10 items-center justify-center rounded-xl border px-4 text-xs sm:text-sm font-medium transition-all active:scale-95 leading-none",
+                      material === m
+                        ? "border-accent bg-accent-soft text-fg ring-1 ring-accent font-semibold shadow-xs"
+                        : "border-border bg-surface text-muted hover:border-accent/40 hover:text-fg"
+                    )}
                   >
                     {m}
                   </button>
@@ -378,6 +387,7 @@ function ProductPage() {
                   <Button
                     size="lg"
                     variant="secondary"
+                    className="sm:flex-1"
                     onClick={() => { addToCart(); navigate({ to: "/checkout" }); }}
                   >
                     Buy now

@@ -73,9 +73,9 @@ function ShopPage() {
               aria-selected={category === c.id}
               onClick={() => setCategory(c.id)}
               className={cn(
-                "h-11 rounded-full px-4 text-sm font-medium transition-colors duration-150",
+                "inline-flex h-11 items-center justify-center rounded-full px-4 text-sm font-medium transition-colors duration-150 leading-none",
                 category === c.id
-                  ? "bg-accent text-ink"
+                  ? "bg-accent text-ink font-semibold"
                   : "bg-surface text-muted shadow-[var(--shadow-border)] hover:text-fg",
               )}
             >
@@ -87,7 +87,7 @@ function ShopPage() {
           <select 
             value={sort} 
             onChange={(e) => setSort(e.target.value)}
-            className="w-[140px] h-11 bg-surface border-none shadow-[var(--shadow-border)] rounded-md px-3 text-sm focus:ring-1 focus:ring-accent outline-none appearance-none cursor-pointer"
+            className="h-11 rounded-xl border border-border bg-surface px-3.5 text-sm text-fg shadow-[var(--shadow-border)] focus:border-accent focus:ring-2 focus:ring-ring/30 focus:outline-none cursor-pointer"
             aria-label="Sort by"
           >
             <option value="featured">Featured</option>

@@ -266,15 +266,21 @@ function CheckoutPage() {
           restoreScrollAndCleanup();
           const targetNumber = (verifyRes as any)?.orderNumber || internalOrderNumber;
           void navigate({ to: "/order/$id", params: { id: targetNumber } });
-        } catch {
-          toast.error("Payment verification failed.");
+        } catch (err: any) {
+          console.error("Payment verification failed:", err);
           restoreScrollAndCleanup();
+          const paymentId = response?.razorpay_payment_id ? ` (Payment Ref: ${response.razorpay_payment_id})` : "";
+          toast.error(
+            (err?.message ? `Verification error: ${err.message}.` : "Payment verification failed.") +
+            ` If money was debited from your account, please contact hello@prynth.in${paymentId}.`,
+            { duration: 10000 }
+          );
         }
       },
       modal: {
         ondismiss: function () {
           restoreScrollAndCleanup();
-          toast.info("Payment window closed.");
+          toast.info("Payment cancelled. You can change payment method or retry whenever you're ready.");
         },
         escape: true,
         backdropclose: true,
@@ -293,12 +299,13 @@ function CheckoutPage() {
       const rzp1 = new window.Razorpay(options);
       rzp1.on("payment.failed", function (response: any) {
         restoreScrollAndCleanup();
-        toast.error(response?.error?.description || "Payment failed. Please try again.");
+        const reason = response?.error?.description || response?.error?.reason || "Payment declined or failed.";
+        toast.error(`Payment failed: ${reason}. Please try again or choose another payment method.`, { duration: 7000 });
       });
       rzp1.open();
     } catch (err: any) {
       restoreScrollAndCleanup();
-      toast.error(err?.message || "Failed to initialize payment gateway.");
+      toast.error(err?.message || "Failed to initialize payment gateway. Please check your connection.");
     }
   }
 
@@ -403,10 +410,10 @@ function CheckoutPage() {
               <h2 className="font-display text-xl font-semibold">Contact & shipping</h2>
               {savedAddresses && savedAddresses.length > 0 && (
                 <div className="flex items-center gap-2 text-sm">
-                  <Label htmlFor="saved_addr">Saved Addresses</Label>
+                  <Label htmlFor="saved_addr" className="text-xs text-muted whitespace-nowrap">Saved Addresses:</Label>
                   <select
                     id="saved_addr"
-                    className="rounded border border-border bg-surface px-2 py-1 focus:outline-none"
+                    className="h-9 rounded-xl border border-border bg-surface px-3 text-xs text-fg focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none cursor-pointer"
                     onChange={handleSelectSavedAddress}
                   >
                     <option value="">Select...</option>
@@ -476,9 +483,9 @@ function CheckoutPage() {
                     id="save_addr" 
                     checked={saveAddressToProfile} 
                     onChange={(e) => setSaveAddressToProfile(e.target.checked)}
-                    className="rounded border-border text-primary focus:ring-primary"
+                    className="size-4 rounded border-border accent-accent cursor-pointer"
                   />
-                  <Label htmlFor="save_addr" className="text-sm cursor-pointer">Save this address to my profile</Label>
+                  <Label htmlFor="save_addr" className="text-sm cursor-pointer select-none">Save this address to my profile</Label>
                 </div>
               )}
             </div>
@@ -508,15 +515,15 @@ function CheckoutPage() {
                   type="button"
                   onClick={() => setShip(opt.id)}
                   className={cn(
-                    "flex items-center justify-between rounded-2xl p-4 text-left shadow-[var(--shadow-border)]",
-                    ship === opt.id ? "bg-accent-soft ring-2 ring-accent" : "bg-surface",
+                    "flex items-center justify-between rounded-2xl p-4 text-left shadow-[var(--shadow-border)] transition-colors border",
+                    ship === opt.id ? "border-accent bg-accent-soft ring-1 ring-accent" : "border-border/60 bg-surface hover:border-accent/40",
                   )}
                 >
                   <span>
                     <span className="block font-medium">{opt.title}</span>
                     <span className="text-sm text-muted">{opt.detail}</span>
                   </span>
-                  <span className="tabular-nums">
+                  <span className="tabular-nums font-semibold">
                     {opt.price === 0 ? "Free" : formatINR(opt.price)}
                   </span>
                 </button>
@@ -536,8 +543,8 @@ function CheckoutPage() {
                   type="button"
                   onClick={() => setPay(opt.id)}
                   className={cn(
-                    "h-12 rounded-2xl text-sm font-medium shadow-[var(--shadow-border)] transition-colors",
-                    pay === opt.id ? "bg-accent text-ink" : "bg-surface text-fg hover:bg-surface-2",
+                    "h-12 rounded-2xl text-sm font-medium shadow-[var(--shadow-border)] transition-colors leading-none flex items-center justify-center border",
+                    pay === opt.id ? "border-accent bg-accent text-ink font-semibold" : "border-border/60 bg-surface text-fg hover:bg-surface-2",
                   )}
                 >
                   {opt.label}
@@ -635,11 +642,12 @@ function CheckoutPage() {
               value={couponCode} 
               onChange={e => setCouponCode(e.target.value)} 
               disabled={!!appliedCoupon || couponMutation.isPending}
+              className="h-11"
             />
             {appliedCoupon ? (
-              <Button type="button" variant="secondary" onClick={() => setAppliedCoupon(null)}>Remove</Button>
+              <Button type="button" variant="secondary" size="md" className="shrink-0 h-11 px-5" onClick={() => setAppliedCoupon(null)}>Remove</Button>
             ) : (
-              <Button type="button" variant="secondary" onClick={applyCoupon} disabled={couponMutation.isPending || !couponCode}>Apply</Button>
+              <Button type="button" variant="secondary" size="md" className="shrink-0 h-11 px-5" onClick={applyCoupon} disabled={couponMutation.isPending || !couponCode}>Apply</Button>
             )}
           </div>
           

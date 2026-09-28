@@ -30,7 +30,7 @@ export function QuantityStepper({
       >
         <Minus className="size-4" strokeWidth={1.75} />
       </button>
-      <span className="min-w-8 text-center text-sm font-medium tabular-nums">
+      <span className="min-w-8 text-center text-sm font-medium tabular-nums select-none leading-none">
         {value}
       </span>
       <button

@@ -353,7 +353,9 @@ export const getOrderById = createServerFn({ method: "GET" })
       try {
         const addr = typeof order.shipping_address === "string" ? JSON.parse(order.shipping_address) : order.shipping_address;
         addressEmail = (addr?.email || "").trim().toLowerCase();
-      } catch {}
+      } catch (_e) {
+        // Ignore json parse error and proceed with available fields
+      }
       if (inputEmail === guestEmail || inputEmail === addressEmail) {
         return order;
       }

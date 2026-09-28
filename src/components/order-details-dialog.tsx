@@ -357,18 +357,19 @@ export function OrderDetailsDialog({
                         )}
 
                         {/* Bambu Slicer Action Bar */}
-                        <div className="pt-2 border-t border-accent/20 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
-                          <div className="flex flex-wrap items-center gap-2">
+                        <div className="pt-3 border-t border-accent/20">
+                          <p className="text-[11px] font-semibold text-muted uppercase tracking-wider mb-2">Slicer & Machine Actions</p>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 w-full">
                             {custom.fileId ? (
                               <>
                                 {/* Primary Button: Open in Bambu Studio */}
                                 <Button
                                   size="sm"
                                   onClick={() => handleOpenInBambu(custom.fileId, custom.fileName)}
-                                  className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-sm text-xs h-8 whitespace-nowrap"
+                                  className="w-full gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-sm text-xs justify-center whitespace-nowrap"
                                 >
-                                  <PrinterIcon className="size-3.5" />
-                                  Open in Bambu Studio
+                                  <PrinterIcon className="size-3.5 shrink-0" />
+                                  Bambu Studio
                                 </Button>
 
                                 {/* Secondary Button: Open in Orca */}
@@ -376,10 +377,10 @@ export function OrderDetailsDialog({
                                   variant="outline"
                                   size="sm"
                                   onClick={() => handleOpenInOrca(custom.fileId)}
-                                  className="gap-1.5 text-xs h-8 whitespace-nowrap"
+                                  className="w-full gap-1.5 text-xs justify-center whitespace-nowrap"
                                 >
-                                  <ExternalLink className="size-3.5" />
-                                  Orca
+                                  <ExternalLink className="size-3.5 shrink-0" />
+                                  Orca Slicer
                                 </Button>
 
                                 {/* Download Raw 3D Model */}
@@ -387,49 +388,48 @@ export function OrderDetailsDialog({
                                   asChild
                                   variant="outline"
                                   size="sm"
-                                  className="gap-1.5 text-xs h-8 whitespace-nowrap"
+                                  className="w-full gap-1.5 text-xs justify-center whitespace-nowrap"
                                 >
                                   <a
                                     href={getModelDownloadUrl(custom.fileId)}
                                     download={custom.fileName || "model.stl"}
                                     target="_blank"
                                     rel="noreferrer"
+                                    className="inline-flex items-center justify-center gap-1.5"
                                   >
-                                    <Download className="size-3.5" />
+                                    <Download className="size-3.5 shrink-0" />
                                     Download 3D
                                   </a>
                                 </Button>
                               </>
                             ) : null}
-                          </div>
 
-                          <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
                             {/* Copy Slicer Checklist */}
                             <Button
                               variant="secondary"
                               size="sm"
                               onClick={() => handleCopySlicerSettings(item)}
-                              className="gap-1.5 text-xs h-8 whitespace-nowrap"
+                              className="w-full gap-1.5 text-xs justify-center whitespace-nowrap"
                             >
                               {copiedSettings === item.id ? (
                                 <>
-                                  <Check className="size-3.5 text-emerald-500" /> Copied!
+                                  <Check className="size-3.5 text-emerald-500 shrink-0" /> Copied!
                                 </>
                               ) : (
                                 <>
-                                  <Copy className="size-3.5" /> Copy Settings
+                                  <Copy className="size-3.5 shrink-0" /> Copy Specs
                                 </>
                               )}
                             </Button>
 
                             {/* Export Bambu Slicer JSON Preset */}
                             <Button
-                              variant="ghost"
+                              variant="outline"
                               size="sm"
                               onClick={() => handleExportBambuJson(item)}
-                              className="gap-1.5 text-xs h-8 whitespace-nowrap"
+                              className="w-full gap-1.5 text-xs justify-center whitespace-nowrap"
                             >
-                              <FileCode className="size-3.5" /> Preset JSON
+                              <FileCode className="size-3.5 shrink-0" /> Preset JSON
                             </Button>
                           </div>
                         </div>

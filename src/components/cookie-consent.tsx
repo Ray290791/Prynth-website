@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
 
 export function CookieConsent() {
   const [showBanner, setShowBanner] = useState(false);
@@ -29,26 +30,32 @@ export function CookieConsent() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 p-4 z-[9999] pointer-events-none flex justify-center sm:p-6">
-      <div className="bg-glass backdrop-blur-2xl backdrop-saturate-150 border border-glass-border rounded-xl shadow-xl shadow-black/5 max-w-4xl w-full p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pointer-events-auto">
+      <div className="bg-glass backdrop-blur-2xl backdrop-saturate-150 border border-glass-border rounded-2xl shadow-xl shadow-black/10 max-w-4xl w-full p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pointer-events-auto">
         <div className="text-sm text-fg/80 flex-1">
           <p className="font-medium text-fg mb-1">We use cookies</p>
           We use cookies and similar technologies to measure site traffic and improve your experience. 
-          By clicking "Accept", you consent to our use of these technologies. 
+          By clicking &quot;Accept&quot;, you consent to our use of these technologies. 
           Read our <Link to="/privacy" className="underline hover:text-fg">Privacy Policy</Link> for more information.
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto shrink-0">
-          <button
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
             onClick={handleDecline}
-            className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium border border-border rounded-lg hover:bg-hover transition-colors"
+            className="flex-1 sm:flex-none"
           >
             Decline
-          </button>
-          <button
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
             onClick={handleAccept}
-            className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium bg-brand text-brand-fg rounded-lg hover:brightness-110 transition-colors"
+            className="flex-1 sm:flex-none shadow-sm"
           >
             Accept
-          </button>
+          </Button>
         </div>
       </div>
     </div>

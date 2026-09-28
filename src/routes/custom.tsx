@@ -969,7 +969,7 @@ function UploadForm({
                 </button>
               )}
             </div>
-            <div className="mt-2 flex flex-wrap gap-2">
+            <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2.5 w-full">
               {pricingConfig.sizePresets.map((s) => (
                 <button
                   key={s.id}
@@ -979,14 +979,16 @@ function UploadForm({
                     setVolume(s.cm3);
                   }}
                   className={cn(
-                    "h-11 rounded-full px-4 text-sm font-medium transition-all",
+                    "flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition-all min-h-12 leading-none",
                     fallback === s.id
-                      ? "bg-accent text-ink shadow-sm"
-                      : "bg-surface text-muted shadow-[var(--shadow-border)] hover:text-fg",
+                      ? "border-accent bg-accent text-ink shadow-sm font-semibold"
+                      : "border-border/80 bg-surface text-muted shadow-[var(--shadow-border)] hover:border-accent/40 hover:text-fg font-medium",
                   )}
                 >
-                  {s.name}
-                  <span className="ml-1 text-xs opacity-70">{s.hint} ({s.cm3} cm³)</span>
+                  <span className="text-xs sm:text-sm font-semibold">{s.name}</span>
+                  <span className={cn("mt-1 text-[11px] leading-tight", fallback === s.id ? "opacity-80 text-ink" : "text-muted")}>
+                    {s.hint} ({s.cm3} cm³)
+                  </span>
                 </button>
               ))}
             </div>
@@ -1067,23 +1069,24 @@ function UploadForm({
           </div>
 
           {/* Quick Preset Buttons */}
-          <div className="flex flex-wrap items-center gap-2 pt-1">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1 w-full">
             {[
               { pct: 15, label: "15% · Light" },
               { pct: 20, label: "20% · Standard" },
               { pct: 40, label: "40% · Sturdy" },
-              { pct: 70, label: "70% · Heavy Duty" },
+              { pct: 70, label: "70% · Heavy" },
               { pct: 100, label: "100% · Solid" },
-            ].map((p) => (
+            ].map((p, idx) => (
               <button
                 key={p.pct}
                 type="button"
                 onClick={() => setInfillPct(p.pct)}
                 className={cn(
-                  "rounded-lg px-3 py-1 text-xs font-medium transition-colors",
+                  "h-9 rounded-xl px-2 text-xs font-medium transition-colors flex items-center justify-center text-center leading-none border",
+                  idx === 4 ? "col-span-2 sm:col-span-1" : "",
                   infillPct === p.pct
-                    ? "bg-accent text-ink"
-                    : "bg-surface-2 text-muted border border-border/70 hover:border-accent/60 hover:text-fg",
+                    ? "border-accent bg-accent text-ink font-semibold"
+                    : "border-border/70 bg-surface-2 text-muted hover:border-accent/60 hover:text-fg",
                 )}
               >
                 {p.label}
@@ -1532,21 +1535,23 @@ function IdeaForm({
         </div>
         <div>
           <Label>How big is it?</Label>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2.5 w-full">
             {pricingConfig.sizePresets.map((s) => (
               <button
                 key={s.id}
                 type="button"
                 onClick={() => setSize(s.id)}
                 className={cn(
-                  "h-11 rounded-full px-4 text-sm font-medium transition-all",
+                  "flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition-all min-h-12 leading-none",
                   size === s.id
-                    ? "bg-accent text-ink shadow-sm"
-                    : "bg-surface text-muted shadow-[var(--shadow-border)] hover:text-fg",
+                    ? "border-accent bg-accent text-ink shadow-sm font-semibold"
+                    : "border-border/80 bg-surface text-muted shadow-[var(--shadow-border)] hover:border-accent/40 hover:text-fg font-medium",
                 )}
               >
-                {s.name}
-                <span className="ml-1 text-xs opacity-70">{s.hint}</span>
+                <span className="text-xs sm:text-sm font-semibold">{s.name}</span>
+                <span className={cn("mt-1 text-[11px] leading-tight", size === s.id ? "opacity-80 text-ink" : "text-muted")}>
+                  {s.hint}
+                </span>
               </button>
             ))}
           </div>

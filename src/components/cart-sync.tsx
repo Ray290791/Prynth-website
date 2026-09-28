@@ -64,8 +64,6 @@ export function CartSync() {
 
   // When the local cart changes, or when forced (e.g. email typed), sync it to the DB.
   useEffect(() => {
-    let timeoutId: ReturnType<typeof setTimeout>;
-    
     const sync = () => {
       // 1. Sync to logged-in user's cart (if logged in)
       if (user) {
@@ -89,7 +87,7 @@ export function CartSync() {
     };
 
     // Debounce to avoid spamming the database on regular item changes
-    timeoutId = setTimeout(sync, 1000);
+    const timeoutId = setTimeout(sync, 1000);
 
     // Also listen for explicit sync requests (e.g. guest email entered)
     const handleForceSync = () => {

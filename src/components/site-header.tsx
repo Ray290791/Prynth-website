@@ -86,7 +86,7 @@ export function SiteHeader() {
               trigger={
                 <button
                   type="button"
-                  className="cursor-pointer rounded-lg px-3 py-2 text-sm font-medium text-fg hover:bg-surface-2 transition-colors duration-150"
+                  className="cursor-pointer rounded-xl px-3 py-2 text-sm font-medium text-fg hover:bg-surface-2 transition-colors duration-150 whitespace-nowrap shrink-0 leading-none h-11 inline-flex items-center justify-center"
                 >
                   Sign in
                 </button>
@@ -96,7 +96,7 @@ export function SiteHeader() {
           <UserButton />
           <button
             type="button"
-            className="inline-flex size-11 items-center justify-center rounded-xl text-fg hover:bg-surface-2 md:hidden"
+            className="inline-flex size-11 items-center justify-center rounded-xl text-fg hover:bg-surface-2 md:hidden shrink-0"
             aria-label={open ? "Close menu" : "Open menu"}
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
@@ -112,12 +112,12 @@ export function SiteHeader() {
 
       {open ? (
         <div className="border-t border-glass-border bg-glass backdrop-blur-2xl backdrop-saturate-150 md:hidden shadow-xl shadow-black/5">
-          <nav className="mx-auto flex max-w-6xl flex-col px-4 py-3" aria-label="Mobile">
+          <nav className="mx-auto flex max-w-6xl flex-col px-4 py-3 gap-1" aria-label="Mobile">
             {NAV.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
-                className="rounded-xl px-3 py-3 text-base font-medium text-fg hover:bg-surface-2"
+                className="rounded-xl px-3.5 py-2.5 text-base font-medium text-fg hover:bg-surface-2 transition-colors"
               >
                 {item.label}
               </Link>

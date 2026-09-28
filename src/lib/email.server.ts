@@ -198,3 +198,49 @@ export async function sendContactFormEmail(name: string, replyToEmail: string, m
     console.error("Failed to send contact email:", err);
   }
 }
+
+export async function sendTicketReplyEmail(
+  name: string,
+  toEmail: string,
+  originalMessage: string,
+  replyMessage: string
+) {
+  const resend = getResend();
+  const adminEmail = process.env.ADMIN_EMAIL || "hello@prynth.in";
+  if (!resend) {
+    throw new Error("Email service (Resend) is not configured with an API key.");
+  }
+
+  const safeName = escapeHtml(name);
+  const safeOriginal = escapeHtml(originalMessage);
+  const safeReply = escapeHtml(replyMessage);
+
+  const { data, error } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to: toEmail,
+    replyTo: adminEmail,
+    subject: `Re: Your inquiry to prynth!`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #1e2124; line-height: 1.6;">
+        <div style="background-color: #00b8a9; padding: 20px 24px; border-radius: 8px 8px 0 0; color: #ffffff;">
+          <h1 style="margin: 0; font-size: 20px; font-weight: 700;">prynth! Support</h1>
+        </div>
+        <div style="padding: 24px; border: 1px solid #e4e4e7; border-top: none; border-radius: 0 0 8px 8px; background-color: #ffffff;">
+          <p style="margin-top: 0;">Hi ${safeName},</p>
+          <div style="padding: 16px; background-color: #f9fafb; border-left: 4px solid #00b8a9; border-radius: 4px; white-space: pre-wrap; margin: 16px 0; font-size: 15px;">${safeReply}</div>
+          <p style="font-size: 14px; color: #666; margin-bottom: 0;">If you have any further questions, feel free to reply directly to this email.</p>
+          <div style="margin-top: 28px; padding-top: 16px; border-top: 1px solid #e4e4e7; font-size: 13px; color: #888;">
+            <p style="margin: 0 0 6px 0; font-weight: 600;">Original Inquiry:</p>
+            <div style="white-space: pre-wrap; font-style: italic;">${safeOriginal}</div>
+          </div>
+        </div>
+      </div>
+    `,
+  });
+
+  if (error) {
+    console.error("Resend API Error on ticket reply:", error);
+    throw new Error(error.message);
+  }
+  return data;
+}
