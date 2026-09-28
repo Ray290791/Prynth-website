@@ -984,6 +984,13 @@ function SettingsTab() {
       custom_pricing_infills: ((fd.get("custom_pricing_infills") as string) || settings?.custom_pricing_infills || "").trim(),
       custom_pricing_size_presets: ((fd.get("custom_pricing_size_presets") as string) || settings?.custom_pricing_size_presets || "").trim(),
       custom_pricing_complexities: ((fd.get("custom_pricing_complexities") as string) || settings?.custom_pricing_complexities || "").trim(),
+      payment_online_enabled: fd.get("payment_online_enabled") === "on" ? "true" : "false",
+      payment_cod_enabled: fd.get("payment_cod_enabled") === "on" ? "true" : "false",
+      payment_upi_enabled: fd.get("payment_upi_enabled") === "on" ? "true" : "false",
+      payment_upi_id: ((fd.get("payment_upi_id") as string) || "").trim(),
+      resend_from_email: ((fd.get("resend_from_email") as string) || "").trim(),
+      razorpay_key_id: ((fd.get("razorpay_key_id") as string) || "").trim(),
+      razorpay_key_secret: ((fd.get("razorpay_key_secret") as string) || "").trim(),
     };
     updateMutation.mutate(data);
   };
@@ -1267,6 +1274,173 @@ function SettingsTab() {
           <div>
             <label className="block text-sm font-medium mb-1">Returns Policy</label>
             <textarea name="returns_policy" defaultValue={settings.returns_policy} required rows={4} className="w-full rounded border border-border bg-surface p-2 text-sm" />
+          </div>
+        </section>
+
+        {/* PAYMENT & EMAIL LIVE GATEWAYS SECTION */}
+        <section className="space-y-6 rounded-2xl border border-border bg-surface-2/40 p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-3">
+            <div>
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <span>💳</span> Payment Gateway & Email Verification (Live Setup)
+              </h3>
+              <p className="text-xs text-muted mt-0.5">
+                Configure Razorpay credentials and Resend sender email to transition out of test modes.
+              </p>
+            </div>
+            {/* Live status badge */}
+            <div className="flex items-center gap-2">
+              {(settings.razorpay_key_id?.startsWith("rzp_live_")) ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                  <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Razorpay Live Mode
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                  <span className="size-1.5 rounded-full bg-amber-500" />
+                  Razorpay Test Mode
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Resend Section */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-semibold flex items-center gap-2">
+                <span>✉️</span> Resend Custom Domain & Sender Email
+              </h4>
+              <span className="text-xs font-mono text-muted">
+                {settings.resend_from_email && !settings.resend_from_email.includes("resend.dev") ? "Verified Domain Mode" : "Sandbox Test Mode (onboarding@resend.dev)"}
+              </span>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-subtle mb-1">
+                From Sender Email (e.g. Prynth &lt;orders@prynth.in&gt; or hello@prynth.in)
+              </label>
+              <input
+                name="resend_from_email"
+                defaultValue={settings.resend_from_email || "Prynth <orders@prynth.in>"}
+                placeholder="Prynth <orders@prynth.in>"
+                className="w-full rounded border border-border bg-surface p-2 text-sm font-mono"
+              />
+              <p className="text-xs text-muted mt-1.5 leading-relaxed">
+                💡 To send from your email without Resend test restrictions, add your domain at <a href="https://resend.com/domains" target="_blank" rel="noreferrer" className="text-accent underline font-medium">resend.com/domains</a> and add the 3 DNS records (DKIM, SPF, DMARC) at your domain host.
+              </p>
+            </div>
+          </div>
+
+          {/* Razorpay Section */}
+          <div className="space-y-4 pt-4 border-t border-border">
+            <h4 className="text-sm font-semibold flex items-center gap-2">
+              <span>⚡</span> Razorpay Live Credentials
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-subtle mb-1">
+                  Razorpay Key ID (rzp_live_... or rzp_test_...)
+                </label>
+                <input
+                  name="razorpay_key_id"
+                  defaultValue={settings.razorpay_key_id}
+                  placeholder="rzp_live_..."
+                  className="w-full rounded border border-border bg-surface p-2 text-sm font-mono"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-subtle mb-1">
+                  Razorpay Key Secret
+                </label>
+                <input
+                  type="password"
+                  name="razorpay_key_secret"
+                  defaultValue={settings.razorpay_key_secret}
+                  placeholder="Enter Razorpay Secret"
+                  className="w-full rounded border border-border bg-surface p-2 text-sm font-mono"
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted">
+              Once your Razorpay KYC verification is approved, toggle to <strong>Live Mode</strong> in your Razorpay dashboard, generate Live API keys, and paste them here or in your Vercel environment variables.
+            </p>
+          </div>
+
+          {/* Payment Toggles */}
+          <div className="space-y-3 pt-4 border-t border-border">
+            <h4 className="text-sm font-semibold">Store Checkout Payment Methods</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <label className="flex items-center gap-2 rounded-xl border border-border bg-surface p-3 cursor-pointer hover:bg-surface-2 transition-colors">
+                <input
+                  type="checkbox"
+                  name="payment_online_enabled"
+                  defaultChecked={settings.payment_online_enabled !== "false"}
+                  className="size-4 rounded border-border accent-accent cursor-pointer"
+                />
+                <div className="text-xs">
+                  <span className="font-medium block text-fg">Razorpay Online</span>
+                  <span className="text-muted">UPI, Cards, Netbanking</span>
+                </div>
+              </label>
+
+              <label className="flex items-center gap-2 rounded-xl border border-border bg-surface p-3 cursor-pointer hover:bg-surface-2 transition-colors">
+                <input
+                  type="checkbox"
+                  name="payment_cod_enabled"
+                  defaultChecked={settings.payment_cod_enabled !== "false"}
+                  className="size-4 rounded border-border accent-accent cursor-pointer"
+                />
+                <div className="text-xs">
+                  <span className="font-medium block text-fg">Cash on Delivery</span>
+                  <span className="text-muted">Pay on courier delivery</span>
+                </div>
+              </label>
+
+              <label className="flex items-center gap-2 rounded-xl border border-border bg-surface p-3 cursor-pointer hover:bg-surface-2 transition-colors">
+                <input
+                  type="checkbox"
+                  name="payment_upi_enabled"
+                  defaultChecked={settings.payment_upi_enabled !== "false"}
+                  className="size-4 rounded border-border accent-accent cursor-pointer"
+                />
+                <div className="text-xs">
+                  <span className="font-medium block text-fg">Direct UPI / QR</span>
+                  <span className="text-muted">Scan QR & enter UTR</span>
+                </div>
+              </label>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-subtle mb-1">
+                Direct UPI ID (for manual QR payments)
+              </label>
+              <input
+                name="payment_upi_id"
+                defaultValue={settings.payment_upi_id}
+                placeholder="e.g. prynth@okhdfcbank"
+                className="w-full rounded border border-border bg-surface p-2 text-sm font-mono"
+              />
+            </div>
+          </div>
+
+          {/* Razorpay Merchant Compliance Status Checklist */}
+          <div className="pt-4 border-t border-border">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-subtle mb-2">
+              Razorpay KYC Compliance Checklist (Audit Ready)
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <div className="flex items-center gap-2 text-emerald-500">
+                <span>✓</span> <span>Contact Us page (Email, Phone, Operating Address)</span>
+              </div>
+              <div className="flex items-center gap-2 text-emerald-500">
+                <span>✓</span> <span>Terms & Conditions (Governing Law & Razorpay clause)</span>
+              </div>
+              <div className="flex items-center gap-2 text-emerald-500">
+                <span>✓</span> <span>Refund & Cancellation (5–7 days timeline & mode)</span>
+              </div>
+              <div className="flex items-center gap-2 text-emerald-500">
+                <span>✓</span> <span>Shipping Policy (Estimated 3–5 days across India)</span>
+              </div>
+            </div>
           </div>
         </section>
 

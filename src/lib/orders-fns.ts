@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getSql } from "./db";
 import { authMiddleware, optionalAuthMiddleware } from "./auth/middleware";
 import { verifyAdminRole, verifyAdminPIN } from "./admin-fns";
-import { createRazorpayOrder as rzpCreateOrder, verifyRazorpaySignature } from "./razorpay.server";
+import { createRazorpayOrder as rzpCreateOrder, verifyRazorpaySignature, getRazorpayCredentials } from "./razorpay.server";
 import { sendOrderConfirmationEmail, sendOrderStatusUpdateEmail } from "./email.server";
 import { notifyNewOrder } from "./notifications.server";
 import type { CartItem } from "./cart-store";
@@ -111,7 +111,7 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
       // The order is only created if and when the payment succeeds in `verifyRazorpayPayment`.
       // This prevents aborted, failed, or cancelled transactions from polluting the orders list.
 
-      const rzpKeyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || "rzp_test_TdWyTzFRBBGque";
+      const { keyId: rzpKeyId } = await getRazorpayCredentials();
 
       return {
         orderId: rzpOrder.id,

@@ -1,6 +1,20 @@
 import { Resend } from "resend";
+import { getSql } from "./db";
 
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev"; // Use onboarding for testing without verified domain
+export async function getSenderEmail(): Promise<string> {
+  try {
+    const sql = await getSql();
+    const rows = await sql<{ value: string }>`
+      SELECT value FROM site_settings WHERE key = 'resend_from_email' LIMIT 1
+    `;
+    if (rows.length > 0 && rows[0].value && rows[0].value.trim()) {
+      return rows[0].value.trim();
+    }
+  } catch (err) {
+    // If DB read fails, fall back to environment variable
+  }
+  return process.env.RESEND_FROM_EMAIL?.trim() || "onboarding@resend.dev";
+}
 
 function getResend(): Resend | null {
   if (!process.env.RESEND_API_KEY) return null;
@@ -87,8 +101,9 @@ export async function sendOrderConfirmationEmail(
   }
 
   try {
+    const fromEmail = await getSenderEmail();
     await resend.emails.send({
-      from: FROM_EMAIL,
+      from: fromEmail,
       to: email,
       subject: `Order Confirmation - ${safeOrderNumber}`,
       html: `
@@ -127,9 +142,10 @@ export async function sendOrderStatusUpdateEmail(orderNumber: string, email: str
 
   const safeOrderNumber = escapeHtml(orderNumber);
   const safeStatus = escapeHtml(status);
+  const fromEmail = await getSenderEmail();
 
   await resend.emails.send({
-    from: FROM_EMAIL,
+    from: fromEmail,
     to: email,
     subject: `Order Update - ${safeOrderNumber}`,
     html: `
@@ -165,8 +181,9 @@ export async function sendContactFormEmail(name: string, replyToEmail: string, m
   const safeMessage = escapeHtml(message);
 
   try {
+    const fromEmail = await getSenderEmail();
     const { data, error } = await resend.emails.send({
-      from: FROM_EMAIL,
+      from: fromEmail,
       to: adminEmail,
       replyTo: replyToEmail,
       subject: `New Contact Form Message from ${safeName}`,
@@ -214,9 +231,10 @@ export async function sendTicketReplyEmail(
   const safeName = escapeHtml(name);
   const safeOriginal = escapeHtml(originalMessage);
   const safeReply = escapeHtml(replyMessage);
+  const fromEmail = await getSenderEmail();
 
   const { data, error } = await resend.emails.send({
-    from: FROM_EMAIL,
+    from: fromEmail,
     to: toEmail,
     replyTo: adminEmail,
     subject: `Re: Your inquiry to prynth!`,

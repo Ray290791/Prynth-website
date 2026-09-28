@@ -1,11 +1,51 @@
+import { getSql } from "./db";
+
 /**
- * Cloudflare Workers-compatible Razorpay helpers.
+ * Cloudflare Workers & Node-compatible Razorpay helpers.
  * Uses the Razorpay REST API directly via fetch (no Node.js SDK needed).
  */
 
-function getAuth(): string {
-  const keyId = process.env.RAZORPAY_KEY_ID ?? "";
-  const keySecret = process.env.RAZORPAY_KEY_SECRET ?? "";
+export async function getRazorpayCredentials(): Promise<{
+  keyId: string;
+  keySecret: string;
+  isLive: boolean;
+}> {
+  let keyId = process.env.RAZORPAY_KEY_ID?.trim() || process.env.VITE_RAZORPAY_KEY_ID?.trim() || "";
+  let keySecret = process.env.RAZORPAY_KEY_SECRET?.trim() || "";
+
+  try {
+    const sql = await getSql();
+    const rows = await sql<{ key: string; value: string }>`
+      SELECT key, value FROM site_settings 
+      WHERE key IN ('razorpay_key_id', 'razorpay_key_secret')
+    `;
+    for (const r of rows) {
+      if (r.key === "razorpay_key_id" && r.value && r.value.trim()) {
+        keyId = r.value.trim();
+      }
+      if (r.key === "razorpay_key_secret" && r.value && r.value.trim()) {
+        keySecret = r.value.trim();
+      }
+    }
+  } catch (err) {
+    // If DB fails, rely on process.env
+  }
+
+  // Safe fallback to test key if nothing configured
+  if (!keyId) {
+    keyId = "rzp_test_TdWyTzFRBBGque";
+  }
+  if (!keySecret) {
+    keySecret = "REDACTED_RAZORPAY_WEBHOOK_SECRET";
+  }
+
+  const isLive = keyId.startsWith("rzp_live_");
+
+  return { keyId, keySecret, isLive };
+}
+
+async function getAuth(): Promise<string> {
+  const { keyId, keySecret } = await getRazorpayCredentials();
   return "Basic " + btoa(`${keyId}:${keySecret}`);
 }
 
@@ -22,10 +62,11 @@ export async function createRazorpayOrder(opts: {
   currency?: string;
   receipt: string;
 }): Promise<RazorpayOrder> {
+  const auth = await getAuth();
   const res = await fetch("https://api.razorpay.com/v1/orders", {
     method: "POST",
     headers: {
-      Authorization: getAuth(),
+      Authorization: auth,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -52,11 +93,11 @@ export async function verifyRazorpaySignature(
   razorpayPaymentId: string,
   signature: string,
 ): Promise<boolean> {
-  const secret = process.env.RAZORPAY_KEY_SECRET ?? "";
+  const { keySecret } = await getRazorpayCredentials();
   const enc = new TextEncoder();
   const key = await crypto.subtle.importKey(
     "raw",
-    enc.encode(secret),
+    enc.encode(keySecret),
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"],

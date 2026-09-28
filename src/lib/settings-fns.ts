@@ -52,6 +52,10 @@ export type SiteSettings = {
   payment_cod_enabled?: string;
   payment_upi_enabled?: string;
   payment_upi_id?: string;
+  // Live Gateway & Email Credentials
+  resend_from_email?: string;
+  razorpay_key_id?: string;
+  razorpay_key_secret?: string;
 };
 
 export const getSiteSettings = createServerFn({ method: "GET" }).handler(
@@ -85,6 +89,9 @@ export const getSiteSettings = createServerFn({ method: "GET" }).handler(
       payment_cod_enabled: "true",
       payment_upi_enabled: "true",
       payment_upi_id: "",
+      resend_from_email: "Prynth <orders@prynth.in>",
+      razorpay_key_id: "",
+      razorpay_key_secret: "",
       hero_featured_slots: JSON.stringify([
         { slug: "catch-bowl", image: "/products/catch-bowl.jpg" },
         { slug: "desk-tray", image: "/products/desk-tray.jpg" },
@@ -153,6 +160,9 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
     payment_cod_enabled: z.string().optional(),
     payment_upi_enabled: z.string().optional(),
     payment_upi_id: z.string().optional(),
+    resend_from_email: z.string().optional(),
+    razorpay_key_id: z.string().optional(),
+    razorpay_key_secret: z.string().optional(),
     hero_featured_slots: z.string().optional(),
     custom_pricing_upload_formula: z.string().optional(),
     custom_pricing_idea_formula: z.string().optional(),

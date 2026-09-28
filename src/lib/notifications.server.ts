@@ -1,5 +1,6 @@
 import { getSql } from "./db";
 import { Resend } from "resend";
+import { getSenderEmail } from "./email.server";
 
 interface NotificationConfig {
   phoneNumber: string;
@@ -181,7 +182,7 @@ export async function dispatchNotification({
   if (config.emailEnabled && process.env.RESEND_API_KEY && config.adminEmail) {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY);
-      const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
+      const fromEmail = await getSenderEmail();
       await resend.emails.send({
         from: fromEmail,
         to: config.adminEmail,

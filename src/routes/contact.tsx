@@ -1,7 +1,7 @@
 import { createFileRoute, getRouteApi } from "@tanstack/react-router";
 
 const rootRoute = getRouteApi("__root__");
-import { Instagram, Mail } from "lucide-react";
+import { Instagram, Mail, Phone, MapPin, Clock } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,10 @@ function ContactPage() {
   const { settings } = rootRoute.useLoaderData();
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  const contactEmail = settings.contact_email || "hello@prynth.in";
+  const contactPhone = settings.contact_phone || "+91 98765 43210";
+  const contactAddress = settings.contact_address || "Bengaluru, Karnataka, India";
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -58,36 +62,62 @@ function ContactPage() {
       <div className="mt-10 grid gap-10 md:grid-cols-12">
         <div className="md:col-span-5">
           <div className="space-y-4 rounded-3xl bg-surface p-6 shadow-[var(--shadow-border)]">
-            {settings.contact_email && (
-              <a
-                href={`mailto:${settings.contact_email}`}
-                className="flex items-center gap-3 rounded-2xl p-3 hover:bg-surface-2"
-              >
-                <Mail className="size-5 text-accent" strokeWidth={1.75} />
-                <span>
-                  <span className="block text-sm text-subtle">Email</span>
-                  {settings.contact_email}
-                </span>
-              </a>
-            )}
+            <a
+              href={`mailto:${contactEmail}`}
+              className="flex items-center gap-3 rounded-2xl p-3 hover:bg-surface-2 transition-colors"
+            >
+              <Mail className="size-5 text-accent shrink-0" strokeWidth={1.75} />
+              <div>
+                <span className="block text-xs font-medium text-subtle uppercase tracking-wider">Email</span>
+                <span className="text-sm font-medium">{contactEmail}</span>
+              </div>
+            </a>
+
+            <a
+              href={`tel:${contactPhone.replace(/\s+/g, '')}`}
+              className="flex items-center gap-3 rounded-2xl p-3 hover:bg-surface-2 transition-colors"
+            >
+              <Phone className="size-5 text-accent shrink-0" strokeWidth={1.75} />
+              <div>
+                <span className="block text-xs font-medium text-subtle uppercase tracking-wider">Phone / WhatsApp</span>
+                <span className="text-sm font-medium">{contactPhone}</span>
+              </div>
+            </a>
+
+            <div className="flex items-start gap-3 rounded-2xl p-3">
+              <MapPin className="size-5 text-accent shrink-0 mt-0.5" strokeWidth={1.75} />
+              <div>
+                <span className="block text-xs font-medium text-subtle uppercase tracking-wider">Operating Address</span>
+                <span className="text-sm font-medium leading-relaxed">{contactAddress}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 rounded-2xl p-3">
+              <Clock className="size-5 text-accent shrink-0" strokeWidth={1.75} />
+              <div>
+                <span className="block text-xs font-medium text-subtle uppercase tracking-wider">Business Hours</span>
+                <span className="text-sm">Monday – Saturday: 10:00 AM – 7:00 PM IST</span>
+              </div>
+            </div>
+
             {settings.contact_instagram && (
               <a
                 href={`https://instagram.com/${settings.contact_instagram.replace('@', '')}`}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-3 rounded-2xl p-3 hover:bg-surface-2"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-3 rounded-2xl p-3 hover:bg-surface-2 transition-colors"
               >
-                <Instagram className="size-5 text-accent" strokeWidth={1.75} />
-                <span>
-                  <span className="block text-sm text-subtle">Instagram</span>
-                  {settings.contact_instagram}
-                </span>
+                <Instagram className="size-5 text-accent shrink-0" strokeWidth={1.75} />
+                <div>
+                  <span className="block text-xs font-medium text-subtle uppercase tracking-wider">Instagram</span>
+                  <span className="text-sm font-medium">{settings.contact_instagram}</span>
+                </div>
               </a>
             )}
-            <p className="px-3 pt-2 text-sm text-muted">
-              We usually reply within one working day. For order changes, include
-              your order number (PRY-…).
-            </p>
+
+            <div className="px-3 pt-2 text-xs text-muted border-t border-border/50">
+              For order queries, please mention your PRY- order number for faster assistance.
+            </div>
           </div>
         </div>
         <div className="md:col-span-7">

@@ -19,12 +19,18 @@ function ShippingPage() {
         {settings.shipping_policy.split("\n\n").map((paragraph, i) => (
           <p key={i} className="whitespace-pre-wrap">{paragraph}</p>
         ))}
-        <p>
+
+        <h2 className="font-display text-2xl font-medium text-fg pt-6">Courier Partners & Tracking</h2>
+        <p className="whitespace-pre-wrap">
+          We partner with reliable courier services including Delhivery, Blue Dart, DTDC, and India Post (Speed Post for remote PIN codes). As soon as your order is packed and dispatched from our print studio, a tracking link with the AWB / Consignment Number will be sent to your registered email address so you can follow the package journey in real time.
+        </p>
+
+        <p className="pt-2">
           Questions about an order in transit:{" "}
           <Link to="/contact" className="text-accent hover:underline">
-            contact
+            contact us
           </Link>{" "}
-          with your PRY- number.
+          with your PRY- order number.
         </p>
       </div>
     </div>

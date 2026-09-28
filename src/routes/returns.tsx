@@ -20,16 +20,24 @@ function ReturnsPage() {
           <p key={i} className="whitespace-pre-wrap">{paragraph}</p>
         ))}
         
+        <h2 className="font-display text-2xl font-medium text-fg pt-6">Refund Processing & Timelines</h2>
+        <p className="whitespace-pre-wrap">
+          Once your return or cancellation is inspected and approved, your refund will be processed immediately. The refund amount will be credited back to your original mode of payment (Bank Account, UPI, or Credit/Debit Card via Razorpay) within <strong>5 to 7 business days</strong>, depending on your bank's processing cycle.
+        </p>
+        <p className="whitespace-pre-wrap">
+          For Cash on Delivery (COD) orders, refunds are processed via direct NEFT / IMPS bank transfer or UPI ID once bank account details are verified with our support team.
+        </p>
+
         <h2 className="font-display text-2xl font-medium text-fg pt-6">Cancellations</h2>
         <p className="whitespace-pre-wrap">
-          Orders can be cancelled before they enter the "printing" phase. Since 3D printing is a manufacturing process, once printing has begun, the order cannot be cancelled. Custom modeling orders can be cancelled before modeling begins. To request a cancellation, please email us with your Order Number immediately.
+          Orders can be cancelled before they enter the "printing" or "processing" phase. Since 3D printing is a manufacturing process tailored to each order, once printing has begun, the order cannot be cancelled. Custom modeling orders can be cancelled before design modeling begins. To request a cancellation, please email us at <a href={`mailto:${settings.contact_email || "hello@prynth.in"}`} className="text-accent hover:underline">{settings.contact_email || "hello@prynth.in"}</a> with your Order Number (PRY-…) immediately.
         </p>
 
         <p className="pt-4">
           <Link to="/contact" className="text-accent hover:underline">
             Contact us
           </Link>{" "}
-          if you're unsure which case you're in or need to request a cancellation.
+          if you have any questions regarding a refund or cancellation.
         </p>
       </div>
     </div>

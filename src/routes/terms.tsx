@@ -45,6 +45,20 @@ function TermsPage() {
             In no case shall Prynth, our directors, officers, employees, affiliates, agents, contractors, interns, suppliers, service providers or licensors be liable for any injury, loss, claim, or any direct, indirect, incidental, punitive, special, or consequential damages of any kind.
           </p>
         </section>
+
+        <section>
+          <h2 className="font-display text-2xl font-medium text-fg">6. Payment Processing via Razorpay</h2>
+          <p className="mt-3 text-sm leading-relaxed">
+            We use Razorpay Software Private Limited as our trusted third-party payment gateway partner. Razorpay provides bank-grade 128-bit SSL encryption and complies with the highest Payment Card Industry Data Security Standards (PCI-DSS Level 1). Your payment credentials (UPI PINs, card numbers, OTPs) are directly processed by Razorpay and your issuing bank; they are never captured, accessed, or stored on our servers.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="font-display text-2xl font-medium text-fg">7. Governing Law & Dispute Resolution</h2>
+          <p className="mt-3 text-sm leading-relaxed">
+            These Terms & Conditions and any agreements whereby we provide you Services or Products shall be governed by and construed in accordance with the laws of India. Any disputes arising out of or in connection with these terms shall be subject to the exclusive jurisdiction of the competent courts in India.
+          </p>
+        </section>
       </div>
     </div>
   );
