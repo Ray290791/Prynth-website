@@ -4,6 +4,7 @@ import { authMiddleware, optionalAuthMiddleware } from "./auth/middleware";
 import { verifyAdminRole, verifyAdminPIN } from "./admin-fns";
 import { createRazorpayOrder as rzpCreateOrder, verifyRazorpaySignature } from "./razorpay.server";
 import { sendOrderConfirmationEmail, sendOrderStatusUpdateEmail } from "./email.server";
+import { notifyNewOrder } from "./notifications.server";
 import type { CartItem } from "./cart-store";
 import type { Address } from "./orders-store";
 
@@ -164,6 +165,28 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
         }
       }
 
+      // Dispatch phone/WhatsApp/Telegram/Email notification to store owner
+      try {
+        await notifyNewOrder({
+          orderNumber,
+          name: data.address.name,
+          email: data.address.email,
+          phone: data.address.phone,
+          total: data.total,
+          paymentMethod: data.paymentMethod,
+          items: data.items.map((i) => ({
+            name: i.name,
+            qty: i.qty,
+            color: i.color,
+            size: i.size,
+            custom: i.custom,
+          })),
+          shippingAddress: `${data.address.line1}, ${data.address.city}, ${data.address.state} - ${data.address.pincode}`,
+        });
+      } catch (notifyErr) {
+        console.error("Order placed, but admin notification failed:", notifyErr);
+      }
+
       return { orderId: null, amount: 0, internalOrderNumber: orderNumber };
     }
   });
@@ -303,6 +326,28 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
       } catch (emErr) {
         console.warn("Failed to send order email:", emErr);
       }
+    }
+
+    // Dispatch phone/WhatsApp/Telegram/Email notification to store owner
+    try {
+      await notifyNewOrder({
+        orderNumber: orderNumber!,
+        name,
+        email,
+        phone: (order.shipping_address as any)?.phone,
+        total: Number(order.total),
+        paymentMethod: "Razorpay (Online)",
+        items: orderItems.map((i: any) => ({
+          name: i.name,
+          qty: i.qty,
+          color: i.color,
+          size: i.size,
+          custom: i.custom,
+        })),
+        shippingAddress: order.shipping_address ? JSON.stringify(order.shipping_address) : undefined,
+      });
+    } catch (notifyErr) {
+      console.error("Order verified, but admin notification failed:", notifyErr);
     }
 
     return { success: true, orderNumber };

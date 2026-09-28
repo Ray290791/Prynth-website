@@ -50,6 +50,17 @@ export const submitContactMessage = createServerFn({ method: "POST" })
     const { sendContactFormEmail } = await import("./email.server");
     await sendContactFormEmail(data.name, data.email, data.message);
 
+    try {
+      const { notifyNewInquiry } = await import("./notifications.server");
+      await notifyNewInquiry({
+        name: data.name,
+        email: data.email,
+        message: data.message,
+      });
+    } catch (err) {
+      console.error("Failed to send phone notification for inquiry:", err);
+    }
+
     return { success: true };
   });
 

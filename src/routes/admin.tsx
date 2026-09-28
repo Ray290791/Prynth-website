@@ -6,11 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useState, useEffect, useId } from "react";
 import { cn } from "@/lib/utils";
-import { Package, Box, X, Settings, Image as ImageIcon, BarChart3, Tag, ClipboardList, Shield, UserCog, HelpCircle, Users, Search, Trash2, Layers, Edit2, Plus, Eye, EyeOff, Printer as PrinterIcon, Disc, CreditCard, Mail } from "lucide-react";
+import { Package, Box, X, Settings, Image as ImageIcon, BarChart3, Tag, ClipboardList, Shield, UserCog, HelpCircle, Users, Search, Trash2, Layers, Edit2, Plus, Eye, EyeOff, Printer as PrinterIcon, Disc, CreditCard, Mail, Bell } from "lucide-react";
 import { InquiriesTab } from "@/components/inquiries-tab";
 import { PrintersTab } from "@/components/printers-tab";
 import { FilamentsTab } from "@/components/filaments-tab";
 import { PaymentOptionsTab } from "@/components/payment-options-tab";
+import { NotificationsTab } from "@/components/notifications-tab";
 import { OrderDetailsDialog } from "@/components/order-details-dialog";
 import { getMaterialsAdmin, createMaterial, updateMaterial, deleteMaterial, type Material, type MaterialInput } from "@/lib/materials-fns";
 import { getAllProductsAdmin, deleteProduct, updateProduct, createProduct, updateProductInventory } from "@/lib/products-fns";
@@ -112,6 +113,7 @@ function AdminPage() {
     { id: "users", label: "Users", icon: Users },
     { id: "payments", label: "Payment Options", icon: CreditCard },
     { id: "settings", label: "Site Settings", icon: Settings },
+    { id: "notifications", label: "Phone Alerts", icon: Bell },
   ];
 
   return (
@@ -292,6 +294,7 @@ function AdminPage() {
 
         {activeTab === "payments" && <PaymentOptionsTab />}
         {activeTab === "settings" && <SettingsTab />}
+        {activeTab === "notifications" && <NotificationsTab />}
         {activeTab === "faqs" && <FaqsTab />}
         {activeTab === "admin-team" && <AdminTeamTab />}
         {activeTab === "admin-profile" && <AdminProfileTab />}

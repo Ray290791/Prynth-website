@@ -3,6 +3,7 @@ import { getSql } from "./db";
 import { authMiddleware } from "./auth/middleware";
 import { verifyAdminRole } from "./admin-fns";
 import { z } from "zod";
+import { notifyFilamentOver, notifyFilamentLow } from "./notifications.server";
 
 export type FilamentStatus = "in_stock" | "low_stock" | "filament_over";
 
@@ -369,11 +370,38 @@ export const updateFilamentStatus = createServerFn({ method: "POST" })
     const admin = await verifyAdminRole(context.userId, sql);
     if (!admin) throw new Error("Unauthorized");
 
-    await sql`
+    const [updated] = await sql<FilamentRecord>`
       UPDATE filaments 
       SET status = ${data.status}, updated_at = now() 
       WHERE id = ${data.id}
+      RETURNING *
     `;
+
+    if (updated) {
+      if (data.status === "filament_over") {
+        try {
+          await notifyFilamentOver({
+            name: updated.name,
+            material: updated.material_id,
+            colorName: updated.color_name,
+            brand: updated.brand,
+          });
+        } catch (err) {
+          console.error("Failed to notify filament over:", err);
+        }
+      } else if (data.status === "low_stock") {
+        try {
+          await notifyFilamentLow({
+            name: updated.name,
+            material: updated.material_id,
+            colorName: updated.color_name,
+            spoolsRemaining: updated.spool_count,
+          });
+        } catch (err) {
+          console.error("Failed to notify filament low stock:", err);
+        }
+      }
+    }
 
     return { success: true };
   });
@@ -389,16 +417,19 @@ export const updateFilamentSpools = createServerFn({ method: "POST" })
     const admin = await verifyAdminRole(context.userId, sql);
     if (!admin) throw new Error("Unauthorized");
 
+    let updatedRows: FilamentRecord[] = [];
+
     if (data.count !== undefined) {
       const newCount = Math.max(0, data.count);
       const newStatus = newCount === 0 ? "filament_over" : newCount <= 1 ? "low_stock" : "in_stock";
-      await sql`
+      updatedRows = await sql<FilamentRecord>`
         UPDATE filaments 
         SET spool_count = ${newCount}, status = ${newStatus}, updated_at = now() 
         WHERE id = ${data.id}
+        RETURNING *
       `;
     } else if (data.delta !== undefined) {
-      await sql`
+      updatedRows = await sql<FilamentRecord>`
         UPDATE filaments 
         SET 
           spool_count = GREATEST(0, spool_count + ${data.delta}),
@@ -409,7 +440,35 @@ export const updateFilamentSpools = createServerFn({ method: "POST" })
           END,
           updated_at = now() 
         WHERE id = ${data.id}
+        RETURNING *
       `;
+    }
+
+    const updated = updatedRows[0];
+    if (updated) {
+      if (updated.status === "filament_over" || updated.spool_count === 0) {
+        try {
+          await notifyFilamentOver({
+            name: updated.name,
+            material: updated.material_id,
+            colorName: updated.color_name,
+            brand: updated.brand,
+          });
+        } catch (err) {
+          console.error("Failed to notify filament over:", err);
+        }
+      } else if (updated.status === "low_stock" || updated.spool_count === 1) {
+        try {
+          await notifyFilamentLow({
+            name: updated.name,
+            material: updated.material_id,
+            colorName: updated.color_name,
+            spoolsRemaining: updated.spool_count,
+          });
+        } catch (err) {
+          console.error("Failed to notify filament low:", err);
+        }
+      }
     }
 
     return { success: true };
