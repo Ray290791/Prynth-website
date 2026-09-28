@@ -66,7 +66,7 @@ const DEVTOOLS_DETERRENT = `
     o.id='__dt-warn';
     o.setAttribute('style',[
       'position:fixed','top:0','left:0','width:100%','padding:14px 20px',
-      'background:#1e2124','color:#f3f1ec','font-family:sans-serif',
+      'background:#0c0e12','color:#f4f6f8','font-family:sans-serif',
       'font-size:14px','z-index:2147483647','display:flex',
       'align-items:center','justify-content:space-between','gap:16px',
       'box-shadow:0 4px 24px rgba(0,0,0,.4)','border-bottom:1px solid rgba(255,255,255,.1)'

@@ -65,24 +65,24 @@
 
 .dark {
   color-scheme: dark;
-  --bg: #1e2124;
-  --surface: #262a2e;
-  --surface-2: #2f3439;
-  --fg: #f3f1ec;
-  --muted: #b0b6bc;
-  --subtle: #8a9096;
+  --bg: #0c0e12;
+  --surface: #14171d;
+  --surface-2: #1c2028;
+  --fg: #f4f6f8;
+  --muted: #9aa2ac;
+  --subtle: #656c76;
   --accent: #00b8a9;
   --accent-hover: #1ec9ba;
-  --accent-soft: color-mix(in oklab, #00b8a9 16%, #1e2124);
-  --ink: #1e2124;
-  --border: color-mix(in oklab, #f3f1ec 12%, transparent);
+  --accent-soft: rgba(0, 184, 169, 0.14);
+  --ink: #0c0e12;
+  --border: rgba(255, 255, 255, 0.08);
   --ring: #00b8a9;
-  --danger: #e08a7c;
-  --shadow-border: 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --danger: #f87171;
+  --shadow-border: 0 0 0 1px rgba(255, 255, 255, 0.07);
   --shadow-border-hover: 0 0 0 1px rgba(255, 255, 255, 0.14);
-  --shadow-lift: 0 18px 40px -18px rgba(0, 0, 0, 0.55);
-  --glass-bg: rgba(38, 42, 46, 0.3);
-  --glass-border: rgba(255, 255, 255, 0.1);
+  --shadow-lift: 0 20px 48px -18px rgba(0, 0, 0, 0.85);
+  --glass-bg: rgba(12, 14, 18, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.08);
 }
 
 html {
