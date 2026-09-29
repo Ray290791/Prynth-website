@@ -21,11 +21,11 @@ export function LogoLink({ className }: { className?: string }) {
       to="/"
       aria-label="prynth! home"
       className={cn(
-        "inline-flex items-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70",
+        "inline-flex items-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 shrink-0",
         className,
       )}
     >
-      <Wordmark className="text-[1.65rem] leading-none md:text-2xl" />
+      <Wordmark className="text-[1.35rem] xs:text-[1.5rem] sm:text-[1.65rem] leading-none md:text-2xl" />
     </Link>
   );
 }

@@ -70,21 +70,21 @@ export function InlineSearch() {
   };
 
   return (
-    <div ref={containerRef} className="relative flex items-center justify-end">
+    <div ref={containerRef} className="relative flex items-center justify-end shrink-0">
       {/* Search Bar Container */}
       <div 
         className={cn(
           "flex items-center overflow-hidden transition-all duration-300 ease-in-out bg-surface-2 rounded-xl",
-          open ? "w-44 xs:w-52 sm:w-64 opacity-100 px-2" : "w-11 opacity-0 pointer-events-none"
+          open ? "w-36 xs:w-44 sm:w-64 opacity-100 px-2" : "w-9 sm:w-10 md:w-11 opacity-0 pointer-events-none"
         )}
       >
-        <Search className="size-5 text-muted shrink-0 ml-1" strokeWidth={1.75} />
+        <Search className="size-4 sm:size-5 text-muted shrink-0 ml-1" strokeWidth={1.75} />
         <input
           ref={inputRef}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search..."
-          className="w-full bg-transparent border-none outline-none text-base sm:text-sm text-fg placeholder:text-muted py-2 px-1.5"
+          className="w-full bg-transparent border-none outline-none text-base sm:text-sm text-fg placeholder:text-muted py-1.5 sm:py-2 px-1.5"
         />
         <button 
           onClick={() => {
@@ -103,11 +103,11 @@ export function InlineSearch() {
         onClick={() => setOpen(true)}
         aria-label="Search products"
         className={cn(
-          "absolute right-0 inline-flex size-11 items-center justify-center rounded-xl text-fg hover:bg-surface-2 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70",
+          "absolute right-0 inline-flex size-9 sm:size-10 md:size-11 items-center justify-center rounded-xl text-fg hover:bg-surface-2 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 shrink-0",
           open ? "opacity-0 scale-95 pointer-events-none" : "opacity-100 scale-100"
         )}
       >
-        <Search className="size-5" strokeWidth={1.75} />
+        <Search className="size-4.5 sm:size-5" strokeWidth={1.75} />
       </button>
 
       {/* Dropdown Results */}

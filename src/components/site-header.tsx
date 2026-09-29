@@ -1,11 +1,11 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Menu, ShoppingBag, X, Search } from "lucide-react";
+import { Menu, ShoppingBag, X, User, Clock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { LogoLink } from "@/components/logo";
 import { AuthModal } from "@/components/auth-modal";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { InlineSearch } from "@/components/inline-search";
-import { SignedOut, UserButton } from "@/lib/auth/gates";
+import { SignedIn, SignedOut, UserButton } from "@/lib/auth/gates";
 import { cartCount, useCart } from "@/lib/cart-store";
 import { useHydrated } from "@/lib/use-hydrated";
 import { cn } from "@/lib/utils";
@@ -40,8 +40,8 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-glass-border bg-glass backdrop-blur-2xl backdrop-saturate-150 shadow-xl shadow-black/5">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 md:h-[4.25rem] md:px-6">
-        <LogoLink />
+      <div className="mx-auto flex h-14 sm:h-16 max-w-6xl items-center justify-between gap-1 sm:gap-4 px-3 sm:px-4 md:h-[4.25rem] md:px-6">
+        <LogoLink className="shrink-0" />
 
         <nav className="hidden items-center gap-1 md:flex" aria-label="Primary">
           {NAV.map((item) => {
@@ -66,17 +66,17 @@ export function SiteHeader() {
           })}
         </nav>
 
-        <div className="flex items-center gap-0.5">
+        <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
           <InlineSearch />
           <ThemeToggle />
           <Link
             to="/cart"
             aria-label={count ? `Cart, ${count} items` : "Cart"}
-            className="relative inline-flex size-11 items-center justify-center rounded-xl text-fg transition-colors duration-150 hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
+            className="relative inline-flex size-9 sm:size-10 md:size-11 items-center justify-center rounded-xl text-fg transition-colors duration-150 hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 shrink-0"
           >
-            <ShoppingBag className="size-5" strokeWidth={1.75} />
+            <ShoppingBag className="size-4.5 sm:size-5" strokeWidth={1.75} />
             {count > 0 ? (
-              <span className="absolute top-1.5 right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-semibold text-ink tabular-nums">
+              <span className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 flex h-3.5 min-w-3.5 sm:h-4 sm:min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] sm:text-[10px] font-semibold text-ink tabular-nums">
                 {count > 99 ? "99+" : count}
               </span>
             ) : null}
@@ -86,7 +86,7 @@ export function SiteHeader() {
               trigger={
                 <button
                   type="button"
-                  className="cursor-pointer rounded-xl px-3 py-2 text-sm font-medium text-fg hover:bg-surface-2 transition-colors duration-150 whitespace-nowrap shrink-0 leading-none h-11 hidden sm:inline-flex items-center justify-center"
+                  className="cursor-pointer rounded-xl px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-fg hover:bg-surface-2 transition-colors duration-150 whitespace-nowrap shrink-0 leading-none h-9 sm:h-10 md:h-11 hidden sm:inline-flex items-center justify-center"
                 >
                   Sign in
                 </button>
@@ -96,15 +96,15 @@ export function SiteHeader() {
           <UserButton />
           <button
             type="button"
-            className="inline-flex size-11 items-center justify-center rounded-xl text-fg hover:bg-surface-2 md:hidden shrink-0"
+            className="inline-flex size-9 sm:size-10 md:size-11 items-center justify-center rounded-xl text-fg hover:bg-surface-2 md:hidden shrink-0"
             aria-label={open ? "Close menu" : "Open menu"}
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
           >
             {open ? (
-              <X className="size-5" strokeWidth={1.75} />
+              <X className="size-4.5 sm:size-5" strokeWidth={1.75} />
             ) : (
-              <Menu className="size-5" strokeWidth={1.75} />
+              <Menu className="size-4.5 sm:size-5" strokeWidth={1.75} />
             )}
           </button>
         </div>
@@ -139,12 +139,29 @@ export function SiteHeader() {
                 )}
               </Link>
 
+              <SignedIn>
+                <Link
+                  to="/profile"
+                  className="flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-base font-medium text-fg hover:bg-surface-2 transition-colors"
+                >
+                  <User className="size-5 text-accent" strokeWidth={1.75} />
+                  My Account / Dashboard
+                </Link>
+                <Link
+                  to="/history"
+                  className="flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-base font-medium text-fg hover:bg-surface-2 transition-colors"
+                >
+                  <Clock className="size-5 text-muted" strokeWidth={1.75} />
+                  Recently Viewed
+                </Link>
+              </SignedIn>
+
               <SignedOut>
                 <AuthModal
                   trigger={
                     <button
                       type="button"
-                      className="w-full h-11 rounded-xl bg-accent text-ink font-semibold text-sm flex items-center justify-center transition-colors shadow-sm"
+                      className="w-full h-11 rounded-xl bg-accent text-ink font-semibold text-sm flex items-center justify-center transition-colors shadow-sm cursor-pointer"
                     >
                       Sign In / Sign Up
                     </button>

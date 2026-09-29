@@ -48,19 +48,21 @@ export function UserButton() {
     : "U";
 
   return (
-    <div className="relative" ref={containerRef}>
+    <div className="relative shrink-0" ref={containerRef}>
       <button
+        type="button"
         onClick={() => setOpen(!open)}
-        className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-accent-foreground"
+        className="flex size-8 sm:size-9 md:size-10 items-center justify-center rounded-full bg-accent text-ink font-bold text-xs sm:text-sm shadow-sm ring-1 ring-border/50 hover:brightness-110 active:scale-95 transition-all"
+        aria-label="User account menu"
       >
         {initials}
       </button>
       {open && (
-        <div className="absolute right-0 mt-2 w-max min-w-[12rem] rounded-md border border-border bg-bg p-2 shadow-md">
-          <div className="px-2 py-1.5 text-sm font-medium">
+        <div className="absolute right-0 mt-2 w-max min-w-[13rem] rounded-2xl border border-glass-border bg-glass backdrop-blur-2xl backdrop-saturate-150 p-2 shadow-2xl shadow-black/20 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="px-3 py-1.5 text-sm font-semibold text-fg">
             {user.displayName || "User"}
           </div>
-          <div className="px-2 pb-2 text-xs text-muted-foreground border-b border-border mb-1">
+          <div className="px-3 pb-2 text-xs text-muted border-b border-border/50 mb-1">
             {user.primaryEmail}
           </div>
 
