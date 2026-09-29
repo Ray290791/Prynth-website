@@ -214,12 +214,9 @@ function Home() {
               <span className="text-xs text-muted">Quality Guaranteed</span>
             </div>
 
-            {/* Decorative accent lines */}
-            <div aria-hidden className="absolute -right-2 -bottom-2 hidden items-center gap-2 md:flex">
-              <span className="h-px w-10 bg-accent/40" />
-              <span className="h-px w-7 bg-accent/30" />
-              <span className="h-px w-4 bg-accent/20" />
-              <img src="/brand/mark.png" alt="" className="size-12 rounded-2xl" />
+            {/* Floating brand mark badge */}
+            <div aria-hidden className="absolute -right-2 -bottom-2 hidden items-center md:flex">
+              <img src="/brand/mark.png" alt="Prynth mark" className="size-12 rounded-2xl shadow-lg border border-glass-border" />
             </div>
           </div>
         </div>
