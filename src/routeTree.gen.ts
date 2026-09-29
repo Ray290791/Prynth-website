@@ -25,6 +25,8 @@ import { Route as ReturnsRouteImport } from './routes/returns'
 import { Route as ShippingRouteImport } from './routes/shipping'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as WishlistRouteImport } from './routes/wishlist'
+import { Route as ApiCreateOrderRouteImport } from './routes/api/create-order'
+import { Route as ApiVerifyPaymentRouteImport } from './routes/api/verify-payment'
 import { Route as OrderIdRouteImport } from './routes/order.$id'
 import { Route as ShopIndexRouteImport } from './routes/shop.index'
 import { Route as ShopSlugRouteImport } from './routes/shop.$slug'
@@ -111,6 +113,16 @@ const WishlistRoute = WishlistRouteImport.update({
   path: '/wishlist',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCreateOrderRoute = ApiCreateOrderRouteImport.update({
+  id: '/api/create-order',
+  path: '/api/create-order',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiVerifyPaymentRoute = ApiVerifyPaymentRouteImport.update({
+  id: '/api/verify-payment',
+  path: '/api/verify-payment',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrderIdRoute = OrderIdRouteImport.update({
   id: '/order/$id',
   path: '/order/$id',
@@ -154,6 +166,8 @@ export interface FileRoutesByFullPath {
   '/shipping': typeof ShippingRoute
   '/terms': typeof TermsRoute
   '/wishlist': typeof WishlistRoute
+  '/api/create-order': typeof ApiCreateOrderRoute
+  '/api/verify-payment': typeof ApiVerifyPaymentRoute
   '/order/$id': typeof OrderIdRoute
   '/shop/$slug': typeof ShopSlugRoute
   '/shop/': typeof ShopIndexRoute
@@ -177,6 +191,8 @@ export interface FileRoutesByTo {
   '/shipping': typeof ShippingRoute
   '/terms': typeof TermsRoute
   '/wishlist': typeof WishlistRoute
+  '/api/create-order': typeof ApiCreateOrderRoute
+  '/api/verify-payment': typeof ApiVerifyPaymentRoute
   '/order/$id': typeof OrderIdRoute
   '/shop/$slug': typeof ShopSlugRoute
   '/shop': typeof ShopIndexRoute
@@ -201,6 +217,8 @@ export interface FileRoutesById {
   '/shipping': typeof ShippingRoute
   '/terms': typeof TermsRoute
   '/wishlist': typeof WishlistRoute
+  '/api/create-order': typeof ApiCreateOrderRoute
+  '/api/verify-payment': typeof ApiVerifyPaymentRoute
   '/order/$id': typeof OrderIdRoute
   '/shop/$slug': typeof ShopSlugRoute
   '/shop/': typeof ShopIndexRoute
@@ -226,6 +244,8 @@ export interface FileRouteTypes {
     | '/shipping'
     | '/terms'
     | '/wishlist'
+    | '/api/create-order'
+    | '/api/verify-payment'
     | '/order/$id'
     | '/shop/$slug'
     | '/shop/'
@@ -249,6 +269,8 @@ export interface FileRouteTypes {
     | '/shipping'
     | '/terms'
     | '/wishlist'
+    | '/api/create-order'
+    | '/api/verify-payment'
     | '/order/$id'
     | '/shop/$slug'
     | '/shop'
@@ -272,6 +294,8 @@ export interface FileRouteTypes {
     | '/shipping'
     | '/terms'
     | '/wishlist'
+    | '/api/create-order'
+    | '/api/verify-payment'
     | '/order/$id'
     | '/shop/$slug'
     | '/shop/'
@@ -296,6 +320,8 @@ export interface RootRouteChildren {
   ShippingRoute: typeof ShippingRoute
   TermsRoute: typeof TermsRoute
   WishlistRoute: typeof WishlistRoute
+  ApiCreateOrderRoute: typeof ApiCreateOrderRoute
+  ApiVerifyPaymentRoute: typeof ApiVerifyPaymentRoute
   OrderIdRoute: typeof OrderIdRoute
   ShopSlugRoute: typeof ShopSlugRoute
   ShopIndexRoute: typeof ShopIndexRoute
@@ -417,6 +443,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WishlistRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/create-order': {
+      id: '/api/create-order'
+      path: '/api/create-order'
+      fullPath: '/api/create-order'
+      preLoaderRoute: typeof ApiCreateOrderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/verify-payment': {
+      id: '/api/verify-payment'
+      path: '/api/verify-payment'
+      fullPath: '/api/verify-payment'
+      preLoaderRoute: typeof ApiVerifyPaymentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/order/$id': {
       id: '/order/$id'
       path: '/order/$id'
@@ -472,6 +512,8 @@ const rootRouteChildren: RootRouteChildren = {
   ShippingRoute: ShippingRoute,
   TermsRoute: TermsRoute,
   WishlistRoute: WishlistRoute,
+  ApiCreateOrderRoute: ApiCreateOrderRoute,
+  ApiVerifyPaymentRoute: ApiVerifyPaymentRoute,
   OrderIdRoute: OrderIdRoute,
   ShopSlugRoute: ShopSlugRoute,
   ShopIndexRoute: ShopIndexRoute,

@@ -167,6 +167,8 @@ function Root() {
         <script dangerouslySetInnerHTML={{ __html: DISABLE_IMG_CONTEXT_MENU }} />
         {/* Security: DevTools soft deterrent + keyboard shortcut blocking */}
         <script dangerouslySetInnerHTML={{ __html: DEVTOOLS_DETERRENT }} />
+        {/* Razorpay Standard Web Checkout SDK */}
+        <script src="https://checkout.razorpay.com/v1/checkout.js" async />
       </head>
       <body className="antialiased">
         <PreviewHostBridge />

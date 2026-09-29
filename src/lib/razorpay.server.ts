@@ -1,8 +1,8 @@
 import { getSql } from "./db";
 
 /**
- * Cloudflare Workers & Node-compatible Razorpay helpers.
- * Uses the Razorpay REST API directly via fetch (no Node.js SDK needed).
+ * Razorpay backend integration helpers.
+ * Compatible with Node.js and Edge/Workers runtimes.
  */
 
 export async function getRazorpayCredentials(): Promise<{
@@ -20,23 +20,32 @@ export async function getRazorpayCredentials(): Promise<{
       WHERE key IN ('razorpay_key_id', 'razorpay_key_secret')
     `;
     for (const r of rows) {
-      if (r.key === "razorpay_key_id" && r.value && r.value.trim()) {
-        keyId = r.value.trim();
+      const val = r.value?.trim();
+      if (!val || val === "rzp_test_TdWyTzFRBBGque" || val === "REDACTED_RAZORPAY_WEBHOOK_SECRET") {
+        continue;
       }
-      if (r.key === "razorpay_key_secret" && r.value && r.value.trim()) {
-        keySecret = r.value.trim();
+      if (r.key === "razorpay_key_id") {
+        // Prioritize live keys from DB if configured, or use if no env var
+        if (!keyId || val.startsWith("rzp_live_")) {
+          keyId = val;
+        }
+      }
+      if (r.key === "razorpay_key_secret") {
+        if (!keySecret || keyId.startsWith("rzp_live_")) {
+          keySecret = val;
+        }
       }
     }
-  } catch (err) {
-    // If DB fails, rely on process.env
+  } catch {
+    // If DB query fails, continue with process.env
   }
 
-  // Safe fallback to test key if nothing configured
+  // Safe fallback to configured test keys
   if (!keyId) {
-    keyId = "rzp_test_TdWyTzFRBBGque";
+    keyId = "rzp_test_ThipwD9wdDVzo7";
   }
   if (!keySecret) {
-    keySecret = "REDACTED_RAZORPAY_WEBHOOK_SECRET";
+    keySecret = "REDACTED_RAZORPAY_TEST_SECRET";
   }
 
   const isLive = keyId.startsWith("rzp_live_");
@@ -46,7 +55,7 @@ export async function getRazorpayCredentials(): Promise<{
 
 async function getAuth(): Promise<string> {
   const { keyId, keySecret } = await getRazorpayCredentials();
-  return "Basic " + btoa(`${keyId}:${keySecret}`);
+  return "Basic " + Buffer.from(`${keyId}:${keySecret}`).toString("base64");
 }
 
 export interface RazorpayOrder {
@@ -56,12 +65,28 @@ export interface RazorpayOrder {
   receipt: string;
 }
 
-/** Create a Razorpay order via the REST API (fetch-based, edge-compatible). */
+/** 
+ * Create a Razorpay order via the REST API.
+ * Validates minimum amount of 100 paise (₹1.00).
+ */
 export async function createRazorpayOrder(opts: {
   amount: number;
   currency?: string;
-  receipt: string;
+  receipt?: string;
 }): Promise<RazorpayOrder> {
+  if (typeof opts.amount !== "number" || isNaN(opts.amount) || opts.amount < 100) {
+    const err: any = new Error("Amount must be at least 100 paise (₹1.00)");
+    err.status = 400;
+    throw err;
+  }
+
+  const { keyId, keySecret } = await getRazorpayCredentials();
+  if (!keyId || !keySecret) {
+    const err: any = new Error("Razorpay credentials are not configured");
+    err.status = 401;
+    throw err;
+  }
+
   const auth = await getAuth();
   const res = await fetch("https://api.razorpay.com/v1/orders", {
     method: "POST",
@@ -70,42 +95,73 @@ export async function createRazorpayOrder(opts: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      amount: opts.amount,
+      amount: Math.round(opts.amount),
       currency: opts.currency ?? "INR",
-      receipt: opts.receipt,
+      receipt: opts.receipt ?? `rcpt_${Date.now()}`,
     }),
   });
 
   if (!res.ok) {
-    const text = await res.text().catch(() => res.statusText);
-    throw new Error(`Razorpay order creation failed: ${res.status} ${text}`);
+    const errorData = await res.json().catch(() => ({}));
+    const message = errorData?.error?.description || res.statusText || "Razorpay API error";
+    const err: any = new Error(`Razorpay order creation failed: ${message}`);
+    err.status = res.status === 401 ? 401 : 500;
+    err.details = errorData;
+    throw err;
   }
 
   return res.json() as Promise<RazorpayOrder>;
 }
 
 /**
- * Verify Razorpay payment signature using the Web Crypto API
- * (works in Cloudflare Workers, Node.js, browsers).
+ * Verify Razorpay payment signature using HMAC-SHA256(order_id + "|" + payment_id, KEY_SECRET).
+ * Returns true if and only if generated signature matches razorpay_signature.
  */
 export async function verifyRazorpaySignature(
   razorpayOrderId: string,
   razorpayPaymentId: string,
   signature: string,
 ): Promise<boolean> {
+  if (!razorpayOrderId || !razorpayPaymentId || !signature) {
+    return false;
+  }
+
   const { keySecret } = await getRazorpayCredentials();
-  const enc = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw",
-    enc.encode(keySecret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const msgBuffer = enc.encode(`${razorpayOrderId}|${razorpayPaymentId}`);
-  const sigBuffer = await crypto.subtle.sign("HMAC", key, msgBuffer);
-  const generated = Array.from(new Uint8Array(sigBuffer))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-  return generated === signature;
+  if (!keySecret) {
+    return false;
+  }
+
+  try {
+    // Fast path: Node.js crypto module
+    const nodeCrypto = await import("crypto");
+    if (nodeCrypto && typeof nodeCrypto.createHmac === "function") {
+      const generated = nodeCrypto
+        .createHmac("sha256", keySecret)
+        .update(`${razorpayOrderId}|${razorpayPaymentId}`)
+        .digest("hex");
+      return generated === signature;
+    }
+  } catch {
+    // Fallback to Web Crypto subtle API
+  }
+
+  try {
+    const enc = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      enc.encode(keySecret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"],
+    );
+    const msgBuffer = enc.encode(`${razorpayOrderId}|${razorpayPaymentId}`);
+    const sigBuffer = await crypto.subtle.sign("HMAC", key, msgBuffer);
+    const generated = Array.from(new Uint8Array(sigBuffer))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+    return generated === signature;
+  } catch (subtleErr) {
+    console.error("[verifyRazorpaySignature] WebCrypto error:", subtleErr);
+    return false;
+  }
 }
