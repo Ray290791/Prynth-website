@@ -66,6 +66,7 @@ export const Route = createFileRoute("/api/create-order")({
                 amount: order.amount,
                 currency: order.currency,
                 key_id: creds.keyId,
+                checkout_config_id: creds.checkoutConfigId,
               }),
               {
                 status: 200,

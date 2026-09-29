@@ -243,13 +243,20 @@ function CheckoutPage() {
       import.meta.env.VITE_RAZORPAY_KEY_ID ||
       "rzp_live_ThjBr4kKFcwBxe";
 
-    const options = {
+    const configId =
+      orderData.checkoutConfigId ||
+      import.meta.env.VITE_RAZORPAY_CHECKOUT_CONFIG_ID ||
+      "config_ThjM40ZxZS5DIY";
+
+    const options: any = {
       key: razorpayKey,
       amount: orderData.amount,
       currency: "INR",
       name: "Prynth!",
       description: "3D Printing Order",
       order_id: orderData.orderId,
+      checkout_config_id: configId,
+      config_id: configId,
       handler: async function (response: any) {
         try {
           const verifyRes = await verifyRazorpayPayment({

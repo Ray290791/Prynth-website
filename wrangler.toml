@@ -15,6 +15,8 @@ BETTER_AUTH_URL = "https://prynth.in"
 GOOGLE_CLIENT_ID = "643060983104-512gqpe7ag7a31838kh43dkrl5oa7eqi.apps.googleusercontent.com"
 RAZORPAY_KEY_ID = "rzp_live_ThjBr4kKFcwBxe"
 VITE_RAZORPAY_KEY_ID = "rzp_live_ThjBr4kKFcwBxe"
+RAZORPAY_CHECKOUT_CONFIG_ID = "config_ThjM40ZxZS5DIY"
+VITE_RAZORPAY_CHECKOUT_CONFIG_ID = "config_ThjM40ZxZS5DIY"
 RESEND_FROM_EMAIL = "Prynth <orders@prynth.in>"
 
 

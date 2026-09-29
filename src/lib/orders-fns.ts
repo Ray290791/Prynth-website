@@ -111,13 +111,14 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
       // The order is only created if and when the payment succeeds in `verifyRazorpayPayment`.
       // This prevents aborted, failed, or cancelled transactions from polluting the orders list.
 
-      const { keyId: rzpKeyId } = await getRazorpayCredentials();
+      const { keyId: rzpKeyId, checkoutConfigId } = await getRazorpayCredentials();
 
       return {
         orderId: rzpOrder.id,
         amount: rzpOrder.amount,
         internalOrderNumber: orderNumber,
         keyId: rzpKeyId,
+        checkoutConfigId,
       };
     } else {
       // COD or UPI
