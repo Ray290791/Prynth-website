@@ -1054,7 +1054,7 @@ export function ModelViewer({
             title="Toggle Print Volume Enclosure"
             onClick={() => setShowVolume((prev) => !prev)}
             className={cn(
-              "p-1.5 rounded-lg transition-colors",
+              "hidden sm:inline-flex p-1.5 rounded-lg transition-colors",
               showVolume
                 ? "bg-cyan-500/20 text-cyan-500"
                 : isLight
@@ -1071,7 +1071,7 @@ export function ModelViewer({
             title="Toggle Mesh Wireframe"
             onClick={() => setWireframe((prev) => !prev)}
             className={cn(
-              "p-1.5 rounded-lg transition-colors",
+              "hidden sm:inline-flex p-1.5 rounded-lg transition-colors",
               wireframe
                 ? "bg-accent/20 text-accent"
                 : isLight

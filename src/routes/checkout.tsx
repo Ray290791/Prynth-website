@@ -413,14 +413,14 @@ function CheckoutPage() {
       <form onSubmit={placeOrder} className="mt-10 grid gap-10 md:grid-cols-12">
         <div className="space-y-8 md:col-span-7">
           <section>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="font-display text-xl font-semibold">Contact & shipping</h2>
               {savedAddresses && savedAddresses.length > 0 && (
                 <div className="flex items-center gap-2 text-sm">
                   <Label htmlFor="saved_addr" className="text-xs text-muted whitespace-nowrap">Saved Addresses:</Label>
                   <select
                     id="saved_addr"
-                    className="h-9 rounded-xl border border-border bg-surface px-3 text-xs text-fg focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none cursor-pointer"
+                    className="h-9 rounded-xl border border-border bg-surface px-3 text-xs text-fg focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none cursor-pointer max-w-[200px] truncate"
                     onChange={handleSelectSavedAddress}
                   >
                     <option value="">Select...</option>
@@ -604,7 +604,7 @@ function CheckoutPage() {
           </div>
         </div>
 
-        <aside className="h-fit rounded-3xl bg-surface p-6 shadow-[var(--shadow-border)] md:sticky md:top-24 md:col-span-5">
+        <aside className="h-fit rounded-3xl bg-surface p-4 sm:p-6 shadow-[var(--shadow-border)] md:sticky md:top-24 md:col-span-5">
           <h2 className="font-display text-xl font-semibold">Order</h2>
           <ul className="mt-4 divide-y divide-border">
             {items.map((item) => (

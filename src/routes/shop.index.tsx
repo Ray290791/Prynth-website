@@ -83,11 +83,11 @@ function ShopPage() {
             </button>
           ))}
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="flex flex-col sm:flex-row gap-2 sm:items-center w-full md:w-auto">
           <select 
             value={sort} 
             onChange={(e) => setSort(e.target.value)}
-            className="h-11 rounded-xl border border-border bg-surface px-3.5 text-sm text-fg shadow-[var(--shadow-border)] focus:border-accent focus:ring-2 focus:ring-ring/30 focus:outline-none cursor-pointer"
+            className="h-11 w-full sm:w-auto rounded-xl border border-border bg-surface px-3.5 text-base sm:text-sm text-fg shadow-[var(--shadow-border)] focus:border-accent focus:ring-2 focus:ring-ring/30 focus:outline-none cursor-pointer"
             aria-label="Sort by"
           >
             <option value="featured">Featured</option>
@@ -98,9 +98,9 @@ function ShopPage() {
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search prints"
+            placeholder="Search prints..."
             aria-label="Search prints"
-            className="md:max-w-xs h-11"
+            className="w-full md:max-w-xs h-11"
           />
         </div>
       </div>

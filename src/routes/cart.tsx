@@ -69,10 +69,10 @@ function CartPage() {
                   src={item.image}
                   alt=""
                   loading="lazy"
-                  className="product-photo size-24 rounded-xl object-cover sm:size-28"
+                  className="product-photo size-20 rounded-xl object-cover sm:size-28 shrink-0"
                 />
               ) : (
-                <div className="flex size-24 items-center justify-center rounded-xl bg-accent-soft text-sm font-medium text-accent sm:size-28">
+                <div className="flex size-20 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-sm font-medium text-accent sm:size-28">
                   custom
                 </div>
               )}
@@ -130,7 +130,7 @@ function CartPage() {
                     {formatINR(item.unitPrice * item.qty)}
                   </p>
                 </div>
-                <div className="mt-4 flex flex-wrap items-center gap-3">
+                <div className="mt-4 flex flex-wrap items-center gap-2 sm:gap-3">
                   <QuantityStepper
                     value={item.qty}
                     onChange={(n) => setQty(item.id, n)}
@@ -159,7 +159,7 @@ function CartPage() {
           ))}
         </ul>
 
-        <aside className="h-fit rounded-3xl bg-surface p-6 shadow-[var(--shadow-border)] md:sticky md:top-24 md:col-span-5">
+        <aside className="h-fit rounded-3xl bg-surface p-4 sm:p-6 shadow-[var(--shadow-border)] md:sticky md:top-24 md:col-span-5">
           <h2 className="font-display text-xl font-semibold">Summary</h2>
           <dl className="mt-5 space-y-2 text-sm">
             <div className="flex justify-between">

@@ -75,7 +75,7 @@ export function InlineSearch() {
       <div 
         className={cn(
           "flex items-center overflow-hidden transition-all duration-300 ease-in-out bg-surface-2 rounded-xl",
-          open ? "w-64 opacity-100 px-2" : "w-11 opacity-0 pointer-events-none"
+          open ? "w-44 xs:w-52 sm:w-64 opacity-100 px-2" : "w-11 opacity-0 pointer-events-none"
         )}
       >
         <Search className="size-5 text-muted shrink-0 ml-1" strokeWidth={1.75} />
@@ -83,8 +83,8 @@ export function InlineSearch() {
           ref={inputRef}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search products..."
-          className="w-full bg-transparent border-none outline-none text-sm text-fg placeholder:text-muted py-2.5 px-2"
+          placeholder="Search..."
+          className="w-full bg-transparent border-none outline-none text-base sm:text-sm text-fg placeholder:text-muted py-2 px-1.5"
         />
         <button 
           onClick={() => {
@@ -112,7 +112,7 @@ export function InlineSearch() {
 
       {/* Dropdown Results */}
       {open && query.trim().length > 0 && (
-        <div className="absolute top-14 right-0 w-80 max-h-[70vh] overflow-hidden bg-glass backdrop-blur-2xl backdrop-saturate-150 border border-glass-border shadow-xl shadow-black/5 rounded-2xl flex flex-col z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="absolute top-14 right-0 w-[min(calc(100vw-2rem),22rem)] max-h-[70vh] overflow-hidden bg-glass backdrop-blur-2xl backdrop-saturate-150 border border-glass-border shadow-xl shadow-black/5 rounded-2xl flex flex-col z-50 animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="overflow-y-auto p-2">
             {isLoading && (
               <div className="p-8 flex items-center justify-center text-muted">

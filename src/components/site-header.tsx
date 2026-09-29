@@ -86,7 +86,7 @@ export function SiteHeader() {
               trigger={
                 <button
                   type="button"
-                  className="cursor-pointer rounded-xl px-3 py-2 text-sm font-medium text-fg hover:bg-surface-2 transition-colors duration-150 whitespace-nowrap shrink-0 leading-none h-11 inline-flex items-center justify-center"
+                  className="cursor-pointer rounded-xl px-3 py-2 text-sm font-medium text-fg hover:bg-surface-2 transition-colors duration-150 whitespace-nowrap shrink-0 leading-none h-11 hidden sm:inline-flex items-center justify-center"
                 >
                   Sign in
                 </button>
@@ -111,7 +111,7 @@ export function SiteHeader() {
       </div>
 
       {open ? (
-        <div className="border-t border-glass-border bg-glass backdrop-blur-2xl backdrop-saturate-150 md:hidden shadow-xl shadow-black/5">
+        <div className="border-t border-glass-border bg-glass backdrop-blur-2xl backdrop-saturate-150 md:hidden shadow-xl shadow-black/5 animate-in fade-in-0 duration-200">
           <nav className="mx-auto flex max-w-6xl flex-col px-4 py-3 gap-1" aria-label="Mobile">
             {NAV.map((item) => (
               <Link
@@ -122,6 +122,36 @@ export function SiteHeader() {
                 {item.label}
               </Link>
             ))}
+
+            <div className="mt-2 pt-3 border-t border-border/50 flex flex-col gap-2">
+              <Link
+                to="/cart"
+                className="flex items-center justify-between rounded-xl px-3.5 py-2.5 text-base font-medium text-fg hover:bg-surface-2 transition-colors"
+              >
+                <span className="flex items-center gap-2">
+                  <ShoppingBag className="size-5 text-accent" strokeWidth={1.75} />
+                  Cart
+                </span>
+                {count > 0 && (
+                  <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-ink">
+                    {count}
+                  </span>
+                )}
+              </Link>
+
+              <SignedOut>
+                <AuthModal
+                  trigger={
+                    <button
+                      type="button"
+                      className="w-full h-11 rounded-xl bg-accent text-ink font-semibold text-sm flex items-center justify-center transition-colors shadow-sm"
+                    >
+                      Sign In / Sign Up
+                    </button>
+                  }
+                />
+              </SignedOut>
+            </div>
           </nav>
         </div>
       ) : null}

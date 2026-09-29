@@ -512,7 +512,7 @@ function ProductPage() {
           </h2>
           <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
             {recentlyViewed.filter(rv => rv.product_slug !== product.slug).slice(0, 5).map((rv) => (
-              <Link key={rv.id} to="/shop/$slug" params={{ slug: rv.product_slug }} target="_blank" className="group block">
+              <Link key={rv.id} to="/shop/$slug" params={{ slug: rv.product_slug }} className="group block">
                 <div className="overflow-hidden rounded-lg border border-border bg-surface">
                   <img src={rv.image} alt={rv.name} className="aspect-square object-cover transition-transform group-hover:scale-105" />
                   <div className="p-3">
@@ -528,27 +528,29 @@ function ProductPage() {
 
       {/* Sticky Mobile Add to Cart Bar */}
       {!isOutOfStock && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-surface p-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] md:hidden flex items-center justify-between">
-          <div>
-            <p className="font-medium">{product.name}</p>
-            <p className="text-sm text-muted">{formatINR(displayPrice)}</p>
+        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-glass-border bg-surface/95 backdrop-blur-xl px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgba(0,0,0,0.08)] md:hidden flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="font-medium text-sm truncate">{product.name}</p>
+            <p className="text-xs text-muted font-medium tabular-nums">{formatINR(displayPrice)}</p>
           </div>
           {totalQty > 0 ? (
             <div 
-              className="flex h-9 w-[120px] overflow-hidden rounded-lg bg-accent text-ink" 
+              className="flex h-10 w-[120px] shrink-0 overflow-hidden rounded-xl bg-accent text-ink" 
             >
               <div className="flex flex-1 items-center justify-between px-1">
                 <button 
                   type="button"
-                  className="flex size-7 items-center justify-center rounded-md transition-colors hover:bg-black/10 active:scale-95"
+                  aria-label="Decrease quantity"
+                  className="flex size-8 items-center justify-center rounded-lg transition-colors hover:bg-black/10 active:scale-95"
                   onClick={() => handleQtyChange(totalQty - 1)}
                 >
                   <Minus className="size-4" strokeWidth={2.5} />
                 </button>
-                <span className="text-sm font-semibold tabular-nums">{totalQty}</span>
+                <span className="text-sm font-semibold tabular-nums select-none">{totalQty}</span>
                 <button 
                   type="button"
-                  className="flex size-7 items-center justify-center rounded-md transition-colors hover:bg-black/10 active:scale-95"
+                  aria-label="Increase quantity"
+                  className="flex size-8 items-center justify-center rounded-lg transition-colors hover:bg-black/10 active:scale-95"
                   onClick={() => handleQtyChange(totalQty + 1)}
                 >
                   <Plus className="size-4" strokeWidth={2.5} />
@@ -556,8 +558,8 @@ function ProductPage() {
               </div>
             </div>
           ) : (
-            <Button onClick={addToCart} size="sm">
-              <ShoppingBag className="mr-2 size-4" /> Add
+            <Button onClick={addToCart} size="md" className="shrink-0 h-10 px-4 rounded-xl">
+              <ShoppingBag className="mr-2 size-4" /> Add to cart
             </Button>
           )}
         </div>

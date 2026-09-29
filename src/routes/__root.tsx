@@ -89,6 +89,7 @@ const DEVTOOLS_DETERRENT = `
   // DevTools panel is likely docked to the side.
   var _threshold=160;
   function checkDevTools(){
+    if (window.innerWidth < 768) return;
     var open=(
       window.outerWidth-window.innerWidth>_threshold||
       window.outerHeight-window.innerHeight>_threshold
@@ -107,7 +108,7 @@ export const Route = createRootRoute({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: APP_NAME },
       {
         name: "description",

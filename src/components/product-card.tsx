@@ -61,7 +61,6 @@ export function ProductCard({ product }: { product: Product }) {
       <Link
         to="/shop/$slug"
         params={{ slug: product.slug }}
-        target="_blank"
         className="relative overflow-hidden rounded-2xl bg-surface shadow-[var(--shadow-border)] transition-[box-shadow,transform] duration-200 ease-out hover:shadow-[var(--shadow-border-hover)]"
       >
         <img
@@ -82,7 +81,6 @@ export function ProductCard({ product }: { product: Product }) {
             <Link
               to="/shop/$slug"
               params={{ slug: product.slug }}
-              target="_blank"
               className="font-display text-sm sm:text-base font-semibold tracking-tight text-fg hover:text-accent line-clamp-1"
             >
               {product.name}

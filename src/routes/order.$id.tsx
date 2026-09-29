@@ -108,6 +108,14 @@ function OrderPage() {
             We'll print this to order and email {address?.email} when it ships.
             Typical ready-made turnaround is 3–5 days before the courier has it.
           </p>
+          <div className="flex sm:hidden flex-wrap gap-2 mt-5 print:hidden">
+            <Button variant="outline" size="sm" onClick={handlePrintInvoice}>
+              <Receipt className="mr-2 size-4" /> Download Invoice
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleReorder}>
+              <RotateCcw className="mr-2 size-4" /> Order Again
+            </Button>
+          </div>
         </div>
         <div className="hidden sm:flex flex-col gap-2">
           <Button variant="outline" size="sm" onClick={handlePrintInvoice} className="print:hidden">

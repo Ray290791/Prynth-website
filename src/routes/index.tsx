@@ -191,7 +191,6 @@ function Home() {
                   key={`${p.slug}-${i}`}
                   to="/shop/$slug"
                   params={{ slug: p.slug }}
-                  target="_blank"
                   className={
                     i % 2 === 1 ? "mt-6 overflow-hidden rounded-2xl" : "overflow-hidden rounded-2xl"
                   }
@@ -432,7 +431,7 @@ function LastVisitedSection({ products }: { products: Product[] }) {
       <h2 className="font-display text-lg font-semibold tracking-tight text-muted">
         Pick up where you left off
       </h2>
-      <div className="mt-4 w-1/2 sm:max-w-sm">
+      <div className="mt-4 w-full max-w-xs sm:max-w-sm">
         <ProductCard product={product} />
       </div>
     </section>
