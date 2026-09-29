@@ -1,11 +1,38 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { verifyRazorpaySignature } from "@/lib/razorpay.server";
+import { RateLimiter, getClientIp, isBotUserAgent } from "@/lib/rate-limiter";
+
+// Rate limit: max 20 verification requests per minute per IP
+const verifyRateLimiter = new RateLimiter({ maxAttempts: 20, windowMs: 60 * 1000 });
 
 export const Route = createFileRoute("/api/verify-payment")({
   server: {
     handlers: {
       POST: async ({ request }) => {
         try {
+          const ua = request.headers.get("user-agent") || "";
+          if (isBotUserAgent(ua)) {
+            return new Response(JSON.stringify({ success: false, error: "Access denied" }), {
+              status: 403,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+
+          const ip = getClientIp(request);
+          if (verifyRateLimiter.isLimited(ip)) {
+            const retryAfter = verifyRateLimiter.getRemainingSeconds(ip);
+            return new Response(
+              JSON.stringify({ success: false, error: "Too many verification requests. Please wait a moment." }),
+              {
+                status: 429,
+                headers: {
+                  "Content-Type": "application/json",
+                  "Retry-After": String(retryAfter || 60),
+                },
+              }
+            );
+          }
+
           let body: any = {};
           try {
             body = await request.json();
@@ -44,11 +71,15 @@ export const Route = createFileRoute("/api/verify-payment")({
             );
           }
 
+          const orderIdStr = String(razorpay_order_id).trim().slice(0, 100);
+          const paymentIdStr = String(razorpay_payment_id).trim().slice(0, 100);
+          const sigStr = String(razorpay_signature).trim().slice(0, 200);
+
           // Verify HMAC-SHA256 signature
           const isValid = await verifyRazorpaySignature(
-            String(razorpay_order_id),
-            String(razorpay_payment_id),
-            String(razorpay_signature)
+            orderIdStr,
+            paymentIdStr,
+            sigStr
           );
 
           if (!isValid) {
@@ -69,8 +100,8 @@ export const Route = createFileRoute("/api/verify-payment")({
             JSON.stringify({
               success: true,
               message: "Payment signature verified successfully",
-              order_id: razorpay_order_id,
-              payment_id: razorpay_payment_id,
+              order_id: orderIdStr,
+              payment_id: paymentIdStr,
             }),
             {
               status: 200,

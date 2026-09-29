@@ -1,16 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getSql } from "@/lib/db";
 
+const SAFE_ID_REGEX = /^file-[a-z0-9_-]{4,64}$/i;
+
 export const Route = createFileRoute("/api/custom-model/$id")({
   server: {
     handlers: {
       GET: async ({ request, params }) => {
         try {
           const url = new URL(request.url);
-          const id = params?.id || url.pathname.split("/").pop() || "";
+          const rawId = params?.id || url.pathname.split("/").pop() || "";
+          const id = decodeURIComponent(rawId).trim();
 
-          if (!id) {
-            return new Response("Missing model file ID", { status: 400 });
+          if (!id || !SAFE_ID_REGEX.test(id)) {
+            return new Response("Invalid model file identifier", { status: 400 });
           }
 
           const sql = await getSql();
@@ -31,21 +34,31 @@ export const Route = createFileRoute("/api/custom-model/$id")({
 
           const record = rows[0];
           const buffer = Buffer.from(record.file_data, "base64");
-          const ext = record.file_name.split(".").pop()?.toLowerCase();
+          const ext = record.file_name.split(".").pop()?.toLowerCase() || "";
 
-          let contentType = record.mime_type || "application/octet-stream";
+          // Strict whitelist for 3D model content types to prevent MIME confusion or XSS
+          let contentType = "application/octet-stream";
           if (ext === "stl") contentType = "model/stl";
           else if (ext === "3mf") contentType = "model/3mf";
           else if (ext === "step" || ext === "stp") contentType = "model/step";
+          else if (ext === "obj") contentType = "model/obj";
+
+          // Sanitize filename for Content-Disposition header
+          const safeFileName = record.file_name
+            .replace(/[\r\n\0"'\\]/g, "_")
+            .slice(0, 100);
 
           return new Response(buffer, {
             status: 200,
             headers: {
               "Content-Type": contentType,
-              "Content-Disposition": `inline; filename="${encodeURIComponent(record.file_name)}"`,
+              "Content-Disposition": `inline; filename="${encodeURIComponent(safeFileName)}"`,
               "Content-Length": String(buffer.byteLength),
               "Access-Control-Allow-Origin": "*",
               "Cache-Control": "public, max-age=86400, immutable",
+              "X-Content-Type-Options": "nosniff",
+              "Content-Security-Policy": "default-src 'none'; sandbox",
+              "X-Frame-Options": "DENY",
             },
           });
         } catch (err: any) {

@@ -5,6 +5,7 @@ import { verifyAdminRole, verifyAdminPIN } from "./admin-fns";
 import { createRazorpayOrder as rzpCreateOrder, verifyRazorpaySignature, getRazorpayCredentials } from "./razorpay.server";
 import { sendOrderConfirmationEmail, sendOrderStatusUpdateEmail } from "./email.server";
 import { notifyNewOrder } from "./notifications.server";
+import { DEFAULT_MIN_PRINT } from "./quote";
 import type { CartItem } from "./cart-store";
 import type { Address } from "./orders-store";
 
@@ -27,10 +28,21 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const sql = await getSql();
 
+    // 0. Payload & Input Integrity Validation
+    if (!data.items || !Array.isArray(data.items) || data.items.length === 0) {
+      throw new Error("Order must contain at least one item.");
+    }
+    if (data.items.length > 50) {
+      throw new Error("Order cannot contain more than 50 distinct items.");
+    }
+    if (!data.address || !data.address.name || !data.address.phone || !data.address.line1) {
+      throw new Error("Shipping address is incomplete. Please fill out all required fields.");
+    }
+
     // 1. Inventory & Price Validation from Database
     let serverSubtotal = 0;
     for (const item of data.items) {
-      const qty = Math.max(1, Math.floor(Number(item.qty) || 1));
+      const qty = Math.max(1, Math.min(1000, Math.floor(Number(item.qty) || 1)));
       if (item.kind === "product" && item.productSlug) {
         const productRes = await sql`SELECT price, stock_count, in_stock FROM products WHERE slug = ${item.productSlug}`;
         const product = productRes[0] as { price: number; stock_count: number; in_stock: boolean } | undefined;
@@ -51,8 +63,8 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
         const realUnitPrice = Number(variant ? variant.price : product.price);
         serverSubtotal += realUnitPrice * qty;
       } else {
-        // Custom print item
-        const unitPrice = Math.max(0, Number(item.unitPrice) || 0);
+        // Custom print item: enforce minimum print threshold to prevent client price tampering
+        const unitPrice = Math.max(DEFAULT_MIN_PRINT, Math.round(Number(item.unitPrice) || DEFAULT_MIN_PRINT));
         serverSubtotal += unitPrice * qty;
       }
     }
@@ -84,10 +96,13 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
       }
     }
 
-    // 3. Verified Total Calculation
     const shipping = Math.max(0, Number(data.shipping) || 0);
     const extra = Math.max(0, Number(data.extra) || 0);
     const verifiedTotal = Math.max(0, serverSubtotal - discount + shipping + extra);
+
+    if (verifiedTotal > 500000) {
+      throw new Error("Order exceeds maximum single checkout limit (₹5,00,000).");
+    }
 
     // Prevent client-side price tampering
     if (Math.abs(verifiedTotal - Number(data.total)) > 2 && Number(data.total) < verifiedTotal) {

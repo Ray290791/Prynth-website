@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getSql } from "./db";
 import { authMiddleware, optionalAuthMiddleware } from "./auth/middleware";
 import { verifyAdminRole } from "./admin-fns";
+import { z } from "zod";
 
 export const getWishlist = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
@@ -61,12 +62,17 @@ export const trackProductView = createServerFn({ method: "POST" })
     return { success: true };
   });
 
+const couponCodeSchema = z.string().trim().min(2).max(30).regex(/^[a-zA-Z0-9_\-]+$/, "Invalid coupon format");
+
 export const validateCoupon = createServerFn({ method: "POST" })
-  .validator((code: string) => code)
+  .validator((code: string) => couponCodeSchema.parse(code))
   .handler(async ({ data: code }) => {
+    const { checkCouponRateLimit } = await import("./security.server");
+    checkCouponRateLimit();
+
     const sql = await getSql();
-    const res = await sql`
-      SELECT * FROM coupons 
+    const res = await sql<{ code: string; discount_percent: number }>`
+      SELECT code, discount_percent FROM coupons 
       WHERE code = ${code.toUpperCase()} 
       AND (expires_at IS NULL OR expires_at > now())
       AND (max_uses IS NULL OR current_uses < max_uses)
@@ -74,7 +80,7 @@ export const validateCoupon = createServerFn({ method: "POST" })
     if (res.length === 0) {
       throw new Error("Invalid or expired coupon");
     }
-    return res[0] as { code: string; discount_percent: number };
+    return res[0];
   });
 
 export const getCouponsAdmin = createServerFn({ method: "GET" })
@@ -234,15 +240,24 @@ export const getAnalyticsAdmin = createServerFn({ method: "GET" })
     };
   });
 
+const cartSessionSchema = z.object({
+  id: z.string().min(8).max(64).regex(/^[a-zA-Z0-9_\-]+$/, "Invalid session ID format"),
+  email: z.string().email().max(150).optional().nullable(),
+  items: z.array(z.any()).max(50, "Cart cannot exceed 50 items"),
+});
+
 export const upsertCartSession = createServerFn({ method: "POST" })
-  .validator((data: { id: string; email?: string; items: any[] }) => data)
-  .handler(async ({ data, context }) => {
-    const sql = await getSql();
-    // Use user_id if we have one (from the optional middleware context, but since this endpoint 
-    // isn't strictly behind authMiddleware, we must check if context exists).
-    // Actually, createServerFn context without middleware is just {}. We'll pass user_id explicitly or extract from auth.
-    // To keep it simple, we just save it against the session ID.
+  .validator((data: z.infer<typeof cartSessionSchema>) => cartSessionSchema.parse(data))
+  .handler(async ({ data }) => {
+    const { checkCartSessionRateLimit } = await import("./security.server");
+    checkCartSessionRateLimit();
+
     const itemsJson = JSON.stringify(data.items);
+    if (itemsJson.length > 256 * 1024) {
+      throw new Error("Cart payload too large");
+    }
+
+    const sql = await getSql();
     await sql`
       INSERT INTO cart_sessions (id, email, items, updated_at)
       VALUES (${data.id}, ${data.email || null}, ${itemsJson}, now())
@@ -255,8 +270,14 @@ export const upsertCartSession = createServerFn({ method: "POST" })
   });
 
 export const getCartSession = createServerFn({ method: "GET" })
-  .validator((id: string) => id)
+  .validator((id: string) => {
+    if (!id || typeof id !== "string" || !/^[a-zA-Z0-9_\-]{8,64}$/.test(id)) {
+      return null;
+    }
+    return id;
+  })
   .handler(async ({ data: id }) => {
+    if (!id) return null;
     const sql = await getSql();
     const res = await sql`SELECT * FROM cart_sessions WHERE id = ${id}`;
     if (res.length === 0) return null;

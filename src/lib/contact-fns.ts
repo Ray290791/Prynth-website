@@ -6,6 +6,16 @@ const submissionTimestamps = new Map<string, number[]>();
 
 function checkRateLimit(key: string, limit = 5, windowMs = 10 * 60 * 1000): boolean {
   const now = Date.now();
+  if (submissionTimestamps.size > 2000) {
+    for (const [k, times] of submissionTimestamps.entries()) {
+      const active = times.filter((t) => now - t < windowMs);
+      if (active.length === 0) {
+        submissionTimestamps.delete(k);
+      } else {
+        submissionTimestamps.set(k, active);
+      }
+    }
+  }
   const times = (submissionTimestamps.get(key) || []).filter((t) => now - t < windowMs);
   if (times.length >= limit) {
     return false;

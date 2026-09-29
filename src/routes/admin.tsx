@@ -15,7 +15,7 @@ import { NotificationsTab } from "@/components/notifications-tab";
 import { OrderDetailsDialog } from "@/components/order-details-dialog";
 import { getMaterialsAdmin, createMaterial, updateMaterial, deleteMaterial, type Material, type MaterialInput } from "@/lib/materials-fns";
 import { getAllProductsAdmin, deleteProduct, updateProduct, createProduct, updateProductInventory } from "@/lib/products-fns";
-import { getSiteSettings, updateSiteSettings } from "@/lib/settings-fns";
+import { getAdminSiteSettings, getSiteSettings, updateSiteSettings } from "@/lib/settings-fns";
 import { CustomPricingSettings } from "@/components/custom-pricing-settings";
 import { getCouponsAdmin, createCoupon, deleteCoupon, getAnalyticsAdmin } from "@/lib/ecommerce-fns";
 import { getAdminTeam, addAdmin, removeAdmin, getAdminProfile, setAdminPin, requestPinResetOTP, resetAdminPinWithOTP, getAllUsersAdmin } from "@/lib/admin-fns";
@@ -92,7 +92,7 @@ function AdminPage() {
     return (
       <div className="mx-auto max-w-6xl px-4 py-24 text-center">
         <h1 className="font-display text-3xl font-semibold text-danger">Unauthorized</h1>
-        <p className="mt-2 text-muted">RAW ERROR: {error.message}</p>
+        <p className="mt-2 text-muted">You do not have administrative privileges to access this console.</p>
       </div>
     );
   }
@@ -882,8 +882,8 @@ function SettingsTab() {
   const router = useRouter();
 
   const { data: settings, isLoading, error } = useQuery({
-    queryKey: ["siteSettings"],
-    queryFn: () => getSiteSettings(),
+    queryKey: ["adminSiteSettings"],
+    queryFn: () => getAdminSiteSettings(),
   });
 
   const { data: products } = useQuery({
@@ -953,7 +953,7 @@ function SettingsTab() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const data = {
+    const data: Record<string, any> = {
       tagline: (fd.get("tagline") as string)?.trim(),
       email: (fd.get("email") as string)?.trim(),
       instagram: (fd.get("instagram") as string)?.trim(),
@@ -990,8 +990,11 @@ function SettingsTab() {
       payment_upi_id: ((fd.get("payment_upi_id") as string) || "").trim(),
       resend_from_email: ((fd.get("resend_from_email") as string) || "").trim(),
       razorpay_key_id: ((fd.get("razorpay_key_id") as string) || "").trim(),
-      razorpay_key_secret: ((fd.get("razorpay_key_secret") as string) || "").trim(),
     };
+    const secretInput = ((fd.get("razorpay_key_secret") as string) || "").trim();
+    if (secretInput && !secretInput.includes("•")) {
+      data.razorpay_key_secret = secretInput;
+    }
     updateMutation.mutate(data);
   };
 
@@ -1354,9 +1357,10 @@ function SettingsTab() {
                 <input
                   type="password"
                   name="razorpay_key_secret"
-                  defaultValue={settings.razorpay_key_secret}
-                  placeholder="Enter Razorpay Secret"
+                  defaultValue=""
+                  placeholder={settings.has_razorpay_secret ? "•••••••••••••••• (Configured — leave blank to keep)" : "Enter Razorpay Secret"}
                   className="w-full rounded border border-border bg-surface p-2 text-sm font-mono"
+                  autoComplete="new-password"
                 />
               </div>
             </div>

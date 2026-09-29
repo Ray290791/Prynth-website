@@ -110,10 +110,14 @@ export const getSiteSettings = createServerFn({ method: "GET" }).handler(
     };
 
     for (const row of rows) {
+      // Security: NEVER expose private credentials (e.g. razorpay_key_secret) in public site settings
+      if (row.key === "razorpay_key_secret") continue;
       if (row.key in settings) {
         settings[row.key as keyof SiteSettings] = row.value;
       }
     }
+    // Guarantee secret remains empty in public bundle
+    settings.razorpay_key_secret = "";
 
     // Auto-heal legacy buggy formula records if present in DB
     if (
@@ -132,6 +136,30 @@ export const getSiteSettings = createServerFn({ method: "GET" }).handler(
     return settings;
   }
 );
+
+/**
+ * Admin-only: Fetch site settings with masked credentials indicator
+ */
+export const getAdminSiteSettings = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }): Promise<SiteSettings & { has_razorpay_secret: boolean }> => {
+    const sql = await getSql();
+    const admin = await verifyAdminRole(context.userId, sql);
+    if (!admin) throw new Error("Unauthorized");
+
+    const settings = await getSiteSettings();
+    const rows = await sql<{ key: string; value: string }>`
+      SELECT value FROM site_settings WHERE key = 'razorpay_key_secret' LIMIT 1
+    `;
+    const hasSecret = rows.length > 0 && Boolean(rows[0].value?.trim());
+
+    return {
+      ...settings,
+      has_razorpay_secret: hasSecret,
+      // Provide masked indicator so real secret is never sent to browser DOM
+      razorpay_key_secret: hasSecret ? "••••••••••••••••" : "",
+    };
+  });
 
 export const updateSiteSettings = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
@@ -186,6 +214,14 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
 
     for (const [key, value] of Object.entries(data)) {
       if (value !== undefined) {
+        // Prevent clearing or saving masked secret
+        if (key === "razorpay_key_secret") {
+          const secretStr = String(value).trim();
+          if (!secretStr || secretStr.includes("•")) {
+            continue;
+          }
+        }
+
         await sql`
           INSERT INTO site_settings (key, value)
           VALUES (${key}, ${value})
