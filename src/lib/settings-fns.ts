@@ -91,7 +91,6 @@ export const getSiteSettings = createServerFn({ method: "GET" }).handler(
       payment_upi_id: "",
       resend_from_email: "Prynth <orders@prynth.in>",
       razorpay_key_id: "",
-      razorpay_key_secret: "",
       hero_featured_slots: JSON.stringify([
         { slug: "catch-bowl", image: "/products/catch-bowl.jpg" },
         { slug: "desk-tray", image: "/products/desk-tray.jpg" },
@@ -116,8 +115,7 @@ export const getSiteSettings = createServerFn({ method: "GET" }).handler(
         settings[row.key as keyof SiteSettings] = row.value;
       }
     }
-    // Guarantee secret remains empty in public bundle
-    settings.razorpay_key_secret = "";
+    delete (settings as any).razorpay_key_secret;
 
     // Auto-heal legacy buggy formula records if present in DB
     if (
