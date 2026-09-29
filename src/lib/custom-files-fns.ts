@@ -19,19 +19,42 @@ async function ensureCustomFilesTable(sql: any) {
   }
 }
 
+const ALLOWED_EXTENSIONS = /\.(stl|obj|3mf|step|stp|f3d)$/i;
+const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB
+const MAX_PAYLOAD_CHARS = 75_000_000;
+
 export const uploadCustomFile = createServerFn({ method: "POST" })
   .validator(
     z.object({
-      fileName: z.string().min(1),
-      fileSize: z.number(),
-      mimeType: z.string().default("application/octet-stream"),
-      fileData: z.string().min(1), // Base64 or Data URL
+      fileName: z
+        .string()
+        .min(1)
+        .max(255)
+        .refine((name) => ALLOWED_EXTENSIONS.test(name), {
+          message: "Only 3D model files (.stl, .obj, .3mf, .step, .stp, .f3d) are permitted.",
+        }),
+      fileSize: z
+        .number()
+        .positive()
+        .max(MAX_FILE_SIZE_BYTES, {
+          message: "File size exceeds 50 MB limit.",
+        }),
+      mimeType: z.string().max(100).default("application/octet-stream"),
+      fileData: z.string().min(1).max(MAX_PAYLOAD_CHARS, {
+        message: "File data exceeds allowed upload size.",
+      }),
     })
   )
   .handler(async ({ data }) => {
     try {
       const sql = await getSql();
       await ensureCustomFilesTable(sql);
+
+      // Sanitize fileName to prevent directory traversal or injection
+      const sanitizedFileName = data.fileName
+        .replace(/[\\/\0]/g, "")
+        .replace(/^\.+/, "")
+        .slice(0, 150);
 
       // Clean base64 data if it contains a data URL prefix
       let cleanData = data.fileData;
@@ -43,13 +66,13 @@ export const uploadCustomFile = createServerFn({ method: "POST" })
 
       await sql`
         INSERT INTO custom_files (id, file_name, file_size, mime_type, file_data, created_at)
-        VALUES (${fileId}, ${data.fileName}, ${data.fileSize}, ${data.mimeType}, ${cleanData}, now())
+        VALUES (${fileId}, ${sanitizedFileName}, ${data.fileSize}, ${data.mimeType}, ${cleanData}, now())
       `;
 
       return {
         success: true,
         fileId,
-        fileName: data.fileName,
+        fileName: sanitizedFileName,
         fileSize: data.fileSize,
       };
     } catch (err: any) {

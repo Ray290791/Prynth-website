@@ -85,9 +85,19 @@ function initAuth() {
 
     ...(Object.keys(socialProviders).length > 0 ? { socialProviders } : {}),
 
+    rateLimit: {
+      window: 60,
+      max: 10,
+    },
+
     advanced: {
-      useSecureCookies: false, // Allows auth over HTTP localhost
-      defaultCookieAttributes: { secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/" },
+      useSecureCookies: isProd || isCloudflare,
+      defaultCookieAttributes: {
+        secure: isProd || isCloudflare,
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+      },
       cookies: {
         session_token: { name: SESSION_TOKEN_COOKIE },
         session_data: { name: "prynth.session_data" },

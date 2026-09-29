@@ -241,12 +241,12 @@ function CheckoutPage() {
     const razorpayKey =
       orderData.keyId ||
       import.meta.env.VITE_RAZORPAY_KEY_ID ||
-      "rzp_live_ThjBr4kKFcwBxe";
+      "";
 
     const configId =
       orderData.checkoutConfigId ||
       import.meta.env.VITE_RAZORPAY_CHECKOUT_CONFIG_ID ||
-      "config_ThjM40ZxZS5DIY";
+      "";
 
     const options: any = {
       key: razorpayKey,

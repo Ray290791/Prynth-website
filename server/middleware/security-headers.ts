@@ -46,6 +46,18 @@ export default defineEventHandler((event) => {
   // Only include origin (not full path) in Referer header on cross-origin requests
   setResponseHeader(event, "Referrer-Policy", "strict-origin-when-cross-origin");
 
+  // Force HTTPS with HSTS (max-age: 1 year, include subdomains, preload)
+  setResponseHeader(event, "Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+
+  // Prevent cross-origin resource leakage
+  setResponseHeader(event, "Cross-Origin-Resource-Policy", "same-origin");
+
+  // Cross-Origin Opener Policy: allow OAuth/Razorpay popup windows while isolating opener
+  setResponseHeader(event, "Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+
+  // Legacy XSS filter for older browsers
+  setResponseHeader(event, "X-XSS-Protection", "1; mode=block");
+
   // Restrict which browser APIs are allowed by this page
   setResponseHeader(
     event,

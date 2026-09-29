@@ -314,7 +314,7 @@ export const getProductReviews = createServerFn({ method: "GET" })
   .handler(async ({ data: slug }) => {
     const sql = await getSql();
     const rows = await sql`
-      SELECT r.*, u.name as user_name, u.image as user_image
+      SELECT r.id, r.product_slug, r.rating, r.comment, r.created_at, u.name as user_name, u.image as user_image
       FROM product_reviews r
       JOIN "user" u ON r.user_id = u.id
       WHERE r.product_slug = ${slug}
@@ -329,8 +329,10 @@ export const createReview = createServerFn({ method: "POST" })
     const slug = data.product_slug?.trim();
     if (!slug) throw new Error("Product slug is required.");
     const rating = Math.min(5, Math.max(1, Math.round(Number(data.rating) || 5)));
-    const comment = data.comment ? data.comment.trim().slice(0, 1000) : null;
-    return { product_slug: slug, rating, comment };
+    const cleanComment = data.comment
+      ? data.comment.replace(/<[^>]*>?/gm, "").trim().slice(0, 1000)
+      : null;
+    return { product_slug: slug, rating, comment: cleanComment };
   })
   .handler(async ({ data, context }) => {
     const sql = await getSql();

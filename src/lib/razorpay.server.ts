@@ -11,12 +11,20 @@ export async function getRazorpayCredentials(): Promise<{
   isLive: boolean;
   checkoutConfigId: string;
 }> {
-  let keyId = process.env.RAZORPAY_KEY_ID?.trim() || process.env.VITE_RAZORPAY_KEY_ID?.trim() || "";
-  let keySecret = process.env.RAZORPAY_KEY_SECRET?.trim() || "";
+  let keyId =
+    (typeof process !== "undefined" ? process.env.RAZORPAY_KEY_ID : undefined)?.trim() ||
+    (typeof process !== "undefined" ? process.env.VITE_RAZORPAY_KEY_ID : undefined)?.trim() ||
+    (globalThis as any).__env__?.RAZORPAY_KEY_ID?.trim() ||
+    "";
+  let keySecret =
+    (typeof process !== "undefined" ? process.env.RAZORPAY_KEY_SECRET : undefined)?.trim() ||
+    (globalThis as any).__env__?.RAZORPAY_KEY_SECRET?.trim() ||
+    "";
   let checkoutConfigId =
-    process.env.RAZORPAY_CHECKOUT_CONFIG_ID?.trim() ||
-    process.env.VITE_RAZORPAY_CHECKOUT_CONFIG_ID?.trim() ||
-    "config_ThjM40ZxZS5DIY";
+    (typeof process !== "undefined" ? process.env.RAZORPAY_CHECKOUT_CONFIG_ID : undefined)?.trim() ||
+    (typeof process !== "undefined" ? process.env.VITE_RAZORPAY_CHECKOUT_CONFIG_ID : undefined)?.trim() ||
+    (globalThis as any).__env__?.RAZORPAY_CHECKOUT_CONFIG_ID?.trim() ||
+    "";
 
   try {
     const sql = await getSql();
@@ -26,36 +34,19 @@ export async function getRazorpayCredentials(): Promise<{
     `;
     for (const r of rows) {
       const val = r.value?.trim();
-      if (!val || val === "rzp_test_TdWyTzFRBBGque" || val === "REDACTED_RAZORPAY_WEBHOOK_SECRET") {
-        continue;
+      if (!val) continue;
+      if (r.key === "razorpay_key_id" && !keyId) {
+        keyId = val;
       }
-      if (r.key === "razorpay_key_id") {
-        if (!keyId || val.startsWith("rzp_live_")) {
-          keyId = val;
-        }
+      if (r.key === "razorpay_key_secret" && !keySecret) {
+        keySecret = val;
       }
-      if (r.key === "razorpay_key_secret") {
-        if (!keySecret || keyId.startsWith("rzp_live_")) {
-          keySecret = val;
-        }
-      }
-      if (r.key === "razorpay_checkout_config_id" && val) {
+      if (r.key === "razorpay_checkout_config_id" && !checkoutConfigId) {
         checkoutConfigId = val;
       }
     }
   } catch {
-    // If DB query fails, continue with process.env
-  }
-
-  // Safe fallback to configured production keys
-  if (!keyId) {
-    keyId = "rzp_live_ThjBr4kKFcwBxe";
-  }
-  if (!keySecret) {
-    keySecret = "REDACTED_RAZORPAY_LIVE_SECRET";
-  }
-  if (!checkoutConfigId) {
-    checkoutConfigId = "config_ThjM40ZxZS5DIY";
+    // If DB query fails, continue with environment variables
   }
 
   const isLive = keyId.startsWith("rzp_live_");

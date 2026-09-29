@@ -40,22 +40,28 @@ export const getUserProfile = createServerFn({ method: "GET" })
     return newRes[0];
   });
 
+import { z } from "zod";
+
+const updateUserProfileSchema = z.object({
+  phone: z.string().trim().max(20).optional(),
+  name: z.string().trim().min(1).max(100).optional(),
+  image: z.string().max(2_800_000, "Image too large. Please use a photo under 2 MB.").optional(),
+});
+
 export const updateUserProfile = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .validator((data: { phone?: string; name?: string; image?: string }) => data)
+  .validator((data: z.infer<typeof updateUserProfileSchema>) => updateUserProfileSchema.parse(data))
   .handler(async ({ data, context }) => {
     const sql = await getSql();
     if (data.phone !== undefined) {
-      await sql`UPDATE user_profiles SET phone = ${data.phone} WHERE user_id = ${context.userId}`;
+      const sanitizedPhone = data.phone.replace(/[^\d+ -]/g, "").slice(0, 20);
+      await sql`UPDATE user_profiles SET phone = ${sanitizedPhone} WHERE user_id = ${context.userId}`;
     }
     if (data.name !== undefined) {
-      await sql`UPDATE "user" SET name = ${data.name} WHERE id = ${context.userId}`;
+      const sanitizedName = data.name.replace(/[\0<>]/g, "").slice(0, 100);
+      await sql`UPDATE "user" SET name = ${sanitizedName} WHERE id = ${context.userId}`;
     }
     if (data.image !== undefined) {
-      // ~2 MB limit (base64 is ~4/3 of raw size, so 2MB raw ≈ 2.7MB base64)
-      if (data.image.length > 2_800_000) {
-        throw new Error("Image too large. Please use a photo under 2 MB.");
-      }
       await sql`UPDATE "user" SET image = ${data.image} WHERE id = ${context.userId}`;
     }
     return { success: true };
@@ -68,24 +74,42 @@ export const getAddresses = createServerFn({ method: "GET" })
     return await sql<Address>`SELECT * FROM addresses WHERE user_id = ${context.userId} ORDER BY is_default DESC, created_at DESC`;
   });
 
+const saveAddressSchema = z.object({
+  name: z.string().trim().min(1).max(100),
+  phone: z.string().trim().min(10).max(20),
+  line1: z.string().trim().min(3).max(150),
+  line2: z.string().trim().max(150).nullable().optional(),
+  city: z.string().trim().min(2).max(100),
+  state: z.string().trim().min(2).max(100),
+  pin: z.string().trim().min(4).max(10),
+  is_default: z.boolean().optional(),
+});
+
 export const saveAddress = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .validator((data: Omit<Address, "id" | "user_id" | "is_default"> & { is_default?: boolean }) => data)
+  .validator((data: z.infer<typeof saveAddressSchema>) => saveAddressSchema.parse(data))
   .handler(async ({ data, context }) => {
     const sql = await getSql();
     if (data.is_default) {
       await sql`UPDATE addresses SET is_default = false WHERE user_id = ${context.userId}`;
     }
-    const res = await sql`
+    const cleanName = data.name.replace(/[\0<>]/g, "");
+    const cleanLine1 = data.line1.replace(/[\0<>]/g, "");
+    const cleanLine2 = data.line2 ? data.line2.replace(/[\0<>]/g, "") : null;
+    const cleanCity = data.city.replace(/[\0<>]/g, "");
+    const cleanState = data.state.replace(/[\0<>]/g, "");
+    const cleanPin = data.pin.replace(/[^\w]/g, "");
+
+    await sql`
       INSERT INTO addresses (user_id, name, phone, line1, line2, city, state, pin, is_default)
-      VALUES (${context.userId}, ${data.name}, ${data.phone}, ${data.line1}, ${data.line2 || null}, ${data.city}, ${data.state}, ${data.pin}, ${data.is_default || false})
+      VALUES (${context.userId}, ${cleanName}, ${data.phone}, ${cleanLine1}, ${cleanLine2}, ${cleanCity}, ${cleanState}, ${cleanPin}, ${data.is_default || false})
     `;
     return { success: true };
   });
 
 export const deleteAddress = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .validator((id: number) => id)
+  .validator((id: number) => z.number().int().positive().parse(id))
   .handler(async ({ data: id, context }) => {
     const sql = await getSql();
     await sql`DELETE FROM addresses WHERE id = ${id} AND user_id = ${context.userId}`;
@@ -94,10 +118,11 @@ export const deleteAddress = createServerFn({ method: "POST" })
 
 export const setDefaultAddress = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .validator((id: number) => id)
+  .validator((id: number) => z.number().int().positive().parse(id))
   .handler(async ({ data: id, context }) => {
     const sql = await getSql();
     await sql`UPDATE addresses SET is_default = false WHERE user_id = ${context.userId}`;
     await sql`UPDATE addresses SET is_default = true WHERE id = ${id} AND user_id = ${context.userId}`;
     return { success: true };
   });
+
