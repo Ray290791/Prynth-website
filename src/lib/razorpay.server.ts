@@ -40,12 +40,12 @@ export async function getRazorpayCredentials(): Promise<{
     // If DB query fails, continue with process.env
   }
 
-  // Safe fallback to configured test keys
+  // Safe fallback to configured production keys
   if (!keyId) {
-    keyId = "rzp_test_ThipwD9wdDVzo7";
+    keyId = "rzp_live_ThjBr4kKFcwBxe";
   }
   if (!keySecret) {
-    keySecret = "REDACTED_RAZORPAY_TEST_SECRET";
+    keySecret = "REDACTED_RAZORPAY_LIVE_SECRET";
   }
 
   const isLive = keyId.startsWith("rzp_live_");

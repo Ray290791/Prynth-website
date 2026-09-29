@@ -241,7 +241,7 @@ function CheckoutPage() {
     const razorpayKey =
       orderData.keyId ||
       import.meta.env.VITE_RAZORPAY_KEY_ID ||
-      "rzp_test_ThipwD9wdDVzo7";
+      "rzp_live_ThjBr4kKFcwBxe";
 
     const options = {
       key: razorpayKey,
