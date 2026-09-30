@@ -44,6 +44,7 @@ export type CustomSpec = {
   sizeId?: string;
   complexityId?: string;
   modelRotation?: [number, number, number];
+  referencePhotos?: string[];
 };
 
 export type CartItem = {

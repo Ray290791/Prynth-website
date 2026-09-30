@@ -125,6 +125,21 @@ function CartPage() {
                     {item.custom?.fileName ? (
                       <p className="mt-1 truncate text-xs text-subtle">{item.custom.fileName}</p>
                     ) : null}
+                    {item.custom?.referencePhotos && item.custom.referencePhotos.length > 0 && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <span className="text-[11px] text-muted">Photos:</span>
+                        <div className="flex items-center gap-1.5 overflow-x-auto py-0.5">
+                          {item.custom.referencePhotos.map((photo, pIdx) => (
+                            <img
+                              key={pIdx}
+                              src={photo}
+                              alt={`Reference ${pIdx + 1}`}
+                              className="size-9 rounded-lg object-cover border border-border/80 shadow-2xs"
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <p className="shrink-0 font-medium tabular-nums">
                     {formatINR(item.unitPrice * item.qty)}

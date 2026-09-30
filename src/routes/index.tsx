@@ -1,4 +1,5 @@
-import { createFileRoute, Link, getRouteApi } from "@tanstack/react-router";
+import { createFileRoute, Link, getRouteApi, useNavigate } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 import {
   ArrowRight,
   Clock3,
@@ -8,6 +9,14 @@ import {
   Upload,
   WandSparkles,
   Zap,
+  Camera,
+  Layers,
+  Printer,
+  Sparkles,
+  Wrench,
+  Bike,
+  Headphones,
+  Gift,
 } from "lucide-react";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
@@ -156,7 +165,7 @@ function Home() {
           {/* Left: headline + CTA */}
           <div className="relative z-10 md:col-span-6 lg:col-span-6">
             <p className="text-[11px] font-medium tracking-[0.18em] text-subtle uppercase">
-              Custom 3D printing · Ready-made prints · Design
+              Custom 3D printing · Ready-made prints · Design from Scratch
             </p>
             <h1 className="mt-4">
               <Wordmark className="block text-4xl sm:text-6xl lg:text-[4.5rem]" />
@@ -167,19 +176,59 @@ function Home() {
             <p className="mt-3 max-w-md text-sm text-muted">
               {settings.hero_description}
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Button asChild size="lg">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Button asChild size="lg" className="shadow-lg shadow-accent/20">
+                <Link to="/custom" search={{ path: "idea" }}>
+                  <WandSparkles className="size-4 shrink-0" />
+                  Describe what you want
+                </Link>
+              </Button>
+              <Button asChild size="lg" variant="secondary">
                 <Link to="/shop">
                   Shop ready-made
                   <ArrowRight className="size-4" strokeWidth={1.75} />
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="secondary">
-                <Link to="/custom">Get a custom print</Link>
-              </Button>
             </div>
-            <p className="mt-6 text-sm text-subtle">
-              Transparent pricing · No hidden fees · Printed in India
+
+            {/* Informative service highlight banner right in Hero */}
+            <div className="mt-5 flex items-start gap-3 rounded-2xl border border-glass-border bg-glass/80 p-3.5 backdrop-blur-xl shadow-sm max-w-lg">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent/15 text-accent mt-0.5">
+                <Camera className="size-4.5" />
+              </div>
+              <div className="text-xs">
+                <p className="font-semibold text-fg flex items-center gap-1.5">
+                  <span>Have an idea or broken part?</span>
+                  <span className="rounded-full bg-accent/15 text-accent px-2 py-0.5 text-[10px] font-bold">
+                    No 3D file needed
+                  </span>
+                </p>
+                <p className="text-muted mt-1 leading-relaxed">
+                  Just describe what you need &amp; attach a few photos. Our CAD team models it, 3D prints it, and ships it right to your door.
+                </p>
+                <div className="mt-2 flex items-center gap-3">
+                  <Link
+                    to="/custom"
+                    search={{ path: "idea" }}
+                    className="inline-flex items-center gap-1 font-semibold text-accent hover:underline"
+                  >
+                    Start with an idea or photos
+                    <ArrowRight className="size-3" />
+                  </Link>
+                  <span className="text-border">·</span>
+                  <Link
+                    to="/custom"
+                    search={{ path: "upload" }}
+                    className="text-subtle hover:text-fg hover:underline"
+                  >
+                    Have an STL? Upload here
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            <p className="mt-4 text-xs text-subtle">
+              Transparent pricing · Zero surprise fees · Made &amp; shipped across India
             </p>
           </div>
 
@@ -289,6 +338,9 @@ function Home() {
         </div>
       </section>
 
+      {/* ── Idea-to-Print Showcase Section ────────────────── */}
+      <IdeaToPrintSection />
+
       {/* ── Featured Products ──────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 py-16 md:px-6 md:py-20">
         <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
@@ -357,13 +409,21 @@ function Home() {
               search={{ path: "idea" }}
               className="group col-span-1 rounded-3xl border border-glass-border bg-glass p-6 backdrop-blur-2xl backdrop-saturate-150 shadow-xl shadow-black/5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl"
             >
-              <div className="size-10 rounded-xl border border-accent/20 bg-accent/10 flex items-center justify-center text-accent mb-3">
-                <WandSparkles className="size-5" strokeWidth={1.75} />
+              <div className="flex items-center justify-between mb-3">
+                <div className="size-10 rounded-xl border border-accent/20 bg-accent/10 flex items-center justify-center text-accent">
+                  <WandSparkles className="size-5" strokeWidth={1.75} />
+                </div>
+                <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-semibold text-accent">
+                  Photos welcome
+                </span>
               </div>
               <h3 className="font-display text-xl font-semibold tracking-tight">Describe your idea</h3>
               <p className="mt-2 text-sm text-muted">
-                No file? Tell us what you need. We'll model it, quote it, and print it.
+                No 3D file needed. Describe what you need, attach photos of a broken part or sketch, and we&apos;ll model, print &amp; ship it.
               </p>
+              <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-accent group-hover:underline">
+                Start with idea or photo &rarr;
+              </span>
             </Link>
 
             {/* Card 4 — Filaments guide (full width on lg) */}
@@ -408,7 +468,257 @@ function Home() {
   );
 }
 
-import { useState, useEffect } from "react";
+function IdeaToPrintSection() {
+  const [ideaText, setIdeaText] = useState("");
+  const navigate = useNavigate();
+
+  const presets = [
+    {
+      label: "Washing machine knob",
+      category: "Broken Appliance",
+      idea: "Replacement rotary dial knob for washing machine with D-shaft slot and grip ridges",
+    },
+    {
+      label: "Helmet wall hook + key rack",
+      category: "Home & Bike",
+      idea: "Wall mount hook for motorcycle helmet with an extra slot for keys and jacket loop",
+    },
+    {
+      label: "Under-desk dual headphone hanger",
+      category: "Desk Setup",
+      idea: "Dual headphone mount that clamps under a 20mm desk with integrated cable channel",
+    },
+    {
+      label: "Car AC vent phone mount",
+      category: "Vehicle Mount",
+      idea: "Car dashboard phone holder clip that snaps into AC vent slats firmly",
+    },
+    {
+      label: "Backlit lithophane photo lamp",
+      category: "Custom Gift",
+      idea: "Curved 3D lithophane photo frame that reveals photo details when illuminated",
+    },
+  ];
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const text = ideaText.trim();
+    if (!text) {
+      void navigate({ to: "/custom", search: { path: "idea" } });
+    } else {
+      void navigate({ to: "/custom", search: { path: "idea", idea: text } });
+    }
+  }
+
+  return (
+    <section className="relative overflow-hidden border-t border-border/60 bg-gradient-to-b from-surface/40 via-surface/80 to-surface/40 py-16 md:py-24">
+      {/* Ambient glow */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-[45rem] rounded-full bg-accent/10 blur-[130px] dark:bg-accent/5" />
+      </div>
+
+      <div className="mx-auto max-w-6xl px-4 md:px-6">
+        {/* Header */}
+        <div className="text-center max-w-3xl mx-auto">
+          <div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-3.5 py-1 text-xs font-semibold text-accent shadow-xs backdrop-blur-md">
+            <Sparkles className="size-3.5" />
+            <span>On-Demand 3D Design &amp; Print Service</span>
+          </div>
+          <h2 className="mt-4 font-display text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight text-fg">
+            Got an idea or a broken part? <br className="hidden sm:inline" />
+            <span className="text-accent">We model, print &amp; ship it.</span>
+          </h2>
+          <p className="mt-4 text-base sm:text-lg text-muted leading-relaxed">
+            You don&apos;t need CAD software or 3D files. Tell us what you want in plain words, attach a few phone photos or a napkin sketch, and our engineering team will 3D model it from scratch, precision-print it on our Bambu Lab fleet, and express-courier it to your doorstep anywhere in India.
+          </p>
+        </div>
+
+        {/* 3 Step Workflow Cards */}
+        <div className="mt-12 grid gap-6 md:grid-cols-3">
+          {/* Step 1 */}
+          <div className="group relative rounded-3xl border border-glass-border bg-glass p-7 backdrop-blur-2xl backdrop-saturate-150 shadow-xl shadow-black/5 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex size-12 items-center justify-center rounded-2xl border border-accent/30 bg-accent/10 text-accent">
+                <Camera className="size-6" strokeWidth={1.75} />
+              </div>
+              <span className="rounded-full bg-surface-2 px-2.5 py-1 font-mono text-xs font-semibold text-muted">
+                Step 01
+              </span>
+            </div>
+            <h3 className="font-display text-xl font-semibold text-fg">
+              1. Describe &amp; Attach Photos
+            </h3>
+            <p className="mt-2.5 text-sm text-muted leading-relaxed">
+              Describe what you need in simple everyday words. Snap phone photos of your broken piece from a few angles (with a ruler or coin for scale) or upload a quick paper sketch.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-1.5 pt-3 border-t border-border/50 text-[11px] font-medium text-accent">
+              <span className="rounded-md bg-accent/10 px-2 py-0.5">📸 Phone photos welcome</span>
+              <span className="rounded-md bg-accent/10 px-2 py-0.5">📐 No CAD files required</span>
+            </div>
+          </div>
+
+          {/* Step 2 */}
+          <div className="group relative rounded-3xl border border-glass-border bg-glass p-7 backdrop-blur-2xl backdrop-saturate-150 shadow-xl shadow-black/5 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex size-12 items-center justify-center rounded-2xl border border-accent/30 bg-accent/10 text-accent">
+                <Layers className="size-6" strokeWidth={1.75} />
+              </div>
+              <span className="rounded-full bg-surface-2 px-2.5 py-1 font-mono text-xs font-semibold text-muted">
+                Step 02
+              </span>
+            </div>
+            <h3 className="font-display text-xl font-semibold text-fg">
+              2. We 3D Model &amp; Preview
+            </h3>
+            <p className="mt-2.5 text-sm text-muted leading-relaxed">
+              Our CAD designers engineer a robust, print-ready 3D model. We share previews and confirm critical measurements with you before manufacturing. Clear, upfront design fee with zero surprise bills.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-1.5 pt-3 border-t border-border/50 text-[11px] font-medium text-accent">
+              <span className="rounded-md bg-accent/10 px-2 py-0.5">✅ Design sign-off first</span>
+              <span className="rounded-md bg-accent/10 px-2 py-0.5">💳 Transparent flat rates</span>
+            </div>
+          </div>
+
+          {/* Step 3 */}
+          <div className="group relative rounded-3xl border border-glass-border bg-glass p-7 backdrop-blur-2xl backdrop-saturate-150 shadow-xl shadow-black/5 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex size-12 items-center justify-center rounded-2xl border border-accent/30 bg-accent/10 text-accent">
+                <Printer className="size-6" strokeWidth={1.75} />
+              </div>
+              <span className="rounded-full bg-surface-2 px-2.5 py-1 font-mono text-xs font-semibold text-muted">
+                Step 03
+              </span>
+            </div>
+            <h3 className="font-display text-xl font-semibold text-fg">
+              3. 3D Printed &amp; Shipped Pan-India
+            </h3>
+            <p className="mt-2.5 text-sm text-muted leading-relaxed">
+              Manufactured on our high-speed Bambu Lab fleet using durable polymers (PLA, PETG, ABS, ASA). Quality inspected, securely packaged, and couriered straight to your door across India.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-1.5 pt-3 border-t border-border/50 text-[11px] font-medium text-accent">
+              <span className="rounded-md bg-accent/10 px-2 py-0.5">🚀 Bambu Lab precision</span>
+              <span className="rounded-md bg-accent/10 px-2 py-0.5">🇮🇳 Pan-India delivery</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Real-Life Everyday Inspiration Cards */}
+        <div className="mt-14 rounded-3xl border border-border/80 bg-surface/70 p-6 md:p-8 backdrop-blur-xl shadow-xl">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+            <div>
+              <p className="text-[11px] font-medium tracking-[0.18em] text-accent uppercase">Real-World Examples</p>
+              <h3 className="font-display text-2xl font-semibold tracking-tight text-fg mt-1">
+                What can you get designed &amp; made?
+              </h3>
+            </div>
+            <p className="text-xs text-muted max-w-sm">
+              From broken kitchen appliances to custom car and bike gadgets — if it exists as plastic or an idea, we can make it.
+            </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-2xl border border-border/60 bg-surface p-4 space-y-2 hover:border-accent/40 transition-colors">
+              <div className="flex items-center gap-2 text-accent font-semibold text-sm">
+                <Wrench className="size-4 shrink-0" />
+                <span>Broken Appliance Parts</span>
+              </div>
+              <p className="text-xs text-muted leading-relaxed">
+                Washing machine control dials, refrigerator drawer clips, AC vent slats, mixer-grinder safety locks. Don&apos;t discard a ₹20,000 appliance over a ₹200 plastic tab.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-border/60 bg-surface p-4 space-y-2 hover:border-accent/40 transition-colors">
+              <div className="flex items-center gap-2 text-accent font-semibold text-sm">
+                <Bike className="size-4 shrink-0" />
+                <span>Bike, Helmet &amp; Car Mounts</span>
+              </div>
+              <p className="text-xs text-muted leading-relaxed">
+                Handlebar GPS clips, action cam chin mounts, sun-visor clips, bottle cages. Printed in UV-resistant ASA &amp; high-impact PETG built for Indian roads and heat.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-border/60 bg-surface p-4 space-y-2 hover:border-accent/40 transition-colors">
+              <div className="flex items-center gap-2 text-accent font-semibold text-sm">
+                <Headphones className="size-4 shrink-0" />
+                <span>Desk &amp; Setup Accessories</span>
+              </div>
+              <p className="text-xs text-muted leading-relaxed">
+                Dual headphone under-desk hangers, stream deck docks, mechanical keyboard rests, cable raceways shaped exactly to your table thickness.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-border/60 bg-surface p-4 space-y-2 hover:border-accent/40 transition-colors">
+              <div className="flex items-center gap-2 text-accent font-semibold text-sm">
+                <Gift className="size-4 shrink-0" />
+                <span>Custom Gifts &amp; Lithophanes</span>
+              </div>
+              <p className="text-xs text-muted leading-relaxed">
+                Turn your family or pet photo into a magic 3D backlit night-lamp, custom nameplates, personalized keychains, or architectural replicas.
+              </p>
+            </div>
+          </div>
+
+          {/* Interactive Idea Input Box */}
+          <div className="mt-8 rounded-2xl border border-accent/30 bg-accent-soft/30 p-5 sm:p-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Sparkles className="size-4 text-accent" />
+                <label htmlFor="home-idea-input" className="text-sm font-semibold text-fg">
+                  Try it now — what do you need made?
+                </label>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input
+                  id="home-idea-input"
+                  type="text"
+                  value={ideaText}
+                  onChange={(e) => setIdeaText(e.target.value)}
+                  placeholder="e.g. A wall hook that holds a cycle helmet and keys, palm sized..."
+                  className="flex-1 rounded-xl border border-border/80 bg-surface px-4 py-3 text-sm text-fg placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent shadow-xs"
+                />
+                <Button type="submit" size="lg" className="shrink-0 gap-2 shadow-sm font-semibold">
+                  <WandSparkles className="size-4" />
+                  Describe &amp; Attach Photos
+                  <ArrowRight className="size-4" />
+                </Button>
+              </div>
+
+              {/* Clickable Quick Presets */}
+              <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+                <span className="text-muted font-medium">Quick ideas:</span>
+                {presets.map((p) => (
+                  <button
+                    key={p.label}
+                    type="button"
+                    onClick={() => setIdeaText(p.idea)}
+                    className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-surface px-3 py-1 text-xs text-fg hover:border-accent hover:text-accent transition-colors cursor-pointer"
+                  >
+                    <span>{p.label}</span>
+                  </button>
+                ))}
+              </div>
+            </form>
+          </div>
+        </div>
+
+        {/* Bottom Quick-Switch Link */}
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-sm text-muted">
+          <span>Already have a 3D model file ready?</span>
+          <Link
+            to="/custom"
+            search={{ path: "upload" }}
+            className="inline-flex items-center gap-1 font-semibold text-accent hover:underline"
+          >
+            <Upload className="size-3.5" />
+            Upload STL / 3MF for instant quote &rarr;
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 import { type Product } from "@/lib/products";
 import { getLastVisited } from "@/lib/product-history";
 

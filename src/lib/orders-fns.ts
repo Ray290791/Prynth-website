@@ -8,6 +8,12 @@ import { notifyNewOrder } from "./notifications.server";
 import { DEFAULT_MIN_PRINT } from "./quote";
 import type { CartItem } from "./cart-store";
 import type { Address } from "./orders-store";
+import {
+  createShiprocketOrder,
+  assignShiprocketAWB,
+  shiprocketTrackingUrl,
+  type ShiprocketOrderPayload,
+} from "./shiprocket.server";
 
 export const createRazorpayOrder = createServerFn({ method: "POST" })
   .middleware([optionalAuthMiddleware])
@@ -529,5 +535,136 @@ export const deleteOrderAdmin = createServerFn({ method: "POST" })
     // Delete order
     await sql`DELETE FROM orders WHERE order_number = ${data.order_number}`;
     return { success: true };
+  });
+
+// ─── Shiprocket: create shipment & assign AWB ─────────────────────────────────
+export const shipWithShiprocket = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator(
+    (data: {
+      order_number: string;
+      /** Name of the pickup location configured in your Shiprocket account */
+      pickup_location: string;
+      /** Dimensional weight details */
+      length_cm: number;
+      breadth_cm: number;
+      height_cm: number;
+      weight_kg: number;
+      /** Optional: force a specific courier company ID */
+      courier_id?: number;
+    }) => data
+  )
+  .handler(async ({ data, context }) => {
+    const sql = await getSql();
+
+    // Verify admin
+    const admin = await verifyAdminRole(context.userId, sql);
+    if (!admin) throw new Error("Unauthorized");
+
+    // Fetch order
+    const orderRes = await sql`SELECT * FROM orders WHERE order_number = ${data.order_number}`;
+    if (orderRes.length === 0) throw new Error("Order not found");
+    const order = orderRes[0] as any;
+
+    if (order.tracking_number) {
+      throw new Error(
+        `This order already has a tracking number: ${order.tracking_number}. ` +
+        "Cancel the existing shipment in Shiprocket first if you need to re-ship."
+      );
+    }
+
+    const addr: Address =
+      typeof order.shipping_address === "string"
+        ? JSON.parse(order.shipping_address)
+        : order.shipping_address;
+
+    const items: CartItem[] =
+      typeof order.items === "string" ? JSON.parse(order.items) : order.items;
+
+    // Build order_items for Shiprocket
+    const shiprocketItems = items.map((item) => ({
+      name: item.name,
+      sku: item.productSlug || `custom-${item.id}`,
+      units: item.qty,
+      selling_price: item.unitPrice,
+    }));
+
+    const payload: ShiprocketOrderPayload = {
+      order_id: order.order_number,
+      order_date: new Date(order.created_at || Date.now()).toISOString().replace("T", " ").slice(0, 19),
+      pickup_location: data.pickup_location,
+
+      billing_customer_name: addr.name,
+      billing_address: addr.line1,
+      billing_address_2: addr.line2 || "",
+      billing_city: addr.city,
+      billing_pincode: addr.pincode,
+      billing_state: addr.state,
+      billing_country: "India",
+      billing_email: addr.email,
+      billing_phone: addr.phone,
+
+      shipping_is_billing: true,
+
+      order_items: shiprocketItems,
+      payment_method:
+        order.payment_method === "cod" ? "COD" : "Prepaid",
+      sub_total: Number(order.subtotal),
+
+      length: data.length_cm,
+      breadth: data.breadth_cm,
+      height: data.height_cm,
+      weight: data.weight_kg,
+    };
+
+    // 1. Create forward order in Shiprocket
+    const srOrder = await createShiprocketOrder(payload);
+
+    // 2. Assign AWB (auto-assign best courier unless caller specifies one)
+    const awbRes = await assignShiprocketAWB(
+      srOrder.shipment_id,
+      data.courier_id
+    );
+
+    const awbData = awbRes.response?.data;
+    const awbCode = awbData?.awb_code || awbRes.response?.awb_code || srOrder.awb_code || "";
+    const courierName = awbData?.courier_name || awbRes.response?.courier_name || "";
+    const trackingUrl = awbCode ? shiprocketTrackingUrl(awbCode) : "";
+
+    // 3. Persist tracking info + auto-mark as shipped
+    await sql`
+      UPDATE orders
+      SET
+        shiprocket_order_id  = ${String(srOrder.order_id)},
+        shiprocket_shipment_id = ${String(srOrder.shipment_id)},
+        tracking_number      = ${awbCode || null},
+        tracking_url         = ${trackingUrl || null},
+        courier_name         = ${courierName || null},
+        status               = 'shipped'
+      WHERE order_number = ${data.order_number}
+    `;
+
+    // 4. Notify the customer
+    try {
+      const customerEmail =
+        order.guest_email ||
+        (typeof order.shipping_address === "string"
+          ? JSON.parse(order.shipping_address)?.email
+          : order.shipping_address?.email);
+      if (customerEmail) {
+        await sendOrderStatusUpdateEmail(data.order_number, customerEmail, "shipped");
+      }
+    } catch (emailErr) {
+      console.warn("Shiprocket: customer notification failed:", emailErr);
+    }
+
+    return {
+      success: true,
+      shiprocket_order_id: srOrder.order_id,
+      shipment_id: srOrder.shipment_id,
+      awb_code: awbCode,
+      courier_name: courierName,
+      tracking_url: trackingUrl,
+    };
   });
 

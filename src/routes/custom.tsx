@@ -33,16 +33,17 @@ import { PrintabilityChecker } from "@/components/printability-checker";
 import type { PrintabilityReport } from "@/lib/mesh-analysis";
 import { parseModelFile, estimateFdmMaterialVolumeCm3 } from "@/lib/model-parser";
 import { cn } from "@/lib/utils";
-import { ChevronDown, Sliders, Sparkles, Printer as PrinterIcon, Loader2, Check, CheckCircle2, RefreshCcw, Save, ArrowLeft } from "lucide-react";
+import { ChevronDown, Sliders, Sparkles, Printer as PrinterIcon, Loader2, Check, CheckCircle2, RefreshCcw, Save, ArrowLeft, Camera, X } from "lucide-react";
 
 const rootRoute = getRouteApi("__root__");
 
 type Path = "upload" | "idea";
 
 export const Route = createFileRoute("/custom")({
-  validateSearch: (s: Record<string, unknown>): { path?: Path; edit?: string } => ({
+  validateSearch: (s: Record<string, unknown>): { path?: Path; edit?: string; idea?: string } => ({
     path: s.path === "idea" ? "idea" : s.path === "upload" ? "upload" : undefined,
     edit: typeof s.edit === "string" ? s.edit : undefined,
+    idea: typeof s.idea === "string" ? s.idea : undefined,
   }),
   component: CustomPage,
 });
@@ -161,7 +162,7 @@ function PrinterSelector({
 }
 
 function CustomPage() {
-  const { path, edit } = Route.useSearch();
+  const { path, edit, idea: searchIdea } = Route.useSearch();
   const navigate = useNavigate({ from: "/custom" });
   const add = useCart((s) => s.add);
   const updateItem = useCart((s) => s.updateItem);
@@ -188,7 +189,7 @@ function CustomPage() {
   const tab = path ?? (editItem?.custom?.path === "idea" ? "idea" : "upload");
 
   function switchTab(next: Path) {
-    void navigate({ search: { path: next, edit } });
+    void navigate({ search: { path: next, edit, idea: searchIdea } });
   }
 
   return (
@@ -270,7 +271,7 @@ function CustomPage() {
         >
           <p className="font-display text-lg font-semibold">Describe your idea</p>
           <p className="mt-1 text-sm text-muted">
-            No file needed. Tell us the dimensions and purpose. Listed CAD design fee with zero surprise charges.
+            No file needed. Tell us what you need or attach photos. Listed CAD design fee with zero surprise charges.
           </p>
         </button>
       </div>
@@ -293,6 +294,7 @@ function CustomPage() {
             filaments={filaments}
             editItem={editItem}
             onUpdateItem={updateItem}
+            initialIdea={searchIdea}
           />
         )}
       </div>
@@ -328,6 +330,7 @@ function QuotePanel({
     surfaceFinish?: string;
     orientation?: string;
     dimensions?: string;
+    photosCount?: string;
   };
 }) {
   return (
@@ -425,6 +428,12 @@ function QuotePanel({
                 <div className="flex justify-between">
                   <span>Print Orientation</span>
                   <span className="font-medium text-accent">{specs.orientation}</span>
+                </div>
+              )}
+              {specs.photosCount && (
+                <div className="flex justify-between">
+                  <span>Reference Photos</span>
+                  <span className="font-medium text-accent">{specs.photosCount}</span>
                 </div>
               )}
             </div>
@@ -1368,6 +1377,7 @@ function IdeaForm({
   filaments,
   editItem,
   onUpdateItem,
+  initialIdea,
 }: {
   add: ReturnType<typeof useCart.getState>["add"];
   pricingConfig: CustomPricingConfig;
@@ -1375,6 +1385,7 @@ function IdeaForm({
   filaments: FilamentRecord[];
   editItem?: CartItem | null;
   onUpdateItem?: (id: string, updated: Partial<CartItem>) => void;
+  initialIdea?: string;
 }) {
   const navigate = useNavigate();
   const [selectedPrinterId, setSelectedPrinterId] = useState(() => {
@@ -1395,8 +1406,86 @@ function IdeaForm({
   const [idea, setIdea] = useState(() => {
     if (editItem?.custom?.idea) return editItem.custom.idea;
     if (editItem?.custom?.notes) return editItem.custom.notes.split(" · ")[0] || "";
+    if (initialIdea) return initialIdea;
     return "";
   });
+
+  useEffect(() => {
+    if (initialIdea && !idea) {
+      setIdea(initialIdea);
+    }
+  }, [initialIdea]);
+
+  const [photos, setPhotos] = useState<string[]>(() => editItem?.custom?.referencePhotos || []);
+
+  function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const remainingSlots = 5 - photos.length;
+    if (remainingSlots <= 0) {
+      toast.error("You can upload a maximum of 5 reference photos.");
+      return;
+    }
+
+    const filesToProcess = Array.from(files).slice(0, remainingSlots);
+
+    for (const file of filesToProcess) {
+      if (!file.type.startsWith("image/")) {
+        toast.error(`${file.name} is not an image file.`);
+        continue;
+      }
+      if (file.size > 15 * 1024 * 1024) {
+        toast.error(`${file.name} exceeds 15MB limit.`);
+        continue;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        if (result) {
+          const img = new Image();
+          img.onload = () => {
+            const maxDim = 1400;
+            let width = img.width;
+            let height = img.height;
+            if (width > maxDim || height > maxDim) {
+              if (width > height) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              } else {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+              ctx.drawImage(img, 0, 0, width, height);
+              const compressed = canvas.toDataURL("image/jpeg", 0.82);
+              setPhotos((prev) => (prev.length < 5 ? [...prev, compressed] : prev));
+            } else {
+              setPhotos((prev) => (prev.length < 5 ? [...prev, result] : prev));
+            }
+          };
+          img.onerror = () => {
+            setPhotos((prev) => (prev.length < 5 ? [...prev, result] : prev));
+          };
+          img.src = result;
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+    e.target.value = "";
+    toast.success("Photo(s) attached!");
+  }
+
+  function removePhoto(index: number) {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+    toast.info("Photo removed.");
+  }
   const [size, setSize] = useState(() => editItem?.custom?.sizeId || "desk");
   const [complexity, setComplexity] = useState(() => editItem?.custom?.complexityId || "basic");
   const [material, setMaterial] = useState(() => editItem?.custom?.materialId || "pla");
@@ -1544,8 +1633,8 @@ function IdeaForm({
     : "None";
 
   function addEstimate() {
-    if (idea.trim().length < 12) {
-      toast.error("Tell us a little more about the piece.");
+    if (idea.trim().length < 6 && photos.length === 0) {
+      toast.error("Tell us what you need or attach reference photos.");
       return;
     }
 
@@ -1579,6 +1668,7 @@ function IdeaForm({
       complexityId: complexity,
       volumeCm3: quote.volumeCm3,
       modeling: cx.name,
+      referencePhotos: photos.length > 0 ? photos : undefined,
     };
 
     if (editItem && onUpdateItem) {
@@ -1620,9 +1710,77 @@ function IdeaForm({
             id="idea"
             value={idea}
             onChange={(e) => setIdea(e.target.value)}
-            placeholder="A wall hook that holds a cycle helmet, about the size of a palm, rounded so it doesn't snag the strap…"
+            placeholder="A replacement knob for my washing machine, or a wall hook that holds a motorcycle helmet, about palm sized…"
           />
         </div>
+
+        {/* Reference Photos / Sketches Uploader */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <Label htmlFor="photo-input">Attach Reference Photos or Sketches (Optional)</Label>
+            <span className="text-xs text-muted">
+              {photos.length}/5 attached
+            </span>
+          </div>
+          <p className="text-xs text-muted mb-2.5">
+            Snap photos of the broken part, a napkin sketch, or reference photos from multiple angles. (Tip: place a coin or ruler next to it for scale!)
+          </p>
+
+          <div className="space-y-3">
+            {photos.length < 5 && (
+              <label
+                htmlFor="photo-input"
+                className="flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border/80 bg-surface/50 p-5 text-center transition-colors hover:border-accent/60 hover:bg-surface-2/40 cursor-pointer"
+              >
+                <div className="flex size-10 items-center justify-center rounded-xl bg-accent/15 text-accent">
+                  <Camera className="size-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-fg">
+                    Click to add photos or drag &amp; drop
+                  </p>
+                  <p className="text-xs text-muted mt-0.5">
+                    PNG, JPG, WEBP, or HEIC up to 15MB each
+                  </p>
+                </div>
+                <input
+                  id="photo-input"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="sr-only"
+                  onChange={handlePhotoUpload}
+                />
+              </label>
+            )}
+
+            {photos.length > 0 && (
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
+                {photos.map((src, idx) => (
+                  <div key={idx} className="group relative aspect-square rounded-xl overflow-hidden border border-border bg-surface-2 shadow-2xs">
+                    <img
+                      src={src}
+                      alt={`Reference ${idx + 1}`}
+                      className="size-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(idx)}
+                      className="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full bg-black/70 text-white hover:bg-danger transition-colors shadow-xs cursor-pointer"
+                      title="Remove photo"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                    <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white/90">
+                      Photo {idx + 1}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
         <div>
           <Label htmlFor="email">Email for the design back-and-forth</Label>
           <Input
@@ -1919,7 +2077,7 @@ function IdeaForm({
           modeling={quote.modeling}
           days={quote.days}
           volumeCm3={quote.volumeCm3}
-          ready={idea.trim().length > 0}
+          ready={idea.trim().length > 0 || photos.length > 0}
           specs={{
             printerName: selectedPrinter?.name,
             qualityName: qualityMeta?.name,
@@ -1927,6 +2085,7 @@ function IdeaForm({
             wallLoops,
             supports: supportState.enabled ? supportDisplayLabel : undefined,
             surfaceFinish: surfaceFinish !== "standard" ? finishMeta?.name : undefined,
+            photosCount: photos.length > 0 ? `${photos.length} photo${photos.length > 1 ? "s" : ""} attached` : undefined,
           }}
         />
       </div>

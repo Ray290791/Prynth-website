@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { shipWithShiprocket } from "@/lib/orders-fns";
 import {
   ExternalLink,
   Download,
@@ -36,6 +38,47 @@ export function OrderDetailsDialog({
   onUpdateStatus: (status: string) => void;
 }) {
   const [copiedSettings, setCopiedSettings] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+
+  // ── Shiprocket shipping form state ──────────────────────────────────────
+  const [showShiprocketForm, setShowShiprocketForm] = useState(false);
+  const [srPickup, setSrPickup] = useState("Primary");
+  const [srLength, setSrLength] = useState("15");
+  const [srBreadth, setSrBreadth] = useState("10");
+  const [srHeight, setSrHeight] = useState("5");
+  const [srWeight, setSrWeight] = useState("0.5");
+  const [srResult, setSrResult] = useState<{ awb_code: string; courier_name: string; tracking_url: string } | null>(
+    order.tracking_number
+      ? { awb_code: order.tracking_number, courier_name: order.courier_name || "", tracking_url: order.tracking_url || "" }
+      : null
+  );
+
+  const shiprocketMutation = useMutation({
+    mutationFn: () =>
+      shipWithShiprocket({
+        data: {
+          order_number: order.order_number,
+          pickup_location: srPickup.trim() || "Primary",
+          length_cm: parseFloat(srLength) || 15,
+          breadth_cm: parseFloat(srBreadth) || 10,
+          height_cm: parseFloat(srHeight) || 5,
+          weight_kg: parseFloat(srWeight) || 0.5,
+        },
+      }),
+    onSuccess: (res) => {
+      setSrResult({ awb_code: res.awb_code, courier_name: res.courier_name, tracking_url: res.tracking_url });
+      setShowShiprocketForm(false);
+      toast.success(`Shipment created! AWB: ${res.awb_code || "assigned"}`);
+      queryClient.invalidateQueries({ queryKey: ["adminOrders"] });
+      order.status = "shipped";
+      order.tracking_number = res.awb_code;
+      order.tracking_url = res.tracking_url;
+      order.courier_name = res.courier_name;
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || "Failed to create Shiprocket shipment.");
+    },
+  });
 
   useEffect(() => {
     const prevOverflow = document.body.style.overflow;
@@ -375,6 +418,32 @@ export function OrderDetailsDialog({
                           </div>
                         )}
 
+                        {custom.referencePhotos && custom.referencePhotos.length > 0 && (
+                          <div className="rounded-xl bg-surface/80 p-3 border border-border/40 space-y-2">
+                            <span className="text-xs font-semibold text-fg flex items-center gap-1.5">
+                              Attached Reference Photos ({custom.referencePhotos.length})
+                            </span>
+                            <div className="flex flex-wrap gap-2">
+                              {custom.referencePhotos.map((photo: string, pIdx: number) => (
+                                <a
+                                  key={pIdx}
+                                  href={photo}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="group relative block size-16 overflow-hidden rounded-lg border border-border hover:border-accent shadow-2xs"
+                                  title={`View photo ${pIdx + 1}`}
+                                >
+                                  <img
+                                    src={photo}
+                                    alt={`Reference ${pIdx + 1}`}
+                                    className="size-full object-cover transition-transform group-hover:scale-105"
+                                  />
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
                         {/* Bambu Slicer Action Bar */}
                         <div className="pt-3 border-t border-accent/20">
                           <p className="text-[11px] font-semibold text-muted uppercase tracking-wider mb-2">Slicer & Machine Actions</p>
@@ -460,7 +529,147 @@ export function OrderDetailsDialog({
             </div>
           </div>
 
+          {/* Shiprocket Shipping Panel */}
+          <div className="border border-border rounded-2xl overflow-hidden">
+            <div className="flex items-center justify-between bg-surface-2/60 px-4 py-3">
+              <div className="flex items-center gap-2">
+                <Truck className="size-4 text-accent" />
+                <span className="text-sm font-semibold text-fg">Shiprocket Shipping</span>
+              </div>
+              {srResult ? (
+                <Badge className="bg-primary/10 text-primary border-primary/30 text-xs">
+                  AWB Assigned
+                </Badge>
+              ) : (
+                !showShiprocketForm && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs h-7 px-3"
+                    onClick={() => setShowShiprocketForm(true)}
+                  >
+                    + Create Shipment
+                  </Button>
+                )
+              )}
+            </div>
+
+            <div className="p-4">
+              {srResult ? (
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-muted">AWB / Tracking No.</span>
+                    <span className="font-mono font-semibold text-fg">{srResult.awb_code || "—"}</span>
+                  </div>
+                  {srResult.courier_name && (
+                    <div className="flex justify-between">
+                      <span className="text-muted">Courier</span>
+                      <span className="font-medium text-fg">{srResult.courier_name}</span>
+                    </div>
+                  )}
+                  {srResult.tracking_url && (
+                    <a
+                      href={srResult.tracking_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 mt-1 text-accent hover:underline font-medium"
+                    >
+                      <ExternalLink className="size-3" /> Track Package
+                    </a>
+                  )}
+                </div>
+              ) : showShiprocketForm ? (
+                <div className="space-y-3 text-xs">
+                  <p className="text-muted text-[11px]">
+                    Enter the package dimensions and the pickup location name exactly as configured in your Shiprocket account.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="col-span-2">
+                      <Label htmlFor="sr-pickup" className="text-xs">Pickup Location Name</Label>
+                      <Input
+                        id="sr-pickup"
+                        value={srPickup}
+                        onChange={(e) => setSrPickup(e.target.value)}
+                        placeholder="Primary"
+                        className="h-8 text-xs mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="sr-length" className="text-xs">Length (cm)</Label>
+                      <Input
+                        id="sr-length"
+                        type="number"
+                        min="1"
+                        value={srLength}
+                        onChange={(e) => setSrLength(e.target.value)}
+                        className="h-8 text-xs mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="sr-breadth" className="text-xs">Breadth (cm)</Label>
+                      <Input
+                        id="sr-breadth"
+                        type="number"
+                        min="1"
+                        value={srBreadth}
+                        onChange={(e) => setSrBreadth(e.target.value)}
+                        className="h-8 text-xs mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="sr-height" className="text-xs">Height (cm)</Label>
+                      <Input
+                        id="sr-height"
+                        type="number"
+                        min="1"
+                        value={srHeight}
+                        onChange={(e) => setSrHeight(e.target.value)}
+                        className="h-8 text-xs mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="sr-weight" className="text-xs">Weight (kg)</Label>
+                      <Input
+                        id="sr-weight"
+                        type="number"
+                        min="0.1"
+                        step="0.1"
+                        value={srWeight}
+                        onChange={(e) => setSrWeight(e.target.value)}
+                        className="h-8 text-xs mt-1"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <Button
+                      size="sm"
+                      className="text-xs h-8 flex-1"
+                      onClick={() => shiprocketMutation.mutate()}
+                      disabled={shiprocketMutation.isPending}
+                    >
+                      {shiprocketMutation.isPending ? "Creating shipment…" : "Ship via Shiprocket"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs h-8"
+                      onClick={() => setShowShiprocketForm(false)}
+                      disabled={shiprocketMutation.isPending}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-muted py-1">
+                  No shipment created yet. Click "+ Create Shipment" to book a courier via Shiprocket.
+                </p>
+              )}
+            </div>
+          </div>
+
           {/* Pricing Summary */}
+
           <div className="border-t border-border pt-4 text-xs space-y-1.5">
             <div className="flex justify-between text-muted">
               <span>Subtotal</span>

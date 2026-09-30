@@ -179,7 +179,13 @@ export const getAnalyticsAdmin = createServerFn({ method: "GET" })
       }
     }
 
-    const ordersRes = await sql<any>`SELECT total, created_at, status FROM orders WHERE status != 'cancelled' ORDER BY created_at ASC`;
+    const ordersRes = await sql<any>`
+      SELECT total, created_at, status, payment_status, payment_method 
+      FROM orders 
+      WHERE status != 'cancelled' 
+        AND NOT (payment_method IN ('razorpay', 'online') AND payment_status = 'pending')
+      ORDER BY created_at ASC
+    `;
     const usersRes = await sql<any>`SELECT "createdAt" FROM "user" ORDER BY "createdAt" ASC`;
     
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -191,8 +197,9 @@ export const getAnalyticsAdmin = createServerFn({ method: "GET" })
         AND "expiresAt" > NOW()
     `;
 
-    // Calculate totals
-    const totalRevenue = ordersRes.reduce((acc, o) => acc + parseFloat(o.total || "0"), 0);
+    // Only count confirmed paid orders towards revenue
+    const paidOrders = ordersRes.filter((o: any) => o.payment_status === 'paid');
+    const totalRevenue = paidOrders.reduce((acc: number, o: any) => acc + parseFloat(o.total || "0"), 0);
     const totalOrders = ordersRes.length;
     const totalUsers = usersRes.length;
 
@@ -224,7 +231,7 @@ export const getAnalyticsAdmin = createServerFn({ method: "GET" })
       return Object.entries(grouped).map(([date, value]) => ({ date, value }));
     };
 
-    const revenueOverTime = groupByDate(ordersRes, 'created_at', o => parseFloat(o.total || "0"));
+    const revenueOverTime = groupByDate(paidOrders, 'created_at', (o: any) => parseFloat(o.total || "0"));
     const ordersOverTime = groupByDate(ordersRes, 'created_at', () => 1);
     const usersJoinedOverTime = groupByDate(usersRes, 'createdAt', () => 1);
 
