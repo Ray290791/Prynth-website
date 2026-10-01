@@ -108,6 +108,12 @@ function buildLithophaneGeometry(
         }
 
         let lum = sampleBilinearLuminance(data, imgW, imgH, u, v);
+        // Slicer mechanical layer quantization
+        const layerSteps = Math.round(heightMm / 0.20);
+        const vQuant = Math.floor(v * layerSteps) / layerSteps;
+        let lumQuant = sampleBilinearLuminance(data, imgW, imgH, u, vQuant);
+        lum = lum * 0.5 + lumQuant * 0.5;
+
         lum = Math.pow(Math.max(0, Math.min(1, lum)), contrast);
         if (invert) lum = 1.0 - lum;
 
@@ -205,6 +211,12 @@ function buildLithophaneGeometry(
       const u = c / (cols - 1);
 
       let lum = sampleBilinearLuminance(data, imgW, imgH, u, v);
+      // Slicer mechanical layer quantization
+      const layerSteps = Math.round(heightMm / 0.20);
+      const vQuant = Math.floor(v * layerSteps) / layerSteps;
+      let lumQuant = sampleBilinearLuminance(data, imgW, imgH, u, vQuant);
+      lum = lum * 0.5 + lumQuant * 0.5;
+
       lum = Math.pow(Math.max(0, Math.min(1, lum)), contrast);
       if (invert) lum = 1.0 - lum;
 
@@ -350,19 +362,46 @@ const lithophaneShader = {
     void main() {
       // Smooth Heart mask if heart shape
       if (uIsHeart > 0.5) {
-        float nx = (vUv.x - 0.5) * 2.2;
-        float ny = (vUv.y - 0.45) * 2.2;
-        float heartDist = pow(nx * nx + ny * ny - 1.0, 3.0) - nx * nx * pow(ny, 3.0);
-        if (heartDist > 0.015) {
+        float nx = (vUv.x - 0.5) * 2.3;
+        float ny = (0.5 - vUv.y) * 2.3 + 0.18;
+        float x2 = nx * nx;
+        float y2 = ny * ny;
+        float term = x2 + y2 - 1.0;
+        float heartDist = term * term * term - x2 * (ny * ny * ny);
+        if (heartDist > 0.012) {
           discard;
         }
       }
 
-      // Sample base continuous-tone image
-      vec4 texColor = texture2D(uTexture, vUv);
-      float lum = 0.299 * texColor.r + 0.587 * texColor.g + 0.114 * texColor.b;
-      lum = pow(clamp(lum, 0.0, 1.0), uContrast);
-      if (uInvert > 0.5) lum = 1.0 - lum;
+      // ── Physical FDM 3D Printing Layer Calculations ──
+      // Physical layer height on Bambu Lab machines is 0.12mm - 0.16mm
+      float layerHeightMm = 0.16; // Visible mechanical layer thickness
+      float totalLayers = max(100.0, uDimensionsMm.y / layerHeightMm);
+      float layerCoord = (1.0 - vUv.y) * totalLayers;
+      float layerIdx = floor(layerCoord);
+      float layerFract = fract(layerCoord); // 0.0 at bottom seam, 0.5 at bead apex, 1.0 at top seam
+
+      // Slicer Discrete Toolpath Quantization:
+      // The extruder deposits discrete horizontal passes. Slicers sample image rows discretely.
+      float yQuantized = 1.0 - (layerIdx + 0.5) / totalLayers;
+
+      // Sample continuous image & quantized layer slice
+      vec4 texColorCont = texture2D(uTexture, vUv);
+      vec4 texColorQuant = texture2D(uTexture, vec2(vUv.x, yQuantized));
+
+      float lumCont = 0.299 * texColorCont.r + 0.587 * texColorCont.g + 0.114 * texColorCont.b;
+      float lumQuant = 0.299 * texColorQuant.r + 0.587 * texColorQuant.g + 0.114 * texColorQuant.b;
+
+      // Apply contrast curve to both
+      lumCont = pow(clamp(lumCont, 0.0, 1.0), uContrast);
+      lumQuant = pow(clamp(lumQuant, 0.0, 1.0), uContrast);
+      if (uInvert > 0.5) {
+        lumCont = 1.0 - lumCont;
+        lumQuant = 1.0 - lumQuant;
+      }
+
+      // Blend 60% discrete print stepping + 40% micro-gradient
+      float physicalLum = mix(lumCont, lumQuant, 0.60);
 
       // Micro-relief surface normal gradients from heightmap
       vec2 texel = vec2(1.0 / 800.0, 1.0 / 600.0);
@@ -371,33 +410,45 @@ const lithophaneShader = {
       float lumU = texture2D(uTexture, vUv + vec2(0.0, texel.y)).r;
       float lumD = texture2D(uTexture, vUv - vec2(0.0, texel.y)).r;
 
-      vec3 surfaceNormal = normalize(vNormal + vec3((lumL - lumR) * 0.4, (lumD - lumU) * 0.4, 0.0));
+      vec3 surfaceNormal = normalize(vNormal + vec3((lumL - lumR) * 0.35, (lumD - lumU) * 0.35, 0.0));
 
-      // Subtle 0.12mm FDM 3D printing horizontal micro-layer texture
-      float layerLine = sin(vUv.y * uDimensionsMm.y * (1.0 / 0.12) * 3.14159) * 0.035;
-      surfaceNormal.y += layerLine;
+      // ── Physical Layer Bead Profile & Normal Ridges ──
+      // Filament cross-section is a curved horizontal cylinder:
+      // Center (0.5) is apex, edges (0.0 & 1.0) are recessed inter-layer valleys
+      float beadDist = (layerFract - 0.5) * 2.0; // -1.0 to +1.0 slope
+      float beadCurvature = sin(layerFract * 3.14159265); // 0 at seams, 1.0 at crest
+      float interLayerSeam = smoothstep(0.0, 0.12, layerFract) * smoothstep(1.0, 0.88, layerFract);
+
+      // Strong normal perturbation: each layer has distinct horizontal highlight & shadow ridge
+      surfaceNormal.y += beadDist * 0.45;
+      // Faint nozzle extrusion drag micro-texture along X
+      surfaceNormal.x += sin(vUv.x * uDimensionsMm.x * 8.0 + layerIdx * 1.7) * 0.035;
       surfaceNormal = normalize(surfaceNormal);
 
       vec3 viewDir = normalize(vViewPosition);
 
-      // 1. Studio ambient & key lighting (room reflections)
-      vec3 keyLightDir = normalize(vec3(0.5, 0.85, 0.9));
+      // 1. Studio ambient & key lighting (room reflections on white plastic)
+      vec3 keyLightDir = normalize(vec3(0.45, 0.85, 0.9));
       float NdotL = max(dot(surfaceNormal, keyLightDir), 0.0);
 
-      // Specular reflection of silky Jade White PLA
+      // Specular sheen of silky PLA plastic ridges (highlights the horizontal layer lines)
       vec3 halfDir = normalize(keyLightDir + viewDir);
-      float spec = pow(max(dot(surfaceNormal, halfDir), 0.0), 28.0) * 0.22;
+      float spec = pow(max(dot(surfaceNormal, halfDir), 0.0), 32.0) * 0.32;
 
-      // Authentic unlit 3D carved white plastic appearance
-      vec3 unlitPlastic = uPlasticColor * (0.38 + 0.62 * NdotL) + vec3(spec);
+      // Authentic unlit 3D carved white plastic appearance (shows distinct horizontal corduroy lines)
+      vec3 unlitPlastic = uPlasticColor * (0.34 + 0.66 * NdotL) + vec3(spec);
 
       // 2. Physical Backlight Transmission:
-      // Sunlight or lamp shining directly from behind through the translucent polymer
-      float transmission = 0.06 + 0.94 * pow(lum, 1.25);
-      vec3 backlitGlow = uLightColor * transmission;
+      // Light passing through varying polymer wall thickness:
+      // Beer-Lambert transmission modulated by horizontal filament density and seams
+      float baseTransmission = 0.04 + 0.96 * pow(physicalLum, 1.30);
 
-      // Backlit state combines the warm natural internal transmission with subtle surface specular reflection
-      vec3 litPlastic = unlitPlastic * 0.22 + backlitGlow * 1.1 + vec3(spec * 0.4);
+      // Inter-layer boundary striation: light slightly scatters at the fusion boundary between layers
+      float layerTransmission = 0.82 + 0.18 * (0.65 * beadCurvature + 0.35 * interLayerSeam);
+      vec3 backlitGlow = uLightColor * (baseTransmission * layerTransmission);
+
+      // Combined lit state: warm transmission shining through plastic + surface specular reflections
+      vec3 litPlastic = unlitPlastic * 0.18 + backlitGlow * 1.15 + vec3(spec * 0.45);
 
       // Smooth transition between Backlight OFF (Sculptural PLA) and Backlight ON (Sunlit Window / Lamp Glow)
       vec3 finalColor = mix(unlitPlastic, litPlastic, uLightIntensity);
@@ -780,16 +831,22 @@ export function LithophaneViewer({
 
         {/* Top Control Overlay Bar */}
         <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
-          {/* Shape & Dimensions Pill */}
-          <div className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-border/80 bg-surface/85 px-3 py-1 text-xs backdrop-blur-md shadow-xs">
-            <Layers className="size-3.5 text-accent" />
-            <span className="font-semibold text-fg capitalize">
-              {shape === "heart" ? "Heart Keepsake" : "Classic Flat Panel"}
-            </span>
-            <span className="text-muted">·</span>
-            <span className="text-muted tabular-nums">
-              {sizeMm.width} × {sizeMm.height} mm
-            </span>
+          {/* Shape, Dimensions & Layer Line Badge */}
+          <div className="pointer-events-auto flex items-center gap-2">
+            <div className="flex items-center gap-1.5 rounded-full border border-border/80 bg-surface/85 px-3 py-1 text-xs backdrop-blur-md shadow-xs">
+              <Layers className="size-3.5 text-accent" />
+              <span className="font-semibold text-fg capitalize">
+                {shape === "heart" ? "Heart Keepsake" : "Classic Flat Panel"}
+              </span>
+              <span className="text-muted">·</span>
+              <span className="text-muted tabular-nums">
+                {sizeMm.width} × {sizeMm.height} mm
+              </span>
+            </div>
+
+            <div className="hidden sm:flex items-center gap-1 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 text-[11px] font-semibold text-accent backdrop-blur-md shadow-xs">
+              <span>0.12mm Layer Lines Visible</span>
+            </div>
           </div>
 
           {/* Quick Viewer Toggles */}
