@@ -6,6 +6,41 @@ export interface LithoMesh {
 }
 
 /**
+ * Sub-pixel bilinear interpolation for continuous, buttery-smooth height displacement.
+ * Prevents stair-stepping or pixelation artifacts in 3D prints.
+ */
+function sampleBilinearLuminance(
+  data: Uint8ClampedArray,
+  w: number,
+  h: number,
+  u: number,
+  v: number
+): number {
+  const fx = Math.max(0, Math.min(1, u)) * (w - 1);
+  const fy = Math.max(0, Math.min(1, v)) * (h - 1);
+  const x0 = Math.floor(fx);
+  const y0 = Math.floor(fy);
+  const x1 = Math.min(w - 1, x0 + 1);
+  const y1 = Math.min(h - 1, y0 + 1);
+  const dx = fx - x0;
+  const dy = fy - y0;
+
+  const idx00 = (y0 * w + x0) * 4;
+  const idx10 = (y0 * w + x1) * 4;
+  const idx01 = (y1 * w + x0) * 4;
+  const idx11 = (y1 * w + x1) * 4;
+
+  const l00 = (0.299 * data[idx00] + 0.587 * data[idx00 + 1] + 0.114 * data[idx00 + 2]) / 255;
+  const l10 = (0.299 * data[idx10] + 0.587 * data[idx10 + 1] + 0.114 * data[idx10 + 2]) / 255;
+  const l01 = (0.299 * data[idx01] + 0.587 * data[idx01 + 1] + 0.114 * data[idx01 + 2]) / 255;
+  const l11 = (0.299 * data[idx11] + 0.587 * data[idx11 + 1] + 0.114 * data[idx11 + 2]) / 255;
+
+  const top = l00 * (1 - dx) + l10 * dx;
+  const bot = l01 * (1 - dx) + l11 * dx;
+  return top * (1 - dy) + bot * dy;
+}
+
+/**
  * Authentic heart boundary test matching lithophane-viewer.tsx
  */
 export function isInsideHeart(u: number, v: number): boolean {
@@ -18,10 +53,8 @@ export function isInsideHeart(u: number, v: number): boolean {
 }
 
 /**
- * Generates a watertight 3D manifold mesh from an image data URL.
- * Top surface has height displacement from luminance.
- * Bottom is flat at z = 0.
- * Perimeter walls connect the top edges to bottom edges, ensuring a solid body for slicers.
+ * Generates an ultra-high-definition, watertight 3D manifold mesh directly from the photo.
+ * Matches the exact fidelity, contrast gamma, and tactile micro-relief seen in the 3D studio preview.
  */
 export async function generateLithophaneMeshData(
   photo: string,
@@ -37,136 +70,202 @@ export async function generateLithophaneMeshData(
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
-      // 80x80 grid provides razor-sharp micro-relief details while keeping 3MF file under 300 KB
-      const RES = 80;
-      const MAX_DEPTH = 2.4; // mm relief thickness (darkest areas)
-      const BASE_THICK = 0.8; // mm light transmission base (brightest areas)
+      // 1. Maintain high-resolution image buffer (do not downsample before sampling)
+      const imgW = Math.min(1200, Math.max(400, img.naturalWidth || 800));
+      const imgH = Math.min(1200, Math.max(400, img.naturalHeight || 800));
 
       const canvas = document.createElement("canvas");
-      canvas.width = RES;
-      canvas.height = RES;
+      canvas.width = imgW;
+      canvas.height = imgH;
       const ctx = canvas.getContext("2d");
       if (!ctx) {
         resolve(null);
         return;
       }
-      ctx.drawImage(img, 0, 0, RES, RES);
-      const imgData = ctx.getImageData(0, 0, RES, RES);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(img, 0, 0, imgW, imgH);
+      const imgData = ctx.getImageData(0, 0, imgW, imgH);
       const { data } = imgData;
 
-      const verts: [number, number, number][] = [];
+      const minT = 0.8;  // Thinnest printable layer in mm (pure highlights)
+      const maxT = 3.2;  // Thickest solid layer in mm (pure shadows)
+      const contrast = 1.15; // Contrast gamma curve matching 3D preview
+
+      const positions: [number, number, number][] = [];
       const triangles: [number, number, number][] = [];
 
-      // Grid index map: [row][col] -> vertex index
-      const topIndices: (number | null)[][] = [];
+      if (shape === "heart") {
+        // High density grid for smooth heart curves and facial details (200x200)
+        const cols = 200;
+        const rows = 200;
+        const vertMap: ({ front: number; back: number } | null)[][] = [];
 
-      // 1. Generate top surface vertices (centered around 0, 0 in X and Y)
-      for (let row = 0; row <= RES; row++) {
-        topIndices[row] = [];
-        for (let col = 0; col <= RES; col++) {
-          const u = col / RES;
-          const v = row / RES;
-
-          if (shape === "heart" && !isInsideHeart(u, v)) {
-            topIndices[row][col] = null;
-            continue;
-          }
-
-          const px = Math.min(RES - 1, Math.round(u * (RES - 1)));
-          const py = Math.min(RES - 1, Math.round(v * (RES - 1)));
-          const idx = (py * RES + px) * 4;
-          const lum = (0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2]) / 255;
-          const z = BASE_THICK + (1 - lum) * MAX_DEPTH;
-          const x = (u - 0.5) * widthMm;
+        for (let r = 0; r < rows; r++) {
+          vertMap[r] = [];
+          const v = r / (rows - 1);
           const y = (0.5 - v) * heightMm;
 
-          topIndices[row][col] = verts.length;
-          verts.push([x, y, z]);
-        }
-      }
+          for (let c = 0; c < cols; c++) {
+            const u = c / (cols - 1);
+            const x = (u - 0.5) * widthMm;
 
-      // 2. Generate bottom surface vertices (z = 0)
-      const botIndices: (number | null)[][] = [];
-      for (let row = 0; row <= RES; row++) {
-        botIndices[row] = [];
-        for (let col = 0; col <= RES; col++) {
-          const topIdx = topIndices[row][col];
-          if (topIdx === null) {
-            botIndices[row][col] = null;
-            continue;
-          }
-          const topV = verts[topIdx];
-          botIndices[row][col] = verts.length;
-          verts.push([topV[0], topV[1], 0]);
-        }
-      }
+            if (!isInsideHeart(u, v)) {
+              vertMap[r][c] = null;
+              continue;
+            }
 
-      // 3. Top and Bottom triangles
-      for (let row = 0; row < RES; row++) {
-        for (let col = 0; col < RES; col++) {
-          const tTL = topIndices[row][col];
-          const tTR = topIndices[row][col + 1];
-          const tBL = topIndices[row + 1][col];
-          const tBR = topIndices[row + 1][col + 1];
+            let lum = sampleBilinearLuminance(data, imgW, imgH, u, v);
+            lum = Math.pow(Math.max(0, Math.min(1, lum)), contrast);
+            const t = minT + (1.0 - lum) * (maxT - minT);
 
-          const bTL = botIndices[row][col];
-          const bTR = botIndices[row][col + 1];
-          const bBL = botIndices[row + 1][col];
-          const bBR = botIndices[row + 1][col + 1];
+            const fIdx = positions.length;
+            positions.push([x, y, t]);
+            const bIdx = positions.length;
+            positions.push([x, y, 0]);
 
-          // Top surface (CCW viewed from above: normal points +Z)
-          if (tTL !== null && tTR !== null && tBL !== null && tBR !== null) {
-            triangles.push([tTL, tBL, tTR]);
-            triangles.push([tTR, tBL, tBR]);
-          } else if (tTL !== null && tTR !== null && tBL !== null) {
-            triangles.push([tTL, tBL, tTR]);
-          } else if (tTR !== null && tBR !== null && tBL !== null) {
-            triangles.push([tTR, tBL, tBR]);
-          } else if (tTL !== null && tBL !== null && tBR !== null) {
-            triangles.push([tTL, tBL, tBR]);
-          } else if (tTL !== null && tTR !== null && tBR !== null) {
-            triangles.push([tTL, tTR, tBR]);
-          }
-
-          // Bottom surface (CW viewed from above: normal points -Z)
-          if (bTL !== null && bTR !== null && bBL !== null && bBR !== null) {
-            triangles.push([bTL, bTR, bBL]);
-            triangles.push([bTR, bBR, bBL]);
-          } else if (bTL !== null && bTR !== null && bBL !== null) {
-            triangles.push([bTL, bTR, bBL]);
-          } else if (bTR !== null && bBR !== null && bBL !== null) {
-            triangles.push([bTR, bBR, bBL]);
-          } else if (bTL !== null && bBL !== null && bBR !== null) {
-            triangles.push([bTL, bBR, bBL]);
-          } else if (bTL !== null && bTR !== null && bBR !== null) {
-            triangles.push([bTL, bBR, bTR]);
-          }
-
-          // 4. Perimeter Walls (connecting top edge to bottom edge)
-          // North edge of cell
-          if (tTL !== null && tTR !== null && (row === 0 || topIndices[row - 1]?.[col] === null || topIndices[row - 1]?.[col + 1] === null)) {
-            triangles.push([tTL, tTR, bTL!]);
-            triangles.push([tTR, bTR!, bTL!]);
-          }
-          // South edge of cell
-          if (tBL !== null && tBR !== null && (row === RES - 1 || topIndices[row + 2]?.[col] === null || topIndices[row + 2]?.[col + 1] === null)) {
-            triangles.push([tBL, bBL!, tBR]);
-            triangles.push([tBR, bBL!, bBR!]);
-          }
-          // West edge of cell
-          if (tTL !== null && tBL !== null && (col === 0 || topIndices[row]?.[col - 1] === null || topIndices[row + 1]?.[col - 1] === null)) {
-            triangles.push([tTL, bTL!, tBL]);
-            triangles.push([tBL, bTL!, bBL!]);
-          }
-          // East edge of cell
-          if (tTR !== null && tBR !== null && (col === RES - 1 || topIndices[row]?.[col + 2] === null || topIndices[row + 1]?.[col + 2] === null)) {
-            triangles.push([tTR, tBR, bTR!]);
-            triangles.push([tBR, bBR!, bTR!]);
+            vertMap[r][c] = { front: fIdx, back: bIdx };
           }
         }
-      }
 
-      resolve({ verts, triangles });
+        const directedEdges = new Map<string, { a: number; b: number; aBack: number; bBack: number }>();
+
+        function addHeartFrontTriangle(
+          v0: { front: number; back: number },
+          v1: { front: number; back: number },
+          v2: { front: number; back: number }
+        ) {
+          // Front CCW
+          triangles.push([v0.front, v1.front, v2.front]);
+          // Back CW
+          triangles.push([v0.back, v2.back, v1.back]);
+
+          const edges = [
+            [v0, v1],
+            [v1, v2],
+            [v2, v0],
+          ] as const;
+
+          for (const [p1, p2] of edges) {
+            const key = `${p1.front}_${p2.front}`;
+            directedEdges.set(key, { a: p1.front, b: p2.front, aBack: p1.back, bBack: p2.back });
+          }
+        }
+
+        for (let r = 0; r < rows - 1; r++) {
+          for (let c = 0; c < cols - 1; c++) {
+            const tl = vertMap[r][c];
+            const tr = vertMap[r][c + 1];
+            const bl = vertMap[r + 1][c];
+            const br = vertMap[r + 1][c + 1];
+
+            const count = (tl ? 1 : 0) + (tr ? 1 : 0) + (bl ? 1 : 0) + (br ? 1 : 0);
+            if (count === 4) {
+              addHeartFrontTriangle(tl!, tr!, bl!);
+              addHeartFrontTriangle(tr!, br!, bl!);
+            } else if (count === 3) {
+              if (!br) addHeartFrontTriangle(tl!, tr!, bl!);
+              else if (!bl) addHeartFrontTriangle(tl!, tr!, br!);
+              else if (!tr) addHeartFrontTriangle(tl!, br!, bl!);
+              else if (!tl) addHeartFrontTriangle(tr!, br!, bl!);
+            }
+          }
+        }
+
+        // Watertight sidewalls connecting front heart edge to back base
+        for (const [, edge] of directedEdges.entries()) {
+          const reverseKey = `${edge.b}_${edge.a}`;
+          if (!directedEdges.has(reverseKey)) {
+            triangles.push([edge.a, edge.b, edge.bBack]);
+            triangles.push([edge.a, edge.bBack, edge.aBack]);
+          }
+        }
+
+        resolve({ verts: positions, triangles });
+      } else {
+        // High density grid for flat panel (~240 cols) producing ~230,000 smooth triangles
+        const cols = 240;
+        const rows = Math.max(120, Math.min(320, Math.round(cols * (heightMm / widthMm))));
+
+        for (let r = 0; r < rows; r++) {
+          const v = r / (rows - 1);
+          const y = (0.5 - v) * heightMm;
+
+          for (let c = 0; c < cols; c++) {
+            const u = c / (cols - 1);
+            let lum = sampleBilinearLuminance(data, imgW, imgH, u, v);
+            lum = Math.pow(Math.max(0, Math.min(1, lum)), contrast);
+            let t = minT + (1.0 - lum) * (maxT - minT);
+
+            // Architectural framed border (like professional lithophane makers)
+            const borderDistX = Math.min(c, cols - 1 - c) * (widthMm / (cols - 1));
+            const borderDistY = Math.min(r, rows - 1 - r) * (heightMm / (rows - 1));
+            const borderDist = Math.min(borderDistX, borderDistY);
+            const borderWidthMm = 2.4;
+            if (borderDist < borderWidthMm) {
+              const borderT = 3.4;
+              const factor = Math.sin((borderDist / borderWidthMm) * Math.PI * 0.5);
+              t = borderT * (1.0 - factor) + t * factor;
+            }
+
+            const x = (u - 0.5) * widthMm;
+            // Front vertex (even indices: 2 * (r * cols + c))
+            positions.push([x, y, t]);
+            // Back vertex (odd indices: 2 * (r * cols + c) + 1)
+            positions.push([x, y, 0]);
+          }
+        }
+
+        const getIdx = (r: number, c: number, isBack: boolean) => (r * cols + c) * 2 + (isBack ? 1 : 0);
+
+        // 1. Front face triangles (CCW)
+        for (let r = 0; r < rows - 1; r++) {
+          for (let c = 0; c < cols - 1; c++) {
+            const tl = getIdx(r, c, false);
+            const tr = getIdx(r, c + 1, false);
+            const bl = getIdx(r + 1, c, false);
+            const br = getIdx(r + 1, c + 1, false);
+            triangles.push([tl, tr, bl]);
+            triangles.push([tr, br, bl]);
+          }
+        }
+
+        // 2. Back face triangles (CW to face down/outwards)
+        for (let r = 0; r < rows - 1; r++) {
+          for (let c = 0; c < cols - 1; c++) {
+            const tl = getIdx(r, c, true);
+            const tr = getIdx(r, c + 1, true);
+            const bl = getIdx(r + 1, c, true);
+            const br = getIdx(r + 1, c + 1, true);
+            triangles.push([tl, bl, tr]);
+            triangles.push([tr, bl, br]);
+          }
+        }
+
+        // 3. Side Walls (closing the 3D solid plate)
+        // North
+        for (let c = 0; c < cols - 1; c++) {
+          triangles.push([getIdx(0, c, false), getIdx(0, c, true), getIdx(0, c + 1, false)]);
+          triangles.push([getIdx(0, c + 1, false), getIdx(0, c, true), getIdx(0, c + 1, true)]);
+        }
+        // South
+        for (let c = 0; c < cols - 1; c++) {
+          triangles.push([getIdx(rows - 1, c, false), getIdx(rows - 1, c + 1, false), getIdx(rows - 1, c, true)]);
+          triangles.push([getIdx(rows - 1, c + 1, false), getIdx(rows - 1, c + 1, true), getIdx(rows - 1, c, true)]);
+        }
+        // West
+        for (let r = 0; r < rows - 1; r++) {
+          triangles.push([getIdx(r, 0, false), getIdx(r + 1, 0, false), getIdx(r, 0, true)]);
+          triangles.push([getIdx(r + 1, 0, false), getIdx(r + 1, 0, true), getIdx(r, 0, true)]);
+        }
+        // East
+        for (let r = 0; r < rows - 1; r++) {
+          triangles.push([getIdx(r, cols - 1, false), getIdx(r, cols - 1, true), getIdx(r + 1, cols - 1, false)]);
+          triangles.push([getIdx(r + 1, cols - 1, false), getIdx(r, cols - 1, true), getIdx(r + 1, cols - 1, true)]);
+        }
+
+        resolve({ verts: positions, triangles });
+      }
     };
     img.onerror = () => resolve(null);
     img.src = photo;
@@ -184,7 +283,7 @@ export function buildLithophaneBambu3mf(
 ): Blob {
   let vertXml = "";
   for (const v of mesh.verts) {
-    vertXml += `\n          <vertex x="${v[0].toFixed(3)}" y="${v[1].toFixed(3)}" z="${v[2].toFixed(3)}" />`;
+    vertXml += `\n          <vertex x="${v[0].toFixed(2)}" y="${v[1].toFixed(2)}" z="${v[2].toFixed(2)}" />`;
   }
 
   let triXml = "";
