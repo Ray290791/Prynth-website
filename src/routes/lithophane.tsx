@@ -297,7 +297,7 @@ function LithophaneStudioPage() {
             <div className="flex items-center justify-between px-1 text-xs text-muted">
               <span className="flex items-center gap-1.5">
                 <RotateCw className="size-3 text-accent" />
-                Drag to rotate 360° · Scroll to inspect 0.12mm layer lines
+                Drag to rotate 360° · Scroll to inspect 3D carved relief texture
               </span>
               <span className="text-fg font-medium">
                 Shown with Included 3D-Printed Desktop Display Stand
@@ -539,10 +539,10 @@ function LithophaneStudioPage() {
             <div className="rounded-xl border border-border bg-surface p-3.5 space-y-1">
               <div className="flex items-center gap-1.5 text-accent font-semibold text-xs">
                 <Sparkles className="size-3.5 shrink-0" />
-                <span>0.12mm FDM Layers</span>
+                <span>3D Bas-Relief Depth</span>
               </div>
               <p className="text-[11px] text-muted leading-relaxed">
-                Printed vertically with visible 0.12mm mechanical micro-layer lines and 100% solid infill. Honest physical texture.
+                Carved in 0.8mm – 3.4mm physical polymer depth. Every facial contour and background detail has real sculptural relief.
               </p>
             </div>
 

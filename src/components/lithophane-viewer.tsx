@@ -148,12 +148,6 @@ function buildLithophaneGeometry(
 
         const { u: sU, v: sV } = getMappedUv(u, v, widthMm, heightMm, fitMode, imgNaturalDim);
         let lum = sampleBilinearLuminance(data, imgW, imgH, sU, sV);
-        // Slicer mechanical layer quantization
-        const layerSteps = Math.round(heightMm / 0.20);
-        const vQuant = Math.floor(sV * layerSteps) / layerSteps;
-        let lumQuant = sampleBilinearLuminance(data, imgW, imgH, sU, vQuant);
-        lum = lum * 0.5 + lumQuant * 0.5;
-
         lum = Math.pow(Math.max(0, Math.min(1, lum)), contrast);
         if (invert) lum = 1.0 - lum;
 
@@ -237,9 +231,9 @@ function buildLithophaneGeometry(
     return geometry;
   }
 
-  // 2. CLASSIC FLAT PANEL RECTANGULAR MESH
-  const cols = 150;
-  const rows = Math.max(80, Math.min(180, Math.round(cols * (heightMm / widthMm))));
+  // 2. CLASSIC FLAT PANEL RECTANGULAR MESH WITH ARCHITECTURAL BORDER
+  const cols = 180;
+  const rows = Math.max(90, Math.min(240, Math.round(cols * (heightMm / widthMm))));
 
   const thicknessGrid: number[][] = [];
 
@@ -252,16 +246,22 @@ function buildLithophaneGeometry(
 
       const { u: sU, v: sV } = getMappedUv(u, v, widthMm, heightMm, fitMode, imgNaturalDim);
       let lum = sampleBilinearLuminance(data, imgW, imgH, sU, sV);
-      // Slicer mechanical layer quantization
-      const layerSteps = Math.round(heightMm / 0.20);
-      const vQuant = Math.floor(sV * layerSteps) / layerSteps;
-      let lumQuant = sampleBilinearLuminance(data, imgW, imgH, sU, vQuant);
-      lum = lum * 0.5 + lumQuant * 0.5;
-
       lum = Math.pow(Math.max(0, Math.min(1, lum)), contrast);
       if (invert) lum = 1.0 - lum;
 
-      const t = minT + (1.0 - lum) * (maxT - minT);
+      let t = minT + (1.0 - lum) * (maxT - minT);
+
+      // Architectural framed perimeter border (like LithophaneMaker framed prints)
+      const borderDistX = Math.min(c, cols - 1 - c) * (widthMm / (cols - 1));
+      const borderDistY = Math.min(r, rows - 1 - r) * (heightMm / (rows - 1));
+      const borderDist = Math.min(borderDistX, borderDistY);
+      const borderWidthMm = 2.6;
+      if (borderDist < borderWidthMm) {
+        const borderT = 3.6;
+        const factor = Math.sin((borderDist / borderWidthMm) * Math.PI * 0.5);
+        t = borderT * (1.0 - factor) + t * factor;
+      }
+
       thicknessGrid[r][c] = t;
     }
   }
@@ -419,86 +419,61 @@ const lithophaneShader = {
       vec2 mappedUv = (vUv - 0.5) * uUvScale + 0.5;
       mappedUv = clamp(mappedUv, 0.0, 1.0);
 
-      // ── Physical FDM 3D Printing Layer Calculations ──
-      // Physical layer height on Bambu Lab machines is 0.12mm - 0.16mm
-      float layerHeightMm = 0.16; // Visible mechanical layer thickness
-      float totalLayers = max(100.0, uDimensionsMm.y / layerHeightMm);
-      float layerCoord = (1.0 - vUv.y) * totalLayers;
-      float layerIdx = floor(layerCoord);
-      float layerFract = fract(layerCoord); // 0.0 at bottom seam, 0.5 at bead apex, 1.0 at top seam
-
-      // Slicer Discrete Toolpath Quantization:
-      // The extruder deposits discrete horizontal passes. Slicers sample image rows discretely.
-      float yQuantized = 1.0 - (layerIdx + 0.5) / totalLayers;
-      float mappedYQuantized = (yQuantized - 0.5) * uUvScale.y + 0.5;
-      mappedYQuantized = clamp(mappedYQuantized, 0.0, 1.0);
-
-      // Sample continuous image & quantized layer slice using aspect-mapped UVs
-      vec4 texColorCont = texture2D(uTexture, mappedUv);
-      vec4 texColorQuant = texture2D(uTexture, vec2(mappedUv.x, mappedYQuantized));
-
-      float lumCont = 0.299 * texColorCont.r + 0.587 * texColorCont.g + 0.114 * texColorCont.b;
-      float lumQuant = 0.299 * texColorQuant.r + 0.587 * texColorQuant.g + 0.114 * texColorQuant.b;
-
-      // Apply contrast curve to both
-      lumCont = pow(clamp(lumCont, 0.0, 1.0), uContrast);
-      lumQuant = pow(clamp(lumQuant, 0.0, 1.0), uContrast);
+      // Clean, unadulterated high-resolution continuous luminance
+      vec4 texColor = texture2D(uTexture, mappedUv);
+      float lum = 0.299 * texColor.r + 0.587 * texColor.g + 0.114 * texColor.b;
+      lum = pow(clamp(lum, 0.0, 1.0), uContrast);
       if (uInvert > 0.5) {
-        lumCont = 1.0 - lumCont;
-        lumQuant = 1.0 - lumQuant;
+        lum = 1.0 - lum;
       }
 
-      // Blend 60% discrete print stepping + 40% micro-gradient
-      float physicalLum = mix(lumCont, lumQuant, 0.60);
-
-      // Micro-relief surface normal gradients from heightmap
-      vec2 texel = vec2(1.0 / 800.0, 1.0 / 600.0);
+      // ── Tactile 3D Bas-Relief Surface Normals (LithophaneMaker High-Definition Relief) ──
+      // Samples neighboring micro-relief gradients to give facial features, hair, and edges crisp physical 3D contours
+      vec2 texel = vec2(1.0 / 800.0, 1.0 / 800.0);
       float lumR = texture2D(uTexture, clamp(mappedUv + vec2(texel.x, 0.0), 0.0, 1.0)).r;
       float lumL = texture2D(uTexture, clamp(mappedUv - vec2(texel.x, 0.0), 0.0, 1.0)).r;
       float lumU = texture2D(uTexture, clamp(mappedUv + vec2(0.0, texel.y), 0.0, 1.0)).r;
       float lumD = texture2D(uTexture, clamp(mappedUv - vec2(0.0, texel.y), 0.0, 1.0)).r;
 
-      vec3 surfaceNormal = normalize(vNormal + vec3((lumL - lumR) * 0.35, (lumD - lumU) * 0.35, 0.0));
+      vec3 surfaceNormal = normalize(vNormal + vec3((lumL - lumR) * 0.70, (lumD - lumU) * 0.70, 0.0));
 
-      // ── Physical Layer Bead Profile & Normal Ridges ──
-      // Filament cross-section is a curved horizontal cylinder:
-      // Center (0.5) is apex, edges (0.0 & 1.0) are recessed inter-layer valleys
-      float beadDist = (layerFract - 0.5) * 2.0; // -1.0 to +1.0 slope
-      float beadCurvature = sin(layerFract * 3.14159265); // 0 at seams, 1.0 at crest
-      float interLayerSeam = smoothstep(0.0, 0.12, layerFract) * smoothstep(1.0, 0.88, layerFract);
-
-      // Strong normal perturbation: each layer has distinct horizontal highlight & shadow ridge
-      surfaceNormal.y += beadDist * 0.45;
-      // Faint nozzle extrusion drag micro-texture along X
-      surfaceNormal.x += sin(vUv.x * uDimensionsMm.x * 8.0 + layerIdx * 1.7) * 0.035;
-      surfaceNormal = normalize(surfaceNormal);
+      // Authentic 0.12mm FDM filament layer micro-sheen (anisotropic grazing specular only, zero black stripes)
+      float layerCount = uDimensionsMm.y / 0.12;
+      float microSheen = sin(vUv.y * layerCount * 6.2831853) * 0.035;
 
       vec3 viewDir = normalize(vViewPosition);
 
-      // 1. Studio ambient & key lighting (room reflections on white plastic)
-      vec3 keyLightDir = normalize(vec3(0.45, 0.85, 0.9));
+      // ── Directional Studio Three-Point Lighting for 3D Relief ──
+      // Key light from top-right: casts natural shadows in the carved relief valleys and highlights on peaks
+      vec3 keyLightDir = normalize(vec3(0.55, 0.75, 0.70));
       float NdotL = max(dot(surfaceNormal, keyLightDir), 0.0);
 
-      // Specular sheen of silky PLA plastic ridges (highlights the horizontal layer lines)
+      // Fill light from left: softens shadows and accentuates contours
+      vec3 fillLightDir = normalize(vec3(-0.60, 0.35, -0.30));
+      float NdotFill = max(dot(surfaceNormal, fillLightDir), 0.0);
+
+      // Ambient Occlusion: deeper carved recesses naturally receive subtle contact shading
+      float ao = clamp(0.38 + 0.62 * pow(lum, 0.55), 0.0, 1.0);
+
+      // Specular highlight of silky 3D printed polymer
       vec3 halfDir = normalize(keyLightDir + viewDir);
-      float spec = pow(max(dot(surfaceNormal, halfDir), 0.0), 32.0) * 0.32;
+      float spec = pow(max(dot(surfaceNormal, halfDir), 0.0), 24.0) * (0.26 + microSheen);
 
-      // Authentic unlit 3D carved white plastic appearance (shows distinct horizontal corduroy lines)
-      vec3 unlitPlastic = uPlasticColor * (0.34 + 0.66 * NdotL) + vec3(spec);
+      // 1. UNLIT 3D SCULPTED RELIEF (LithophaneMaker STL Style):
+      // Shows the genuine, carved physical 3D plastic bas-relief under studio lighting
+      vec3 plaBase = uPlasticColor; // Jade White / Ivory architectural PLA
+      vec3 unlitPlastic = plaBase * (0.24 * ao + 0.64 * NdotL + 0.16 * NdotFill) + vec3(spec);
 
-      // 2. Physical Backlight Transmission:
-      // Light passing through varying polymer wall thickness:
-      // Beer-Lambert transmission modulated by horizontal filament density and seams
-      float baseTransmission = 0.04 + 0.96 * pow(physicalLum, 1.30);
+      // 2. SUNLIGHT BACKLIT TRANSMISSION:
+      // Real Beer-Lambert optical transmission: thin areas glow brightly, thick areas block light
+      float transmission = pow(lum, 1.28);
+      vec3 sunlitGold = uLightColor; // Warm sunlight through polymer
+      vec3 transmittedGlow = sunlitGold * (0.05 + 0.95 * transmission) * 1.30;
 
-      // Inter-layer boundary striation: light slightly scatters at the fusion boundary between layers
-      float layerTransmission = 0.82 + 0.18 * (0.65 * beadCurvature + 0.35 * interLayerSeam);
-      vec3 backlitGlow = uLightColor * (baseTransmission * layerTransmission);
+      // Combined lit state: warm rear light streaming through + front surface specular reflections
+      vec3 litPlastic = transmittedGlow + plaBase * 0.10 * NdotL + vec3(spec * 0.35);
 
-      // Combined lit state: warm transmission shining through plastic + surface specular reflections
-      vec3 litPlastic = unlitPlastic * 0.18 + backlitGlow * 1.15 + vec3(spec * 0.45);
-
-      // Smooth transition between Backlight OFF (Sculptural PLA) and Backlight ON (Sunlit Window / Lamp Glow)
+      // Smooth transition between 3D Carved Relief (Backlight OFF) and Sunlit Window Glow (Backlight ON)
       vec3 finalColor = mix(unlitPlastic, litPlastic, uLightIntensity);
 
       gl_FragColor = vec4(finalColor, 1.0);
@@ -859,19 +834,20 @@ export function LithophaneViewer({
           className="h-full w-full cursor-grab active:cursor-grabbing"
         >
           {/* Ambient Lighting */}
-          <ambientLight intensity={darkRoom ? 0.35 : 0.85} />
+          <ambientLight intensity={darkRoom ? 0.45 : 0.85} />
 
-          {/* Key Light */}
+          {/* Key Light: directional studio light to highlight physical 3D carved relief */}
           <directionalLight
-            position={[100, 150, 120]}
-            intensity={darkRoom ? 0.6 : 1.3}
+            position={[90, 130, 110]}
+            intensity={darkRoom ? 1.1 : 1.5}
             castShadow
             shadow-mapSize={[1024, 1024]}
           />
+          {/* Fill Light: secondary rim light to accentuate contoured borders */}
           <directionalLight
-            position={[-80, 80, -60]}
-            intensity={darkRoom ? 0.3 : 0.6}
-            color="#8fb0ff"
+            position={[-90, 70, -60]}
+            intensity={darkRoom ? 0.45 : 0.75}
+            color="#b8ceff"
           />
 
           <LithophaneScene
@@ -911,7 +887,7 @@ export function LithophaneViewer({
 
         {/* Top Control Overlay Bar */}
         <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
-          {/* Shape, Dimensions & Layer Line Badge */}
+          {/* Shape, Dimensions & Relief Mode Badge */}
           <div className="pointer-events-auto flex items-center gap-2">
             <div className="flex items-center gap-1.5 rounded-full border border-border/80 bg-surface/85 px-3 py-1 text-xs backdrop-blur-md shadow-xs">
               <Layers className="size-3.5 text-accent" />
@@ -924,13 +900,19 @@ export function LithophaneViewer({
               </span>
             </div>
 
-            <div className="hidden sm:flex items-center gap-1 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 text-[11px] font-semibold text-accent backdrop-blur-md shadow-xs">
-              <span>0.12mm Layer Lines Visible</span>
-            </div>
+            {backlightOn ? (
+              <div className="hidden sm:flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-300 backdrop-blur-md shadow-xs">
+                <span>☀️ Sunlit Window Glow</span>
+              </div>
+            ) : (
+              <div className="hidden sm:flex items-center gap-1 rounded-full border border-accent/40 bg-accent/15 px-2.5 py-1 text-[11px] font-semibold text-accent backdrop-blur-md shadow-xs">
+                <span>🗿 3D Carved Relief Texture</span>
+              </div>
+            )}
 
             {fitMode === "stretch" ? (
-              <div className="hidden sm:flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-300 backdrop-blur-md shadow-xs">
-                <span>Strict Frame (Stretched)</span>
+              <div className="hidden md:flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-300 backdrop-blur-md shadow-xs">
+                <span>Strict Frame</span>
               </div>
             ) : (
               <div className="hidden md:flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-300 backdrop-blur-md shadow-xs">
@@ -941,6 +923,19 @@ export function LithophaneViewer({
 
           {/* Quick Viewer Toggles */}
           <div className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-border/80 bg-surface/85 p-1 backdrop-blur-md shadow-xs">
+            {/* View Mode Toggle: Backlit vs 3D Relief Texture */}
+            <button
+              type="button"
+              onClick={onToggleBacklight}
+              title={backlightOn ? "Switch to 3D Carved Relief Texture (Inspect Physical Print)" : "Switch to Sunlight Backlit View"}
+              className={cn(
+                "flex size-7 items-center justify-center rounded-full transition-colors cursor-pointer",
+                backlightOn ? "text-amber-400 hover:text-amber-300" : "bg-accent/20 text-accent font-bold"
+              )}
+            >
+              {backlightOn ? <Sun className="size-3.5" /> : <Layers className="size-3.5" />}
+            </button>
+
             {/* Dark Room vs Daylight Studio */}
             <button
               type="button"
@@ -979,20 +974,29 @@ export function LithophaneViewer({
           </div>
         </div>
 
-        {/* Bottom Prominent Backlight Power Button */}
+        {/* Bottom Prominent Dual-Mode Switcher Button */}
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 pointer-events-auto">
           <button
             type="button"
             onClick={onToggleBacklight}
             className={cn(
-              "flex items-center gap-2.5 rounded-full px-4 py-2 text-xs font-semibold shadow-lg transition-all duration-200 cursor-pointer border",
+              "flex items-center gap-2.5 rounded-full px-5 py-2.5 text-xs font-semibold shadow-xl transition-all duration-200 cursor-pointer border",
               backlightOn
                 ? "bg-amber-400 text-stone-950 border-amber-300 ring-4 ring-amber-400/20 shadow-amber-500/30 font-bold"
-                : "bg-surface/90 text-fg border-border hover:bg-surface hover:border-accent/40"
+                : "bg-surface/95 text-fg border-accent/50 ring-4 ring-accent/20 shadow-accent/25 hover:bg-surface font-bold"
             )}
           >
-            <Sun className={cn("size-4", backlightOn ? "text-stone-950 fill-current" : "text-muted")} />
-            <span>{backlightOn ? "☀️ Sunlight Backlit: ON (Window / Lamp)" : "Simulate Sunlight Backlight"}</span>
+            {backlightOn ? (
+              <>
+                <Sun className="size-4 text-stone-950 fill-current shrink-0" />
+                <span>☀️ Sunlight Backlit: ON · Click to Inspect 3D Relief Texture</span>
+              </>
+            ) : (
+              <>
+                <Layers className="size-4 text-accent shrink-0" />
+                <span>🗿 3D Carved Relief: ON · Click for Sunlight Backlight</span>
+              </>
+            )}
           </button>
         </div>
       </div>
