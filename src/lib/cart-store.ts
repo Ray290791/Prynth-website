@@ -45,6 +45,8 @@ export type CustomSpec = {
   complexityId?: string;
   modelRotation?: [number, number, number];
   referencePhotos?: string[];
+  threadedInserts?: { count: number; size: string };
+  rubberPads?: boolean;
 };
 
 export type CartItem = {
@@ -153,4 +155,18 @@ export function shippingFee(
   if (method === "express") return express;
   if (subtotal >= freeAt) return 0;
   return standard;
+}
+
+export function getBulkDiscount(items: CartItem[]) {
+  const totalCount = cartCount(items);
+  if (totalCount >= 20) {
+    return { percent: 15, tier: "20+ units", discount: 0.15, count: totalCount, nextTierAt: null, remainingForNext: 0 };
+  }
+  if (totalCount >= 10) {
+    return { percent: 10, tier: "10+ units", discount: 0.10, count: totalCount, nextTierAt: 20, remainingForNext: 20 - totalCount };
+  }
+  if (totalCount >= 5) {
+    return { percent: 5, tier: "5+ units", discount: 0.05, count: totalCount, nextTierAt: 10, remainingForNext: 10 - totalCount };
+  }
+  return { percent: 0, tier: "", discount: 0, count: totalCount, nextTierAt: 5, remainingForNext: 5 - totalCount };
 }

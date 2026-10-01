@@ -222,6 +222,16 @@ function OrderPage() {
                         {item.custom.brim === "outer" ? "Outer brim" : item.custom.brim}
                       </span>
                     ) : null}
+                    {item.custom.threadedInserts ? (
+                      <span className="rounded bg-accent/10 px-1.5 py-0.5 text-accent font-medium">
+                        {item.custom.threadedInserts.count}× {item.custom.threadedInserts.size} Brass Inserts
+                      </span>
+                    ) : null}
+                    {item.custom.rubberPads ? (
+                      <span className="rounded bg-surface-2 px-1.5 py-0.5">
+                        Anti-slip pads included
+                      </span>
+                    ) : null}
                     {item.custom.fileName ? (
                       <span className="truncate rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[11px]">
                         File: {item.custom.fileName}
@@ -315,6 +325,19 @@ function OrderPage() {
           </p>
         </div>
       </section>
+
+      {order.notes && (
+        <section className="mt-6 rounded-3xl bg-surface p-6 shadow-[var(--shadow-border)]">
+          <h2 className="text-sm font-semibold text-fg">Order Details & B2B Tax Info</h2>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs">
+            {order.notes.split(" | ").map((note: string, idx: number) => (
+              <span key={idx} className="rounded-xl border border-border bg-surface-2 px-3 py-1.5 font-medium text-fg">
+                {note}
+              </span>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div className="mt-8 flex flex-col gap-3 sm:flex-row print:hidden">
         <Button asChild>

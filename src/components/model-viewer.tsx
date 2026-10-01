@@ -22,6 +22,9 @@ import {
   Loader2,
   Move,
   ScanLine,
+  Ruler,
+  Lock,
+  Unlock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTheme } from "@/lib/theme";
@@ -50,6 +53,7 @@ export interface ModelViewerProps {
   rotation?: [number, number, number];
   onRotationChange?: (rotation: [number, number, number]) => void;
   onReportChange?: (report: PrintabilityReport | null) => void;
+  onDimensionsChange?: (dims: { x: number; y: number; z: number }, volumeCm3: number, solidVolumeCm3?: number) => void;
   className?: string;
 }
 
@@ -475,6 +479,7 @@ export function ModelViewer({
   rotation: externalRotation,
   onRotationChange,
   onReportChange,
+  onDimensionsChange,
   className,
 }: ModelViewerProps) {
   const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null);
@@ -502,6 +507,106 @@ export function ModelViewer({
     volumeCm3: number;
     solidVolumeCm3?: number;
   } | null>(null);
+
+  const [origStats, setOrigStats] = useState<{
+    sizeMm: { x: number; y: number; z: number };
+    volumeCm3: number;
+    solidVolumeCm3?: number;
+  } | null>(null);
+
+  const [scaleToolOpen, setScaleToolOpen] = useState(false);
+  const [scaleUniform, setScaleUniform] = useState(true);
+  const [dimInput, setDimInput] = useState<{ x: string; y: string; z: string; percent: string }>({
+    x: "",
+    y: "",
+    z: "",
+    percent: "100",
+  });
+
+  function handleApplyScale(targetX: number, targetY: number, targetZ: number) {
+    if (!geometry || !stats) return;
+    if (targetX <= 0 || targetY <= 0 || targetZ <= 0) {
+      toast.error("Dimensions must be greater than 0 mm.");
+      return;
+    }
+    const currentX = stats.sizeMm.x;
+    const currentY = stats.sizeMm.y;
+    const currentZ = stats.sizeMm.z;
+    if (currentX <= 0 || currentY <= 0 || currentZ <= 0) return;
+
+    const fx = targetX / currentX;
+    const fy = targetY / currentY;
+    const fz = targetZ / currentZ;
+
+    const nextGeo = geometry.clone();
+    nextGeo.scale(fx, fy, fz);
+    const newStats = computeStats(nextGeo);
+    if (origStats?.solidVolumeCm3) {
+      (newStats as any).solidVolumeCm3 =
+        origStats.solidVolumeCm3 * (newStats.volumeCm3 / (origStats.volumeCm3 || 1));
+    }
+
+    setGeometry(nextGeo);
+    setStats(newStats);
+    setDimInput({
+      x: newStats.sizeMm.x.toFixed(1),
+      y: newStats.sizeMm.y.toFixed(1),
+      z: newStats.sizeMm.z.toFixed(1),
+      percent: origStats ? Math.round((newStats.sizeMm.x / origStats.sizeMm.x) * 100).toString() : "100",
+    });
+
+    onDimensionsChange?.(newStats.sizeMm, newStats.volumeCm3, (newStats as any).solidVolumeCm3);
+    toast.success(`Rescaled to ${newStats.sizeMm.x.toFixed(1)} × ${newStats.sizeMm.y.toFixed(1)} × ${newStats.sizeMm.z.toFixed(1)} mm`);
+  }
+
+  function handleResetScale() {
+    if (!origStats || !stats || !geometry) return;
+    handleApplyScale(origStats.sizeMm.x, origStats.sizeMm.y, origStats.sizeMm.z);
+    setDimInput({
+      x: origStats.sizeMm.x.toFixed(1),
+      y: origStats.sizeMm.y.toFixed(1),
+      z: origStats.sizeMm.z.toFixed(1),
+      percent: "100",
+    });
+    toast.info("Reset to original upload dimensions (100%).");
+  }
+
+  function handleQuickPercent(pct: number) {
+    if (!origStats) return;
+    const scaleFactor = pct / 100;
+    const targetX = origStats.sizeMm.x * scaleFactor;
+    const targetY = origStats.sizeMm.y * scaleFactor;
+    const targetZ = origStats.sizeMm.z * scaleFactor;
+    handleApplyScale(targetX, targetY, targetZ);
+  }
+
+  function handleAxisChange(axis: "x" | "y" | "z", valStr: string) {
+    const val = parseFloat(valStr);
+    if (isNaN(val) || val <= 0 || !stats) {
+      setDimInput((prev) => ({ ...prev, [axis]: valStr }));
+      return;
+    }
+    if (scaleUniform) {
+      const currentVal = stats.sizeMm[axis];
+      if (currentVal > 0) {
+        const ratio = val / currentVal;
+        const other1 = axis === "x" ? "y" : axis === "y" ? "x" : "x";
+        const other2 = axis === "x" ? "z" : axis === "y" ? "z" : "y";
+        const next1 = (stats.sizeMm[other1] * ratio).toFixed(1);
+        const next2 = (stats.sizeMm[other2] * ratio).toFixed(1);
+        const origAxis = origStats ? origStats.sizeMm[axis] : currentVal;
+        const pct = origAxis > 0 ? Math.round((val / origAxis) * 100).toString() : "100";
+        setDimInput({
+          [axis]: valStr,
+          [other1]: next1,
+          [other2]: next2,
+          percent: pct,
+        } as any);
+      }
+    } else {
+      setDimInput((prev) => ({ ...prev, [axis]: valStr }));
+    }
+  }
 
   const { theme } = useTheme();
   const isLight = theme === "light";
@@ -583,6 +688,17 @@ export function ModelViewer({
       }
       if (active) {
         setStats(st);
+        setOrigStats({
+          sizeMm: { ...st.sizeMm },
+          volumeCm3: st.volumeCm3,
+          solidVolumeCm3: (st as any).solidVolumeCm3,
+        });
+        setDimInput({
+          x: st.sizeMm.x.toFixed(1),
+          y: st.sizeMm.y.toFixed(1),
+          z: st.sizeMm.z.toFixed(1),
+          percent: "100",
+        });
         setGeometry(geo);
         setLoading(false);
       }
@@ -1007,6 +1123,36 @@ export function ModelViewer({
             <span className="hidden sm:inline">Lay on Face</span>
           </button>
 
+          {/* Interactive Scale Tool (Dimensions in mm) */}
+          {stats && (
+            <button
+              type="button"
+              title={scaleToolOpen ? "Close Scale Tool" : "Scale Model (Adjust dimensions in mm)"}
+              onClick={() => {
+                setScaleToolOpen((prev) => !prev);
+                if (!scaleToolOpen && stats) {
+                  setDimInput({
+                    x: stats.sizeMm.x.toFixed(1),
+                    y: stats.sizeMm.y.toFixed(1),
+                    z: stats.sizeMm.z.toFixed(1),
+                    percent: origStats ? Math.round((stats.sizeMm.x / origStats.sizeMm.x) * 100).toString() : "100",
+                  });
+                }
+              }}
+              className={cn(
+                "flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-colors",
+                scaleToolOpen
+                  ? "bg-accent text-ink font-semibold ring-2 ring-accent/50"
+                  : isLight
+                  ? "text-slate-700 hover:text-slate-900 hover:bg-slate-200/60"
+                  : "text-white/70 hover:text-white hover:bg-white/10"
+              )}
+            >
+              <Ruler className="size-3.5" />
+              <span className="hidden sm:inline">Scale</span>
+            </button>
+          )}
+
           {/* Auto-Orient Button if non-optimal */}
           {printabilityReport && !printabilityReport.isCurrentOrientationOptimal && printabilityReport.optimalOrientation && (
             <button
@@ -1098,6 +1244,133 @@ export function ModelViewer({
           </button>
         </div>
       </div>
+
+      {/* Floating Dimension Rescaling Panel */}
+      {scaleToolOpen && stats && (
+        <div
+          className={cn(
+            "absolute top-14 right-3 z-30 w-72 rounded-2xl p-4 shadow-xl border backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-150",
+            isLight
+              ? "bg-white/95 text-slate-800 border-slate-200 shadow-slate-300/50"
+              : "bg-[#181a1f]/95 text-white border-white/15 shadow-black/60"
+          )}
+        >
+          <div className="flex items-center justify-between border-b pb-2 mb-3 border-border/60">
+            <div className="flex items-center gap-1.5 font-semibold text-xs text-fg">
+              <Ruler className="size-3.5 text-accent" />
+              <span>Scale & Dimensions (mm)</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setScaleUniform(!scaleUniform)}
+              title={scaleUniform ? "Aspect ratio locked" : "Free non-uniform scale"}
+              className={cn(
+                "flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md transition-colors border cursor-pointer",
+                scaleUniform
+                  ? "border-accent/30 bg-accent/15 text-accent font-medium"
+                  : "border-border text-muted hover:text-fg"
+              )}
+            >
+              {scaleUniform ? <Lock className="size-3" /> : <Unlock className="size-3" />}
+              <span>{scaleUniform ? "Locked" : "Free"}</span>
+            </button>
+          </div>
+
+          {/* Quick Presets */}
+          <div className="grid grid-cols-5 gap-1 mb-3">
+            {[50, 75, 100, 150, 200].map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => handleQuickPercent(p)}
+                className={cn(
+                  "h-6 rounded text-[10px] font-medium transition-colors border cursor-pointer",
+                  dimInput.percent === p.toString()
+                    ? "border-accent bg-accent text-ink font-semibold"
+                    : isLight
+                    ? "border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-700"
+                    : "border-white/10 bg-white/5 hover:bg-white/10 text-white/80"
+                )}
+              >
+                {p}%
+              </button>
+            ))}
+          </div>
+
+          {/* Axis Millimeter Inputs */}
+          <div className="space-y-2 text-xs">
+            <div className="flex items-center justify-between gap-2">
+              <span className="w-12 font-mono text-muted text-[11px]">X (W)</span>
+              <div className="flex-1 relative">
+                <input
+                  type="number"
+                  step="0.5"
+                  min="1"
+                  value={dimInput.x}
+                  onChange={(e) => handleAxisChange("x", e.target.value)}
+                  className="w-full h-7 rounded-lg border border-border bg-surface-2/80 px-2 text-right font-mono text-xs focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                />
+              </div>
+              <span className="text-muted text-[11px]">mm</span>
+            </div>
+
+            <div className="flex items-center justify-between gap-2">
+              <span className="w-12 font-mono text-muted text-[11px]">Y (H)</span>
+              <div className="flex-1 relative">
+                <input
+                  type="number"
+                  step="0.5"
+                  min="1"
+                  value={dimInput.y}
+                  onChange={(e) => handleAxisChange("y", e.target.value)}
+                  className="w-full h-7 rounded-lg border border-border bg-surface-2/80 px-2 text-right font-mono text-xs focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                />
+              </div>
+              <span className="text-muted text-[11px]">mm</span>
+            </div>
+
+            <div className="flex items-center justify-between gap-2">
+              <span className="w-12 font-mono text-muted text-[11px]">Z (D)</span>
+              <div className="flex-1 relative">
+                <input
+                  type="number"
+                  step="0.5"
+                  min="1"
+                  value={dimInput.z}
+                  onChange={(e) => handleAxisChange("z", e.target.value)}
+                  className="w-full h-7 rounded-lg border border-border bg-surface-2/80 px-2 text-right font-mono text-xs focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                />
+              </div>
+              <span className="text-muted text-[11px]">mm</span>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="mt-3 pt-2 border-t border-border/60 flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={handleResetScale}
+              className="text-[11px] text-muted hover:text-fg underline cursor-pointer"
+            >
+              Reset (100%)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const tx = parseFloat(dimInput.x);
+                const ty = parseFloat(dimInput.y);
+                const tz = parseFloat(dimInput.z);
+                if (!isNaN(tx) && !isNaN(ty) && !isNaN(tz)) {
+                  handleApplyScale(tx, ty, tz);
+                }
+              }}
+              className="h-7 px-3 rounded-lg bg-accent text-ink font-semibold text-xs hover:opacity-90 transition-opacity cursor-pointer"
+            >
+              Apply Scale
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 3D Canvas Area */}
       <div className="h-full w-full" onContextMenu={(e) => e.preventDefault()}>

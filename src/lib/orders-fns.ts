@@ -6,7 +6,7 @@ import { createRazorpayOrder as rzpCreateOrder, verifyRazorpaySignature, getRazo
 import { sendOrderConfirmationEmail, sendOrderStatusUpdateEmail } from "./email.server";
 import { notifyNewOrder } from "./notifications.server";
 import { DEFAULT_MIN_PRINT } from "./quote";
-import type { CartItem } from "./cart-store";
+import { getBulkDiscount, type CartItem } from "./cart-store";
 import type { Address } from "./orders-store";
 import {
   createShiprocketOrder,
@@ -78,8 +78,11 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
     // 2. Validate Coupon & Discount Server-Side
     const isOnline = data.paymentMethod === "razorpay" || data.paymentMethod === "online";
 
-    // 2. Validate Coupon & Discount Server-Side
-    let discount = 0;
+    // 2. Validate Bulk Volume & Coupon Discount Server-Side
+    const bulkDiscountInfo = getBulkDiscount(data.items);
+    const bulkDiscount = Math.round((serverSubtotal * bulkDiscountInfo.percent) / 100);
+
+    let couponDiscount = 0;
     if (data.couponCode) {
       const couponRes = await sql`
         SELECT code, discount_percent, max_uses, current_uses 
@@ -90,7 +93,7 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
       `;
       if (couponRes.length > 0) {
         const c = couponRes[0];
-        discount = Math.round((serverSubtotal * Number(c.discount_percent)) / 100);
+        couponDiscount = Math.round(((serverSubtotal - bulkDiscount) * Number(c.discount_percent)) / 100);
         // Atomically increment coupon usage only for COD/UPI immediately. For online, increment on verified payment.
         if (!isOnline) {
           await sql`
@@ -101,6 +104,8 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
         }
       }
     }
+
+    const discount = bulkDiscount + couponDiscount;
 
     const shipping = Math.max(0, Number(data.shipping) || 0);
     const extra = Math.max(0, Number(data.extra) || 0);

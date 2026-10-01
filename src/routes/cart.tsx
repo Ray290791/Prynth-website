@@ -4,6 +4,7 @@ import { QuantityStepper } from "@/components/quantity-stepper";
 import { Button } from "@/components/ui/button";
 import {
   cartSubtotal,
+  getBulkDiscount,
   FREE_SHIPPING_AT,
   STANDARD_SHIPPING,
   EXPRESS_SHIPPING,
@@ -28,9 +29,13 @@ function CartPage() {
   const items = useCart((s) => s.items);
   const setQty = useCart((s) => s.setQty);
   const remove = useCart((s) => s.remove);
+  
   const subtotal = cartSubtotal(items);
-  const ship = shippingFee(subtotal, "standard", { freeThreshold, standardFee, expressFee });
-  const remaining = Math.max(0, freeThreshold - subtotal);
+  const bulk = getBulkDiscount(items);
+  const bulkDiscountAmount = Math.round(subtotal * bulk.discount);
+  const discountedSubtotal = subtotal - bulkDiscountAmount;
+  const ship = shippingFee(discountedSubtotal, "standard", { freeThreshold, standardFee, expressFee });
+  const remaining = Math.max(0, freeThreshold - discountedSubtotal);
 
   if (!hydrated) {
     return <div className="mx-auto max-w-6xl px-4 py-16 md:px-6">Loading cart…</div>;
@@ -120,6 +125,16 @@ function CartPage() {
                             {item.custom.surfaceFinish}
                           </span>
                         ) : null}
+                        {item.custom.threadedInserts ? (
+                          <span className="rounded bg-accent/10 px-1.5 py-0.5 font-medium text-accent">
+                            {item.custom.threadedInserts.count}× {item.custom.threadedInserts.size} Brass Inserts
+                          </span>
+                        ) : null}
+                        {item.custom.rubberPads ? (
+                          <span className="rounded bg-surface-2 px-1.5 py-0.5">
+                            Anti-slip pads included
+                          </span>
+                        ) : null}
                       </div>
                     ) : null}
                     {item.custom?.fileName ? (
@@ -174,33 +189,52 @@ function CartPage() {
           ))}
         </ul>
 
-        <aside className="h-fit rounded-3xl bg-surface p-4 sm:p-6 shadow-[var(--shadow-border)] md:sticky md:top-24 md:col-span-5">
-          <h2 className="font-display text-xl font-semibold">Summary</h2>
-          <dl className="mt-5 space-y-2 text-sm">
+        <aside className="h-fit rounded-2xl border border-border bg-surface p-5 sm:p-6 shadow-xs md:sticky md:top-24 md:col-span-5 space-y-4">
+          <h2 className="font-display text-xl font-semibold text-fg">Summary</h2>
+
+          {/* Bulk Tier Notification */}
+          {bulk.percent > 0 ? (
+            <div className="rounded-xl border border-accent/30 bg-accent/10 p-3 text-xs text-fg flex items-center justify-between">
+              <span className="font-medium text-accent">Bulk Discount Active ({bulk.tier})</span>
+              <span className="font-semibold text-accent">Save {bulk.percent}%</span>
+            </div>
+          ) : bulk.remainingForNext > 0 ? (
+            <div className="rounded-xl border border-border bg-surface-2/50 p-3 text-xs text-muted">
+              Add <strong className="text-fg">{bulk.remainingForNext} more unit{bulk.remainingForNext > 1 ? "s" : ""}</strong> to unlock a 5% volume prototyping discount.
+            </div>
+          ) : null}
+
+          <dl className="space-y-2 text-sm">
             <div className="flex justify-between">
               <dt className="text-muted">Subtotal</dt>
-              <dd className="tabular-nums">{formatINR(subtotal)}</dd>
+              <dd className="tabular-nums font-medium">{formatINR(subtotal)}</dd>
             </div>
+            {bulkDiscountAmount > 0 && (
+              <div className="flex justify-between text-accent">
+                <dt>Volume discount ({bulk.percent}%)</dt>
+                <dd className="tabular-nums font-medium">−{formatINR(bulkDiscountAmount)}</dd>
+              </div>
+            )}
             <div className="flex justify-between">
               <dt className="text-muted">Standard shipping</dt>
               <dd className="tabular-nums">{ship === 0 ? "Free" : formatINR(ship)}</dd>
             </div>
           </dl>
           {remaining > 0 ? (
-            <p className="mt-4 text-sm text-muted">
+            <p className="text-xs text-muted">
               Add {formatINR(remaining)} for free standard shipping.
             </p>
           ) : (
-            <p className="mt-4 text-sm text-muted">Free standard shipping unlocked.</p>
+            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Free standard shipping unlocked.</p>
           )}
-          <div className="mt-5 flex justify-between border-t border-border pt-4 text-base font-medium">
+          <div className="flex justify-between border-t border-border pt-4 text-base font-semibold text-fg">
             <span>Total</span>
-            <span className="tabular-nums">{formatINR(subtotal + ship)}</span>
+            <span className="tabular-nums">{formatINR(discountedSubtotal + ship)}</span>
           </div>
-          <Button asChild size="lg" className="mt-6 w-full">
-            <Link to="/checkout">Checkout</Link>
+          <Button asChild size="lg" className="w-full cursor-pointer shadow-xs">
+            <Link to="/checkout">Proceed to Checkout</Link>
           </Button>
-          <Button asChild variant="ghost" className="mt-2 w-full">
+          <Button asChild variant="ghost" className="w-full cursor-pointer text-xs">
             <Link to="/shop">Continue shopping</Link>
           </Button>
         </aside>

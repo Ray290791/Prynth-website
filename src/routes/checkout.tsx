@@ -12,6 +12,7 @@ import {
   STANDARD_SHIPPING,
   EXPRESS_SHIPPING,
   shippingFee,
+  getBulkDiscount,
   useCart,
 } from "@/lib/cart-store";
 import { formatINR } from "@/lib/format";
@@ -60,7 +61,10 @@ function CheckoutPage() {
   });
   
   const [saveAddressToProfile, setSaveAddressToProfile] = useState(true);
+  const [isB2B, setIsB2B] = useState(false);
+  const [companyName, setCompanyName] = useState("");
   const [gstin, setGstin] = useState("");
+  const [whatsappOptIn, setWhatsappOptIn] = useState(true);
   
   const [ship, setShip] = useState<Ship>("standard");
   const [pay, setPay] = useState<Pay>("online");
@@ -153,10 +157,14 @@ function CheckoutPage() {
   });
 
   const subtotal = cartSubtotal(items);
-  const discountAmount = appliedCoupon ? (subtotal * appliedCoupon.discount_percent) / 100 : 0;
-  const shipping = shippingFee(subtotal - discountAmount, ship, shippingRates);
+  const bulk = getBulkDiscount(items);
+  const bulkDiscountAmount = bulk.percent > 0 ? Math.round((subtotal * bulk.percent) / 100) : 0;
+  const discountedSubtotal = subtotal - bulkDiscountAmount;
+  const discountAmount = appliedCoupon ? Math.round((discountedSubtotal * appliedCoupon.discount_percent) / 100) : 0;
+  const totalDiscount = bulkDiscountAmount + discountAmount;
+  const shipping = shippingFee(subtotal - totalDiscount, ship, shippingRates);
   const extra = pay === "cod" ? codFee : 0;
-  const total = subtotal - discountAmount + shipping + extra;
+  const total = Math.max(0, subtotal - totalDiscount + shipping + extra);
 
   const empty = hydrated && items.length === 0;
 
@@ -186,6 +194,16 @@ function CheckoutPage() {
     if (address.line1.trim().length < 4) next.line1 = "Address is required.";
     if (address.city.trim().length < 2) next.city = "City is required.";
     if (!/^\d{6}$/.test(address.pincode)) next.pincode = "PIN code must be 6 digits.";
+
+    if (isB2B) {
+      if (companyName.trim().length < 2) {
+        next.companyName = "Company / organization name is required for B2B invoice.";
+      }
+      if (!/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/i.test(gstin.trim())) {
+        next.gstin = "Please enter a valid 15-character GSTIN (e.g. 29AAAAA0000A1Z5).";
+      }
+    }
+
     setErrors(next);
     return Object.keys(next).length === 0;
   }
@@ -342,6 +360,14 @@ function CheckoutPage() {
         }
       }
 
+      const formattedNotes = [
+        notes.trim(),
+        isB2B && gstin.trim() ? `B2B Tax Invoice | Company: ${companyName.trim()} | GSTIN: ${gstin.trim().toUpperCase()}` : "",
+        whatsappOptIn ? "WhatsApp Updates: Opted In" : "WhatsApp Updates: Opted Out",
+        bulk.percent > 0 ? `Volume Tier: ${bulk.tier} (${bulk.percent}% off)` : "",
+        pay === "upi" && upiRef ? `UTR: ${upiRef.trim()}` : "",
+      ].filter(Boolean).join(" | ") || undefined;
+
       if (pay === "online") {
         const orderPayload = {
           items,
@@ -352,7 +378,7 @@ function CheckoutPage() {
           address: { ...address, phone: address.phone.replace(/\s/g, "") },
           shippingMethod: ship,
           paymentMethod: "razorpay",
-          notes: notes.trim() || undefined,
+          notes: formattedNotes,
           couponCode: appliedCoupon?.code,
         };
 
@@ -371,7 +397,7 @@ function CheckoutPage() {
             address: { ...address, phone: address.phone.replace(/\s/g, "") },
             shippingMethod: ship,
             paymentMethod: pay,
-            notes: [notes.trim(), pay === 'upi' && upiRef ? `UTR: ${upiRef}` : ''].filter(Boolean).join(' | ') || undefined,
+            notes: formattedNotes,
           }
         });
         clear();
@@ -495,6 +521,24 @@ function CheckoutPage() {
                   <Label htmlFor="save_addr" className="text-sm cursor-pointer select-none">Save this address to my profile</Label>
                 </div>
               )}
+
+              <div className="sm:col-span-2 mt-2 flex items-start gap-2.5 rounded-xl border border-border/80 bg-surface-2/40 p-3">
+                <input 
+                  type="checkbox" 
+                  id="whatsapp_opt" 
+                  checked={whatsappOptIn} 
+                  onChange={(e) => setWhatsappOptIn(e.target.checked)}
+                  className="mt-0.5 size-4 rounded border-border accent-accent cursor-pointer"
+                />
+                <div className="flex-1 text-xs">
+                  <Label htmlFor="whatsapp_opt" className="text-xs font-semibold cursor-pointer select-none text-fg block">
+                    Receive tracking & order updates on WhatsApp
+                  </Label>
+                  <p className="text-[11px] text-muted mt-0.5">
+                    We will send dispatch alerts and live courier tracking links directly to your mobile number.
+                  </p>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -507,13 +551,13 @@ function CheckoutPage() {
                     id: "standard" as const,
                     title: "Standard",
                     detail: "3–5 days after we print",
-                    price: shippingFee(subtotal - discountAmount, "standard", shippingRates),
+                    price: shippingFee(subtotal - totalDiscount, "standard", shippingRates),
                   },
                   {
                     id: "express" as const,
                     title: "Express",
                     detail: "1–2 days after we print",
-                    price: shippingFee(subtotal - discountAmount, "express", shippingRates),
+                    price: shippingFee(subtotal - totalDiscount, "express", shippingRates),
                   },
                 ]
               ).map((opt) => (
@@ -580,17 +624,53 @@ function CheckoutPage() {
             )}
           </section>
           
-          <section>
-            <h2 className="font-display text-xl font-semibold">Business Info</h2>
-            <div className="mt-4">
-              <Label htmlFor="gstin">GSTIN (optional)</Label>
-              <Input 
-                id="gstin" 
-                value={gstin}
-                onChange={(e) => setGstin(e.target.value)}
-                placeholder="Enter GSTIN for B2B invoice" 
-              />
+          <section className="rounded-2xl border border-border bg-surface p-4 sm:p-5 shadow-xs space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="font-display text-base font-semibold">Business Tax Invoicing (B2B / GST)</h2>
+                <p className="text-xs text-muted mt-0.5">Need a formal GST tax invoice with Input Tax Credit (ITC) for your company?</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                <input
+                  type="checkbox"
+                  checked={isB2B}
+                  onChange={(e) => setIsB2B(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-surface-2 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
+              </label>
             </div>
+
+            {isB2B && (
+              <div className="grid gap-3 sm:grid-cols-2 pt-3 border-t border-border animate-in fade-in duration-200">
+                <div>
+                  <Label htmlFor="companyName">Registered Company Name</Label>
+                  <Input
+                    id="companyName"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    placeholder="e.g. Acme Technologies Pvt Ltd"
+                    className="mt-1"
+                  />
+                  {errors.companyName ? <p className="mt-1 text-xs text-danger">{errors.companyName}</p> : null}
+                </div>
+                <div>
+                  <Label htmlFor="gstin">GST Identification Number (GSTIN)</Label>
+                  <Input
+                    id="gstin"
+                    value={gstin}
+                    onChange={(e) => setGstin(e.target.value.toUpperCase())}
+                    maxLength={15}
+                    placeholder="29AAAAA0000A1Z5"
+                    className="mt-1 uppercase font-mono"
+                  />
+                  {errors.gstin ? <p className="mt-1 text-xs text-danger">{errors.gstin}</p> : null}
+                </div>
+                <p className="sm:col-span-2 text-[11px] text-muted">
+                  Your official 18% GST tax invoice with HSN code 8477 will be attached to your order and available for instant download.
+                </p>
+              </div>
+            )}
           </section>
 
           <div>
@@ -635,6 +715,8 @@ function CheckoutPage() {
                     {item.custom?.material && ` · ${item.custom.material}`}
                     {item.custom?.quality && ` · ${item.custom.quality}`}
                     {item.custom?.infillPercentage != null && ` · ${item.custom.infillPercentage}% infill`}
+                    {item.custom?.threadedInserts && ` · ${item.custom.threadedInserts.count}× ${item.custom.threadedInserts.size} inserts`}
+                    {item.custom?.rubberPads && " · Anti-slip pads"}
                     {" · "}×{item.qty}
                   </p>
                 </div>
@@ -663,10 +745,16 @@ function CheckoutPage() {
               <dt className="text-muted">Subtotal</dt>
               <dd className="tabular-nums">{formatINR(subtotal)}</dd>
             </div>
+            {bulkDiscountAmount > 0 && (
+              <div className="flex justify-between text-accent font-medium">
+                <dt>Volume prototyping discount ({bulk.percent}%)</dt>
+                <dd className="tabular-nums">−{formatINR(bulkDiscountAmount)}</dd>
+              </div>
+            )}
             {appliedCoupon && (
               <div className="flex justify-between text-primary font-medium">
-                <dt>Discount ({appliedCoupon.discount_percent}%)</dt>
-                <dd className="tabular-nums">-{formatINR(discountAmount)}</dd>
+                <dt>Coupon discount ({appliedCoupon.code} · {appliedCoupon.discount_percent}%)</dt>
+                <dd className="tabular-nums">−{formatINR(discountAmount)}</dd>
               </div>
             )}
             <div className="flex justify-between">
@@ -679,9 +767,9 @@ function CheckoutPage() {
                 <dd className="tabular-nums">{formatINR(extra)}</dd>
               </div>
             ) : null}
-            <div className="flex justify-between pt-2 text-base font-medium">
+            <div className="flex justify-between pt-2 text-base font-semibold border-t border-border">
               <dt>Total</dt>
-              <dd className="tabular-nums">{formatINR(total)}</dd>
+              <dd className="tabular-nums text-lg text-accent">{formatINR(total)}</dd>
             </div>
           </dl>
           <Button type="submit" size="lg" className="mt-6 w-full" disabled={busy}>
