@@ -74,7 +74,7 @@ export const submitContactMessage = createServerFn({ method: "POST" })
     return { success: true };
   });
 
-import { authMiddleware } from "./auth/middleware";
+import { authMiddleware, optionalAuthMiddleware } from "./auth/middleware";
 import { verifyAdminRole } from "./admin-fns";
 
 export interface Ticket {
@@ -85,6 +85,129 @@ export interface Ticket {
   status: "open" | "resolved" | "closed";
   created_at: string;
 }
+
+export interface CustomDesignRequestInput {
+  name?: string;
+  email: string;
+  phone?: string;
+  idea: string;
+  photos?: string[];
+  sizeName?: string;
+  materialName?: string;
+  colorName?: string;
+  quantity?: number;
+  printerName?: string;
+  specsSummary?: string;
+}
+
+export const submitCustomDesignRequest = createServerFn({ method: "POST" })
+  .middleware([optionalAuthMiddleware])
+  .validator((data: CustomDesignRequestInput) => {
+    const email = data.email?.trim().toLowerCase();
+    const idea = data.idea?.trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new Error("Please enter a valid email address so we can reply with your quote.");
+    }
+    if ((!idea || idea.length < 5) && (!data.photos || data.photos.length === 0)) {
+      throw new Error("Please describe what you need or attach at least one reference photo.");
+    }
+    return {
+      ...data,
+      email,
+      name: data.name?.trim() || "Customer",
+      idea: idea || "Custom 3D model request (see attached photos)",
+    };
+  })
+  .handler(async ({ data, context }) => {
+    if (!checkRateLimit(data.email, 6, 10 * 60 * 1000)) {
+      throw new Error("Too many requests submitted. Please wait a few minutes before trying again.");
+    }
+
+    const sql = await getSql();
+    const userId = context.userId || `guest-${data.email}`;
+
+    const ticketPayload = {
+      isCustomRequest: true,
+      customerName: data.name,
+      customerEmail: data.email,
+      customerPhone: data.phone || "",
+      idea: data.idea,
+      sizeName: data.sizeName || "Standard",
+      materialName: data.materialName || "PLA",
+      colorName: data.colorName || "Standard",
+      quantity: data.quantity || 1,
+      printerName: data.printerName || "Bambu Lab Fleet",
+      specsSummary: data.specsSummary || "",
+      photos: (data.photos || []).slice(0, 5),
+    };
+
+    const formattedDescription = JSON.stringify(ticketPayload);
+
+    const [inserted] = await sql<{ id: number }>`
+      INSERT INTO tickets (user_id, title, description, status)
+      VALUES (
+        ${userId},
+        ${`Custom 3D Request from ${data.name || data.email}`},
+        ${formattedDescription},
+        'open'
+      )
+      RETURNING id
+    `;
+
+    try {
+      const { sendCustomRequestAdminEmail, sendCustomRequestCustomerAckEmail } = await import("./email.server");
+      await sendCustomRequestAdminEmail({
+        ticketId: inserted.id,
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        idea: data.idea,
+        sizeName: data.sizeName,
+        materialName: data.materialName,
+        colorName: data.colorName,
+        quantity: data.quantity || 1,
+        printerName: data.printerName,
+        photosCount: (data.photos || []).length,
+      });
+
+      await sendCustomRequestCustomerAckEmail({
+        ticketId: inserted.id,
+        name: data.name,
+        email: data.email,
+        idea: data.idea,
+        materialName: data.materialName,
+        photosCount: (data.photos || []).length,
+      });
+    } catch (err) {
+      console.error("Failed to send custom request emails:", err);
+    }
+
+    try {
+      const { notifyNewInquiry } = await import("./notifications.server");
+      await notifyNewInquiry({
+        name: data.name,
+        email: data.email,
+        message: `Custom 3D Print Request (#${inserted.id}): ${data.idea.slice(0, 100)}... (${(data.photos || []).length} photos attached)`,
+      });
+    } catch (err) {
+      console.error("Failed to send phone notification for custom request:", err);
+    }
+
+    return { success: true, ticketId: inserted.id };
+  });
+
+export const getUserTickets = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => {
+    const sql = await getSql();
+    const tickets = await sql<Ticket>`
+      SELECT id, user_id, title, description, status, created_at
+      FROM tickets
+      WHERE user_id = ${context.userId}
+      ORDER BY created_at DESC
+    `;
+    return tickets;
+  });
 
 export const getTicketsAdmin = createServerFn({ method: "GET" })
   .middleware([authMiddleware])

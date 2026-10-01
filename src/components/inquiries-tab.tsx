@@ -26,6 +26,9 @@ import {
   Clock,
   User,
   AlertCircle,
+  Camera,
+  Sparkles,
+  Phone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -36,6 +39,7 @@ export function InquiriesTab() {
   const [replyingTicketId, setReplyingTicketId] = useState<number | null>(null);
   const [replyText, setReplyText] = useState("");
   const [autoResolve, setAutoResolve] = useState(true);
+  const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
 
   const { data: tickets = [], isLoading, isFetching, refetch } = useQuery({
     queryKey: ["adminTickets"],
@@ -85,6 +89,33 @@ export function InquiriesTab() {
     return { total, open, resolved };
   }, [tickets]);
 
+  const parseTicketSender = (ticket: Ticket) => {
+    let email = ticket.user_id.replace(/^guest-/, "");
+    let name = "Customer";
+    let isCustom = false;
+    let payload: any = null;
+
+    try {
+      const parsed = JSON.parse(ticket.description);
+      if (parsed && typeof parsed === "object" && parsed.isCustomRequest) {
+        isCustom = true;
+        payload = parsed;
+        if (parsed.customerEmail) email = parsed.customerEmail;
+        if (parsed.customerName) name = parsed.customerName;
+      }
+    } catch {
+      // Plain text description
+    }
+
+    if (!isCustom) {
+      const nameMatch = ticket.title.match(/(?:Contact from|Custom 3D Request from) (.*)/i);
+      if (nameMatch) name = nameMatch[1].trim();
+      isCustom = ticket.title.toLowerCase().includes("custom 3d request");
+    }
+
+    return { name, email, isCustom, payload };
+  };
+
   const filteredTickets = useMemo(() => {
     return tickets.filter((t) => {
       if (statusFilter !== "all" && t.status !== statusFilter) return false;
@@ -96,13 +127,6 @@ export function InquiriesTab() {
       return name.includes(q) || email.includes(q) || msg.includes(q);
     });
   }, [tickets, statusFilter, search]);
-
-  const parseTicketSender = (ticket: Ticket) => {
-    const email = ticket.user_id.replace(/^guest-/, "");
-    const nameMatch = ticket.title.match(/Contact from (.*)/i);
-    const name = nameMatch ? nameMatch[1].trim() : "Customer";
-    return { name, email };
-  };
 
   const copyEmail = (email: string) => {
     navigator.clipboard.writeText(email);
@@ -213,7 +237,7 @@ export function InquiriesTab() {
       ) : (
         <div className="space-y-4">
           {filteredTickets.map((ticket) => {
-            const { name, email } = parseTicketSender(ticket);
+            const { name, email, isCustom, payload } = parseTicketSender(ticket);
             const isOpen = ticket.status === "open";
             const isReplying = replyingTicketId === ticket.id;
             const dateStr = new Date(ticket.created_at).toLocaleString("en-IN", {
@@ -239,6 +263,12 @@ export function InquiriesTab() {
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold text-fg text-base">{name}</span>
+                      {isCustom && (
+                        <Badge className="bg-accent/15 text-accent border-accent/30 text-[11px] px-2 py-0.5 font-medium rounded-full flex items-center gap-1">
+                          <Sparkles className="size-3" />
+                          <span>Custom 3D Request</span>
+                        </Badge>
+                      )}
                       <Badge
                         className={cn(
                           "capitalize text-[11px] px-2 py-0.5 font-medium rounded-full border",
@@ -260,7 +290,7 @@ export function InquiriesTab() {
                       <button
                         type="button"
                         onClick={() => copyEmail(email)}
-                        className="p-1 hover:text-accent transition-colors"
+                        className="p-1 hover:text-accent transition-colors cursor-pointer"
                         title="Copy email address"
                       >
                         <Copy className="size-3" />
@@ -274,6 +304,16 @@ export function InquiriesTab() {
                         <ExternalLink className="size-3" />
                         <span>Email directly</span>
                       </a>
+
+                      {payload?.customerPhone && (
+                        <>
+                          <span className="text-subtle">·</span>
+                          <span className="flex items-center gap-1 text-fg/80">
+                            <Phone className="size-3 text-accent" />
+                            <span>{payload.customerPhone}</span>
+                          </span>
+                        </>
+                      )}
 
                       <span className="text-subtle">·</span>
 
@@ -325,7 +365,7 @@ export function InquiriesTab() {
                       className="h-8 text-xs gap-1.5"
                     >
                       <CornerDownRight className="size-3.5" />
-                      <span>{isReplying ? "Cancel" : "Reply"}</span>
+                      <span>{isReplying ? "Cancel" : isCustom ? "Send Quote" : "Reply"}</span>
                     </Button>
 
                     <Button
@@ -347,12 +387,77 @@ export function InquiriesTab() {
 
                 {/* Message Body */}
                 <div className="p-4 sm:p-5">
-                  <div className="text-xs font-semibold text-subtle uppercase tracking-wider mb-2">
-                    Inquiry Details
-                  </div>
-                  <div className="p-3.5 rounded-xl bg-surface-2/40 border border-border/40 text-sm text-fg whitespace-pre-wrap leading-relaxed">
-                    {ticket.description}
-                  </div>
+                  {payload && payload.isCustomRequest ? (
+                    <div className="space-y-4">
+                      <div>
+                        <div className="text-xs font-semibold text-subtle uppercase tracking-wider mb-1.5">
+                          Customer Idea &amp; Requirements
+                        </div>
+                        <div className="p-3.5 rounded-xl bg-surface-2/40 border border-border/50 text-sm text-fg whitespace-pre-wrap leading-relaxed">
+                          {payload.idea}
+                        </div>
+                      </div>
+
+                      {/* Specifications Summary Grid */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+                        <div className="rounded-xl border border-border/60 bg-surface p-2.5">
+                          <span className="text-muted block text-[11px]">Approx Size</span>
+                          <span className="font-semibold text-fg capitalize">{payload.sizeName}</span>
+                        </div>
+                        <div className="rounded-xl border border-border/60 bg-surface p-2.5">
+                          <span className="text-muted block text-[11px]">Material</span>
+                          <span className="font-semibold text-fg uppercase">{payload.materialName}</span>
+                        </div>
+                        <div className="rounded-xl border border-border/60 bg-surface p-2.5">
+                          <span className="text-muted block text-[11px]">Colour</span>
+                          <span className="font-semibold text-fg capitalize">{payload.colorName}</span>
+                        </div>
+                        <div className="rounded-xl border border-border/60 bg-surface p-2.5">
+                          <span className="text-muted block text-[11px]">Quantity</span>
+                          <span className="font-semibold text-fg">{payload.quantity} unit{payload.quantity > 1 ? "s" : ""}</span>
+                        </div>
+                      </div>
+
+                      {/* Reference Photos Gallery */}
+                      {payload.photos && payload.photos.length > 0 && (
+                        <div className="space-y-2 pt-1 border-t border-border/40">
+                          <div className="flex items-center gap-1.5 text-xs font-semibold text-subtle uppercase tracking-wider pt-1">
+                            <Camera className="size-3.5 text-accent" />
+                            <span>Attached Reference Photos ({payload.photos.length})</span>
+                          </div>
+                          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2.5">
+                            {payload.photos.map((src: string, idx: number) => (
+                              <button
+                                key={idx}
+                                type="button"
+                                onClick={() => setPreviewPhoto(src)}
+                                className="group relative aspect-square rounded-xl overflow-hidden border border-border bg-surface-2 shadow-2xs hover:border-accent hover:ring-2 hover:ring-accent/30 transition-all cursor-pointer"
+                                title="Click to view full photo"
+                              >
+                                <img
+                                  src={src}
+                                  alt={`Attachment ${idx + 1}`}
+                                  className="size-full object-cover transition-transform duration-200 group-hover:scale-105"
+                                />
+                                <span className="absolute bottom-1 left-1 rounded bg-black/75 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                                  Photo {idx + 1}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="text-xs font-semibold text-subtle uppercase tracking-wider mb-2">
+                        Inquiry Details
+                      </div>
+                      <div className="p-3.5 rounded-xl bg-surface-2/40 border border-border/40 text-sm text-fg whitespace-pre-wrap leading-relaxed">
+                        {ticket.description}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Inline Email Reply Box */}
@@ -398,7 +503,7 @@ export function InquiriesTab() {
                               id: ticket.id,
                               customerName: name,
                               toEmail: email,
-                              originalMessage: ticket.description,
+                              originalMessage: payload?.idea || ticket.description,
                               replyMessage: replyText,
                               markResolved: autoResolve,
                             })
@@ -416,6 +521,27 @@ export function InquiriesTab() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Lightbox Photo Preview Modal */}
+      {previewPhoto && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in duration-200 cursor-pointer"
+          onClick={() => setPreviewPhoto(null)}
+        >
+          <div
+            className="relative max-h-[90vh] max-w-4xl overflow-hidden rounded-2xl bg-surface border border-border shadow-2xl cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img src={previewPhoto} alt="Reference Preview" className="max-h-[80vh] w-auto object-contain" />
+            <div className="flex items-center justify-between p-3 border-t border-border bg-surface-2/60">
+              <span className="text-xs font-medium text-muted">Customer Reference Photo</span>
+              <Button size="sm" variant="outline" onClick={() => setPreviewPhoto(null)} className="text-xs h-8">
+                Close Preview
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

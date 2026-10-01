@@ -262,3 +262,126 @@ export async function sendTicketReplyEmail(
   }
   return data;
 }
+
+export async function sendCustomRequestAdminEmail(params: {
+  ticketId: number;
+  name: string;
+  email: string;
+  phone?: string;
+  idea: string;
+  sizeName?: string;
+  materialName?: string;
+  colorName?: string;
+  quantity?: number;
+  printerName?: string;
+  photosCount?: number;
+}) {
+  const resend = getResend();
+  const adminEmail = process.env.ADMIN_EMAIL || "hello@prynth.in";
+  if (!resend) return;
+
+  const safeName = escapeHtml(params.name);
+  const safeEmail = escapeHtml(params.email);
+  const safePhone = escapeHtml(params.phone || "Not provided");
+  const safeIdea = escapeHtml(params.idea);
+  const fromEmail = await getSenderEmail();
+
+  try {
+    await resend.emails.send({
+      from: fromEmail,
+      to: adminEmail,
+      replyTo: params.email,
+      subject: `[Custom Request #${params.ticketId}] New 3D Print Quote Request from ${safeName}`,
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #111; line-height: 1.6;">
+          <div style="background-color: #00b8a9; padding: 20px 24px; border-radius: 8px 8px 0 0; color: #fff;">
+            <h1 style="margin: 0; font-size: 20px;">New Custom 3D Design Request #${params.ticketId}</h1>
+            <p style="margin: 4px 0 0; opacity: 0.9; font-size: 14px;">Review and quote within 24 hours</p>
+          </div>
+          <div style="padding: 24px; border: 1px solid #e4e4e7; border-top: none; border-radius: 0 0 8px 8px; background-color: #fff;">
+            <p><strong>Customer:</strong> ${safeName} &lt;${safeEmail}&gt;</p>
+            <p><strong>Phone:</strong> ${safePhone}</p>
+            <div style="margin: 16px 0; padding: 16px; background-color: #f8fafc; border-radius: 6px; border: 1px solid #e2e8f0;">
+              <h3 style="margin-top: 0; font-size: 15px; color: #334155;">Customer Description:</h3>
+              <p style="white-space: pre-wrap; font-size: 14px; margin-bottom: 0;">${safeIdea}</p>
+            </div>
+            <h4 style="margin: 16px 0 8px 0; font-size: 14px; color: #475569;">Selected Specifications:</h4>
+            <ul style="font-size: 13px; color: #334155; padding-left: 20px;">
+              <li><strong>Approx. Size:</strong> ${escapeHtml(params.sizeName || "Standard")}</li>
+              <li><strong>Material:</strong> ${escapeHtml(params.materialName || "PLA")}</li>
+              <li><strong>Color:</strong> ${escapeHtml(params.colorName || "Standard")}</li>
+              <li><strong>Quantity:</strong> ${params.quantity || 1}</li>
+              <li><strong>Machine:</strong> ${escapeHtml(params.printerName || "Bambu Lab Fleet")}</li>
+              <li><strong>Reference Photos:</strong> ${params.photosCount || 0} attached</li>
+            </ul>
+            <p style="font-size: 13px; color: #64748b; margin-top: 24px;">
+              You can review the full request with photos and reply with a quote directly in the <a href="https://prynth.in/admin" style="color: #00b8a9; font-weight: 600;">Admin Dashboard</a>, or reply directly to this email!
+            </p>
+          </div>
+        </div>
+      `,
+    });
+  } catch (err) {
+    console.error("Failed to send custom request admin email:", err);
+  }
+}
+
+export async function sendCustomRequestCustomerAckEmail(params: {
+  ticketId: number;
+  name: string;
+  email: string;
+  idea: string;
+  materialName?: string;
+  photosCount?: number;
+}) {
+  const resend = getResend();
+  if (!resend) return;
+
+  const safeName = escapeHtml(params.name);
+  const safeIdea = escapeHtml(params.idea);
+  const fromEmail = await getSenderEmail();
+  const adminEmail = process.env.ADMIN_EMAIL || "hello@prynth.in";
+
+  try {
+    await resend.emails.send({
+      from: fromEmail,
+      to: params.email,
+      replyTo: adminEmail,
+      subject: `We've received your custom 3D request! (#${params.ticketId}) - Prynth`,
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #111; line-height: 1.6;">
+          <div style="background-color: #00b8a9; padding: 24px; border-radius: 8px 8px 0 0; color: #fff; text-align: center;">
+            <h1 style="margin: 0; font-size: 22px; font-weight: 700;">prynth!</h1>
+            <p style="margin: 6px 0 0; opacity: 0.9; font-size: 14px;">Custom 3D Printing & Design Studio</p>
+          </div>
+          <div style="padding: 24px; border: 1px solid #e4e4e7; border-top: none; border-radius: 0 0 8px 8px; background-color: #fff;">
+            <h2 style="font-size: 18px; margin-top: 0; color: #0f172a;">Request Received (#${params.ticketId})</h2>
+            <p>Hi ${safeName},</p>
+            <p>Thank you for submitting your custom 3D design request! Our engineering team is currently reviewing your description, specifications, and reference photos.</p>
+            <div style="padding: 16px; background-color: #f8fafc; border-left: 4px solid #00b8a9; border-radius: 4px; margin: 16px 0;">
+              <p style="margin: 0; font-weight: 600; font-size: 14px; color: #0f172a;">Next Steps (Within 24 Hours):</p>
+              <ul style="margin: 8px 0 0 0; padding-left: 18px; font-size: 13px; color: #475569;">
+                <li>We verify 3D print feasibility and structural requirements.</li>
+                <li>We calculate precision CAD modeling requirements and filament costs.</li>
+                <li>We will send you a personalized quote and delivery timeline directly in this thread.</li>
+              </ul>
+            </div>
+            <div style="margin: 16px 0; padding: 14px; background-color: #f1f5f9; border-radius: 6px; font-size: 13px; color: #334155;">
+              <p style="margin: 0 0 4px 0; font-weight: 600;">Your Request Summary:</p>
+              <p style="margin: 0; font-style: italic;">&ldquo;${safeIdea}&rdquo;</p>
+              ${params.photosCount ? `<p style="margin: 6px 0 0 0; color: #64748b;">${params.photosCount} reference photo(s) attached.</p>` : ""}
+            </div>
+            <p style="font-size: 14px; color: #475569;">
+              Have extra measurements, a ruler photo, or more details to add? <strong>Simply reply directly to this email</strong> to continue the conversation.
+            </p>
+            <div style="margin-top: 32px; padding-top: 20px; border-top: 1px solid #e4e4e7; font-size: 13px; color: #94a3b8; text-align: center;">
+              <p style="margin: 0;">Prynth · Precision 3D Printing & Custom Prototyping · Bengaluru, India</p>
+            </div>
+          </div>
+        </div>
+      `,
+    });
+  } catch (err) {
+    console.error("Failed to send customer ack email:", err);
+  }
+}

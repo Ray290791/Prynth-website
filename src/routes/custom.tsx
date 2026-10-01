@@ -33,7 +33,9 @@ import { PrintabilityChecker } from "@/components/printability-checker";
 import type { PrintabilityReport } from "@/lib/mesh-analysis";
 import { parseModelFile, estimateFdmMaterialVolumeCm3 } from "@/lib/model-parser";
 import { cn } from "@/lib/utils";
-import { ChevronDown, Sliders, Sparkles, Printer as PrinterIcon, Loader2, Check, CheckCircle2, RefreshCcw, Save, ArrowLeft, Camera, X } from "lucide-react";
+import { ChevronDown, Sliders, Sparkles, Printer as PrinterIcon, Loader2, Check, CheckCircle2, RefreshCcw, Save, ArrowLeft, Camera, X, Clock, Send, Phone } from "lucide-react";
+import { submitCustomDesignRequest } from "@/lib/contact-fns";
+import { useCurrentUser } from "@/lib/auth/use-current-user";
 
 const rootRoute = getRouteApi("__root__");
 
@@ -271,7 +273,7 @@ function CustomPage() {
         >
           <p className="font-display text-lg font-semibold">Describe your idea</p>
           <p className="mt-1 text-sm text-muted">
-            No file needed. Tell us what you need or attach photos. Listed CAD design fee with zero surprise charges.
+            No file needed. Tell us what you need or attach photos. We will review your request and send a custom quote within 24 hours.
           </p>
         </button>
       </div>
@@ -1528,11 +1530,27 @@ function IdeaForm({
   });
   const [color, setColor] = useState(() => editItem?.custom?.colorId || editItem?.color || "charcoal");
   const [qty, setQty] = useState(() => editItem?.qty || 1);
+  const user = useCurrentUser();
+  const [name, setName] = useState(() => user?.displayName || "");
+  const [phone, setPhone] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittedTicketId, setSubmittedTicketId] = useState<number | null>(null);
+
   const [email, setEmail] = useState(() => {
     if (editItem?.custom?.email) return editItem.custom.email;
+    if (user?.primaryEmail) return user.primaryEmail;
     const parts = editItem?.custom?.notes?.split(" · ");
     return parts && parts.length > 1 ? parts[1] : "";
   });
+
+  useEffect(() => {
+    if (user?.displayName && !name) {
+      setName(user.displayName);
+    }
+    if (user?.primaryEmail && !email) {
+      setEmail(user.primaryEmail);
+    }
+  }, [user]);
 
   // Filter filaments dynamically by selected material
   const materialFilaments = useMemo(() => {
@@ -1632,50 +1650,55 @@ function IdeaForm({
       }${supportState.interfaceFilament !== "Default" ? ` · ${supportState.interfaceFilament}` : ""}`
     : "None";
 
-  function addEstimate() {
+  async function handleSubmitRequest() {
     if (idea.trim().length < 6 && photos.length === 0) {
       toast.error("Tell us what you need or attach reference photos.");
       return;
     }
 
-    const customData: CustomSpec = {
-      path: "idea",
-      printerId: selectedPrinter?.id,
-      printerName: selectedPrinter?.name,
-      printerModel: selectedPrinter?.model,
-      material: materialMeta?.name ?? material,
-      materialId: material,
-      quality: qualityMeta?.name ?? quality,
-      qualityId: quality,
-      infill: `${infillPct}% (${patternMeta?.name ?? "Gyroid"})`,
-      infillPercentage: infillPct,
-      infillPattern,
-      wallLoops,
-      supports: supportDisplayLabel,
-      supportEnabled: supportState.enabled,
-      supportType: supportState.type,
-      supportThresholdAngle: supportState.thresholdAngle,
-      supportOnBuildPlateOnly: supportState.onBuildPlateOnly,
-      supportBaseFilament: supportState.baseFilament,
-      supportInterfaceFilament: supportState.interfaceFilament,
-      surfaceFinish: finishMeta?.name ?? surfaceFinish,
-      color: selectedColorName,
-      colorId: color,
-      notes: `${idea}${email ? ` · ${email}` : ""}`,
-      idea,
-      email,
-      sizeId: size,
-      complexityId: complexity,
-      volumeCm3: quote.volumeCm3,
-      modeling: cx.name,
-      referencePhotos: photos.length > 0 ? photos : undefined,
-    };
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Please enter a valid email address so we can reply with your quote.");
+      return;
+    }
 
     if (editItem && onUpdateItem) {
+      const customData: CustomSpec = {
+        path: "idea",
+        printerId: selectedPrinter?.id,
+        printerName: selectedPrinter?.name,
+        printerModel: selectedPrinter?.model,
+        material: materialMeta?.name ?? material,
+        materialId: material,
+        quality: qualityMeta?.name ?? quality,
+        qualityId: quality,
+        infill: `${infillPct}% (${patternMeta?.name ?? "Gyroid"})`,
+        infillPercentage: infillPct,
+        infillPattern,
+        wallLoops,
+        supports: supportDisplayLabel,
+        supportEnabled: supportState.enabled,
+        supportType: supportState.type,
+        supportThresholdAngle: supportState.thresholdAngle,
+        supportOnBuildPlateOnly: supportState.onBuildPlateOnly,
+        supportBaseFilament: supportState.baseFilament,
+        supportInterfaceFilament: supportState.interfaceFilament,
+        surfaceFinish: finishMeta?.name ?? surfaceFinish,
+        color: selectedColorName,
+        colorId: color,
+        notes: `${idea}${email ? ` · ${email}` : ""}`,
+        idea,
+        email,
+        sizeId: size,
+        complexityId: complexity,
+        volumeCm3: preset.cm3,
+        modeling: cx.name,
+        referencePhotos: photos.length > 0 ? photos : undefined,
+      };
+
       onUpdateItem(editItem.id, {
         name: `Custom design · ${preset.name}`,
         color: selectedColorName,
-        unitPrice: quote.total,
+        unitPrice: editItem.unitPrice || 0,
         qty,
         custom: customData,
       });
@@ -1684,15 +1707,97 @@ function IdeaForm({
       return;
     }
 
-    add({
-      kind: "custom",
-      name: `Custom design · ${preset.name}`,
-      color: selectedColorName,
-      unitPrice: quote.total,
-      qty: 1,
-      custom: customData,
-    });
-    toast.success("Estimate added to cart");
+    setIsSubmitting(true);
+    try {
+      const res = await submitCustomDesignRequest({
+        data: {
+          name: name.trim() || user?.displayName || "Customer",
+          email: email.trim(),
+          phone: phone.trim() || undefined,
+          idea: idea.trim(),
+          photos,
+          sizeName: `${preset.name} (${preset.hint})`,
+          materialName: materialMeta?.name ?? material,
+          colorName: selectedColorName,
+          quantity: qty,
+          printerName: selectedPrinter?.name ?? "Bambu Lab Fleet",
+          specsSummary: `${infillPct}% ${patternMeta?.name ?? "Gyroid"}, ${wallLoops} loops, Supports: ${supportDisplayLabel}`,
+        },
+      });
+
+      setSubmittedTicketId(res.ticketId);
+      toast.success("Request submitted! We'll review and send your quote within 24 hours.");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to submit request. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  if (submittedTicketId) {
+    return (
+      <div className="rounded-3xl border border-emerald-500/30 bg-surface p-8 sm:p-12 shadow-sm text-center max-w-2xl mx-auto space-y-6 animate-in fade-in duration-300">
+        <div className="size-16 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto border border-emerald-500/20">
+          <CheckCircle2 className="size-8" />
+        </div>
+        <div>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-2">
+            Request Reference: #REQ-{submittedTicketId}
+          </span>
+          <h2 className="font-display text-2xl sm:text-3xl font-semibold text-fg">
+            Custom Request Submitted!
+          </h2>
+          <p className="mt-2 text-sm sm:text-base text-muted max-w-md mx-auto">
+            Thank you! We&apos;ve received your description and reference photos. Our engineering team will review your specifications and send you a custom quote within 24 hours to <strong className="text-fg">{email}</strong>.
+          </p>
+        </div>
+
+        {/* Summary of submitted request */}
+        <div className="rounded-2xl border border-border/70 bg-surface-2/40 p-4 text-left text-xs sm:text-sm space-y-2.5">
+          <div className="flex justify-between border-b border-border/40 pb-2">
+            <span className="text-muted">Concept</span>
+            <span className="font-medium text-fg line-clamp-1 max-w-[65%] text-right">{idea || "See attached photos"}</span>
+          </div>
+          <div className="flex justify-between border-b border-border/40 pb-2">
+            <span className="text-muted">Estimated Size</span>
+            <span className="font-medium text-fg">{preset.name}</span>
+          </div>
+          <div className="flex justify-between border-b border-border/40 pb-2">
+            <span className="text-muted">Material &amp; Color</span>
+            <span className="font-medium text-fg">{materialMeta?.name ?? material} · {selectedColorName}</span>
+          </div>
+          <div className="flex justify-between border-b border-border/40 pb-2">
+            <span className="text-muted">Quantity</span>
+            <span className="font-medium text-fg">{qty} unit{qty > 1 ? "s" : ""}</span>
+          </div>
+          {photos.length > 0 && (
+            <div className="flex justify-between">
+              <span className="text-muted">Reference Photos</span>
+              <span className="font-medium text-accent">{photos.length} photo{photos.length > 1 ? "s" : ""} attached</span>
+            </div>
+          )}
+        </div>
+
+        <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setSubmittedTicketId(null);
+              setIdea("");
+              setPhotos([]);
+            }}
+            className="w-full sm:w-auto"
+          >
+            Submit Another Idea
+          </Button>
+          <Link to="/shop" className="w-full sm:w-auto">
+            <Button className="w-full">
+              Explore Ready-Made Shop &rarr;
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -1701,7 +1806,7 @@ function IdeaForm({
         className="space-y-6 md:col-span-7"
         onSubmit={(e) => {
           e.preventDefault();
-          addEstimate();
+          void handleSubmitRequest();
         }}
       >
         <div>
@@ -1711,6 +1816,7 @@ function IdeaForm({
             value={idea}
             onChange={(e) => setIdea(e.target.value)}
             placeholder="A replacement knob for my washing machine, or a wall hook that holds a motorcycle helmet, about palm sized…"
+            className="min-h-[110px]"
           />
         </div>
 
@@ -1781,18 +1887,57 @@ function IdeaForm({
           </div>
         </div>
 
-        <div>
-          <Label htmlFor="email">Email for the design back-and-forth</Label>
-          <Input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-          />
+        {/* Contact Information */}
+        <div className="rounded-2xl border border-border/70 bg-surface p-4 sm:p-5 space-y-3.5 shadow-[var(--shadow-border)]">
+          <div>
+            <Label className="text-sm font-semibold text-fg">Your Contact Details</Label>
+            <p className="text-xs text-muted mt-0.5">
+              We&apos;ll review your request and send your quote and 3D modeling plan directly to this email within 24 hours.
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="contact-name" className="text-xs text-muted">Your Name (Optional)</Label>
+              <Input
+                id="contact-name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ramesh Sharma"
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="contact-phone" className="text-xs text-muted">Phone / WhatsApp (Optional)</Label>
+              <Input
+                id="contact-phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+91 98765 43210"
+                className="mt-1"
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="contact-email" className="text-xs text-muted">Email Address (Required for Quote)</Label>
+            <Input
+              id="contact-email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              className="mt-1"
+            />
+          </div>
         </div>
+
         <div>
-          <Label>How big is it?</Label>
+          <Label>Approximate Size</Label>
           <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2.5 w-full">
             {pricingConfig.sizePresets.map((s) => (
               <button
@@ -1800,7 +1945,7 @@ function IdeaForm({
                 type="button"
                 onClick={() => setSize(s.id)}
                 className={cn(
-                  "flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition-all min-h-12 leading-none",
+                  "flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition-all min-h-12 leading-none cursor-pointer",
                   size === s.id
                     ? "border-accent bg-accent text-ink shadow-sm font-semibold"
                     : "border-border/80 bg-surface text-muted shadow-[var(--shadow-border)] hover:border-accent/40 hover:text-fg font-medium",
@@ -1814,28 +1959,41 @@ function IdeaForm({
             ))}
           </div>
         </div>
+
         <div>
-          <Label>How should we model it?</Label>
+          <Label>Design &amp; Modeling Starting Point</Label>
           <div className="mt-2 grid gap-2">
-            {pricingConfig.complexities.filter((c) => c.id !== "file").map((c) => (
+            {[
+              {
+                id: "photo",
+                name: "I have reference photos or broken part measurements",
+                note: "Best if you snapped photos of the broken piece from several angles or have physical dimensions.",
+              },
+              {
+                id: "sketch",
+                name: "Rough sketch or concept idea",
+                note: "You have a paper drawing, diagram, or functional concept that needs CAD modeling from scratch.",
+              },
+              {
+                id: "replica",
+                name: "Replicate or modify an existing product",
+                note: "A bracket, mount, adapter, or gadget inspired by an existing product with your custom tweaks.",
+              },
+            ].map((c) => (
               <button
                 key={c.id}
                 type="button"
                 onClick={() => setComplexity(c.id)}
                 className={cn(
-                  "rounded-2xl p-4 text-left shadow-[var(--shadow-border)] transition-colors",
+                  "rounded-2xl p-4 text-left shadow-[var(--shadow-border)] transition-colors cursor-pointer",
                   complexity === c.id ? "bg-accent-soft ring-2 ring-accent" : "bg-surface hover:bg-surface-2/40",
                 )}
               >
-                <p className="font-medium">
-                  {c.name}
-                  {c.fee ? (
-                    <span className="ml-2 text-sm font-normal text-muted">
-                      {formatINR(c.fee)}
-                    </span>
-                  ) : null}
+                <p className="font-medium text-sm text-fg flex items-center justify-between">
+                  <span>{c.name}</span>
+                  {complexity === c.id && <Check className="size-4 text-accent" />}
                 </p>
-                <p className="mt-1 text-sm text-muted">{c.note}</p>
+                <p className="mt-1 text-xs text-muted">{c.note}</p>
               </button>
             ))}
           </div>
@@ -1926,7 +2084,7 @@ function IdeaForm({
                 type="button"
                 onClick={() => setInfillPct(p.pct)}
                 className={cn(
-                  "rounded-lg px-3 py-1 text-xs font-medium transition-colors",
+                  "rounded-lg px-3 py-1 text-xs font-medium transition-colors cursor-pointer",
                   infillPct === p.pct
                     ? "bg-accent text-ink"
                     : "bg-surface-2 text-muted border border-border/70 hover:border-accent/60 hover:text-fg",
@@ -1943,7 +2101,7 @@ function IdeaForm({
           <button
             type="button"
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className="w-full flex items-center justify-between p-4 sm:p-5 text-left hover:bg-surface-2/40 transition-colors"
+            className="w-full flex items-center justify-between p-4 sm:p-5 text-left hover:bg-surface-2/40 transition-colors cursor-pointer"
           >
             <div className="flex items-center gap-2.5">
               <span className="flex size-7 items-center justify-center rounded-lg bg-accent/15 text-accent">
@@ -1953,7 +2111,7 @@ function IdeaForm({
                 <p className="font-semibold text-sm text-fg flex items-center gap-2">
                   <span>Advanced Bambu Slicer Settings</span>
                   <span className="rounded-full bg-accent/15 text-accent px-2 py-0.5 text-[10px] font-semibold">
-                    Studio Tuned
+                    Optional
                   </span>
                 </p>
                 <p className="text-xs text-muted mt-0.5">
@@ -2058,36 +2216,155 @@ function IdeaForm({
           <QuantityStepper value={qty} onChange={setQty} />
         </div>
 
-        <Button type="submit" size="lg" className="gap-2">
-          {editItem ? (
-            <>
-              <Save className="size-4" />
-              Update in cart · {formatINR(quote.total * qty)}
-            </>
-          ) : (
-            "Add estimate to cart"
+        <div className="space-y-2 pt-2">
+          <Button
+            type="submit"
+            size="lg"
+            disabled={isSubmitting}
+            className="w-full sm:w-auto gap-2 text-base px-8 h-12 shadow-sm cursor-pointer"
+          >
+            {editItem ? (
+              <>
+                <Save className="size-4" />
+                Update in cart
+              </>
+            ) : isSubmitting ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Submitting Request…
+              </>
+            ) : (
+              <>
+                <Sparkles className="size-4" />
+                Submit Request for Free Quote
+              </>
+            )}
+          </Button>
+          {!editItem && (
+            <p className="text-xs text-muted">
+              Zero upfront payment · We review your request and send you a custom quote within 24 hours.
+            </p>
           )}
-        </Button>
+        </div>
       </form>
 
+      {/* Right Column: Custom Quote Process Panel (Replaces Estimate Panel) */}
       <div className="md:col-span-5">
-        <QuotePanel
-          total={quote.total}
-          print={quote.print}
-          modeling={quote.modeling}
-          days={quote.days}
-          volumeCm3={quote.volumeCm3}
-          ready={idea.trim().length > 0 || photos.length > 0}
-          specs={{
-            printerName: selectedPrinter?.name,
-            qualityName: qualityMeta?.name,
-            infillLabel: `${infillPct}% ${patternMeta?.name ?? "Gyroid"}`,
-            wallLoops,
-            supports: supportState.enabled ? supportDisplayLabel : undefined,
-            surfaceFinish: surfaceFinish !== "standard" ? finishMeta?.name : undefined,
-            photosCount: photos.length > 0 ? `${photos.length} photo${photos.length > 1 ? "s" : ""} attached` : undefined,
-          }}
-        />
+        <div className="h-fit rounded-3xl bg-surface p-6 shadow-[var(--shadow-border)] md:sticky md:top-24 space-y-6">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-medium tracking-[0.18em] text-subtle uppercase">
+              Custom Quote Request
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-0.5 text-[11px] font-semibold text-accent">
+              <Clock className="size-3" />
+              Quote within 24h
+            </span>
+          </div>
+
+          <div>
+            <h3 className="font-display text-2xl font-semibold text-fg">
+              Free Engineering Review
+            </h3>
+            <p className="mt-1 text-sm text-muted leading-relaxed">
+              We review your idea, check 3D print feasibility, and calculate exact CAD modeling &amp; material requirements before you pay anything.
+            </p>
+          </div>
+
+          <div className="space-y-4 border-t border-border pt-4 text-sm">
+            <div className="flex gap-3 items-start">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-accent/15 text-accent font-semibold text-xs mt-0.5">
+                1
+              </div>
+              <div>
+                <p className="font-medium text-fg">Describe &amp; Attach</p>
+                <p className="text-xs text-muted mt-0.5">
+                  Explain what you need and attach reference photos, measurements, or sketches. No 3D files needed.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 items-start">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-accent/15 text-accent font-semibold text-xs mt-0.5">
+                2
+              </div>
+              <div>
+                <p className="font-medium text-fg">Expert Feasibility Review</p>
+                <p className="text-xs text-muted mt-0.5">
+                  Our CAD engineers assess printability, structural strength, wall thickness, and Bambu filament choice.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 items-start">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-accent/15 text-accent font-semibold text-xs mt-0.5">
+                3
+              </div>
+              <div>
+                <p className="font-medium text-fg">Personalized Quote in 24 Hours</p>
+                <p className="text-xs text-muted mt-0.5">
+                  We reply directly in your request conversation / email with a clear quote, design preview plan, and timeline.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 items-start">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-500 font-semibold text-xs mt-0.5">
+                ✓
+              </div>
+              <div>
+                <p className="font-medium text-fg">Zero Upfront Payment</p>
+                <p className="text-xs text-muted mt-0.5">
+                  100% free consultation. You only pay once you review and approve the design and quote.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Current Request Summary */}
+          <div className="rounded-2xl border border-border/70 bg-surface-2/40 p-4 space-y-2 text-xs">
+            <span className="font-semibold text-subtle uppercase tracking-wider block text-[10px]">
+              Current Request Summary
+            </span>
+            <div className="flex justify-between text-muted">
+              <span>Approx. Size:</span>
+              <span className="font-medium text-fg">{preset.name}</span>
+            </div>
+            <div className="flex justify-between text-muted">
+              <span>Material:</span>
+              <span className="font-medium text-fg">{materialMeta?.name ?? material}</span>
+            </div>
+            <div className="flex justify-between text-muted">
+              <span>Color:</span>
+              <span className="font-medium text-fg">{selectedColorName}</span>
+            </div>
+            <div className="flex justify-between text-muted">
+              <span>Quantity:</span>
+              <span className="font-medium text-fg">{qty} unit{qty > 1 ? "s" : ""}</span>
+            </div>
+            <div className="flex justify-between text-muted">
+              <span>Machine:</span>
+              <span className="font-medium text-fg">{selectedPrinter?.name ?? "Bambu Lab Fleet"}</span>
+            </div>
+            {photos.length > 0 && (
+              <div className="flex justify-between text-muted pt-1 border-t border-border/40">
+                <span>Photos:</span>
+                <span className="font-medium text-accent">{photos.length} photo{photos.length > 1 ? "s" : ""} attached</span>
+              </div>
+            )}
+          </div>
+
+          <div className="pt-1 text-xs text-muted leading-relaxed">
+            Have questions before submitting? Reach out on{" "}
+            <a href="https://wa.me/919876543210" target="_blank" rel="noreferrer" className="text-accent hover:underline font-medium">
+              WhatsApp
+            </a>{" "}
+            or email us at{" "}
+            <a href="mailto:hello@prynth.in" className="text-accent hover:underline font-medium">
+              hello@prynth.in
+            </a>
+            .
+          </div>
+        </div>
       </div>
     </div>
   );
