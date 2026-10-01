@@ -26,7 +26,7 @@ export interface LithophaneViewerProps {
   className?: string;
 }
 
-// Sub-pixel bilinear interpolation for smooth, silky displacement without staircasing
+// Sub-pixel bilinear interpolation for physical vertex height displacement
 function sampleBilinearLuminance(
   data: Uint8ClampedArray,
   w: number,
@@ -58,7 +58,7 @@ function sampleBilinearLuminance(
   return top * (1 - dy) + bot * dy;
 }
 
-// Build closed, manifold 3D solid lithophane geometry (flat or heart-shaped)
+// Build solid 3D manifold geometry with genuine tactile relief depth
 function buildLithophaneGeometry(
   imgData: ImageData,
   shape: LithophaneShape,
@@ -69,11 +69,10 @@ function buildLithophaneGeometry(
 ): THREE.BufferGeometry {
   const { width: imgW, height: imgH, data } = imgData;
 
-  // Ultra-fine grid resolution for silky smooth surface relief
   const cols = 150;
   const rows = Math.max(80, Math.min(180, Math.round(cols * (heightMm / widthMm))));
-  const minT = 0.8; // Minimum printable wall thickness in mm
-  const maxT = 3.2; // Maximum thickness in mm
+  const minT = 0.8; // Minimum printable wall thickness in mm (translucent highlights)
+  const maxT = 3.4; // Maximum thickness in mm (opaque darks)
 
   const thicknessGrid: number[][] = [];
 
@@ -84,19 +83,13 @@ function buildLithophaneGeometry(
     for (let c = 0; c < cols; c++) {
       const u = c / (cols - 1);
 
-      // Bilinear subpixel sampling
       let lum = sampleBilinearLuminance(data, imgW, imgH, u, v);
-
-      // Contrast curve
       lum = Math.pow(Math.max(0, Math.min(1, lum)), contrast);
+      if (invert) lum = 1.0 - lum;
 
-      if (invert) {
-        lum = 1.0 - lum;
-      }
-
-      // In real lithophanes:
-      // High brightness = THIN wall (lets light pass)
-      // Low brightness = THICK wall (blocks light)
+      // In authentic 3D printed lithophanes:
+      // Dark areas = THICK polymer (up to 3.4mm)
+      // Bright areas = THIN polymer (down to 0.8mm)
       let t = minT + (1.0 - lum) * (maxT - minT);
 
       // Heart boundary smooth masking
@@ -104,8 +97,8 @@ function buildLithophaneGeometry(
         const nx = (u - 0.5) * 2.2;
         const ny = (1.0 - v - 0.45) * 2.2;
         const heartDist = Math.pow(nx * nx + ny * ny - 1, 3) - nx * nx * Math.pow(ny, 3);
-        if (heartDist > 0.04) {
-          t = 0.6; // Trimmed smooth border edge
+        if (heartDist > 0.02) {
+          t = 0.5;
         }
       }
 
@@ -124,14 +117,13 @@ function buildLithophaneGeometry(
     for (let c = 0; c < cols; c++) {
       const u = c / (cols - 1);
       const t = thicknessGrid[r][c];
-
       const x = (u - 0.5) * widthMm;
 
-      // Front Face displaced forward along Z
+      // Front Face (Z displaced according to physical polymer thickness)
       positions.push(x, y, t);
       uvs.push(u, 1.0 - v);
 
-      // Back Face flat at Z = 0
+      // Back Face (smooth flat back at Z = 0)
       positions.push(x, y, 0);
       uvs.push(u, 1.0 - v);
     }
@@ -148,7 +140,6 @@ function buildLithophaneGeometry(
       const tr = getIdx(r, c + 1, false);
       const bl = getIdx(r + 1, c, false);
       const br = getIdx(r + 1, c + 1, false);
-
       indices.push(tl, tr, bl);
       indices.push(tr, br, bl);
     }
@@ -161,13 +152,12 @@ function buildLithophaneGeometry(
       const tr = getIdx(r, c + 1, true);
       const bl = getIdx(r + 1, c, true);
       const br = getIdx(r + 1, c + 1, true);
-
       indices.push(tl, bl, tr);
       indices.push(tr, bl, br);
     }
   }
 
-  // 3. Side Walls (watertight solid perimeter)
+  // 3. Side Walls (closing the 3D solid plate along top, bottom, left, right)
   // Top edge (r = 0)
   for (let c = 0; c < cols - 1; c++) {
     const f1 = getIdx(0, c, false);
@@ -216,6 +206,102 @@ function buildLithophaneGeometry(
 
   return geometry;
 }
+
+// Custom True-Lithophane Shader Material
+// Models physical 0.12mm 3D-printed White PLA relief with internal warm backlight transmission
+const lithophaneShader = {
+  vertexShader: `
+    varying vec2 vUv;
+    varying vec3 vNormal;
+    varying vec3 vViewPosition;
+    varying vec3 vWorldPosition;
+
+    void main() {
+      vUv = uv;
+      vNormal = normalize(normalMatrix * normal);
+      vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+      vViewPosition = -mvPosition.xyz;
+      vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
+      gl_Position = projectionMatrix * mvPosition;
+    }
+  `,
+  fragmentShader: `
+    uniform sampler2D uTexture;
+    uniform float uLightIntensity;
+    uniform vec3 uLightColor;
+    uniform vec3 uPlasticColor;
+    uniform float uContrast;
+    uniform float uInvert;
+    uniform vec2 uDimensionsMm;
+    uniform float uIsHeart;
+
+    varying vec2 vUv;
+    varying vec3 vNormal;
+    varying vec3 vViewPosition;
+    varying vec3 vWorldPosition;
+
+    void main() {
+      // Smooth Heart mask if heart shape
+      if (uIsHeart > 0.5) {
+        float nx = (vUv.x - 0.5) * 2.2;
+        float ny = (vUv.y - 0.45) * 2.2;
+        float heartDist = pow(nx * nx + ny * ny - 1.0, 3.0) - nx * nx * pow(ny, 3.0);
+        if (heartDist > 0.015) {
+          discard;
+        }
+      }
+
+      // Sample base continuous-tone image
+      vec4 texColor = texture2D(uTexture, vUv);
+      float lum = 0.299 * texColor.r + 0.587 * texColor.g + 0.114 * texColor.b;
+      lum = pow(clamp(lum, 0.0, 1.0), uContrast);
+      if (uInvert > 0.5) lum = 1.0 - lum;
+
+      // Micro-relief surface normal gradients from heightmap
+      vec2 texel = vec2(1.0 / 800.0, 1.0 / 600.0);
+      float lumR = texture2D(uTexture, vUv + vec2(texel.x, 0.0)).r;
+      float lumL = texture2D(uTexture, vUv - vec2(texel.x, 0.0)).r;
+      float lumU = texture2D(uTexture, vUv + vec2(0.0, texel.y)).r;
+      float lumD = texture2D(uTexture, vUv - vec2(0.0, texel.y)).r;
+
+      vec3 surfaceNormal = normalize(vNormal + vec3((lumL - lumR) * 0.4, (lumD - lumU) * 0.4, 0.0));
+
+      // Subtle 0.12mm FDM 3D printing horizontal micro-layer texture
+      float layerLine = sin(vUv.y * uDimensionsMm.y * (1.0 / 0.12) * 3.14159) * 0.035;
+      surfaceNormal.y += layerLine;
+      surfaceNormal = normalize(surfaceNormal);
+
+      vec3 viewDir = normalize(vViewPosition);
+
+      // 1. Studio ambient & key lighting (room reflections)
+      vec3 keyLightDir = normalize(vec3(0.5, 0.85, 0.9));
+      float NdotL = max(dot(surfaceNormal, keyLightDir), 0.0);
+
+      // Specular reflection of silky Jade White PLA
+      vec3 halfDir = normalize(keyLightDir + viewDir);
+      float spec = pow(max(dot(surfaceNormal, halfDir), 0.0), 28.0) * 0.22;
+
+      // Authentic unlit 3D carved white plastic appearance
+      // Highlights & micro-shadows along the raised physical relief
+      vec3 unlitPlastic = uPlasticColor * (0.38 + 0.62 * NdotL) + vec3(spec);
+
+      // 2. Physical Backlight Transmission:
+      // In real lithophanes, light shines from behind through the translucent polymer:
+      // Thin areas (high lum) allow light to pass brightly with warm tungsten glow
+      // Thick areas (low lum) absorb light, showing as deep rich shadows
+      float transmission = 0.06 + 0.94 * pow(lum, 1.25);
+      vec3 backlitGlow = uLightColor * transmission;
+
+      // Backlit state combines the warm internal transmission with subtle surface specular reflection
+      vec3 litPlastic = unlitPlastic * 0.22 + backlitGlow * 1.1 + vec3(spec * 0.4);
+
+      // Smooth transition between Backlight OFF (Sculptural PLA) and Backlight ON (Warm Lamp Glow)
+      vec3 finalColor = mix(unlitPlastic, litPlastic, uLightIntensity);
+
+      gl_FragColor = vec4(finalColor, 1.0);
+    }
+  `,
+};
 
 // Solid Beech Wood Night Lamp Oval Base with Recessed Slot
 function WoodenBase({
@@ -269,7 +355,7 @@ function WoodenBase({
   );
 }
 
-// Minimalist Tabletop Easel Stand for "Lithophane Only" option
+// Minimalist Tabletop Easel Stand for "Printed Lithophane Only"
 function TabletopEaselStand({
   widthMm,
   heightMm,
@@ -346,23 +432,43 @@ function LithophaneScene({
     };
   }, [geometry]);
 
+  // Lithophane Shader Material Uniforms
+  const shaderUniforms = useMemo(() => {
+    return {
+      uTexture: { value: photoTexture },
+      uLightIntensity: { value: backlightOn ? 1.0 : 0.0 },
+      uLightColor: { value: new THREE.Color("#ffe0a4") },
+      uPlasticColor: { value: new THREE.Color("#f6f5ef") },
+      uContrast: { value: contrast ?? 1.15 },
+      uInvert: { value: invert ? 1.0 : 0.0 },
+      uDimensionsMm: { value: new THREE.Vector2(sizeMm.width, sizeMm.height) },
+      uIsHeart: { value: shape === "heart" ? 1.0 : 0.0 },
+    };
+  }, [photoTexture, sizeMm.width, sizeMm.height, shape]);
+
+  // Update animated uniforms dynamically
+  useEffect(() => {
+    shaderUniforms.uLightIntensity.value = backlightOn ? 1.0 : 0.0;
+    shaderUniforms.uContrast.value = contrast ?? 1.15;
+    shaderUniforms.uInvert.value = invert ? 1.0 : 0.0;
+    shaderUniforms.uTexture.value = photoTexture;
+    shaderUniforms.uDimensionsMm.value.set(sizeMm.width, sizeMm.height);
+    shaderUniforms.uIsHeart.value = shape === "heart" ? 1.0 : 0.0;
+  }, [backlightOn, contrast, invert, photoTexture, sizeMm, shape, shaderUniforms]);
+
   // Center lithophane seated into the wooden base slot or easel
   const yOffset = sizeMm.height / 2 - (hasWoodenBase ? 4 : 0);
 
   return (
     <group position={[0, -sizeMm.height * 0.45 + (hasWoodenBase ? 16 : 6), 0]}>
-      {/* The Lithophane Model */}
+      {/* The Lithophane Physical 3D Model with custom translucent shader */}
       <group ref={meshRef} position={[0, yOffset, 0]}>
         {geometry && (
           <mesh geometry={geometry} castShadow receiveShadow>
-            <meshStandardMaterial
-              map={backlightOn ? photoTexture : null}
-              emissiveMap={backlightOn ? photoTexture : null}
-              emissive={backlightOn ? new THREE.Color("#ffe0a4") : new THREE.Color("#000000")}
-              emissiveIntensity={backlightOn ? 1.05 : 0}
-              color={backlightOn ? "#fff7ea" : "#f6f5ef"}
-              roughness={backlightOn ? 0.4 : 0.65}
-              metalness={0.02}
+            <shaderMaterial
+              vertexShader={lithophaneShader.vertexShader}
+              fragmentShader={lithophaneShader.fragmentShader}
+              uniforms={shaderUniforms}
               side={THREE.DoubleSide}
             />
           </mesh>
@@ -376,22 +482,26 @@ function LithophaneScene({
         <TabletopEaselStand widthMm={sizeMm.width} heightMm={sizeMm.height} />
       )}
 
-      {/* Internal Backlight Emitters (active when backlight is toggled on) */}
+      {/* Real Backlight Source placed physically BEHIND the lithophane plate */}
       {backlightOn && (
-        <>
+        <group position={[0, yOffset, -30]}>
+          {/* Glowing warm LED light bulb mesh visible when camera looks behind */}
+          <mesh>
+            <sphereGeometry args={[4, 16, 16]} />
+            <meshBasicMaterial color="#ffe6b0" />
+          </mesh>
           <pointLight
-            position={[0, yOffset, -35]}
-            intensity={2600}
+            intensity={2800}
             distance={260}
             color="#ffe2a4"
           />
           <pointLight
-            position={[0, yOffset * 0.4, -10]}
-            intensity={1600}
+            position={[0, -15, 10]}
+            intensity={1400}
             distance={160}
             color="#ffd07b"
           />
-        </>
+        </group>
       )}
 
       {/* Ground Contact Shadow */}
@@ -439,7 +549,7 @@ export function LithophaneViewer({
 
     img.onload = () => {
       try {
-        // 1. High-resolution canvas for crystal-clear texture mapping (1024 max)
+        // High-resolution canvas for crystal-clear texture mapping
         const maxTexDim = 1024;
         let tw = img.width;
         let th = img.height;
@@ -459,31 +569,9 @@ export function LithophaneViewer({
         const texCtx = texCanvas.getContext("2d", { willReadFrequently: true });
         if (!texCtx) return;
 
-        // Draw image with smooth high quality scaling
         texCtx.imageSmoothingEnabled = true;
         texCtx.imageSmoothingQuality = "high";
         texCtx.drawImage(img, 0, 0, tw, th);
-
-        // Convert texture to warm continuous-tone lithophane transmission
-        const imgRaw = texCtx.getImageData(0, 0, tw, th);
-        const pData = imgRaw.data;
-        for (let i = 0; i < pData.length; i += 4) {
-          let lum = (0.299 * pData[i] + 0.587 * pData[i + 1] + 0.114 * pData[i + 2]) / 255;
-          lum = Math.pow(lum, contrast);
-          if (invert) lum = 1.0 - lum;
-
-          // Warm lithophane illumination tint
-          // Highlights = warm glowing white (#FFF9E6)
-          // Shadows = warm deep amber/sepia (#3D2C1C)
-          const r = Math.round(55 + 200 * lum);
-          const g = Math.round(40 + 205 * Math.pow(lum, 1.05));
-          const b = Math.round(25 + 200 * Math.pow(lum, 1.2));
-
-          pData[i] = r;
-          pData[i + 1] = g;
-          pData[i + 2] = b;
-        }
-        texCtx.putImageData(imgRaw, 0, 0);
 
         const tex = new THREE.CanvasTexture(texCanvas);
         tex.minFilter = THREE.LinearMipmapLinearFilter;
@@ -491,7 +579,7 @@ export function LithophaneViewer({
         tex.needsUpdate = true;
         setPhotoTexture(tex);
 
-        // 2. Sampled heightmap data for physical geometry displacement
+        // Heightmap data for physical geometry displacement
         const maxDispDim = 320;
         let dw = img.width;
         let dh = img.height;
@@ -525,7 +613,7 @@ export function LithophaneViewer({
     img.onerror = () => {
       setLoading(false);
     };
-  }, [imageSrc, contrast, invert]);
+  }, [imageSrc]);
 
   const handleResetCamera = () => {
     if (controlsRef.current) {
@@ -550,7 +638,7 @@ export function LithophaneViewer({
         <Canvas
           shadows
           camera={{
-            position: [0, sizeMm.height * 0.15, cameraDist],
+            position: [0, sizeMm.height * 0.1, cameraDist],
             fov: 38,
             near: 1,
             far: 2000,
@@ -602,7 +690,7 @@ export function LithophaneViewer({
           <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-xs">
             <div className="flex items-center gap-2.5 rounded-full border border-border bg-surface/90 px-4 py-2 text-xs font-medium text-fg shadow-lg">
               <RotateCw className="size-4 animate-spin text-accent" />
-              <span>Generating HD 3D Lithophane…</span>
+              <span>Simulating 3D Lithophane Relief…</span>
             </div>
           </div>
         )}
@@ -613,7 +701,7 @@ export function LithophaneViewer({
           <div className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-border/80 bg-surface/85 px-3 py-1 text-xs backdrop-blur-md shadow-xs">
             <Layers className="size-3.5 text-accent" />
             <span className="font-semibold text-fg capitalize">
-              {shape === "heart" ? "Heart Keepsake" : "Classic Framed Lithophane"}
+              {shape === "heart" ? "Heart Keepsake" : "Classic Flat Panel"}
             </span>
             <span className="text-muted">·</span>
             <span className="text-muted tabular-nums">
@@ -674,7 +762,7 @@ export function LithophaneViewer({
             )}
           >
             <Lightbulb className={cn("size-4", backlightOn ? "fill-current text-stone-950" : "text-muted")} />
-            <span>{backlightOn ? "💡 Backlight: ON (Warm Glow)" : "Turn Backlight ON"}</span>
+            <span>{backlightOn ? "💡 Backlight: ON (Warm Glow)" : "Turn Backlight ON (See Glow)"}</span>
           </button>
         </div>
       </div>
