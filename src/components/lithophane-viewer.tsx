@@ -7,8 +7,6 @@ import {
   Moon,
   RotateCw,
   Camera,
-  Maximize2,
-  Sparkles,
   Layers,
   Lightbulb,
 } from "lucide-react";
@@ -28,67 +26,86 @@ export interface LithophaneViewerProps {
   className?: string;
 }
 
-// Generate procedurally closed 3D solid lithophane geometry
+// Sub-pixel bilinear interpolation for smooth, silky displacement without staircasing
+function sampleBilinearLuminance(
+  data: Uint8ClampedArray,
+  w: number,
+  h: number,
+  u: number,
+  v: number
+): number {
+  const fx = u * (w - 1);
+  const fy = v * (h - 1);
+  const x0 = Math.floor(fx);
+  const y0 = Math.floor(fy);
+  const x1 = Math.min(w - 1, x0 + 1);
+  const y1 = Math.min(h - 1, y0 + 1);
+  const dx = fx - x0;
+  const dy = fy - y0;
+
+  const idx00 = (y0 * w + x0) * 4;
+  const idx10 = (y0 * w + x1) * 4;
+  const idx01 = (y1 * w + x0) * 4;
+  const idx11 = (y1 * w + x1) * 4;
+
+  const l00 = (0.299 * data[idx00] + 0.587 * data[idx00 + 1] + 0.114 * data[idx00 + 2]) / 255;
+  const l10 = (0.299 * data[idx10] + 0.587 * data[idx10 + 1] + 0.114 * data[idx10 + 2]) / 255;
+  const l01 = (0.299 * data[idx01] + 0.587 * data[idx01 + 1] + 0.114 * data[idx01 + 2]) / 255;
+  const l11 = (0.299 * data[idx11] + 0.587 * data[idx11 + 1] + 0.114 * data[idx11 + 2]) / 255;
+
+  const top = l00 * (1 - dx) + l10 * dx;
+  const bot = l01 * (1 - dx) + l11 * dx;
+  return top * (1 - dy) + bot * dy;
+}
+
+// Build closed, manifold 3D solid lithophane geometry with high spatial resolution
 function buildLithophaneGeometry(
   imgData: ImageData,
   shape: LithophaneShape,
   widthMm: number,
   heightMm: number,
-  contrast = 1.1,
-  invert = false,
-  backlightOn = true
+  contrast = 1.15,
+  invert = false
 ): THREE.BufferGeometry {
   const { width: imgW, height: imgH, data } = imgData;
 
-  // Grid resolution (balanced for 60fps rendering and high spatial resolution)
-  const cols = shape === "curved" ? 110 : 100;
-  const rows = Math.round(cols * (heightMm / widthMm));
+  // Ultra-fine grid resolution for silky smooth surface relief
+  const cols = 150;
+  const rows = Math.max(80, Math.min(180, Math.round(cols * (heightMm / widthMm))));
   const minT = 0.8; // Minimum printable wall thickness in mm
-  const maxT = 3.0; // Maximum thickness (shadow areas) in mm
+  const maxT = 3.0; // Maximum thickness in mm
 
-  // Pre-sample brightness grid
   const thicknessGrid: number[][] = [];
-  const brightnessGrid: number[][] = [];
 
   for (let r = 0; r < rows; r++) {
     thicknessGrid[r] = [];
-    brightnessGrid[r] = [];
     const v = r / (rows - 1);
-    const py = Math.min(imgH - 1, Math.floor(v * imgH));
 
     for (let c = 0; c < cols; c++) {
       const u = c / (cols - 1);
-      const px = Math.min(imgW - 1, Math.floor(u * imgW));
-      const idx = (py * imgW + px) * 4;
 
-      const red = data[idx];
-      const green = data[idx + 1];
-      const blue = data[idx + 2];
-
-      // Perceptual luminance (ITU-R BT.601)
-      let lum = (0.299 * red + 0.587 * green + 0.114 * blue) / 255;
+      // Bilinear subpixel sampling
+      let lum = sampleBilinearLuminance(data, imgW, imgH, u, v);
 
       // Contrast curve
-      lum = Math.pow(lum, contrast);
+      lum = Math.pow(Math.max(0, Math.min(1, lum)), contrast);
 
       if (invert) {
         lum = 1.0 - lum;
       }
 
-      brightnessGrid[r][c] = lum;
-
-      // In a physical lithophane:
-      // High brightness (white highlights) = THIN wall (lets light pass)
-      // Low brightness (dark shadows) = THICK wall (blocks light)
+      // In real lithophanes:
+      // High brightness = THIN wall (lets light pass)
+      // Low brightness = THICK wall (blocks light)
       let t = minT + (1.0 - lum) * (maxT - minT);
 
-      // Heart boundary clipping
+      // Heart boundary smooth masking
       if (shape === "heart") {
         const nx = (u - 0.5) * 2.2;
         const ny = (1.0 - v - 0.45) * 2.2;
         const heartDist = Math.pow(nx * nx + ny * ny - 1, 3) - nx * nx * Math.pow(ny, 3);
-        if (heartDist > 0.05) {
-          t = 0.4; // Trimmed edge
+        if (heartDist > 0.04) {
+          t = 0.6; // Trimmed edge
         }
       }
 
@@ -96,31 +113,21 @@ function buildLithophaneGeometry(
     }
   }
 
-  // Construct vertices for Front Face, Back Face, and Connecting Edges
   const positions: number[] = [];
   const uvs: number[] = [];
-  const colors: number[] = [];
   const indices: number[] = [];
 
-  const arcRad = (115 * Math.PI) / 180; // 115 deg arc for curved mantle lamp
-  const curveRadius = widthMm / arcRad; // Arc radius in mm
-
-  const frontColor = new THREE.Color();
-  const litColor = new THREE.Color("#fff2d6"); // Warm tungsten LED glow
-  const unlitColor = new THREE.Color("#f6f5ef"); // Sculpted white PLA plastic
-
-  // Vertex offsets
-  // Front face vertices: 0 to (rows * cols - 1)
-  // Back face vertices: (rows * cols) to (2 * rows * cols - 1)
+  // Elegant 75° gentle curved arc (1.31 rad) for mantle lamp
+  const arcRad = (75 * Math.PI) / 180;
+  const curveRadius = widthMm / arcRad;
 
   for (let r = 0; r < rows; r++) {
     const v = r / (rows - 1);
-    const y = (0.5 - v) * heightMm; // Centered at origin Y
+    const y = (0.5 - v) * heightMm;
 
     for (let c = 0; c < cols; c++) {
       const u = c / (cols - 1);
       const t = thicknessGrid[r][c];
-      const lum = brightnessGrid[r][c];
 
       let fx = 0,
         fy = y,
@@ -134,11 +141,11 @@ function buildLithophaneGeometry(
         const sinA = Math.sin(angle);
         const cosA = Math.cos(angle);
 
-        // Back is smooth cylindrical arc
+        // Smooth back surface along cylinder radius
         bx = curveRadius * sinA;
         bz = curveRadius * cosA - curveRadius;
 
-        // Front is displaced outwards along the radial normal
+        // Front surface displaced along outward normal
         const rFront = curveRadius + t;
         fx = rFront * sinA;
         fz = rFront * cosA - curveRadius;
@@ -152,28 +159,13 @@ function buildLithophaneGeometry(
         bz = 0;
       }
 
-      // Add Front Vertex
+      // Front Vertex (index = (r * cols + c) * 2)
       positions.push(fx, fy, fz);
       uvs.push(u, 1.0 - v);
 
-      if (backlightOn) {
-        // Backlight transmission: thin areas glow bright, thick areas show shadow
-        const trans = Math.min(1.0, Math.max(0.12, 0.12 + 0.88 * Math.pow(lum, 1.15)));
-        frontColor.copy(litColor).multiplyScalar(trans);
-      } else {
-        // Solid unlit sculpt
-        frontColor.copy(unlitColor).multiplyScalar(0.85 + 0.15 * lum);
-      }
-      colors.push(frontColor.r, frontColor.g, frontColor.b);
-
-      // Add Back Vertex
+      // Back Vertex (index = (r * cols + c) * 2 + 1)
       positions.push(bx, by, bz);
       uvs.push(u, 1.0 - v);
-      if (backlightOn) {
-        colors.push(litColor.r * 0.9, litColor.g * 0.9, litColor.b * 0.9);
-      } else {
-        colors.push(unlitColor.r * 0.9, unlitColor.g * 0.9, unlitColor.b * 0.9);
-      }
     }
   }
 
@@ -207,7 +199,7 @@ function buildLithophaneGeometry(
     }
   }
 
-  // 3. Side Walls (sealing the perimeter for a solid 3D print)
+  // 3. Side Walls (watertight solid perimeter)
   // Top edge (r = 0)
   for (let c = 0; c < cols - 1; c++) {
     const f1 = getIdx(0, c, false);
@@ -251,18 +243,17 @@ function buildLithophaneGeometry(
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
   geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
-  geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
 
   return geometry;
 }
 
-// 3D Solid Beech Wood LED Night Lamp Base
+// Solid Beech Wood Night Lamp Oval Base with Recessed Slot
 function WoodenBase({
   widthMm,
   depthMm = 65,
-  heightMm = 24,
+  heightMm = 20,
   backlightOn,
 }: {
   widthMm: number;
@@ -270,34 +261,40 @@ function WoodenBase({
   heightMm?: number;
   backlightOn: boolean;
 }) {
-  const baseW = Math.max(widthMm * 0.95, 120);
+  const baseW = Math.max(widthMm * 1.05, 130);
 
   return (
-    <group position={[0, -heightMm / 2 - 2, 0]}>
-      {/* Wooden Oval/Rounded Base */}
-      <mesh receiveShadow castShadow>
+    <group position={[0, -heightMm / 2, 0]}>
+      {/* Sleek rounded beech wood base body */}
+      <mesh receiveShadow castShadow position={[0, 0, 0]}>
         <boxGeometry args={[baseW, heightMm, depthMm]} />
         <meshStandardMaterial
-          color="#9e7246"
-          roughness={0.7}
-          metalness={0.05}
+          color="#9b6e45"
+          roughness={0.65}
+          metalness={0.03}
         />
       </mesh>
 
-      {/* Inset LED Light Channel */}
-      <mesh position={[0, heightMm / 2 + 0.1, 0]}>
-        <boxGeometry args={[baseW * 0.85, 1.5, 8]} />
+      {/* Recessed slot where the lithophane sits */}
+      <mesh position={[0, heightMm / 2 - 2, 0]}>
+        <boxGeometry args={[widthMm + 6, 4.5, 9]} />
+        <meshStandardMaterial color="#2d1c10" roughness={0.9} />
+      </mesh>
+
+      {/* Internal warm LED light strip nestled inside slot */}
+      <mesh position={[0, heightMm / 2 - 1, 0]}>
+        <boxGeometry args={[widthMm, 1.5, 4]} />
         <meshStandardMaterial
-          color={backlightOn ? "#ffea9f" : "#2a2a2a"}
-          emissive={backlightOn ? "#ffb74d" : "#000000"}
-          emissiveIntensity={backlightOn ? 1.5 : 0}
-          roughness={0.3}
+          color={backlightOn ? "#fff5dc" : "#221a14"}
+          emissive={backlightOn ? "#ffc66d" : "#000000"}
+          emissiveIntensity={backlightOn ? 2.5 : 0}
+          roughness={0.2}
         />
       </mesh>
 
-      {/* Recessed USB Braided Cable exit at the back */}
-      <mesh position={[0, -heightMm / 4, -depthMm / 2 - 4]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[2.5, 2.5, 10, 16]} />
+      {/* Rear USB braided cable relief */}
+      <mesh position={[0, -heightMm / 4, -depthMm / 2 - 3]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[2, 2, 8, 16]} />
         <meshStandardMaterial color="#1a1a1a" roughness={0.9} />
       </mesh>
     </group>
@@ -307,6 +304,7 @@ function WoodenBase({
 // Scene Content
 function LithophaneScene({
   imgData,
+  photoTexture,
   shape,
   sizeMm,
   backlightOn,
@@ -316,6 +314,7 @@ function LithophaneScene({
   autoRotate,
 }: {
   imgData: ImageData | null;
+  photoTexture: THREE.CanvasTexture | null;
   shape: LithophaneShape;
   sizeMm: { width: number; height: number };
   backlightOn: boolean;
@@ -334,10 +333,9 @@ function LithophaneScene({
       sizeMm.width,
       sizeMm.height,
       contrast,
-      invert,
-      backlightOn
+      invert
     );
-  }, [imgData, shape, sizeMm.width, sizeMm.height, contrast, invert, backlightOn]);
+  }, [imgData, shape, sizeMm.width, sizeMm.height, contrast, invert]);
 
   useEffect(() => {
     return () => {
@@ -345,22 +343,22 @@ function LithophaneScene({
     };
   }, [geometry]);
 
-  // Height offset to seat the lithophane on the table or base
-  const yOffset = sizeMm.height / 2 + (hasWoodenBase ? 10 : 2);
+  // Center lithophane seated into the wooden base slot
+  const yOffset = sizeMm.height / 2 - (hasWoodenBase ? 4 : 0);
 
   return (
-    <group position={[0, -yOffset + sizeMm.height * 0.45, 0]}>
+    <group position={[0, -sizeMm.height * 0.45 + (hasWoodenBase ? 16 : 0), 0]}>
       {/* The Lithophane Model */}
       <group ref={meshRef} position={[0, yOffset, 0]}>
         {geometry && (
-          <mesh
-            geometry={geometry}
-            castShadow
-            receiveShadow
-          >
+          <mesh geometry={geometry} castShadow receiveShadow>
             <meshStandardMaterial
-              vertexColors
-              roughness={backlightOn ? 0.35 : 0.6}
+              map={backlightOn ? photoTexture : null}
+              emissiveMap={backlightOn ? photoTexture : null}
+              emissive={backlightOn ? new THREE.Color("#ffe0a4") : new THREE.Color("#000000")}
+              emissiveIntensity={backlightOn ? 1.05 : 0}
+              color={backlightOn ? "#fff7ea" : "#f6f5ef"}
+              roughness={backlightOn ? 0.4 : 0.65}
               metalness={0.02}
               side={THREE.DoubleSide}
             />
@@ -368,37 +366,34 @@ function LithophaneScene({
         )}
       </group>
 
-      {/* Optional Wooden LED Base */}
+      {/* Beech Wood LED Base */}
       {hasWoodenBase && (
-        <WoodenBase
-          widthMm={sizeMm.width}
-          backlightOn={backlightOn}
-        />
+        <WoodenBase widthMm={sizeMm.width} backlightOn={backlightOn} />
       )}
 
-      {/* Backlight LED Source (placed directly behind the lithophane) */}
+      {/* Internal Backlight Emitters */}
       {backlightOn && (
         <>
           <pointLight
-            position={[0, yOffset, -40]}
-            intensity={2800}
+            position={[0, yOffset, -35]}
+            intensity={2600}
             distance={260}
             color="#ffe2a4"
           />
           <pointLight
-            position={[0, yOffset * 0.7, -15]}
+            position={[0, yOffset * 0.4, -10]}
             intensity={1600}
-            distance={180}
+            distance={160}
             color="#ffd07b"
           />
         </>
       )}
 
-      {/* Realistic Ground Contact Shadow */}
+      {/* Ground Contact Shadow */}
       <ContactShadows
-        position={[0, 0, 0]}
+        position={[0, hasWoodenBase ? -20 : 0, 0]}
         opacity={0.65}
-        scale={Math.max(sizeMm.width * 2, 250)}
+        scale={Math.max(sizeMm.width * 2, 260)}
         blur={1.8}
         far={100}
       />
@@ -412,21 +407,23 @@ export function LithophaneViewer({
   sizeMm,
   backlightOn,
   onToggleBacklight,
-  contrast = 1.1,
+  contrast = 1.15,
   invert = false,
   hasWoodenBase = true,
   className,
 }: LithophaneViewerProps) {
   const [imgData, setImgData] = useState<ImageData | null>(null);
+  const [photoTexture, setPhotoTexture] = useState<THREE.CanvasTexture | null>(null);
   const [loading, setLoading] = useState(false);
   const [autoRotate, setAutoRotate] = useState(false);
   const [darkRoom, setDarkRoom] = useState(true);
   const controlsRef = useRef<any>(null);
 
-  // Extract downsampled ImageData from imageSrc
+  // Process image, generate high-resolution texture map and heightmap data
   useEffect(() => {
     if (!imageSrc) {
       setImgData(null);
+      setPhotoTexture(null);
       return;
     }
 
@@ -437,29 +434,82 @@ export function LithophaneViewer({
 
     img.onload = () => {
       try {
-        const canvas = document.createElement("canvas");
-        const maxDim = 320;
-        let w = img.width;
-        let h = img.height;
-
-        if (w > maxDim || h > maxDim) {
-          if (w > h) {
-            h = Math.round((h * maxDim) / w);
-            w = maxDim;
+        // 1. High-resolution canvas for crystal-clear texture mapping (1024 max)
+        const maxTexDim = 1024;
+        let tw = img.width;
+        let th = img.height;
+        if (tw > maxTexDim || th > maxTexDim) {
+          if (tw > th) {
+            th = Math.round((th * maxTexDim) / tw);
+            tw = maxTexDim;
           } else {
-            w = Math.round((w * maxDim) / h);
-            h = maxDim;
+            tw = Math.round((tw * maxTexDim) / th);
+            th = maxTexDim;
           }
         }
 
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext("2d", { willReadFrequently: true });
-        if (!ctx) return;
+        const texCanvas = document.createElement("canvas");
+        texCanvas.width = tw;
+        texCanvas.height = th;
+        const texCtx = texCanvas.getContext("2d", { willReadFrequently: true });
+        if (!texCtx) return;
 
-        ctx.drawImage(img, 0, 0, w, h);
-        const data = ctx.getImageData(0, 0, w, h);
-        setImgData(data);
+        // Draw image with smooth high quality scaling
+        texCtx.imageSmoothingEnabled = true;
+        texCtx.imageSmoothingQuality = "high";
+        texCtx.drawImage(img, 0, 0, tw, th);
+
+        // Convert texture to warm continuous-tone lithophane transmission
+        const imgRaw = texCtx.getImageData(0, 0, tw, th);
+        const pData = imgRaw.data;
+        for (let i = 0; i < pData.length; i += 4) {
+          let lum = (0.299 * pData[i] + 0.587 * pData[i + 1] + 0.114 * pData[i + 2]) / 255;
+          lum = Math.pow(lum, contrast);
+          if (invert) lum = 1.0 - lum;
+
+          // Warm lithophane illumination tint
+          // Highlights = warm glowing white (#FFF9E6)
+          // Shadows = warm deep amber/sepia (#3D2C1C)
+          const r = Math.round(55 + 200 * lum);
+          const g = Math.round(40 + 205 * Math.pow(lum, 1.05));
+          const b = Math.round(25 + 200 * Math.pow(lum, 1.2));
+
+          pData[i] = r;
+          pData[i + 1] = g;
+          pData[i + 2] = b;
+        }
+        texCtx.putImageData(imgRaw, 0, 0);
+
+        const tex = new THREE.CanvasTexture(texCanvas);
+        tex.minFilter = THREE.LinearMipmapLinearFilter;
+        tex.magFilter = THREE.LinearFilter;
+        tex.needsUpdate = true;
+        setPhotoTexture(tex);
+
+        // 2. Sampled heightmap data for physical geometry displacement
+        const maxDispDim = 320;
+        let dw = img.width;
+        let dh = img.height;
+        if (dw > maxDispDim || dh > maxDispDim) {
+          if (dw > dh) {
+            dh = Math.round((dh * maxDispDim) / dw);
+            dw = maxDispDim;
+          } else {
+            dw = Math.round((dw * maxDispDim) / dh);
+            dw = maxDispDim;
+          }
+        }
+
+        const dispCanvas = document.createElement("canvas");
+        dispCanvas.width = dw;
+        dispCanvas.height = dh;
+        const dispCtx = dispCanvas.getContext("2d", { willReadFrequently: true });
+        if (dispCtx) {
+          dispCtx.imageSmoothingEnabled = true;
+          dispCtx.imageSmoothingQuality = "high";
+          dispCtx.drawImage(img, 0, 0, dw, dh);
+          setImgData(dispCtx.getImageData(0, 0, dw, dh));
+        }
       } catch (err) {
         console.error("Failed to process lithophane image", err);
       } finally {
@@ -470,7 +520,7 @@ export function LithophaneViewer({
     img.onerror = () => {
       setLoading(false);
     };
-  }, [imageSrc]);
+  }, [imageSrc, contrast, invert]);
 
   const handleResetCamera = () => {
     if (controlsRef.current) {
@@ -485,7 +535,7 @@ export function LithophaneViewer({
       className={cn(
         "relative flex h-[380px] sm:h-[460px] md:h-[540px] w-full flex-col overflow-hidden rounded-2xl border transition-colors",
         darkRoom
-          ? "border-border/80 bg-[#090b0e]"
+          ? "border-border/80 bg-[#07090c]"
           : "border-border bg-gradient-to-b from-surface to-surface-2",
         className
       )}
@@ -495,31 +545,32 @@ export function LithophaneViewer({
         <Canvas
           shadows
           camera={{
-            position: [0, sizeMm.height * 0.25, cameraDist],
-            fov: 42,
+            position: [0, sizeMm.height * 0.15, cameraDist],
+            fov: 38,
             near: 1,
             far: 2000,
           }}
           className="h-full w-full cursor-grab active:cursor-grabbing"
         >
           {/* Ambient Lighting */}
-          <ambientLight intensity={darkRoom ? 0.22 : 0.75} />
-          
-          {/* Studio Key Lighting */}
+          <ambientLight intensity={darkRoom ? 0.35 : 0.85} />
+
+          {/* Key Light */}
           <directionalLight
             position={[100, 150, 120]}
-            intensity={darkRoom ? 0.45 : 1.2}
+            intensity={darkRoom ? 0.6 : 1.3}
             castShadow
             shadow-mapSize={[1024, 1024]}
           />
           <directionalLight
             position={[-80, 80, -60]}
-            intensity={darkRoom ? 0.2 : 0.5}
+            intensity={darkRoom ? 0.3 : 0.6}
             color="#8fb0ff"
           />
 
           <LithophaneScene
             imgData={imgData}
+            photoTexture={photoTexture}
             shape={shape}
             sizeMm={sizeMm}
             backlightOn={backlightOn}
@@ -537,7 +588,7 @@ export function LithophaneViewer({
             dampingFactor={0.08}
             minDistance={cameraDist * 0.45}
             maxDistance={cameraDist * 2.8}
-            maxPolarAngle={Math.PI / 2 + 0.12} // Prevent viewing under floor
+            maxPolarAngle={Math.PI / 2 + 0.1}
           />
         </Canvas>
 
@@ -546,7 +597,7 @@ export function LithophaneViewer({
           <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-xs">
             <div className="flex items-center gap-2.5 rounded-full border border-border bg-surface/90 px-4 py-2 text-xs font-medium text-fg shadow-lg">
               <RotateCw className="size-4 animate-spin text-accent" />
-              <span>Generating 3D Lithophane Mesh…</span>
+              <span>Generating HD 3D Lithophane…</span>
             </div>
           </div>
         )}
@@ -613,7 +664,7 @@ export function LithophaneViewer({
             className={cn(
               "flex items-center gap-2.5 rounded-full px-4 py-2 text-xs font-semibold shadow-lg transition-all duration-200 cursor-pointer border",
               backlightOn
-                ? "bg-amber-400 text-stone-950 border-amber-300 ring-4 ring-amber-400/20 shadow-amber-500/30"
+                ? "bg-amber-400 text-stone-950 border-amber-300 ring-4 ring-amber-400/20 shadow-amber-500/30 font-bold"
                 : "bg-surface/90 text-fg border-border hover:bg-surface hover:border-accent/40"
             )}
           >

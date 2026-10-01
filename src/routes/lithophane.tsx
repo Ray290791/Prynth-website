@@ -32,7 +32,7 @@ import {
   LithophaneViewer,
   type LithophaneShape,
 } from "@/components/lithophane-viewer";
-import { SAMPLE_PHOTOS, generateSamplePhoto } from "@/lib/lithophane-samples";
+import { SAMPLE_PHOTOS } from "@/lib/lithophane-samples";
 
 export const Route = createFileRoute("/lithophane")({
   component: LithophaneStudioPage,
@@ -183,8 +183,7 @@ function LithophaneStudioPage() {
 
   // Initialize with the sample couple photo on mount
   useEffect(() => {
-    const initial = generateSamplePhoto("couple");
-    setPhotoUrl(initial);
+    setPhotoUrl(SAMPLE_PHOTOS[0].url);
   }, []);
 
   const selectedSizeConfig = SIZES.find((s) => s.id === size)!;
@@ -237,10 +236,12 @@ function LithophaneStudioPage() {
     reader.readAsDataURL(file);
   };
 
-  const selectSample = (sampleId: "couple" | "pet" | "family") => {
+  const selectSample = (sampleId: string) => {
     setActiveSample(sampleId);
-    const sample = generateSamplePhoto(sampleId);
-    setPhotoUrl(sample);
+    const sample = SAMPLE_PHOTOS.find((s) => s.id === sampleId);
+    if (sample) {
+      setPhotoUrl(sample.url);
+    }
   };
 
   const handleAddToCart = () => {
