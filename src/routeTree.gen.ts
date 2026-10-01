@@ -18,6 +18,7 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CustomRouteImport } from './routes/custom'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as HistoryRouteImport } from './routes/history'
+import { Route as LithophaneRouteImport } from './routes/lithophane'
 import { Route as MaterialsRouteImport } from './routes/materials'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProfileRouteImport } from './routes/profile'
@@ -76,6 +77,11 @@ const FaqRoute = FaqRouteImport.update({
 const HistoryRoute = HistoryRouteImport.update({
   id: '/history',
   path: '/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LithophaneRoute = LithophaneRouteImport.update({
+  id: '/lithophane',
+  path: '/lithophane',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MaterialsRoute = MaterialsRouteImport.update({
@@ -159,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/custom': typeof CustomRoute
   '/faq': typeof FaqRoute
   '/history': typeof HistoryRoute
+  '/lithophane': typeof LithophaneRoute
   '/materials': typeof MaterialsRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
@@ -184,6 +191,7 @@ export interface FileRoutesByTo {
   '/custom': typeof CustomRoute
   '/faq': typeof FaqRoute
   '/history': typeof HistoryRoute
+  '/lithophane': typeof LithophaneRoute
   '/materials': typeof MaterialsRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
@@ -210,6 +218,7 @@ export interface FileRoutesById {
   '/custom': typeof CustomRoute
   '/faq': typeof FaqRoute
   '/history': typeof HistoryRoute
+  '/lithophane': typeof LithophaneRoute
   '/materials': typeof MaterialsRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
@@ -237,6 +246,7 @@ export interface FileRouteTypes {
     | '/custom'
     | '/faq'
     | '/history'
+    | '/lithophane'
     | '/materials'
     | '/privacy'
     | '/profile'
@@ -262,6 +272,7 @@ export interface FileRouteTypes {
     | '/custom'
     | '/faq'
     | '/history'
+    | '/lithophane'
     | '/materials'
     | '/privacy'
     | '/profile'
@@ -287,6 +298,7 @@ export interface FileRouteTypes {
     | '/custom'
     | '/faq'
     | '/history'
+    | '/lithophane'
     | '/materials'
     | '/privacy'
     | '/profile'
@@ -313,6 +325,7 @@ export interface RootRouteChildren {
   CustomRoute: typeof CustomRoute
   FaqRoute: typeof FaqRoute
   HistoryRoute: typeof HistoryRoute
+  LithophaneRoute: typeof LithophaneRoute
   MaterialsRoute: typeof MaterialsRoute
   PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
@@ -392,6 +405,13 @@ declare module '@tanstack/react-router' {
       path: '/history'
       fullPath: '/history'
       preLoaderRoute: typeof HistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lithophane': {
+      id: '/lithophane'
+      path: '/lithophane'
+      fullPath: '/lithophane'
+      preLoaderRoute: typeof LithophaneRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/materials': {
@@ -505,6 +525,7 @@ const rootRouteChildren: RootRouteChildren = {
   CustomRoute: CustomRoute,
   FaqRoute: FaqRoute,
   HistoryRoute: HistoryRoute,
+  LithophaneRoute: LithophaneRoute,
   MaterialsRoute: MaterialsRoute,
   PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,

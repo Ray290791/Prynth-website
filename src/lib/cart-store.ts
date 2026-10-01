@@ -45,8 +45,6 @@ export type CustomSpec = {
   complexityId?: string;
   modelRotation?: [number, number, number];
   referencePhotos?: string[];
-  threadedInserts?: { count: number; size: string };
-  rubberPads?: boolean;
 };
 
 export type CartItem = {

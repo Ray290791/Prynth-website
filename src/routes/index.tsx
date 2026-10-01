@@ -618,15 +618,29 @@ function IdeaToPrintSection() {
               </p>
             </div>
 
-            <div className="rounded-xl border border-border/70 bg-surface-2/30 p-4 space-y-2 hover:border-accent/40 transition-colors">
-              <div className="flex items-center gap-2 text-accent font-semibold text-sm">
-                <Gift className="size-4 shrink-0" />
-                <span>Custom Gifts &amp; Lithophanes</span>
+            <Link
+              to="/lithophane"
+              className="group rounded-xl border border-border/70 bg-surface-2/30 p-4 space-y-2 hover:border-accent/60 hover:bg-surface-2/60 transition-all flex flex-col justify-between cursor-pointer"
+            >
+              <div>
+                <div className="flex items-center justify-between text-accent font-semibold text-sm">
+                  <div className="flex items-center gap-2">
+                    <Gift className="size-4 shrink-0" />
+                    <span>Custom Gifts &amp; Lithophanes</span>
+                  </div>
+                  <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-semibold text-accent group-hover:bg-accent group-hover:text-ink transition-colors">
+                    3D Studio
+                  </span>
+                </div>
+                <p className="text-xs text-muted leading-relaxed mt-2">
+                  Turn your family or pet photo into a glowing 3D backlit night-lamp in optical white PLA with warm solid wood LED base.
+                </p>
               </div>
-              <p className="text-xs text-muted leading-relaxed">
-                Turn your family or pet photo into a magic 3D backlit night-lamp, custom nameplates, personalized keychains, or architectural replicas.
-              </p>
-            </div>
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-accent pt-1 group-hover:translate-x-0.5 transition-transform">
+                <span>Launch Photo-to-3D Studio</span>
+                <ArrowRight className="size-3.5" />
+              </div>
+            </Link>
           </div>
 
           {/* Interactive Idea Input Box */}

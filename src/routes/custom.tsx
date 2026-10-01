@@ -313,7 +313,6 @@ function QuotePanel({
   solidVolumeCm3,
   weightGrams,
   ready,
-  hardwareAddons,
   specs,
 }: {
   total: number;
@@ -324,7 +323,6 @@ function QuotePanel({
   solidVolumeCm3?: number;
   weightGrams?: number;
   ready: boolean;
-  hardwareAddons?: { name: string; price: number }[];
   specs?: {
     printerName?: string;
     qualityName?: string;
@@ -356,16 +354,6 @@ function QuotePanel({
             <dt className="text-muted">Print</dt>
             <dd className="tabular-nums">{formatINR(print)}</dd>
           </div>
-          {hardwareAddons && hardwareAddons.length > 0 && (
-            <>
-              {hardwareAddons.map((ha, i) => (
-                <div key={i} className="flex justify-between text-accent font-medium">
-                  <dt>{ha.name}</dt>
-                  <dd className="tabular-nums">+{formatINR(ha.price)}</dd>
-                </div>
-              ))}
-            </>
-          )}
           {modeling > 0 ? (
             <div className="flex justify-between">
               <dt className="text-muted">Modeling</dt>
@@ -560,19 +548,6 @@ function UploadForm({
   );
   const [printabilityReport, setPrintabilityReport] = useState<PrintabilityReport | null>(null);
 
-  // Mechanical Hardware & Assembly Add-on States
-  const [threadedInsertsEnabled, setThreadedInsertsEnabled] = useState(
-    () => Boolean(editItem?.custom?.threadedInserts && editItem.custom.threadedInserts.count > 0)
-  );
-  const [insertCount, setInsertCount] = useState(
-    () => editItem?.custom?.threadedInserts?.count || 4
-  );
-  const [insertSize, setInsertSize] = useState<"M3" | "M4" | "M5">(
-    () => (editItem?.custom?.threadedInserts?.size as any) || "M3"
-  );
-  const [rubberPadsEnabled, setRubberPadsEnabled] = useState(
-    () => Boolean(editItem?.custom?.rubberPads)
-  );
 
   // Restore file from server if editing and not in client memory cache
   useEffect(() => {
@@ -794,11 +769,6 @@ function UploadForm({
       }${supportState.interfaceFilament !== "Default" ? ` · ${supportState.interfaceFilament}` : ""}`
     : "None";
 
-  const insertsCost = threadedInsertsEnabled ? insertCount * 20 : 0;
-  const rubberPadsCost = rubberPadsEnabled ? 40 : 0;
-  const hardwareAddonsTotal = insertsCost + rubberPadsCost;
-  const finalUnitPrice = quote.total > 0 ? quote.total + hardwareAddonsTotal : 0;
-
   function addEstimate() {
     if ((!file && !editItem?.custom?.fileName) || quote.total <= 0) {
       toast.error("Upload a model first.");
@@ -849,15 +819,13 @@ function UploadForm({
       volumeCm3: quote.volumeCm3,
       solidVolumeCm3: solidVolume ?? editItem?.custom?.solidVolumeCm3,
       surfaceAreaMm2: surfaceArea ?? editItem?.custom?.surfaceAreaMm2,
-      threadedInserts: threadedInsertsEnabled ? { count: insertCount, size: insertSize } : undefined,
-      rubberPads: rubberPadsEnabled ? true : undefined,
     };
 
     if (editItem && onUpdateItem) {
       onUpdateItem(editItem.id, {
         name: `Custom print · ${fileName}`,
         color: selectedColorName,
-        unitPrice: finalUnitPrice,
+        unitPrice: quote.total,
         qty,
         custom: customData,
       });
@@ -870,7 +838,7 @@ function UploadForm({
       kind: "custom",
       name: `Custom print · ${fileName}`,
       color: selectedColorName,
-      unitPrice: finalUnitPrice,
+      unitPrice: quote.total,
       qty,
       custom: customData,
     });
@@ -1351,122 +1319,6 @@ function UploadForm({
           />
         </div>
 
-        {/* MECHANICAL HARDWARE & ASSEMBLY ADD-ONS */}
-        <div className="rounded-2xl border border-border bg-surface p-4 sm:p-5 space-y-4 shadow-[var(--shadow-border)]">
-          <div>
-            <h3 className="font-semibold text-sm text-fg flex items-center gap-2">
-              <span>Mechanical Hardware & Assembly</span>
-              <span className="rounded-full bg-accent/15 text-accent px-2 py-0.5 text-[10px] font-semibold">
-                Add-on
-              </span>
-            </h3>
-            <p className="text-xs text-muted mt-0.5">
-              Professional thermal heat-set brass inserts and vibration-dampening feet installed before shipping.
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            {/* Threaded Brass Inserts */}
-            <div className={cn(
-              "rounded-xl border p-3.5 transition-colors",
-              threadedInsertsEnabled
-                ? "border-accent/40 bg-accent/5 ring-1 ring-accent/30"
-                : "border-border bg-surface-2/40"
-            )}>
-              <div className="flex items-start justify-between gap-3">
-                <label className="flex items-start gap-2.5 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={threadedInsertsEnabled}
-                    onChange={(e) => setThreadedInsertsEnabled(e.target.checked)}
-                    className="mt-0.5 size-4 rounded border-border accent-accent cursor-pointer"
-                  />
-                  <div>
-                    <span className="text-xs font-semibold text-fg block">
-                      Brass Threaded Heat-Set Inserts
-                    </span>
-                    <span className="text-[11px] text-muted block mt-0.5">
-                      Ultrasonic / thermal insertion for strong, reusable machine screw assembly.
-                    </span>
-                  </div>
-                </label>
-                <span className="text-xs font-semibold tabular-nums text-accent shrink-0">
-                  +₹20 / insert
-                </span>
-              </div>
-
-              {threadedInsertsEnabled && (
-                <div className="mt-3 pt-3 border-t border-border/60 flex flex-wrap items-center justify-between gap-3 animate-in fade-in duration-150">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted">Thread:</span>
-                    <div className="flex gap-1">
-                      {(["M3", "M4", "M5"] as const).map((s) => (
-                        <button
-                          key={s}
-                          type="button"
-                          onClick={() => setInsertSize(s)}
-                          className={cn(
-                            "px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors border cursor-pointer",
-                            insertSize === s
-                              ? "border-accent bg-accent text-ink"
-                              : "border-border bg-surface text-muted hover:text-fg"
-                          )}
-                        >
-                          {s}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted">Count:</span>
-                    <div className="flex items-center gap-1.5">
-                      <input
-                        type="number"
-                        min="1"
-                        max="50"
-                        value={insertCount}
-                        onChange={(e) => setInsertCount(Math.max(1, Math.min(50, parseInt(e.target.value) || 1)))}
-                        className="w-14 h-8 rounded-lg border border-border bg-surface px-2 text-center text-xs font-mono font-medium focus:border-accent focus:outline-none"
-                      />
-                      <span className="text-xs text-muted">pcs (+{formatINR(insertCount * 20)})</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Anti-Slip Rubber Pads */}
-            <div className={cn(
-              "rounded-xl border p-3.5 transition-colors",
-              rubberPadsEnabled
-                ? "border-accent/40 bg-accent/5 ring-1 ring-accent/30"
-                : "border-border bg-surface-2/40"
-            )}>
-              <div className="flex items-start justify-between gap-3">
-                <label className="flex items-start gap-2.5 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={rubberPadsEnabled}
-                    onChange={(e) => setRubberPadsEnabled(e.target.checked)}
-                    className="mt-0.5 size-4 rounded border-border accent-accent cursor-pointer"
-                  />
-                  <div>
-                    <span className="text-xs font-semibold text-fg block">
-                      3M Anti-Slip Rubber Bumper Feet (4-pack)
-                    </span>
-                    <span className="text-[11px] text-muted block mt-0.5">
-                      Hemispherical polyurethane dampeners. Prevents desk scratches and isolates vibrations.
-                    </span>
-                  </div>
-                </label>
-                <span className="text-xs font-semibold tabular-nums text-accent shrink-0">
-                  +₹40
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
 
         <div>
           <Label>Quantity</Label>
@@ -1492,11 +1344,11 @@ function UploadForm({
           {editItem ? (
             <>
               <Save className="size-4" />
-              Update in cart · {formatINR(finalUnitPrice * qty)}
+              Update in cart · {formatINR(quote.total * qty)}
             </>
           ) : (
             <>
-              Add estimate to cart · {finalUnitPrice > 0 ? formatINR(finalUnitPrice * qty) : ""}
+              Add estimate to cart · {quote.total > 0 ? formatINR(quote.total * qty) : ""}
             </>
           )}
         </Button>
@@ -1504,7 +1356,7 @@ function UploadForm({
 
       <div className="md:col-span-5">
         <QuotePanel
-          total={finalUnitPrice}
+          total={quote.total}
           print={quote.print}
           modeling={0}
           days={quote.days}
@@ -1512,10 +1364,6 @@ function UploadForm({
           solidVolumeCm3={solidVolume ?? undefined}
           weightGrams={quote.weightGrams}
           ready={Boolean(file || editItem?.custom?.fileName) && quote.total > 0}
-          hardwareAddons={[
-            threadedInsertsEnabled ? { name: `${insertCount}× ${insertSize} Brass Inserts`, price: insertCount * 20 } : null,
-            rubberPadsEnabled ? { name: "Anti-Slip Rubber Feet (4-pack)", price: 40 } : null,
-          ].filter(Boolean) as { name: string; price: number }[]}
           specs={{
             printerName: selectedPrinter?.name,
             qualityName: qualityMeta?.name,

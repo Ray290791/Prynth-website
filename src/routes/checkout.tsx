@@ -715,8 +715,6 @@ function CheckoutPage() {
                     {item.custom?.material && ` · ${item.custom.material}`}
                     {item.custom?.quality && ` · ${item.custom.quality}`}
                     {item.custom?.infillPercentage != null && ` · ${item.custom.infillPercentage}% infill`}
-                    {item.custom?.threadedInserts && ` · ${item.custom.threadedInserts.count}× ${item.custom.threadedInserts.size} inserts`}
-                    {item.custom?.rubberPads && " · Anti-slip pads"}
                     {" · "}×{item.qty}
                   </p>
                 </div>

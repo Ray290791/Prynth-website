@@ -125,16 +125,6 @@ function CartPage() {
                             {item.custom.surfaceFinish}
                           </span>
                         ) : null}
-                        {item.custom.threadedInserts ? (
-                          <span className="rounded bg-accent/10 px-1.5 py-0.5 font-medium text-accent">
-                            {item.custom.threadedInserts.count}× {item.custom.threadedInserts.size} Brass Inserts
-                          </span>
-                        ) : null}
-                        {item.custom.rubberPads ? (
-                          <span className="rounded bg-surface-2 px-1.5 py-0.5">
-                            Anti-slip pads included
-                          </span>
-                        ) : null}
                       </div>
                     ) : null}
                     {item.custom?.fileName ? (
