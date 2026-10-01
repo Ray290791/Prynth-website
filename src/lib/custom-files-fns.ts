@@ -20,8 +20,11 @@ async function ensureCustomFilesTable(sql: any) {
 }
 
 const ALLOWED_EXTENSIONS = /\.(stl|obj|3mf|step|stp|f3d)$/i;
-const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB
-const MAX_PAYLOAD_CHARS = 75_000_000;
+// Keep uploads small enough to avoid filling the Neon free-tier DB.
+// 3D model files for custom quotes only need to be referenced — large files
+// should be shared via Google Drive / WeTransfer and linked in notes.
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB hard cap
+const MAX_PAYLOAD_CHARS = 8_000_000; // ~6 MB base64
 
 export const uploadCustomFile = createServerFn({ method: "POST" })
   .validator(
@@ -37,11 +40,11 @@ export const uploadCustomFile = createServerFn({ method: "POST" })
         .number()
         .positive()
         .max(MAX_FILE_SIZE_BYTES, {
-          message: "File size exceeds 50 MB limit.",
+          message: "File too large. Please keep files under 5 MB, or share a Google Drive link in the notes field instead.",
         }),
       mimeType: z.string().max(100).default("application/octet-stream"),
       fileData: z.string().min(1).max(MAX_PAYLOAD_CHARS, {
-        message: "File data exceeds allowed upload size.",
+        message: "File data exceeds allowed upload size. Please keep files under 5 MB.",
       }),
     })
   )
@@ -60,6 +63,24 @@ export const uploadCustomFile = createServerFn({ method: "POST" })
       let cleanData = data.fileData;
       if (cleanData.includes(";base64,")) {
         cleanData = cleanData.split(";base64,")[1];
+      }
+
+      // ── Deduplication: if the same file (name + size) already exists, reuse it ──
+      // This prevents the same 3D model being stored repeatedly when a customer
+      // re-uploads or reloads the page, which was rapidly filling the Neon DB WAL.
+      const existing = await sql`
+        SELECT id, file_name, file_size FROM custom_files
+        WHERE file_name = ${sanitizedFileName} AND file_size = ${data.fileSize}
+        ORDER BY created_at DESC
+        LIMIT 1
+      `;
+      if (existing.length > 0) {
+        return {
+          success: true,
+          fileId: existing[0].id as string,
+          fileName: existing[0].file_name as string,
+          fileSize: existing[0].file_size as number,
+        };
       }
 
       const fileId = `file-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;

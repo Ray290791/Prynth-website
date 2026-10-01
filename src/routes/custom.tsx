@@ -1461,7 +1461,7 @@ function IdeaForm({
         if (result) {
           const img = new Image();
           img.onload = () => {
-            const maxDim = 1400;
+            const maxDim = 700;
             let width = img.width;
             let height = img.height;
             if (width > maxDim || height > maxDim) {

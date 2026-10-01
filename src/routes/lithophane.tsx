@@ -35,6 +35,7 @@ import {
   type CropConfig,
 } from "@/components/lithophane-framing-modal";
 import { SAMPLE_PHOTOS } from "@/lib/lithophane-samples";
+import { compressImageDataUrl } from "@/lib/image-utils";
 
 export const Route = createFileRoute("/lithophane")({
   component: LithophaneStudioPage,
@@ -213,10 +214,20 @@ function LithophaneStudioPage() {
     }
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!photoUrl) {
       toast.error("Please upload or select a photo first.");
       return;
+    }
+
+    // Ensure photo payload is compressed to ~35-45 KB so it won't inflate DB or cart
+    let finalPhoto = photoUrl;
+    if (photoUrl.startsWith("data:")) {
+      try {
+        finalPhoto = await compressImageDataUrl(photoUrl, 600, 0.82);
+      } catch (err) {
+        console.warn("Could not compress photo before adding to cart:", err);
+      }
     }
 
     const shapeLabel = shape === "heart" ? "Heart Keepsake" : "Classic Flat Panel";
@@ -235,7 +246,7 @@ function LithophaneStudioPage() {
       material: "Lithophane White PLA (0.12mm)",
       dimensions: `${currentDims.width} × ${currentDims.height} mm (${shapeLabel})`,
       notes: `Shape: ${shapeLabel} · Fit: ${fitMode === "dynamic" ? "Dynamic Scale (Preserve Ratio)" : "Strict Frame (Stretch to Fit)"}${giftNotes}`,
-      referencePhotos: [photoUrl],
+      referencePhotos: [finalPhoto],
     };
 
     const cartTitle = isGift
@@ -245,7 +256,7 @@ function LithophaneStudioPage() {
     add({
       kind: "custom",
       name: cartTitle,
-      image: photoUrl,
+      image: finalPhoto,
       color: "Optical Jade White",
       size: `${currentDims.width} × ${currentDims.height} mm (${selectedSizeConfig.label})`,
       material: "Lithophane White PLA (0.12mm)",

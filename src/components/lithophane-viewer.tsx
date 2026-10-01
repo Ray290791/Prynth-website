@@ -61,10 +61,10 @@ function sampleBilinearLuminance(
 
 // Mathematical boundary test for true heart cutout
 function isInsideHeart(u: number, v: number): boolean {
-  // Map u in [0, 1] to nx in [-1.25, 1.25]
-  // Map v in [0, 1] to ny in [1.25, -1.25] (v=0 is top, v=1 is bottom)
-  const nx = (u - 0.5) * 2.3;
-  const ny = (0.5 - v) * 2.3 + 0.18;
+  // Map u in [0,1] to nx in [-1.2, 1.2], map v in [0,1] to ny in [1.2, -1.2]
+  // Shift ny upward slightly so the cleft sits at the top and the point at the bottom
+  const nx = (u - 0.5) * 2.4;
+  const ny = (0.5 - v) * 2.4 + 0.28;
   const x2 = nx * nx;
   const y2 = ny * ny;
   const term = x2 + y2 - 1.0;
@@ -404,8 +404,8 @@ const lithophaneShader = {
     void main() {
       // Smooth Heart mask if heart shape
       if (uIsHeart > 0.5) {
-        float nx = (vUv.x - 0.5) * 2.3;
-        float ny = (0.5 - vUv.y) * 2.3 + 0.18;
+        float nx = (vUv.x - 0.5) * 2.4;
+        float ny = (0.5 - vUv.y) * 2.4 + 0.28;
         float x2 = nx * nx;
         float y2 = ny * ny;
         float term = x2 + y2 - 1.0;

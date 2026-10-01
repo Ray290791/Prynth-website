@@ -148,8 +148,9 @@ export function LithophaneFramingModal({
     const rect = container.getBoundingClientRect();
     const stageSize = Math.min(rect.width, rect.height) || 400;
 
-    // High-resolution export resolution for ultra-sharp 3D micro-displacement
-    const exportDim = 1200;
+    // Bounded export resolution: 600px is 4x oversampled vs 150x150 mesh vertex grid,
+    // producing razor-sharp lithophanes while keeping the compressed payload under 45 KB.
+    const exportDim = 600;
     const factor = exportDim / stageSize;
 
     const canvas = document.createElement("canvas");
@@ -170,29 +171,39 @@ export function LithophaneFramingModal({
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, exportDim, exportDim);
 
+    // ── Match exactly what the preview shows ──
+    // The preview container is a square of stageSize × stageSize.
+    // Inside it the image is rendered with CSS object-contain, which means
+    // the image is letterboxed/pillarboxed so it fits entirely within the
+    // square. The user's pan/zoom is applied on top of that contained size.
+    // We must replicate the same geometry on the canvas so what was visible
+    // in the preview is exactly what gets exported.
+    const imgAspect = img.width / img.height;
+    let containW: number;
+    let containH: number;
+    if (imgAspect >= 1) {
+      // Landscape or square: width fills stage, height is smaller
+      containW = stageSize;
+      containH = stageSize / imgAspect;
+    } else {
+      // Portrait: height fills stage, width is smaller
+      containH = stageSize;
+      containW = stageSize * imgAspect;
+    }
+
+    // Scale those contain dimensions up to canvas resolution
+    const drawW = containW * factor;
+    const drawH = containH * factor;
+
     // Apply translation and scaling relative to canvas center
     ctx.save();
     ctx.translate(exportDim / 2, exportDim / 2);
     ctx.translate(panX * factor, panY * factor);
     ctx.scale(scale, scale);
-
-    // Calculate base cover dimensions for the source image
-    const imgAspect = img.width / img.height;
-    let baseW = exportDim;
-    let baseH = exportDim;
-
-    if (imgAspect > 1) {
-      // Landscape photo: fit height, overflow width
-      baseW = exportDim * imgAspect;
-    } else {
-      // Portrait photo: fit width, overflow height
-      baseH = exportDim / imgAspect;
-    }
-
-    ctx.drawImage(img, -baseW / 2, -baseH / 2, baseW, baseH);
+    ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
     ctx.restore();
 
-    const croppedDataUrl = canvas.toDataURL("image/jpeg", 0.95);
+    const croppedDataUrl = canvas.toDataURL("image/jpeg", 0.82);
     onApply(croppedDataUrl, { scale, panX, panY });
     onClose();
   }, [onApply, onClose, panX, panY, scale]);
@@ -283,7 +294,7 @@ export function LithophaneFramingModal({
                     {shape === "heart" ? (
                       // Authentic smooth heart cutout (normalized to 100x100)
                       <path
-                        d="M 50 88 C 22 62, 5 43, 5 27 C 5 12, 19 6, 34 6 C 42 6, 47 10, 50 16 C 53 10, 58 6, 66 6 C 81 6, 95 12, 95 27 C 95 43, 78 62, 50 88 Z"
+                        d="M 50 85 C 50 85, 8 58, 8 32 C 8 18, 18 10, 29 10 C 37 10, 44 14, 50 20 C 56 14, 63 10, 71 10 C 82 10, 92 18, 92 32 C 92 58, 50 85, 50 85 Z"
                         fill="black"
                       />
                     ) : (
@@ -308,7 +319,7 @@ export function LithophaneFramingModal({
                   <>
                     {/* Glowing outer heart silhouette */}
                     <path
-                      d="M 50 88 C 22 62, 5 43, 5 27 C 5 12, 19 6, 34 6 C 42 6, 47 10, 50 16 C 53 10, 58 6, 66 6 C 81 6, 95 12, 95 27 C 95 43, 78 62, 50 88 Z"
+                      d="M 50 85 C 50 85, 8 58, 8 32 C 8 18, 18 10, 29 10 C 37 10, 44 14, 50 20 C 56 14, 63 10, 71 10 C 82 10, 92 18, 92 32 C 92 58, 50 85, 50 85 Z"
                       fill="none"
                       stroke="#f59e0b"
                       strokeWidth="1.8"
@@ -317,7 +328,7 @@ export function LithophaneFramingModal({
 
                     {/* Subtle dashed inner guideline */}
                     <path
-                      d="M 50 85 C 24 60, 8 42, 8 28 C 8 15, 20 9, 34 9 C 41 9, 46 13, 50 18 C 54 13, 59 9, 66 9 C 80 9, 92 15, 92 28 C 92 42, 76 60, 50 85 Z"
+                      d="M 50 82 C 50 82, 11 57, 11 33 C 11 20, 20 13, 30 13 C 38 13, 45 17, 50 22 C 55 17, 62 13, 70 13 C 80 13, 89 20, 89 33 C 89 57, 50 82, 50 82 Z"
                       fill="none"
                       stroke="#f59e0b"
                       strokeWidth="0.75"
@@ -327,18 +338,18 @@ export function LithophaneFramingModal({
 
                     {/* Lobe sweet-spot guides (where faces sit best) */}
                     <circle
-                      cx="33"
-                      cy="26"
-                      r="12"
+                      cx="32"
+                      cy="30"
+                      r="11"
                       fill="none"
                       stroke="rgba(255,255,255,0.25)"
                       strokeWidth="0.8"
                       strokeDasharray="2 2"
                     />
                     <circle
-                      cx="67"
-                      cy="26"
-                      r="12"
+                      cx="68"
+                      cy="30"
+                      r="11"
                       fill="none"
                       stroke="rgba(255,255,255,0.25)"
                       strokeWidth="0.8"
@@ -348,9 +359,9 @@ export function LithophaneFramingModal({
                     {/* Center cleft line */}
                     <line
                       x1="50"
-                      y1="16"
+                      y1="20"
                       x2="50"
-                      y2="88"
+                      y2="85"
                       stroke="rgba(255,255,255,0.15)"
                       strokeWidth="0.6"
                       strokeDasharray="3 3"

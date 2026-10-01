@@ -15,6 +15,34 @@ import {
   type ShiprocketOrderPayload,
 } from "./shiprocket.server";
 
+/**
+ * Protects Neon DB (512 MB free tier) against oversized base64 blobs in orders.items JSONB.
+ *
+ * Lightweight compressed photos (~30-50 KB) are PRESERVED in the DB so the admin can
+ * view customer reference photos and generate lithophane STLs directly from the order.
+ *
+ * Only excessively large raw blobs (> 250,000 characters, ~180 KB+) are stripped as a fail-safe.
+ */
+function sanitizeItemsForDb(items: CartItem[]): CartItem[] {
+  return items.map((item) => {
+    const sanitized = { ...item };
+    // Keep item image thumbnail if lightweight (< 150 KB); strip only if excessively large
+    if (sanitized.image && sanitized.image.startsWith("data:") && sanitized.image.length > 200000) {
+      sanitized.image = undefined;
+    }
+    // Retain reference photos for lithophanes / custom prints if under size ceiling
+    if (sanitized.custom?.referencePhotos) {
+      sanitized.custom = {
+        ...sanitized.custom,
+        referencePhotos: sanitized.custom.referencePhotos.map((p) =>
+          p.startsWith("data:") && p.length > 250000 ? "[photo-stripped]" : p
+        ),
+      };
+    }
+    return sanitized;
+  });
+}
+
 export const createRazorpayOrder = createServerFn({ method: "POST" })
   .middleware([optionalAuthMiddleware])
   .validator(
@@ -148,6 +176,7 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
       };
     } else {
       // COD or UPI
+      const dbItems = sanitizeItemsForDb(data.items);
       await sql`
         INSERT INTO orders (
           user_id, guest_email, order_number, status, total, subtotal, shipping, extra, 
@@ -155,7 +184,7 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
           payment_status, notes
         ) VALUES (
           ${context.userId || null}, ${!context.userId ? data.address.email : null}, ${orderNumber}, 'pending', ${finalTotal}, ${finalSubtotal}, ${shipping}, ${extra},
-          ${JSON.stringify(data.items)}, ${JSON.stringify(data.address)}, ${data.shippingMethod}, ${data.paymentMethod},
+          ${JSON.stringify(dbItems)}, ${JSON.stringify(data.address)}, ${data.shippingMethod}, ${data.paymentMethod},
           'pending', ${data.notes || null}
         )
       `;
@@ -268,6 +297,7 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
       orderNumber = orderNumber || `PRY-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 5).toUpperCase()}`;
 
       // Insert order ONLY upon verified successful payment
+      const dbItems = sanitizeItemsForDb(p.items);
       await sql`
         INSERT INTO orders (
           user_id, guest_email, order_number, status, total, subtotal, shipping, extra, 
@@ -275,7 +305,7 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
           razorpay_order_id, razorpay_payment_id, payment_status, notes
         ) VALUES (
           ${context.userId || null}, ${!context.userId ? p.address.email : null}, ${orderNumber}, 'processing', ${p.total}, ${p.subtotal}, ${p.shipping}, ${p.extra},
-          ${JSON.stringify(p.items)}, ${JSON.stringify(p.address)}, ${p.shippingMethod}, 'razorpay',
+          ${JSON.stringify(dbItems)}, ${JSON.stringify(p.address)}, ${p.shippingMethod}, 'razorpay',
           ${data.razorpay_order_id}, ${data.razorpay_payment_id}, 'paid', ${p.notes || null}
         )
       `;
