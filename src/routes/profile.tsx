@@ -13,7 +13,7 @@ import { updateUserProfile, setDefaultAddress, deleteAddress } from "@/lib/user-
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Sparkles, Clock, Camera, Package } from "lucide-react";
+import { Layers, Clock, Camera, Package } from "lucide-react";
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
@@ -269,7 +269,7 @@ function ProfilePage() {
                     : "text-muted hover:text-fg hover:bg-surface-2"
                 )}
               >
-                <Sparkles className="size-4" />
+                <Layers className="size-4" />
                 <span>Custom Requests ({tickets.length})</span>
               </button>
             </div>
@@ -282,7 +282,17 @@ function ProfilePage() {
           {dashboardTab === "orders" ? (
             <div>
               {ordersLoading ? (
-                <p className="mt-4 text-muted">Loading orders...</p>
+                <div className="space-y-4 mt-2">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="rounded-xl border border-border bg-surface p-6 animate-pulse space-y-3">
+                      <div className="flex justify-between items-center">
+                        <div className="h-5 w-28 bg-surface-2 rounded-md" />
+                        <div className="h-5 w-20 bg-surface-2 rounded-full" />
+                      </div>
+                      <div className="h-10 w-full bg-surface-2/60 rounded-lg" />
+                    </div>
+                  ))}
+                </div>
               ) : !orders || orders.length === 0 ? (
                 <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border p-12 text-center bg-surface/50">
                   <p className="text-lg font-medium">No orders yet</p>
@@ -341,11 +351,21 @@ function ProfilePage() {
           ) : (
             <div>
               {ticketsLoading ? (
-                <p className="mt-4 text-muted">Loading custom requests...</p>
+                <div className="space-y-4 mt-2">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="rounded-xl border border-border bg-surface p-5 animate-pulse space-y-3">
+                      <div className="flex justify-between items-center">
+                        <div className="h-5 w-32 bg-surface-2 rounded-md" />
+                        <div className="h-5 w-24 bg-surface-2 rounded-full" />
+                      </div>
+                      <div className="h-14 w-full bg-surface-2/60 rounded-lg" />
+                    </div>
+                  ))}
+                </div>
               ) : tickets.length === 0 ? (
                 <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border p-12 text-center bg-surface/50">
-                  <div className="size-12 rounded-2xl bg-accent/15 text-accent flex items-center justify-center mb-3">
-                    <Sparkles className="size-6" />
+                  <div className="size-12 rounded-xl bg-surface-2 text-fg border border-border flex items-center justify-center mb-3">
+                    <Layers className="size-6 text-accent" />
                   </div>
                   <p className="text-lg font-medium">No custom design requests yet</p>
                   <p className="mt-1 text-sm text-muted max-w-sm">

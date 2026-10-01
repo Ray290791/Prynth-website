@@ -336,7 +336,7 @@ function QuotePanel({
   };
 }) {
   return (
-    <aside className="h-fit rounded-3xl bg-surface p-6 shadow-[var(--shadow-border)] md:sticky md:top-24">
+    <aside className="h-fit rounded-2xl border border-border bg-surface p-6 shadow-xs md:sticky md:top-24">
       <p className="text-[11px] font-medium tracking-[0.18em] text-subtle uppercase">
         Estimate
       </p>
@@ -1736,7 +1736,7 @@ function IdeaForm({
 
   if (submittedTicketId) {
     return (
-      <div className="rounded-3xl border border-emerald-500/30 bg-surface p-8 sm:p-12 shadow-sm text-center max-w-2xl mx-auto space-y-6 animate-in fade-in duration-300">
+      <div className="rounded-2xl border border-border bg-surface p-8 sm:p-12 shadow-xs text-center max-w-2xl mx-auto space-y-6 animate-in fade-in duration-300">
         <div className="size-16 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto border border-emerald-500/20">
           <CheckCircle2 className="size-8" />
         </div>
@@ -2235,7 +2235,7 @@ function IdeaForm({
               </>
             ) : (
               <>
-                <Sparkles className="size-4" />
+                <Send className="size-4" />
                 Submit Request for Free Quote
               </>
             )}
@@ -2250,19 +2250,19 @@ function IdeaForm({
 
       {/* Right Column: Custom Quote Process Panel (Replaces Estimate Panel) */}
       <div className="md:col-span-5">
-        <div className="h-fit rounded-3xl bg-surface p-6 shadow-[var(--shadow-border)] md:sticky md:top-24 space-y-6">
+        <div className="h-fit rounded-2xl border border-border bg-surface p-6 shadow-xs md:sticky md:top-24 space-y-6">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium tracking-[0.18em] text-subtle uppercase">
               Custom Quote Request
             </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-0.5 text-[11px] font-semibold text-accent">
-              <Clock className="size-3" />
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-2 px-2.5 py-0.5 text-[11px] font-semibold text-fg">
+              <Clock className="size-3 text-accent" />
               Quote within 24h
             </span>
           </div>
 
           <div>
-            <h3 className="font-display text-2xl font-semibold text-fg">
+            <h3 className="font-display text-xl sm:text-2xl font-semibold text-fg">
               Free Engineering Review
             </h3>
             <p className="mt-1 text-sm text-muted leading-relaxed">
@@ -2272,7 +2272,7 @@ function IdeaForm({
 
           <div className="space-y-4 border-t border-border pt-4 text-sm">
             <div className="flex gap-3 items-start">
-              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-accent/15 text-accent font-semibold text-xs mt-0.5">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-2 text-fg font-semibold text-xs mt-0.5">
                 1
               </div>
               <div>
@@ -2284,7 +2284,7 @@ function IdeaForm({
             </div>
 
             <div className="flex gap-3 items-start">
-              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-accent/15 text-accent font-semibold text-xs mt-0.5">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-2 text-fg font-semibold text-xs mt-0.5">
                 2
               </div>
               <div>
@@ -2296,7 +2296,7 @@ function IdeaForm({
             </div>
 
             <div className="flex gap-3 items-start">
-              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-accent/15 text-accent font-semibold text-xs mt-0.5">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-2 text-fg font-semibold text-xs mt-0.5">
                 3
               </div>
               <div>
@@ -2308,8 +2308,8 @@ function IdeaForm({
             </div>
 
             <div className="flex gap-3 items-start">
-              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-500 font-semibold text-xs mt-0.5">
-                ✓
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-2 text-accent font-semibold text-xs mt-0.5">
+                <Check className="size-3.5" />
               </div>
               <div>
                 <p className="font-medium text-fg">Zero Upfront Payment</p>

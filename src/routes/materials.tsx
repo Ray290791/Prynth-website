@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getMaterials, type Material } from "@/lib/materials-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Thermometer, ShieldCheck, Zap, Layers, CheckCircle2, AlertTriangle, ArrowRight, Sun, Droplets, Flame, Cpu } from "lucide-react";
+import { Thermometer, ShieldCheck, Zap, Layers, CheckCircle2, AlertTriangle, ArrowRight, Sun, Droplets, Flame, Cpu } from "lucide-react";
 import { useState } from "react";
 
 export const Route = createFileRoute("/materials")({
@@ -30,14 +30,11 @@ export default function MaterialsPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-20 animate-in fade-in duration-300">
-      {/* Hero Section with Glassmorphism */}
-      <div className="relative rounded-3xl border border-white/20 dark:border-white/10 bg-surface/30 backdrop-blur-2xl backdrop-saturate-150 p-8 md:p-12 shadow-xl shadow-black/5 overflow-hidden">
-        <div className="absolute top-0 right-0 -mr-24 -mt-24 w-96 h-96 rounded-full bg-accent/15 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/3 -mb-24 w-80 h-80 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-
+      {/* Hero Section */}
+      <div className="relative rounded-2xl border border-border bg-surface p-8 md:p-12 shadow-xs">
         <div className="relative z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 backdrop-blur-md px-3.5 py-1 text-xs font-semibold text-accent mb-4">
-            <Sparkles className="size-3.5" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-2 px-3.5 py-1 text-xs font-semibold text-fg mb-4">
+            <Layers className="size-3.5 text-accent" />
             <span>The Prynth! Filament Field Guide</span>
           </div>
 
@@ -50,13 +47,13 @@ export default function MaterialsPage() {
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <Button asChild className="rounded-xl shadow-lg shadow-accent/20">
+            <Button asChild className="rounded-xl shadow-xs cursor-pointer">
               <Link to="/custom" className="flex items-center gap-2">
                 <span>Start a Custom Print</span>
                 <ArrowRight className="size-4" />
               </Link>
             </Button>
-            <Button asChild variant="outline" className="rounded-xl border-white/20 dark:border-white/10 bg-surface/40 backdrop-blur-md">
+            <Button asChild variant="outline" className="rounded-xl border border-border bg-surface cursor-pointer">
               <Link to="/shop">
                 <span>Browse Ready-Made Prints</span>
               </Link>
@@ -105,7 +102,7 @@ export default function MaterialsPage() {
       {isLoading ? (
         <div className="mt-8 grid gap-8 md:grid-cols-2">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-96 rounded-3xl bg-surface/40 animate-pulse border border-border/30" />
+            <div key={i} className="h-96 rounded-xl bg-surface animate-pulse border border-border/60" />
           ))}
         </div>
       ) : (
@@ -117,7 +114,7 @@ export default function MaterialsPage() {
             return (
               <div
                 key={mat.id}
-                className="group relative flex flex-col justify-between rounded-3xl border border-white/20 dark:border-white/10 bg-surface/30 backdrop-blur-2xl backdrop-saturate-150 p-6 sm:p-8 shadow-xl shadow-black/5 hover:border-white/30 transition-all duration-300"
+                className="group relative flex flex-col justify-between rounded-xl border border-border bg-surface p-6 sm:p-8 shadow-xs hover:border-accent/40 transition-colors"
               >
                 <div>
                   {/* Top Bar with Accent Pill & Code */}
@@ -133,7 +130,7 @@ export default function MaterialsPage() {
                     </div>
 
                     {mat.finish_type && (
-                      <Badge className="border border-white/20 dark:border-white/10 bg-surface/40 backdrop-blur-sm text-[11px]">
+                      <Badge className="border border-border bg-surface-2 text-[11px] text-muted">
                         {mat.finish_type}
                       </Badge>
                     )}
@@ -157,7 +154,7 @@ export default function MaterialsPage() {
                   </p>
 
                   {/* Rating Gauges */}
-                  <div className="mt-6 grid grid-cols-3 gap-3 p-3.5 rounded-2xl border border-white/10 bg-surface/20 backdrop-blur-md">
+                  <div className="mt-6 grid grid-cols-3 gap-3 p-3.5 rounded-lg border border-border bg-surface-2/40">
                     {/* Durability */}
                     <div>
                       <div className="flex items-center justify-between text-[11px] font-medium text-muted mb-1.5">
@@ -297,10 +294,10 @@ export default function MaterialsPage() {
       )}
 
       {/* Decision Matrix Section */}
-      <div className="mt-16 rounded-3xl border border-white/20 dark:border-white/10 bg-surface/30 backdrop-blur-2xl backdrop-saturate-150 p-8 md:p-10 shadow-xl shadow-black/5">
+      <div className="mt-16 rounded-2xl border border-border bg-surface p-8 md:p-10 shadow-xs">
         <div className="text-center max-w-xl mx-auto">
-          <Badge className="bg-accent/20 text-accent mb-2">Quick Decision Matrix</Badge>
-          <h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">
+          <Badge className="bg-accent/15 text-accent border-accent/30 mb-2">Quick Decision Matrix</Badge>
+          <h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-fg">
             Which filament matches your project?
           </h2>
           <p className="mt-2 text-sm text-muted">
@@ -309,12 +306,12 @@ export default function MaterialsPage() {
         </div>
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl border border-border/50 bg-surface/40 p-5 flex flex-col justify-between">
+          <div className="rounded-xl border border-border bg-surface-2/30 p-5 flex flex-col justify-between">
             <div>
-              <div className="size-9 rounded-xl bg-accent/15 text-accent flex items-center justify-center mb-3">
-                <Sparkles className="size-5" />
+              <div className="size-9 rounded-lg border border-border bg-surface-2 text-accent flex items-center justify-center mb-3">
+                <Layers className="size-5" />
               </div>
-              <h4 className="font-bold text-base">Desk & Home Decor</h4>
+              <h4 className="font-bold text-base text-fg">Desk & Home Decor</h4>
               <p className="mt-1 text-xs text-muted">Vibrant colors, razor-sharp details, odorless and eco-friendly.</p>
             </div>
             <div className="mt-4 pt-3 border-t border-border/40 flex items-center justify-between">
@@ -323,12 +320,12 @@ export default function MaterialsPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-border/50 bg-surface/40 p-5 flex flex-col justify-between">
+          <div className="rounded-xl border border-border bg-surface-2/30 p-5 flex flex-col justify-between">
             <div>
-              <div className="size-9 rounded-xl bg-blue-500/15 text-blue-500 flex items-center justify-center mb-3">
+              <div className="size-9 rounded-lg border border-border bg-surface-2 text-blue-500 flex items-center justify-center mb-3">
                 <Droplets className="size-5" />
               </div>
-              <h4 className="font-bold text-base">Bath, Kitchen & Water</h4>
+              <h4 className="font-bold text-base text-fg">Bath, Kitchen & Water</h4>
               <p className="mt-1 text-xs text-muted">Moisture-impervious, soap-safe, impact shock absorbing.</p>
             </div>
             <div className="mt-4 pt-3 border-t border-border/40 flex items-center justify-between">
@@ -337,12 +334,12 @@ export default function MaterialsPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-border/50 bg-surface/40 p-5 flex flex-col justify-between">
+          <div className="rounded-xl border border-border bg-surface-2/30 p-5 flex flex-col justify-between">
             <div>
-              <div className="size-9 rounded-xl bg-amber-500/15 text-amber-500 flex items-center justify-center mb-3">
+              <div className="size-9 rounded-lg border border-border bg-surface-2 text-amber-500 flex items-center justify-center mb-3">
                 <Flame className="size-5" />
               </div>
-              <h4 className="font-bold text-base">Cars & High Heat</h4>
+              <h4 className="font-bold text-base text-fg">Cars & High Heat</h4>
               <p className="mt-1 text-xs text-muted">Handles up to 100°C without warping. Great for car interiors and brackets.</p>
             </div>
             <div className="mt-4 pt-3 border-t border-border/40 flex items-center justify-between">
@@ -351,17 +348,17 @@ export default function MaterialsPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-border/50 bg-surface/40 p-5 flex flex-col justify-between">
+          <div className="rounded-xl border border-border bg-surface-2/30 p-5 flex flex-col justify-between">
             <div>
-              <div className="size-9 rounded-xl bg-pink-500/15 text-pink-500 flex items-center justify-center mb-3">
+              <div className="size-9 rounded-lg border border-border bg-surface-2 text-red-500 flex items-center justify-center mb-3">
                 <Sun className="size-5" />
               </div>
-              <h4 className="font-bold text-base">Outdoor & Sun Exposure</h4>
+              <h4 className="font-bold text-base text-fg">Outdoor & Sun Exposure</h4>
               <p className="mt-1 text-xs text-muted">Zero UV degradation, withstands rain, frost, and intense heat up to 105°C.</p>
             </div>
             <div className="mt-4 pt-3 border-t border-border/40 flex items-center justify-between">
               <span className="text-xs text-subtle">Pick:</span>
-              <strong className="text-pink-500 text-sm font-mono">ASA</strong>
+              <strong className="text-red-500 text-sm font-mono">ASA</strong>
             </div>
           </div>
         </div>

@@ -27,7 +27,7 @@ import {
   User,
   AlertCircle,
   Camera,
-  Sparkles,
+  Layers,
   Phone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -223,7 +223,7 @@ export function InquiriesTab() {
       {isLoading ? (
         <div className="p-12 text-center text-muted animate-pulse">Loading inquiries…</div>
       ) : filteredTickets.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-border p-12 text-center bg-surface/40">
+        <div className="rounded-xl border border-dashed border-border p-12 text-center bg-surface/40">
           <Mail className="size-10 text-muted mx-auto mb-3 opacity-40" />
           <h3 className="font-semibold text-fg">No inquiries found</h3>
           <p className="text-sm text-muted mt-1 max-w-sm mx-auto">
@@ -265,7 +265,7 @@ export function InquiriesTab() {
                       <span className="font-semibold text-fg text-base">{name}</span>
                       {isCustom && (
                         <Badge className="bg-accent/15 text-accent border-accent/30 text-[11px] px-2 py-0.5 font-medium rounded-full flex items-center gap-1">
-                          <Sparkles className="size-3" />
+                          <Layers className="size-3" />
                           <span>Custom 3D Request</span>
                         </Badge>
                       )}

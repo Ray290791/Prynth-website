@@ -4,19 +4,19 @@ import {
   ArrowRight,
   Clock3,
   ShieldCheck,
-  Star,
   Truck,
   Upload,
-  WandSparkles,
   Zap,
   Camera,
   Layers,
   Printer,
-  Sparkles,
   Wrench,
   Bike,
   Headphones,
   Gift,
+  PenTool,
+  DraftingCompass,
+  Send,
 } from "lucide-react";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
@@ -33,24 +33,6 @@ export const Route = createFileRoute("/")({
   },
   component: Home,
 });
-
-const TRUST = [
-  {
-    icon: ShieldCheck,
-    title: "Quality checked",
-    text: "Every piece is looked at before it leaves. If it isn't right, we print it again.",
-  },
-  {
-    icon: Clock3,
-    title: "3–5 day typical turnaround",
-    text: "Made to order, not sitting in a warehouse. Most ready-made pieces ship in a few days.",
-  },
-  {
-    icon: Truck,
-    title: "Ships across India",
-    text: "Standard shipping ₹49, free over ₹799. Express if you need it sooner.",
-  },
-];
 
 const POLYMERS = [
   {
@@ -143,21 +125,15 @@ function Home() {
     <div>
       {/* ── Hero ───────────────────────────────────────────── */}
       <section className="relative overflow-hidden">
-        {/* Ambient gradient mesh */}
-        <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-          <div className="absolute -top-32 -right-32 size-[40rem] rounded-full bg-accent/20 blur-[120px] dark:bg-accent/10" />
-          <div className="absolute top-1/2 -left-24 size-[30rem] rounded-full bg-accent/10 blur-[100px] dark:bg-accent/5" />
-        </div>
-
         {/* Floating promo pill */}
         <div className="mx-auto max-w-6xl px-4 pt-6 md:px-6">
           <Link
             to="/shop"
-            className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-4 py-1.5 text-sm font-medium text-accent backdrop-blur-xl transition-all duration-200 hover:border-accent/40 hover:bg-accent/15"
+            className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-1.5 text-xs sm:text-sm font-medium text-fg transition-colors hover:border-accent hover:text-accent shadow-xs"
           >
-            <Zap className="size-3.5 shrink-0" strokeWidth={2} />
-            {settings.promo_banner || `Free delivery across India on orders over ₹${settings.free_shipping_threshold || 799}`}
-            <ArrowRight className="size-3.5 shrink-0" strokeWidth={2} />
+            <Zap className="size-3.5 shrink-0 text-accent" strokeWidth={2} />
+            <span>{settings.promo_banner || `Free delivery across India on orders over ₹${settings.free_shipping_threshold || 799}`}</span>
+            <ArrowRight className="size-3.5 shrink-0 text-muted" strokeWidth={2} />
           </Link>
         </div>
 
@@ -177,13 +153,13 @@ function Home() {
               {settings.hero_description}
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Button asChild size="lg" className="shadow-lg shadow-accent/20">
+              <Button asChild size="lg" className="shadow-xs cursor-pointer">
                 <Link to="/custom" search={{ path: "idea" }}>
-                  <WandSparkles className="size-4 shrink-0" />
+                  <PenTool className="size-4 shrink-0" />
                   Describe what you want
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="secondary">
+              <Button asChild size="lg" variant="secondary" className="cursor-pointer">
                 <Link to="/shop">
                   Shop ready-made
                   <ArrowRight className="size-4" strokeWidth={1.75} />
@@ -192,21 +168,21 @@ function Home() {
             </div>
 
             {/* Informative service highlight banner right in Hero */}
-            <div className="mt-5 flex items-start gap-3 rounded-2xl border border-glass-border bg-glass/80 p-3.5 backdrop-blur-xl shadow-sm max-w-lg">
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent/15 text-accent mt-0.5">
+            <div className="mt-6 flex items-start gap-3.5 rounded-xl border border-border bg-surface p-4 shadow-xs max-w-lg">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-2 text-accent mt-0.5">
                 <Camera className="size-4.5" />
               </div>
               <div className="text-xs">
-                <p className="font-semibold text-fg flex items-center gap-1.5">
+                <p className="font-semibold text-fg flex items-center gap-2">
                   <span>Have an idea or broken part?</span>
-                  <span className="rounded-full bg-accent/15 text-accent px-2 py-0.5 text-[10px] font-bold">
+                  <span className="rounded-md border border-border bg-surface-2 px-2 py-0.5 text-[10px] font-medium text-muted">
                     No 3D file needed
                   </span>
                 </p>
                 <p className="text-muted mt-1 leading-relaxed">
                   Just describe what you need &amp; attach a few photos. Our CAD team models it, 3D prints it, and ships it right to your door.
                 </p>
-                <div className="mt-2 flex items-center gap-3">
+                <div className="mt-2.5 flex items-center gap-3">
                   <Link
                     to="/custom"
                     search={{ path: "idea" }}
@@ -232,7 +208,7 @@ function Home() {
             </p>
           </div>
 
-          {/* Right: mosaic with floating badge */}
+          {/* Right: mosaic with verified precision badge */}
           <div className="relative md:col-span-6 lg:col-span-6">
             <div className="grid grid-cols-2 gap-3 sm:gap-4 items-start">
               {mosaic.map((p, i) => (
@@ -241,7 +217,7 @@ function Home() {
                   to="/shop/$slug"
                   params={{ slug: p.slug }}
                   className={
-                    i % 2 === 1 ? "mt-6 overflow-hidden rounded-2xl" : "overflow-hidden rounded-2xl"
+                    i % 2 === 1 ? "mt-6 overflow-hidden rounded-xl border border-border/60" : "overflow-hidden rounded-xl border border-border/60"
                   }
                 >
                   <img
@@ -253,28 +229,28 @@ function Home() {
               ))}
             </div>
 
-            {/* Floating 4.9/5 trust badge */}
-            <div className="absolute bottom-4 left-0 flex items-center gap-2 rounded-2xl border border-glass-border bg-glass px-3 py-2 backdrop-blur-2xl backdrop-saturate-150 shadow-xl shadow-black/10">
-              <div className="flex items-center gap-1">
-                <Star className="size-4 fill-amber-400 text-amber-400" strokeWidth={1.5} />
-                <span className="text-sm font-semibold">4.9/5</span>
+            {/* Verified precision manufacturing badge */}
+            <div className="absolute bottom-4 left-0 flex items-center gap-2.5 rounded-xl border border-border bg-surface/95 px-3.5 py-2 shadow-md backdrop-blur-md">
+              <div className="flex items-center gap-1.5 text-accent font-semibold text-xs">
+                <ShieldCheck className="size-4" strokeWidth={2} />
+                <span>0.08mm Precision</span>
               </div>
-              <span className="h-4 w-px bg-border" />
-              <span className="text-xs text-muted">Quality Guaranteed</span>
+              <span className="h-3.5 w-px bg-border" />
+              <span className="text-xs text-muted">Bambu Fleet Verified</span>
             </div>
 
-            {/* Floating brand mark badge */}
+            {/* Brand mark badge */}
             <div aria-hidden className="absolute -right-2 -bottom-2 hidden items-center md:flex">
-              <img src="/brand/mark.png" alt="Prynth mark" className="size-12 rounded-2xl shadow-lg border border-glass-border" />
+              <img src="/brand/mark.png" alt="Prynth mark" className="size-11 rounded-xl shadow-xs border border-border" />
             </div>
           </div>
         </div>
       </section>
 
       {/* ── Polymer Ticker ─────────────────────────────────── */}
-      <section className="border-y border-border/50">
-        <div className="mx-auto max-w-6xl px-4 py-6 md:px-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+      <section className="border-y border-border/60 bg-surface/40">
+        <div className="mx-auto max-w-6xl px-4 py-5 md:px-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
             {/* Polymer pills */}
             <div className="flex gap-2 flex-wrap">
               {POLYMERS.map((p) => (
@@ -283,10 +259,10 @@ function Home() {
                   type="button"
                   onClick={() => setActivePolymer(p.id)}
                   className={cn(
-                    "flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-all duration-200",
+                    "flex items-center gap-2 rounded-lg border px-3.5 py-1.5 text-xs sm:text-sm font-medium transition-colors cursor-pointer",
                     activePolymer === p.id
-                      ? "border-glass-border bg-glass text-fg backdrop-blur-2xl backdrop-saturate-150 shadow-lg shadow-black/5"
-                      : "border-border text-muted hover:border-glass-border hover:text-fg hover:bg-glass hover:backdrop-blur-xl"
+                      ? "border-accent bg-accent/10 text-fg font-semibold"
+                      : "border-border bg-surface text-muted hover:border-border-hover hover:text-fg"
                   )}
                 >
                   <span className="size-2 rounded-full shrink-0" style={{ background: p.color }} />
@@ -297,11 +273,11 @@ function Home() {
             </div>
 
             {/* Verdict panel */}
-            <div className="flex-1 rounded-2xl border border-glass-border bg-glass px-5 py-4 backdrop-blur-2xl backdrop-saturate-150 shadow-xl shadow-black/5 min-h-[72px]">
-              <p className="text-sm font-medium text-fg">{poly.verdict}</p>
-              <div className="mt-2 flex flex-wrap items-center gap-2">
+            <div className="flex-1 rounded-xl border border-border bg-surface px-4 py-3 shadow-2xs min-h-[64px]">
+              <p className="text-xs sm:text-sm font-medium text-fg">{poly.verdict}</p>
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
                 {poly.uses.map((u) => (
-                  <span key={u} className="rounded-full border border-border bg-surface px-2.5 py-0.5 text-xs text-muted">
+                  <span key={u} className="rounded-md border border-border bg-surface-2/60 px-2 py-0.5 text-[11px] text-muted">
                     {u}
                   </span>
                 ))}
@@ -318,20 +294,20 @@ function Home() {
         </div>
       </section>
 
-      {/* ── Trust Bento Pods ───────────────────────────────── */}
-      <section className="bg-surface/50">
-        <div className="mx-auto grid max-w-6xl gap-4 px-4 py-12 md:grid-cols-3 md:px-6 md:py-14">
+      {/* ── Trust Bar (Clean connected industrial divider) ──── */}
+      <section className="border-b border-border/60 bg-surface/30">
+        <div className="mx-auto grid max-w-6xl divide-y divide-border/60 md:divide-y-0 md:divide-x md:grid-cols-3 px-4 py-6 md:px-6 md:py-8">
           {trustItems.map((item) => (
             <div
               key={item.title}
-              className="flex gap-4 rounded-2xl border border-glass-border bg-glass p-5 backdrop-blur-2xl backdrop-saturate-150 shadow-xl shadow-black/5 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
+              className="flex gap-4 p-4 sm:p-5 transition-colors"
             >
-              <div className="size-11 shrink-0 rounded-xl border border-accent/20 bg-accent/10 flex items-center justify-center text-accent">
+              <div className="size-10 shrink-0 rounded-lg border border-border bg-surface-2/70 flex items-center justify-center text-fg">
                 <item.icon className="size-5" strokeWidth={1.75} />
               </div>
               <div>
-                <h2 className="font-display text-base font-semibold tracking-tight">{item.title}</h2>
-                <p className="mt-1 text-sm text-muted">{item.text}</p>
+                <h2 className="font-display text-sm font-semibold tracking-tight text-fg">{item.title}</h2>
+                <p className="mt-1 text-xs text-muted leading-relaxed">{item.text}</p>
               </div>
             </div>
           ))}
@@ -365,8 +341,8 @@ function Home() {
         </div>
       </section>
 
-      {/* ── Choose Your Path — Glass Bento Grid ────────────── */}
-      <section className="bg-surface/50">
+      {/* ── Choose Your Path ──────────────────────────────── */}
+      <section className="border-t border-border/60 bg-surface/30">
         <div className="mx-auto max-w-6xl px-4 py-16 md:px-6 md:py-20">
           <p className="text-[11px] font-medium tracking-[0.18em] text-subtle uppercase">Get started</p>
           <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight md:text-4xl">Choose your path</h2>
@@ -375,16 +351,16 @@ function Home() {
             {/* Card 1 — Ready-made (spans 2 cols on lg) */}
             <Link
               to="/shop"
-              className="group col-span-1 lg:col-span-2 rounded-3xl border border-glass-border bg-glass p-7 backdrop-blur-2xl backdrop-saturate-150 shadow-xl shadow-black/5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl md:p-8"
+              className="group col-span-1 lg:col-span-2 rounded-xl border border-border bg-surface p-6 md:p-8 shadow-xs transition-colors hover:border-accent/50"
             >
               <p className="text-[11px] font-medium tracking-[0.18em] text-subtle uppercase">Ready-made</p>
-              <h3 className="mt-3 font-display text-2xl font-semibold tracking-tight md:text-3xl">Browse the shop</h3>
-              <p className="mt-3 max-w-sm text-sm text-muted">
+              <h3 className="mt-2 font-display text-2xl font-semibold tracking-tight text-fg">Browse the shop</h3>
+              <p className="mt-2 max-w-sm text-sm text-muted leading-relaxed">
                 Stands, trays, planters, hooks. Pick a colour, we print it, it shows up. Prices on the card — that's the price.
               </p>
-              <span className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-accent">
-                Open shop
-                <ArrowRight className="size-4 transition-transform duration-150 group-hover:translate-x-0.5" />
+              <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-accent">
+                <span>Open shop</span>
+                <ArrowRight className="size-4" />
               </span>
             </Link>
 
@@ -392,13 +368,13 @@ function Home() {
             <Link
               to="/custom"
               search={{ path: "upload" }}
-              className="group col-span-1 rounded-3xl border border-glass-border bg-glass p-6 backdrop-blur-2xl backdrop-saturate-150 shadow-xl shadow-black/5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl"
+              className="group col-span-1 rounded-xl border border-border bg-surface p-6 shadow-xs transition-colors hover:border-accent/50"
             >
-              <div className="size-10 rounded-xl border border-accent/20 bg-accent/10 flex items-center justify-center text-accent mb-3">
+              <div className="size-10 rounded-lg border border-border bg-surface-2 flex items-center justify-center text-fg mb-4">
                 <Upload className="size-5" strokeWidth={1.75} />
               </div>
-              <h3 className="font-display text-xl font-semibold tracking-tight">Upload your model</h3>
-              <p className="mt-2 text-sm text-muted">
+              <h3 className="font-display text-lg font-semibold tracking-tight text-fg">Upload your model</h3>
+              <p className="mt-2 text-xs sm:text-sm text-muted leading-relaxed">
                 Have an STL or 3MF? Choose material and colour, see an estimate on the spot.
               </p>
             </Link>
@@ -407,21 +383,21 @@ function Home() {
             <Link
               to="/custom"
               search={{ path: "idea" }}
-              className="group col-span-1 rounded-3xl border border-glass-border bg-glass p-6 backdrop-blur-2xl backdrop-saturate-150 shadow-xl shadow-black/5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl"
+              className="group col-span-1 rounded-xl border border-border bg-surface p-6 shadow-xs transition-colors hover:border-accent/50"
             >
-              <div className="flex items-center justify-between mb-3">
-                <div className="size-10 rounded-xl border border-accent/20 bg-accent/10 flex items-center justify-center text-accent">
-                  <WandSparkles className="size-5" strokeWidth={1.75} />
+              <div className="flex items-center justify-between mb-4">
+                <div className="size-10 rounded-lg border border-border bg-surface-2 flex items-center justify-center text-fg">
+                  <DraftingCompass className="size-5" strokeWidth={1.75} />
                 </div>
-                <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-semibold text-accent">
+                <span className="rounded-md border border-border bg-surface-2 px-2 py-0.5 text-[10px] font-medium text-muted">
                   Photos welcome
                 </span>
               </div>
-              <h3 className="font-display text-xl font-semibold tracking-tight">Describe your idea</h3>
-              <p className="mt-2 text-sm text-muted">
+              <h3 className="font-display text-lg font-semibold tracking-tight text-fg">Describe your idea</h3>
+              <p className="mt-2 text-xs sm:text-sm text-muted leading-relaxed">
                 No 3D file needed. Describe what you need, attach photos of a broken part or sketch, and we&apos;ll model, print &amp; ship it.
               </p>
-              <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-accent group-hover:underline">
+              <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-accent hover:underline">
                 Start with idea or photo &rarr;
               </span>
             </Link>
@@ -429,31 +405,31 @@ function Home() {
             {/* Card 4 — Filaments guide (full width on lg) */}
             <Link
               to="/materials"
-              className="group col-span-1 md:col-span-2 lg:col-span-4 rounded-3xl border border-accent/20 bg-accent/5 p-6 backdrop-blur-2xl backdrop-saturate-150 shadow-xl shadow-black/5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl hover:border-accent/40"
+              className="group col-span-1 md:col-span-2 lg:col-span-4 rounded-xl border border-border bg-surface p-6 shadow-xs transition-colors hover:border-accent/50"
             >
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-[11px] font-medium tracking-[0.18em] text-accent uppercase">Materials Guide</p>
-                  <h3 className="mt-1 font-display text-xl font-semibold tracking-tight">Filaments &amp; Materials</h3>
+                  <h3 className="mt-1 font-display text-xl font-semibold tracking-tight text-fg">Filaments &amp; Materials</h3>
                   <p className="mt-1 text-sm text-muted">
                     Not sure which filament is right for your project? We break it all down.
                   </p>
                 </div>
-                <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-2.5 flex-wrap">
                   {[
                     { name: "PLA", color: "#00b8a9" },
                     { name: "PETG", color: "#3b82f6" },
                     { name: "ABS", color: "#f59e0b" },
                     { name: "ASA", color: "#ef4444" },
                   ].map((m) => (
-                    <span key={m.name} className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1 text-sm font-medium text-fg">
+                    <span key={m.name} className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface-2/60 px-3 py-1 text-xs font-medium text-fg">
                       <span className="size-2 rounded-full shrink-0" style={{ background: m.color }} />
                       {m.name}
                     </span>
                   ))}
-                  <span className="inline-flex items-center gap-1 text-sm font-medium text-accent">
+                  <span className="inline-flex items-center gap-1 text-xs font-medium text-accent ml-2">
                     Explore specs
-                    <ArrowRight className="size-4 transition-transform duration-150 group-hover:translate-x-0.5" />
+                    <ArrowRight className="size-3.5" />
                   </span>
                 </div>
               </div>
@@ -511,17 +487,12 @@ function IdeaToPrintSection() {
   }
 
   return (
-    <section className="relative overflow-hidden border-t border-border/60 bg-gradient-to-b from-surface/40 via-surface/80 to-surface/40 py-16 md:py-24">
-      {/* Ambient glow */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-[45rem] rounded-full bg-accent/10 blur-[130px] dark:bg-accent/5" />
-      </div>
-
+    <section className="relative overflow-hidden border-t border-border/60 bg-surface/20 py-16 md:py-24">
       <div className="mx-auto max-w-6xl px-4 md:px-6">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-3.5 py-1 text-xs font-semibold text-accent shadow-xs backdrop-blur-md">
-            <Sparkles className="size-3.5" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3.5 py-1 text-xs font-medium text-muted shadow-2xs">
+            <Layers className="size-3.5 text-accent" />
             <span>On-Demand 3D Design &amp; Print Service</span>
           </div>
           <h2 className="mt-4 font-display text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight text-fg">
@@ -534,76 +505,76 @@ function IdeaToPrintSection() {
         </div>
 
         {/* 3 Step Workflow Cards */}
-        <div className="mt-12 grid gap-6 md:grid-cols-3">
+        <div className="mt-12 grid gap-5 md:grid-cols-3">
           {/* Step 1 */}
-          <div className="group relative rounded-3xl border border-glass-border bg-glass p-7 backdrop-blur-2xl backdrop-saturate-150 shadow-xl shadow-black/5 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex size-12 items-center justify-center rounded-2xl border border-accent/30 bg-accent/10 text-accent">
-                <Camera className="size-6" strokeWidth={1.75} />
+          <div className="rounded-xl border border-border bg-surface p-6 shadow-xs hover:border-accent/40 transition-colors">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex size-10 items-center justify-center rounded-lg border border-border bg-surface-2 text-fg">
+                <Camera className="size-5" strokeWidth={1.75} />
               </div>
-              <span className="rounded-full bg-surface-2 px-2.5 py-1 font-mono text-xs font-semibold text-muted">
-                Step 01
+              <span className="font-mono text-xs font-semibold text-subtle tracking-wider uppercase">
+                Phase 01
               </span>
             </div>
-            <h3 className="font-display text-xl font-semibold text-fg">
+            <h3 className="font-display text-lg font-semibold text-fg">
               1. Describe &amp; Attach Photos
             </h3>
-            <p className="mt-2.5 text-sm text-muted leading-relaxed">
+            <p className="mt-2 text-xs sm:text-sm text-muted leading-relaxed">
               Describe what you need in simple everyday words. Snap phone photos of your broken piece from a few angles (with a ruler or coin for scale) or upload a quick paper sketch.
             </p>
-            <div className="mt-5 flex flex-wrap gap-1.5 pt-3 border-t border-border/50 text-[11px] font-medium text-accent">
-              <span className="rounded-md bg-accent/10 px-2 py-0.5">📸 Phone photos welcome</span>
-              <span className="rounded-md bg-accent/10 px-2 py-0.5">📐 No CAD files required</span>
+            <div className="mt-4 flex flex-wrap gap-2 pt-3 border-t border-border/50 text-[11px] font-medium text-muted">
+              <span className="rounded-md border border-border/70 bg-surface-2/40 px-2 py-0.5">Phone photos accepted</span>
+              <span className="rounded-md border border-border/70 bg-surface-2/40 px-2 py-0.5">No CAD files required</span>
             </div>
           </div>
 
           {/* Step 2 */}
-          <div className="group relative rounded-3xl border border-glass-border bg-glass p-7 backdrop-blur-2xl backdrop-saturate-150 shadow-xl shadow-black/5 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex size-12 items-center justify-center rounded-2xl border border-accent/30 bg-accent/10 text-accent">
-                <Layers className="size-6" strokeWidth={1.75} />
+          <div className="rounded-xl border border-border bg-surface p-6 shadow-xs hover:border-accent/40 transition-colors">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex size-10 items-center justify-center rounded-lg border border-border bg-surface-2 text-fg">
+                <Layers className="size-5" strokeWidth={1.75} />
               </div>
-              <span className="rounded-full bg-surface-2 px-2.5 py-1 font-mono text-xs font-semibold text-muted">
-                Step 02
+              <span className="font-mono text-xs font-semibold text-subtle tracking-wider uppercase">
+                Phase 02
               </span>
             </div>
-            <h3 className="font-display text-xl font-semibold text-fg">
+            <h3 className="font-display text-lg font-semibold text-fg">
               2. We 3D Model &amp; Preview
             </h3>
-            <p className="mt-2.5 text-sm text-muted leading-relaxed">
+            <p className="mt-2 text-xs sm:text-sm text-muted leading-relaxed">
               Our CAD designers engineer a robust, print-ready 3D model. We share previews and confirm critical measurements with you before manufacturing. Clear, upfront design fee with zero surprise bills.
             </p>
-            <div className="mt-5 flex flex-wrap gap-1.5 pt-3 border-t border-border/50 text-[11px] font-medium text-accent">
-              <span className="rounded-md bg-accent/10 px-2 py-0.5">✅ Design sign-off first</span>
-              <span className="rounded-md bg-accent/10 px-2 py-0.5">💳 Transparent flat rates</span>
+            <div className="mt-4 flex flex-wrap gap-2 pt-3 border-t border-border/50 text-[11px] font-medium text-muted">
+              <span className="rounded-md border border-border/70 bg-surface-2/40 px-2 py-0.5">Design preview sign-off</span>
+              <span className="rounded-md border border-border/70 bg-surface-2/40 px-2 py-0.5">Upfront transparent quote</span>
             </div>
           </div>
 
           {/* Step 3 */}
-          <div className="group relative rounded-3xl border border-glass-border bg-glass p-7 backdrop-blur-2xl backdrop-saturate-150 shadow-xl shadow-black/5 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex size-12 items-center justify-center rounded-2xl border border-accent/30 bg-accent/10 text-accent">
-                <Printer className="size-6" strokeWidth={1.75} />
+          <div className="rounded-xl border border-border bg-surface p-6 shadow-xs hover:border-accent/40 transition-colors">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex size-10 items-center justify-center rounded-lg border border-border bg-surface-2 text-fg">
+                <Printer className="size-5" strokeWidth={1.75} />
               </div>
-              <span className="rounded-full bg-surface-2 px-2.5 py-1 font-mono text-xs font-semibold text-muted">
-                Step 03
+              <span className="font-mono text-xs font-semibold text-subtle tracking-wider uppercase">
+                Phase 03
               </span>
             </div>
-            <h3 className="font-display text-xl font-semibold text-fg">
+            <h3 className="font-display text-lg font-semibold text-fg">
               3. 3D Printed &amp; Shipped Pan-India
             </h3>
-            <p className="mt-2.5 text-sm text-muted leading-relaxed">
+            <p className="mt-2 text-xs sm:text-sm text-muted leading-relaxed">
               Manufactured on our high-speed Bambu Lab fleet using durable polymers (PLA, PETG, ABS, ASA). Quality inspected, securely packaged, and couriered straight to your door across India.
             </p>
-            <div className="mt-5 flex flex-wrap gap-1.5 pt-3 border-t border-border/50 text-[11px] font-medium text-accent">
-              <span className="rounded-md bg-accent/10 px-2 py-0.5">🚀 Bambu Lab precision</span>
-              <span className="rounded-md bg-accent/10 px-2 py-0.5">🇮🇳 Pan-India delivery</span>
+            <div className="mt-4 flex flex-wrap gap-2 pt-3 border-t border-border/50 text-[11px] font-medium text-muted">
+              <span className="rounded-md border border-border/70 bg-surface-2/40 px-2 py-0.5">Bambu Lab precision</span>
+              <span className="rounded-md border border-border/70 bg-surface-2/40 px-2 py-0.5">Pan-India express delivery</span>
             </div>
           </div>
         </div>
 
         {/* Real-Life Everyday Inspiration Cards */}
-        <div className="mt-14 rounded-3xl border border-border/80 bg-surface/70 p-6 md:p-8 backdrop-blur-xl shadow-xl">
+        <div className="mt-14 rounded-2xl border border-border bg-surface p-6 md:p-8 shadow-xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
             <div>
               <p className="text-[11px] font-medium tracking-[0.18em] text-accent uppercase">Real-World Examples</p>
@@ -617,7 +588,7 @@ function IdeaToPrintSection() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-2xl border border-border/60 bg-surface p-4 space-y-2 hover:border-accent/40 transition-colors">
+            <div className="rounded-xl border border-border/70 bg-surface-2/30 p-4 space-y-2 hover:border-accent/40 transition-colors">
               <div className="flex items-center gap-2 text-accent font-semibold text-sm">
                 <Wrench className="size-4 shrink-0" />
                 <span>Broken Appliance Parts</span>
@@ -627,7 +598,7 @@ function IdeaToPrintSection() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-border/60 bg-surface p-4 space-y-2 hover:border-accent/40 transition-colors">
+            <div className="rounded-xl border border-border/70 bg-surface-2/30 p-4 space-y-2 hover:border-accent/40 transition-colors">
               <div className="flex items-center gap-2 text-accent font-semibold text-sm">
                 <Bike className="size-4 shrink-0" />
                 <span>Bike, Helmet &amp; Car Mounts</span>
@@ -637,7 +608,7 @@ function IdeaToPrintSection() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-border/60 bg-surface p-4 space-y-2 hover:border-accent/40 transition-colors">
+            <div className="rounded-xl border border-border/70 bg-surface-2/30 p-4 space-y-2 hover:border-accent/40 transition-colors">
               <div className="flex items-center gap-2 text-accent font-semibold text-sm">
                 <Headphones className="size-4 shrink-0" />
                 <span>Desk &amp; Setup Accessories</span>
@@ -647,7 +618,7 @@ function IdeaToPrintSection() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-border/60 bg-surface p-4 space-y-2 hover:border-accent/40 transition-colors">
+            <div className="rounded-xl border border-border/70 bg-surface-2/30 p-4 space-y-2 hover:border-accent/40 transition-colors">
               <div className="flex items-center gap-2 text-accent font-semibold text-sm">
                 <Gift className="size-4 shrink-0" />
                 <span>Custom Gifts &amp; Lithophanes</span>
@@ -659,10 +630,10 @@ function IdeaToPrintSection() {
           </div>
 
           {/* Interactive Idea Input Box */}
-          <div className="mt-8 rounded-2xl border border-accent/30 bg-accent-soft/30 p-5 sm:p-6">
+          <div className="mt-8 rounded-xl border border-border bg-surface-2/50 p-5 sm:p-6">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="flex items-center gap-2">
-                <Sparkles className="size-4 text-accent" />
+                <PenTool className="size-4 text-accent" />
                 <label htmlFor="home-idea-input" className="text-sm font-semibold text-fg">
                   Try it now — what do you need made?
                 </label>
@@ -675,10 +646,10 @@ function IdeaToPrintSection() {
                   value={ideaText}
                   onChange={(e) => setIdeaText(e.target.value)}
                   placeholder="e.g. A wall hook that holds a cycle helmet and keys, palm sized..."
-                  className="flex-1 rounded-xl border border-border/80 bg-surface px-4 py-3 text-sm text-fg placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent shadow-xs"
+                  className="flex-1 rounded-lg border border-border bg-surface px-4 py-2.5 text-sm text-fg placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent shadow-2xs"
                 />
-                <Button type="submit" size="lg" className="shrink-0 gap-2 shadow-sm font-semibold">
-                  <WandSparkles className="size-4" />
+                <Button type="submit" size="lg" className="shrink-0 gap-2 shadow-xs font-semibold cursor-pointer">
+                  <Send className="size-4" />
                   Describe &amp; Attach Photos
                   <ArrowRight className="size-4" />
                 </Button>
@@ -692,7 +663,7 @@ function IdeaToPrintSection() {
                     key={p.label}
                     type="button"
                     onClick={() => setIdeaText(p.idea)}
-                    className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-surface px-3 py-1 text-xs text-fg hover:border-accent hover:text-accent transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1 rounded-md border border-border bg-surface px-2.5 py-1 text-xs text-fg hover:border-accent hover:text-accent transition-colors cursor-pointer"
                   >
                     <span>{p.label}</span>
                   </button>
@@ -708,7 +679,7 @@ function IdeaToPrintSection() {
           <Link
             to="/custom"
             search={{ path: "upload" }}
-            className="inline-flex items-center gap-1 font-semibold text-accent hover:underline"
+            className="inline-flex items-center gap-1.5 font-semibold text-accent hover:underline"
           >
             <Upload className="size-3.5" />
             Upload STL / 3MF for instant quote &rarr;
