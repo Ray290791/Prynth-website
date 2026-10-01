@@ -16,6 +16,7 @@ import {
   Sliders,
   ArrowRight,
   Info,
+  Crop,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,10 @@ import {
   LithophaneViewer,
   type LithophaneShape,
 } from "@/components/lithophane-viewer";
+import {
+  LithophaneFramingModal,
+  type CropConfig,
+} from "@/components/lithophane-framing-modal";
 import { SAMPLE_PHOTOS } from "@/lib/lithophane-samples";
 
 export const Route = createFileRoute("/lithophane")({
@@ -117,7 +122,10 @@ function LithophaneStudioPage() {
   const add = useCart((s) => s.add);
 
   // Customizer state
+  const [rawPhotoUrl, setRawPhotoUrl] = useState<string>("");
   const [photoUrl, setPhotoUrl] = useState<string>("");
+  const [cropConfig, setCropConfig] = useState<CropConfig>({ scale: 1.25, panX: 0, panY: -10 });
+  const [isFramingOpen, setIsFramingOpen] = useState<boolean>(false);
   const [activeSample, setActiveSample] = useState<string>("couple");
   const [aspect, setAspect] = useState<AspectRatio>("landscape");
   const [shape, setShape] = useState<LithophaneShape>("flat");
@@ -135,6 +143,7 @@ function LithophaneStudioPage() {
 
   // Initialize with sample photo
   useEffect(() => {
+    setRawPhotoUrl(SAMPLE_PHOTOS[0].url);
     setPhotoUrl(SAMPLE_PHOTOS[0].url);
   }, []);
 
@@ -176,9 +185,12 @@ function LithophaneStudioPage() {
     reader.onload = (event) => {
       const result = event.target?.result as string;
       if (result) {
+        setRawPhotoUrl(result);
         setPhotoUrl(result);
         setActiveSample("");
-        toast.success("Photo loaded! Generating HD 3D Lithophane…");
+        toast.success("Photo loaded!");
+        // Automatically open the framing modal so user can fit faces into the shape
+        setIsFramingOpen(true);
       }
       setIsProcessing(false);
     };
@@ -193,6 +205,7 @@ function LithophaneStudioPage() {
     setActiveSample(sampleId);
     const sample = SAMPLE_PHOTOS.find((s) => s.id === sampleId);
     if (sample) {
+      setRawPhotoUrl(sample.url);
       setPhotoUrl(sample.url);
     }
   };
@@ -301,25 +314,59 @@ function LithophaneStudioPage() {
                 </p>
               </div>
 
-              {/* Upload Button */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoUpload}
-                className="hidden"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-                className="gap-2 cursor-pointer font-semibold"
-              >
-                <Upload className="size-3.5" />
-                Upload Photo
-              </Button>
+              {/* Upload & Framing Action Buttons */}
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsFramingOpen(true)}
+                  className="gap-1.5 cursor-pointer font-semibold text-xs border-accent/40 bg-accent/5 hover:bg-accent/10 text-accent"
+                >
+                  <Crop className="size-3.5" />
+                  <span>Adjust Framing</span>
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="gap-2 cursor-pointer font-semibold"
+                >
+                  <Upload className="size-3.5" />
+                  Upload Photo
+                </Button>
+              </div>
             </div>
+
+            {/* Heart Silhouette helper prompt */}
+            {shape === "heart" && (
+              <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs animate-in fade-in duration-150">
+                <div className="flex items-center gap-2 text-rose-300">
+                  <Heart className="size-4 shrink-0 fill-rose-500 text-rose-500" />
+                  <span>
+                    <strong>Heart Cutout Active:</strong> Drag and scale faces into the upper lobes so they aren't cut off by the heart outline.
+                  </span>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setIsFramingOpen(true)}
+                  className="shrink-0 h-7 text-xs font-semibold gap-1.5 cursor-pointer bg-surface text-fg hover:bg-surface-2 self-start sm:self-auto"
+                >
+                  <Crop className="size-3 text-accent" />
+                  <span>Fit into Heart</span>
+                </Button>
+              </div>
+            )}
 
             {/* Quick Sample Presets */}
             <div className="space-y-1.5">
@@ -483,7 +530,12 @@ function LithophaneStudioPage() {
                   <button
                     key={s.id}
                     type="button"
-                    onClick={() => setShape(s.id)}
+                    onClick={() => {
+                      setShape(s.id);
+                      if (s.id === "heart") {
+                        setIsFramingOpen(true);
+                      }
+                    }}
                     className={cn(
                       "flex items-start justify-between p-3 rounded-xl border text-left transition-all cursor-pointer",
                       shape === s.id
@@ -691,6 +743,23 @@ function LithophaneStudioPage() {
           </div>
         </div>
       </div>
+      {/* Interactive Photo Framing & Crop Modal */}
+      <LithophaneFramingModal
+        isOpen={isFramingOpen}
+        onClose={() => setIsFramingOpen(false)}
+        imageSrc={rawPhotoUrl || photoUrl}
+        shape={shape}
+        initialCrop={cropConfig}
+        onApply={(croppedUrl, newConfig) => {
+          setPhotoUrl(croppedUrl);
+          setCropConfig(newConfig);
+          toast.success(
+            shape === "heart"
+              ? "Framed for Heart Keepsake! 3D model updated."
+              : "Photo framing updated!"
+          );
+        }}
+      />
     </div>
   );
 }

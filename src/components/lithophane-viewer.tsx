@@ -57,6 +57,18 @@ function sampleBilinearLuminance(
   return top * (1 - dy) + bot * dy;
 }
 
+// Mathematical boundary test for true heart cutout
+function isInsideHeart(u: number, v: number): boolean {
+  // Map u in [0, 1] to nx in [-1.25, 1.25]
+  // Map v in [0, 1] to ny in [1.25, -1.25] (v=0 is top, v=1 is bottom)
+  const nx = (u - 0.5) * 2.3;
+  const ny = (0.5 - v) * 2.3 + 0.18;
+  const x2 = nx * nx;
+  const y2 = ny * ny;
+  const term = x2 + y2 - 1.0;
+  return term * term * term - x2 * (ny * ny * ny) <= 0.0;
+}
+
 // Build solid 3D manifold geometry with genuine tactile relief depth
 function buildLithophaneGeometry(
   imgData: ImageData,
@@ -67,11 +79,121 @@ function buildLithophaneGeometry(
   invert = false
 ): THREE.BufferGeometry {
   const { width: imgW, height: imgH, data } = imgData;
-
-  const cols = 150;
-  const rows = Math.max(80, Math.min(180, Math.round(cols * (heightMm / widthMm))));
   const minT = 0.8; // Minimum printable wall thickness in mm (translucent highlights)
   const maxT = 3.4; // Maximum thickness in mm (opaque darks)
+
+  // 1. TRUE PHYSICAL 3D HEART CUTOUT MESH
+  if (shape === "heart") {
+    const cols = 130;
+    const rows = 130;
+    const positions: number[] = [];
+    const uvs: number[] = [];
+    const indices: number[] = [];
+
+    // Map from (r, c) to { front: number, back: number }
+    const vertMap: ({ front: number; back: number } | null)[][] = [];
+
+    for (let r = 0; r < rows; r++) {
+      vertMap[r] = [];
+      const v = r / (rows - 1);
+      const y = (0.5 - v) * heightMm;
+
+      for (let c = 0; c < cols; c++) {
+        const u = c / (cols - 1);
+        const x = (u - 0.5) * widthMm;
+
+        if (!isInsideHeart(u, v)) {
+          vertMap[r][c] = null;
+          continue;
+        }
+
+        let lum = sampleBilinearLuminance(data, imgW, imgH, u, v);
+        lum = Math.pow(Math.max(0, Math.min(1, lum)), contrast);
+        if (invert) lum = 1.0 - lum;
+
+        const t = minT + (1.0 - lum) * (maxT - minT);
+
+        const fIdx = positions.length / 3;
+        positions.push(x, y, t);
+        uvs.push(u, 1.0 - v);
+
+        const bIdx = positions.length / 3;
+        positions.push(x, y, 0);
+        uvs.push(u, 1.0 - v);
+
+        vertMap[r][c] = { front: fIdx, back: bIdx };
+      }
+    }
+
+    // Directed edges to extract perimeter boundary
+    const directedEdges = new Map<string, { a: number; b: number; aBack: number; bBack: number }>();
+
+    function addHeartFrontTriangle(
+      v0: { front: number; back: number },
+      v1: { front: number; back: number },
+      v2: { front: number; back: number }
+    ) {
+      // Front CCW
+      indices.push(v0.front, v1.front, v2.front);
+      // Back CW
+      indices.push(v0.back, v2.back, v1.back);
+
+      // Track 3 edges for sidewall construction
+      const edges = [
+        [v0, v1],
+        [v1, v2],
+        [v2, v0],
+      ] as const;
+
+      for (const [p1, p2] of edges) {
+        const key = `${p1.front}_${p2.front}`;
+        directedEdges.set(key, { a: p1.front, b: p2.front, aBack: p1.back, bBack: p2.back });
+      }
+    }
+
+    // Triangulate grid cells inside heart
+    for (let r = 0; r < rows - 1; r++) {
+      for (let c = 0; c < cols - 1; c++) {
+        const tl = vertMap[r][c];
+        const tr = vertMap[r][c + 1];
+        const bl = vertMap[r + 1][c];
+        const br = vertMap[r + 1][c + 1];
+
+        const count = (tl ? 1 : 0) + (tr ? 1 : 0) + (bl ? 1 : 0) + (br ? 1 : 0);
+        if (count === 4) {
+          addHeartFrontTriangle(tl!, tr!, bl!);
+          addHeartFrontTriangle(tr!, br!, bl!);
+        } else if (count === 3) {
+          if (!br) addHeartFrontTriangle(tl!, tr!, bl!);
+          else if (!bl) addHeartFrontTriangle(tl!, tr!, br!);
+          else if (!tr) addHeartFrontTriangle(tl!, br!, bl!);
+          else if (!tl) addHeartFrontTriangle(tr!, br!, bl!);
+        }
+      }
+    }
+
+    // Construct watertight sidewalls on unpaired boundary edges
+    for (const [, edge] of directedEdges.entries()) {
+      const reverseKey = `${edge.b}_${edge.a}`;
+      if (!directedEdges.has(reverseKey)) {
+        // Unpaired edge: add quad connecting front to back
+        indices.push(edge.a, edge.b, edge.bBack);
+        indices.push(edge.a, edge.bBack, edge.aBack);
+      }
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals();
+
+    return geometry;
+  }
+
+  // 2. CLASSIC FLAT PANEL RECTANGULAR MESH
+  const cols = 150;
+  const rows = Math.max(80, Math.min(180, Math.round(cols * (heightMm / widthMm))));
 
   const thicknessGrid: number[][] = [];
 
@@ -86,18 +208,7 @@ function buildLithophaneGeometry(
       lum = Math.pow(Math.max(0, Math.min(1, lum)), contrast);
       if (invert) lum = 1.0 - lum;
 
-      let t = minT + (1.0 - lum) * (maxT - minT);
-
-      // Heart boundary smooth masking
-      if (shape === "heart") {
-        const nx = (u - 0.5) * 2.2;
-        const ny = (1.0 - v - 0.45) * 2.2;
-        const heartDist = Math.pow(nx * nx + ny * ny - 1, 3) - nx * nx * Math.pow(ny, 3);
-        if (heartDist > 0.02) {
-          t = 0.5;
-        }
-      }
-
+      const t = minT + (1.0 - lum) * (maxT - minT);
       thicknessGrid[r][c] = t;
     }
   }
@@ -300,13 +411,52 @@ const lithophaneShader = {
 function PrintedDesktopStand({
   widthMm,
   heightMm,
+  shape,
 }: {
   widthMm: number;
   heightMm: number;
+  shape: LithophaneShape;
 }) {
-  const standW = Math.max(widthMm * 0.85, 90);
+  const standW = Math.max(widthMm * 0.82, 84);
   const standDepth = 48;
   const standH = 12;
+
+  if (shape === "heart") {
+    // Custom sculpted heart cradle stand with angled V-notch and dual support brackets
+    return (
+      <group position={[0, -heightMm * 0.44, 0]}>
+        {/* Main weighted base pedestal */}
+        <mesh receiveShadow castShadow position={[0, -standH / 2, 6]}>
+          <boxGeometry args={[standW, standH, standDepth]} />
+          <meshStandardMaterial color="#1e2229" roughness={0.7} metalness={0.08} />
+        </mesh>
+
+        {/* Center V-cradle where the lower point of the heart rests */}
+        <mesh position={[0, 2, 6]}>
+          <boxGeometry args={[26, 8, 12]} />
+          <meshStandardMaterial color="#16191f" roughness={0.8} />
+        </mesh>
+
+        {/* Left angled support wing */}
+        <mesh position={[-standW * 0.28, 4, 6]} rotation={[0, 0, 0.15]}>
+          <boxGeometry args={[14, 12, 10]} />
+          <meshStandardMaterial color="#222730" roughness={0.75} />
+        </mesh>
+
+        {/* Right angled support wing */}
+        <mesh position={[standW * 0.28, 4, 6]} rotation={[0, 0, -0.15]}>
+          <boxGeometry args={[14, 12, 10]} />
+          <meshStandardMaterial color="#222730" roughness={0.75} />
+        </mesh>
+
+        {/* Chamfered front bevel */}
+        <mesh position={[0, -standH / 4, standDepth / 2 + 3]} rotation={[0.4, 0, 0]}>
+          <boxGeometry args={[standW, 6, 8]} />
+          <meshStandardMaterial color="#262b33" roughness={0.75} />
+        </mesh>
+      </group>
+    );
+  }
 
   return (
     <group position={[0, -heightMm * 0.48, 0]}>
@@ -418,7 +568,7 @@ function LithophaneScene({
       </group>
 
       {/* 100% 3D-Printed Desktop Display Stand included with every print */}
-      <PrintedDesktopStand widthMm={sizeMm.width} heightMm={sizeMm.height} />
+      <PrintedDesktopStand widthMm={sizeMm.width} heightMm={sizeMm.height} shape={shape} />
 
       {/* Real Backlight Source placed physically BEHIND the lithophane (Window sunlight / lamp) */}
       {backlightOn && (
