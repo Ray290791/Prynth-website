@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type LithophaneShape = "curved" | "flat" | "heart";
+export type LithophaneShape = "flat" | "heart";
 
 export interface LithophaneViewerProps {
   imageSrc: string | null;
@@ -58,7 +58,7 @@ function sampleBilinearLuminance(
   return top * (1 - dy) + bot * dy;
 }
 
-// Build closed, manifold 3D solid lithophane geometry with high spatial resolution
+// Build closed, manifold 3D solid lithophane geometry (flat or heart-shaped)
 function buildLithophaneGeometry(
   imgData: ImageData,
   shape: LithophaneShape,
@@ -73,7 +73,7 @@ function buildLithophaneGeometry(
   const cols = 150;
   const rows = Math.max(80, Math.min(180, Math.round(cols * (heightMm / widthMm))));
   const minT = 0.8; // Minimum printable wall thickness in mm
-  const maxT = 3.0; // Maximum thickness in mm
+  const maxT = 3.2; // Maximum thickness in mm
 
   const thicknessGrid: number[][] = [];
 
@@ -105,7 +105,7 @@ function buildLithophaneGeometry(
         const ny = (1.0 - v - 0.45) * 2.2;
         const heartDist = Math.pow(nx * nx + ny * ny - 1, 3) - nx * nx * Math.pow(ny, 3);
         if (heartDist > 0.04) {
-          t = 0.6; // Trimmed edge
+          t = 0.6; // Trimmed smooth border edge
         }
       }
 
@@ -117,10 +117,6 @@ function buildLithophaneGeometry(
   const uvs: number[] = [];
   const indices: number[] = [];
 
-  // Elegant 75° gentle curved arc (1.31 rad) for mantle lamp
-  const arcRad = (75 * Math.PI) / 180;
-  const curveRadius = widthMm / arcRad;
-
   for (let r = 0; r < rows; r++) {
     const v = r / (rows - 1);
     const y = (0.5 - v) * heightMm;
@@ -129,42 +125,14 @@ function buildLithophaneGeometry(
       const u = c / (cols - 1);
       const t = thicknessGrid[r][c];
 
-      let fx = 0,
-        fy = y,
-        fz = 0;
-      let bx = 0,
-        by = y,
-        bz = 0;
+      const x = (u - 0.5) * widthMm;
 
-      if (shape === "curved") {
-        const angle = (u - 0.5) * arcRad;
-        const sinA = Math.sin(angle);
-        const cosA = Math.cos(angle);
-
-        // Smooth back surface along cylinder radius
-        bx = curveRadius * sinA;
-        bz = curveRadius * cosA - curveRadius;
-
-        // Front surface displaced along outward normal
-        const rFront = curveRadius + t;
-        fx = rFront * sinA;
-        fz = rFront * cosA - curveRadius;
-      } else {
-        // Flat panel
-        const x = (u - 0.5) * widthMm;
-        fx = x;
-        fz = t;
-
-        bx = x;
-        bz = 0;
-      }
-
-      // Front Vertex (index = (r * cols + c) * 2)
-      positions.push(fx, fy, fz);
+      // Front Face displaced forward along Z
+      positions.push(x, y, t);
       uvs.push(u, 1.0 - v);
 
-      // Back Vertex (index = (r * cols + c) * 2 + 1)
-      positions.push(bx, by, bz);
+      // Back Face flat at Z = 0
+      positions.push(x, y, 0);
       uvs.push(u, 1.0 - v);
     }
   }
@@ -301,6 +269,41 @@ function WoodenBase({
   );
 }
 
+// Minimalist Tabletop Easel Stand for "Lithophane Only" option
+function TabletopEaselStand({
+  widthMm,
+  heightMm,
+}: {
+  widthMm: number;
+  heightMm: number;
+}) {
+  const legW = 12;
+  const legH = heightMm * 0.55;
+  const spread = Math.min(widthMm * 0.65, 80);
+
+  return (
+    <group position={[0, 0, -8]}>
+      {/* Left easel support foot */}
+      <mesh position={[-spread / 2, -heightMm * 0.42, -10]} rotation={[0.25, 0, 0]}>
+        <boxGeometry args={[legW, legH, 6]} />
+        <meshStandardMaterial color="#22262d" roughness={0.7} />
+      </mesh>
+
+      {/* Right easel support foot */}
+      <mesh position={[spread / 2, -heightMm * 0.42, -10]} rotation={[0.25, 0, 0]}>
+        <boxGeometry args={[legW, legH, 6]} />
+        <meshStandardMaterial color="#22262d" roughness={0.7} />
+      </mesh>
+
+      {/* Cross brace */}
+      <mesh position={[0, -heightMm * 0.46, -6]}>
+        <boxGeometry args={[spread + 10, 6, 6]} />
+        <meshStandardMaterial color="#22262d" roughness={0.7} />
+      </mesh>
+    </group>
+  );
+}
+
 // Scene Content
 function LithophaneScene({
   imgData,
@@ -343,11 +346,11 @@ function LithophaneScene({
     };
   }, [geometry]);
 
-  // Center lithophane seated into the wooden base slot
+  // Center lithophane seated into the wooden base slot or easel
   const yOffset = sizeMm.height / 2 - (hasWoodenBase ? 4 : 0);
 
   return (
-    <group position={[0, -sizeMm.height * 0.45 + (hasWoodenBase ? 16 : 0), 0]}>
+    <group position={[0, -sizeMm.height * 0.45 + (hasWoodenBase ? 16 : 6), 0]}>
       {/* The Lithophane Model */}
       <group ref={meshRef} position={[0, yOffset, 0]}>
         {geometry && (
@@ -366,12 +369,14 @@ function LithophaneScene({
         )}
       </group>
 
-      {/* Beech Wood LED Base */}
-      {hasWoodenBase && (
+      {/* Display Base: Either Beech Wood LED Base OR Tabletop Easel Stand */}
+      {hasWoodenBase ? (
         <WoodenBase widthMm={sizeMm.width} backlightOn={backlightOn} />
+      ) : (
+        <TabletopEaselStand widthMm={sizeMm.width} heightMm={sizeMm.height} />
       )}
 
-      {/* Internal Backlight Emitters */}
+      {/* Internal Backlight Emitters (active when backlight is toggled on) */}
       {backlightOn && (
         <>
           <pointLight
@@ -391,7 +396,7 @@ function LithophaneScene({
 
       {/* Ground Contact Shadow */}
       <ContactShadows
-        position={[0, hasWoodenBase ? -20 : 0, 0]}
+        position={[0, hasWoodenBase ? -20 : -4, 0]}
         opacity={0.65}
         scale={Math.max(sizeMm.width * 2, 260)}
         blur={1.8}
@@ -608,7 +613,7 @@ export function LithophaneViewer({
           <div className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-border/80 bg-surface/85 px-3 py-1 text-xs backdrop-blur-md shadow-xs">
             <Layers className="size-3.5 text-accent" />
             <span className="font-semibold text-fg capitalize">
-              {shape === "curved" ? "Curved Arc Lamp" : shape === "heart" ? "Heart Keepsake" : "Framed Lightbox"}
+              {shape === "heart" ? "Heart Keepsake" : "Classic Framed Lithophane"}
             </span>
             <span className="text-muted">·</span>
             <span className="text-muted tabular-nums">
@@ -669,7 +674,7 @@ export function LithophaneViewer({
             )}
           >
             <Lightbulb className={cn("size-4", backlightOn ? "fill-current text-stone-950" : "text-muted")} />
-            <span>{backlightOn ? "💡 Backlight: ON (Warm LED)" : "Turn Backlight ON"}</span>
+            <span>{backlightOn ? "💡 Backlight: ON (Warm Glow)" : "Turn Backlight ON"}</span>
           </button>
         </div>
       </div>

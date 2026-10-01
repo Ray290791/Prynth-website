@@ -3,24 +3,18 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   Upload,
   Image as ImageIcon,
-  Sun,
-  Moon,
-  Lightbulb,
+  RotateCw,
+  ShoppingBag,
   Sparkles,
   Heart,
   Layers,
   Check,
   ShieldCheck,
   Truck,
-  RotateCw,
-  ShoppingBag,
-  Info,
   Gift,
-  HelpCircle,
-  Eye,
-  ArrowRight,
-  Maximize2,
+  Lightbulb,
   Sliders,
+  ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -38,18 +32,18 @@ export const Route = createFileRoute("/lithophane")({
   component: LithophaneStudioPage,
   head: () => ({
     meta: [
-      { title: "Custom 3D Lithophane Night Lamp Creator | prynth!" },
+      { title: "Custom 3D Lithophane Photo Lamp & Keepsake | prynth!" },
       {
         name: "description",
         content:
-          "Turn your favorite photos into glowing 3D printed lithophane lamps and lightboxes. Custom carved in optical white PLA with warm solid wood LED bases.",
+          "Turn your favorite photos into glowing 3D printed lithophane lamps and romantic heart keepsakes. Custom carved in optical white PLA with warm solid wood LED bases.",
       },
     ],
   }),
 });
 
 type AspectRatio = "landscape" | "portrait" | "square";
-type PackageTier = "panel" | "lamp" | "deluxe";
+type KitChoice = "lithophane_only" | "lithophane_with_light_base";
 type SizeTier = "medium" | "standard" | "large";
 
 interface ShapeOption {
@@ -61,64 +55,50 @@ interface ShapeOption {
 
 const SHAPES: ShapeOption[] = [
   {
-    id: "curved",
-    name: "Curved Arc Lamp",
-    tag: "Bestseller",
-    description: "Self-standing 115° curved arc. Softly radiates panoramic light across desks & nightstands.",
-  },
-  {
     id: "flat",
-    name: "Framed Lightbox",
-    tag: "Classic",
-    description: "Architectural flat relief with precision beveled border. Includes angled easel kickstand.",
+    name: "Classic Flat Panel",
+    tag: "Popular",
+    description: "Architectural flat portrait relief with precision beveled border. Clean & versatile for all photos.",
   },
   {
     id: "heart",
     name: "Heart Keepsake",
     tag: "Romantic",
-    description: "Romantic heart contour. Perfect for wedding anniversaries, Valentine's & memorial gifts.",
+    description: "Heart contour tailored for couples, anniversaries, weddings, and Valentine's Day gifts.",
   },
 ];
 
-const PACKAGES: {
-  id: PackageTier;
+const KITS: {
+  id: KitChoice;
   name: string;
   price: number;
-  badge?: string;
+  tag: string;
+  description: string;
   includes: string[];
 }[] = [
   {
-    id: "panel",
-    name: "Lithophane Panel + Stand",
-    price: 499,
+    id: "lithophane_only",
+    name: "Printed Lithophane Only",
+    price: 399,
+    tag: "Minimalist",
+    description: "The custom 3D printed lithophane plate with an angled tabletop kickstand easel. (No light source included)",
     includes: [
-      "Custom 0.12mm High-Res Lithophane",
-      "Tabletop Kickstand Easel",
-      "Optical Jade White PLA",
+      "Custom 0.12mm High-Resolution Lithophane",
+      "Tabletop Kickstand Display Easel",
+      "Illuminates beautifully in window sunlight or with your own lamp",
     ],
   },
   {
-    id: "lamp",
-    name: "Complete LED Night Lamp Combo",
-    price: 799,
-    badge: "Most Popular Gift",
+    id: "lithophane_with_light_base",
+    name: "Lithophane + LED Wooden Light Base & Stand",
+    price: 749,
+    tag: "Recommended",
+    description: "The complete setup: Lithophane plate + Solid Beech Wood Oval Base that serves as both the sturdy stand and the warm light source.",
     includes: [
-      "Custom 0.12mm High-Res Lithophane",
-      "Solid Beech Wood Oval LED Base",
-      "Warm Tungsten White Light (USB)",
-      "Inline Push-Button Power Switch",
-    ],
-  },
-  {
-    id: "deluxe",
-    name: "Luxury Gift Box Edition",
-    price: 999,
-    badge: "Ready to Gift",
-    includes: [
-      "Custom 0.12mm High-Res Lithophane",
-      "Solid Beech Wood Oval LED Base",
-      "Matte Black Presentation Box & Ribbon",
-      "Custom Foil Greeting Inscription Card",
+      "Custom 0.12mm High-Resolution Lithophane",
+      "Solid Beech Wood Oval LED Base (Stand + Light)",
+      "Warm Tungsten Light with USB Cable & Switch",
+      "Plug into any phone charger, laptop, or powerbank",
     ],
   },
 ];
@@ -161,6 +141,8 @@ const SIZES: {
   },
 ];
 
+const GIFT_PACKAGING_FEE = 149;
+
 function LithophaneStudioPage() {
   const navigate = useNavigate();
   const add = useCart((s) => s.add);
@@ -169,30 +151,43 @@ function LithophaneStudioPage() {
   const [photoUrl, setPhotoUrl] = useState<string>("");
   const [activeSample, setActiveSample] = useState<string>("couple");
   const [aspect, setAspect] = useState<AspectRatio>("landscape");
-  const [shape, setShape] = useState<LithophaneShape>("curved");
-  const [pkg, setPkg] = useState<PackageTier>("lamp");
+  const [shape, setShape] = useState<LithophaneShape>("flat");
+  const [kit, setKit] = useState<KitChoice>("lithophane_with_light_base");
   const [size, setSize] = useState<SizeTier>("standard");
   const [backlightOn, setBacklightOn] = useState<boolean>(true);
-  const [contrast, setContrast] = useState<number>(1.1);
+  const [contrast, setContrast] = useState<number>(1.15);
   const [invert, setInvert] = useState<boolean>(false);
-  const [engravingText, setEngravingText] = useState<string>("");
+  const [isGift, setIsGift] = useState<boolean>(false);
+  const [giftMessage, setGiftMessage] = useState<string>("");
+  const [recipientName, setRecipientName] = useState<string>("");
   const [qty, setQty] = useState<number>(1);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Initialize with the sample couple photo on mount
+  // Initialize with sample photo
   useEffect(() => {
     setPhotoUrl(SAMPLE_PHOTOS[0].url);
   }, []);
 
+  // Sync backlight and base when kit changes
+  useEffect(() => {
+    if (kit === "lithophane_only") {
+      setBacklightOn(false);
+    } else {
+      setBacklightOn(true);
+    }
+  }, [kit]);
+
   const selectedSizeConfig = SIZES.find((s) => s.id === size)!;
   const currentDims = selectedSizeConfig.dims[aspect];
-  const selectedPkgConfig = PACKAGES.find((p) => p.id === pkg)!;
+  const selectedKitConfig = KITS.find((k) => k.id === kit)!;
 
-  // Pricing calculations
-  const unitPrice = selectedPkgConfig.price + selectedSizeConfig.extraPrice;
-  const rawSubtotal = unitPrice * qty;
+  // Base unit price calculations
+  const baseUnitPrice = selectedKitConfig.price + selectedSizeConfig.extraPrice;
+  const giftFeePerItem = isGift ? GIFT_PACKAGING_FEE : 0;
+  const finalUnitPrice = baseUnitPrice + giftFeePerItem;
+  const rawSubtotal = finalUnitPrice * qty;
 
   // Bulk tier discount calculation
   let bulkDiscountRate = 0;
@@ -225,7 +220,7 @@ function LithophaneStudioPage() {
       if (result) {
         setPhotoUrl(result);
         setActiveSample("");
-        toast.success("Photo loaded! Generating 3D Lithophane…");
+        toast.success("Photo loaded! Generating HD 3D Lithophane…");
       }
       setIsProcessing(false);
     };
@@ -250,12 +245,17 @@ function LithophaneStudioPage() {
       return;
     }
 
-    const shapeLabel =
-      shape === "curved"
-        ? "Curved Arc Lamp"
-        : shape === "heart"
-        ? "Heart Keepsake"
-        : "Framed Lightbox";
+    const shapeLabel = shape === "heart" ? "Heart Keepsake" : "Classic Flat Panel";
+    const kitLabel =
+      kit === "lithophane_with_light_base"
+        ? "Lithophane + Wooden LED Light Base"
+        : "Lithophane Plate Only (with Stand)";
+
+    const giftNotes = isGift
+      ? ` [GIFT PACKAGING REQUESTED: Luxury Black Ribbon Box, Conceal Invoice Prices${
+          recipientName.trim() ? ` · To: ${recipientName.trim()}` : ""
+        }${giftMessage.trim() ? ` · Message Card: "${giftMessage.trim()}"` : ""}]`
+      : "";
 
     const customSpec: CustomSpec = {
       path: "idea",
@@ -264,25 +264,27 @@ function LithophaneStudioPage() {
       color: "Optical Jade White",
       material: "Lithophane White PLA (0.12mm)",
       dimensions: `${currentDims.width} × ${currentDims.height} mm (${shapeLabel})`,
-      notes: `Shape: ${shapeLabel} · Package: ${selectedPkgConfig.name}${
-        engravingText.trim() ? ` · Inscription: "${engravingText.trim()}"` : ""
-      }`,
+      notes: `Shape: ${shapeLabel} · Package: ${kitLabel}${giftNotes}`,
       referencePhotos: [photoUrl],
     };
 
+    const cartTitle = isGift
+      ? `3D Lithophane · ${shapeLabel} 🎁 (Gift Packed)`
+      : `3D Lithophane · ${shapeLabel}`;
+
     add({
       kind: "custom",
-      name: `Lithophane 3D Lamp · ${shapeLabel}`,
+      name: cartTitle,
       image: photoUrl,
       color: "Optical Jade White",
       size: `${currentDims.width} × ${currentDims.height} mm (${selectedSizeConfig.label})`,
       material: "Lithophane White PLA (0.12mm)",
-      unitPrice,
+      unitPrice: finalUnitPrice,
       qty,
       custom: customSpec,
     });
 
-    toast.success("Custom Lithophane Lamp added to cart!", {
+    toast.success("Custom Lithophane added to cart!", {
       action: {
         label: "View Cart",
         onClick: () => void navigate({ to: "/cart" }),
@@ -292,17 +294,17 @@ function LithophaneStudioPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 md:px-6 md:py-12">
-      {/* Hero Badge & Headings */}
+      {/* Header & Headings */}
       <div className="max-w-3xl space-y-3">
         <div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-xs font-semibold text-accent">
           <Sparkles className="size-3.5" />
-          <span>B2C Gift Studio · 100% Solid Optical White PLA</span>
+          <span>Precision 3D Lithophane Studio · 0.12mm Micro-Carving</span>
         </div>
         <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl text-fg">
-          Turn Your Favorite Photo into a Magical 3D Night Lamp
+          Turn Your Memories into a Glowing 3D Lithophane Lamp
         </h1>
         <p className="text-sm sm:text-base text-muted leading-relaxed">
-          Upload any portrait, couple shot, or beloved pet. Our precision 0.12mm lithophane carver transforms highlights into translucent resin-grade relief that illuminates with glowing warm warmth.
+          Order just the carved 3D lithophane plate, or get the complete setup with a solid beech wood LED light base that doubles as a sturdy desktop stand.
         </p>
       </div>
 
@@ -320,15 +322,17 @@ function LithophaneStudioPage() {
               onToggleBacklight={() => setBacklightOn(!backlightOn)}
               contrast={contrast}
               invert={invert}
-              hasWoodenBase={pkg !== "panel"}
+              hasWoodenBase={kit === "lithophane_with_light_base"}
             />
             <div className="flex items-center justify-between px-1 text-xs text-muted">
               <span className="flex items-center gap-1.5">
                 <RotateCw className="size-3 text-accent" />
                 Drag to rotate 360° · Scroll to zoom
               </span>
-              <span className="hidden sm:inline">
-                Backlight reveals photo through variable polymer density
+              <span>
+                {kit === "lithophane_with_light_base"
+                  ? "Shown on Solid Beech Wood LED Base"
+                  : "Shown on Minimalist Desktop Kickstand"}
               </span>
             </div>
           </div>
@@ -342,7 +346,7 @@ function LithophaneStudioPage() {
                   <span>Choose or Upload Your Photo</span>
                 </h3>
                 <p className="text-xs text-muted mt-0.5">
-                  High-contrast photos with clear faces look breathtaking when backlit.
+                  High-contrast photos with clear faces look breathtaking when illuminated.
                 </p>
               </div>
 
@@ -368,13 +372,13 @@ function LithophaneStudioPage() {
 
             {/* Quick Sample Presets */}
             <div className="space-y-1.5">
-              <span className="text-xs font-medium text-muted">Or try instant sample photos:</span>
+              <span className="text-xs font-medium text-muted">Or preview with high-res sample photos:</span>
               <div className="grid grid-cols-3 gap-2">
                 {SAMPLE_PHOTOS.map((sample) => (
                   <button
                     key={sample.id}
                     type="button"
-                    onClick={() => selectSample(sample.id as any)}
+                    onClick={() => selectSample(sample.id)}
                     className={cn(
                       "flex flex-col items-start p-2.5 rounded-xl border text-left transition-colors cursor-pointer",
                       activeSample === sample.id
@@ -422,20 +426,20 @@ function LithophaneStudioPage() {
               </div>
             </div>
 
-            {/* Fine-Tuning Sliders: Contrast & Negative */}
+            {/* Fine-Tuning Sliders: Contrast & Invert */}
             <div className="pt-2 border-t border-border/60 grid sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-medium text-fg flex items-center gap-1">
                     <Sliders className="size-3 text-muted" /> Contrast Relief:
                   </span>
-                  <span className="font-mono text-muted">{contrast.toFixed(1)}x</span>
+                  <span className="font-mono text-muted">{contrast.toFixed(2)}x</span>
                 </div>
                 <input
                   type="range"
                   min="0.8"
                   max="1.5"
-                  step="0.1"
+                  step="0.05"
                   value={contrast}
                   onChange={(e) => setContrast(parseFloat(e.target.value))}
                   className="w-full accent-accent cursor-pointer"
@@ -450,56 +454,54 @@ function LithophaneStudioPage() {
                     onChange={(e) => setInvert(e.target.checked)}
                     className="size-4 rounded border-border accent-accent cursor-pointer"
                   />
-                  <span>Invert Negative (Darken highlights)</span>
+                  <span>Invert Negative</span>
                 </label>
               </div>
             </div>
           </div>
 
-          {/* Educational Product Features Accordion */}
+          {/* Value Badges */}
           <div className="grid sm:grid-cols-3 gap-3">
             <div className="rounded-xl border border-border bg-surface p-3.5 space-y-1">
               <div className="flex items-center gap-1.5 text-accent font-semibold text-xs">
                 <Sparkles className="size-3.5 shrink-0" />
-                <span>0.12mm Ultra-Fine</span>
+                <span>0.12mm Resolution</span>
               </div>
               <p className="text-[11px] text-muted leading-relaxed">
-                Micro-layer carved resolution with 100% solid infill for flawless continuous-tone shadows.
+                Vertical 3D printed with 100% solid infill for smooth photographic continuous-tone shadows.
               </p>
             </div>
 
             <div className="rounded-xl border border-border bg-surface p-3.5 space-y-1">
               <div className="flex items-center gap-1.5 text-accent font-semibold text-xs">
                 <Truck className="size-3.5 shrink-0" />
-                <span>48h Fast Dispatch</span>
+                <span>48h Dispatch</span>
               </div>
               <p className="text-[11px] text-muted leading-relaxed">
-                Made to order and verified in Bengaluru. Safe bubble-armor packaging ensures zero breakage.
+                Custom manufactured in Bengaluru. High-density shock-proof bubble packaging ensures zero transit damage.
               </p>
             </div>
 
             <div className="rounded-xl border border-border bg-surface p-3.5 space-y-1">
               <div className="flex items-center gap-1.5 text-accent font-semibold text-xs">
                 <ShieldCheck className="size-3.5 shrink-0" />
-                <span>Warm USB LED</span>
+                <span>Solid Beech Wood</span>
               </div>
               <p className="text-[11px] text-muted leading-relaxed">
-                Solid beech wood oval base equipped with energy-efficient warm tungsten LED &amp; push switch.
+                Optional LED base is carved from solid natural beech wood with warm 3000K LED and USB switch.
               </p>
             </div>
           </div>
         </div>
 
-        {/* Right Column: Customizer, Package Selection & Checkout (5 cols, sticky) */}
+        {/* Right Column: Configurator & Order Summary (5 cols, sticky) */}
         <div className="space-y-6 lg:col-span-5">
           <div className="rounded-2xl border border-border bg-surface p-5 space-y-6 shadow-xs lg:sticky lg:top-24">
             {/* Step 1: Shape Selection */}
             <div className="space-y-2.5">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-muted">
-                  1. Select Lamp Shape
-                </Label>
-              </div>
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted">
+                1. Select Shape
+              </Label>
               <div className="grid gap-2">
                 {SHAPES.map((s) => (
                   <button
@@ -516,11 +518,10 @@ function LithophaneStudioPage() {
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-semibold text-fg">{s.name}</span>
-                        {s.tag && (
-                          <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-semibold text-accent">
-                            {s.tag}
-                          </span>
-                        )}
+                        {s.id === "heart" && <Heart className="size-3.5 text-rose-500 fill-rose-500" />}
+                        <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-semibold text-accent">
+                          {s.tag}
+                        </span>
                       </div>
                       <p className="text-xs text-muted mt-0.5 pr-2">{s.description}</p>
                     </div>
@@ -537,19 +538,21 @@ function LithophaneStudioPage() {
               </div>
             </div>
 
-            {/* Step 2: Package & Base Selection */}
+            {/* Step 2: Light Source & Stand Option */}
             <div className="space-y-2.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted">
-                2. Choose Display Kit
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted">
+                  2. Choose Setup &amp; Light Source
+                </Label>
+              </div>
               <div className="grid gap-2.5">
-                {PACKAGES.map((p) => (
+                {KITS.map((k) => (
                   <div
-                    key={p.id}
-                    onClick={() => setPkg(p.id)}
+                    key={k.id}
+                    onClick={() => setKit(k.id)}
                     className={cn(
                       "rounded-xl border p-3.5 transition-all cursor-pointer",
-                      pkg === p.id
+                      kit === k.id
                         ? "border-accent bg-accent/5 ring-1 ring-accent"
                         : "border-border bg-surface-2/30 hover:border-accent/40"
                     )}
@@ -557,15 +560,14 @@ function LithophaneStudioPage() {
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-fg">{p.name}</span>
-                          {p.badge && (
-                            <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-semibold text-accent">
-                              {p.badge}
-                            </span>
-                          )}
+                          <span className="text-sm font-semibold text-fg">{k.name}</span>
+                          <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-semibold text-accent">
+                            {k.tag}
+                          </span>
                         </div>
-                        <ul className="mt-1.5 space-y-0.5 text-[11px] text-muted">
-                          {p.includes.map((inc, i) => (
+                        <p className="text-xs text-muted mt-1 leading-relaxed">{k.description}</p>
+                        <ul className="mt-2 space-y-0.5 text-[11px] text-muted">
+                          {k.includes.map((inc, i) => (
                             <li key={i} className="flex items-center gap-1.5">
                               <Check className="size-3 text-accent shrink-0" />
                               <span>{inc}</span>
@@ -574,7 +576,7 @@ function LithophaneStudioPage() {
                         </ul>
                       </div>
                       <span className="text-sm font-bold tabular-nums text-accent shrink-0">
-                        {formatINR(p.price)}
+                        {formatINR(k.price)}
                       </span>
                     </div>
                   </div>
@@ -617,26 +619,74 @@ function LithophaneStudioPage() {
               </div>
             </div>
 
-            {/* Step 4: Optional Base Engraving / Inscription (Free) */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="engraving" className="text-xs font-semibold text-fg">
-                  Custom Base Inscription / Gift Note (Optional)
-                </Label>
-                <span className="text-[10px] text-accent font-semibold">Free</span>
+            {/* Step 4: "Make this a Gift" Option Card */}
+            <div
+              className={cn(
+                "rounded-xl border p-4 transition-all space-y-3",
+                isGift
+                  ? "border-accent/40 bg-accent/5 ring-1 ring-accent/30"
+                  : "border-border bg-surface-2/20"
+              )}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={isGift}
+                    onChange={(e) => setIsGift(e.target.checked)}
+                    className="mt-0.5 size-4 rounded border-border accent-accent cursor-pointer"
+                  />
+                  <div>
+                    <span className="text-xs font-semibold text-fg flex items-center gap-1.5">
+                      <Gift className="size-3.5 text-accent" />
+                      <span>Make this a gift</span>
+                      <span className="text-[10px] text-accent font-medium">+₹149</span>
+                    </span>
+                    <span className="text-[11px] text-muted block mt-0.5">
+                      Packed in a luxury matte black presentation box with ribbon, prices concealed on packing slips, and a custom printed gift message card.
+                    </span>
+                  </div>
+                </label>
               </div>
-              <input
-                id="engraving"
-                type="text"
-                maxLength={45}
-                value={engravingText}
-                onChange={(e) => setEngravingText(e.target.value)}
-                placeholder="e.g. Forever &amp; Always • 14.02.2024"
-                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-xs text-fg placeholder:text-muted focus:border-accent focus:outline-none"
-              />
-              <p className="text-[11px] text-muted">
-                Engraved on the front of the wooden base or written on the gift card.
-              </p>
+
+              {/* Gift Message Inputs when checked */}
+              {isGift && (
+                <div className="space-y-2.5 pt-2 border-t border-border/60 animate-in fade-in duration-150">
+                  <div>
+                    <Label htmlFor="recipient" className="text-xs text-muted block mb-1">
+                      Recipient Name (optional):
+                    </Label>
+                    <input
+                      id="recipient"
+                      type="text"
+                      maxLength={30}
+                      value={recipientName}
+                      onChange={(e) => setRecipientName(e.target.value)}
+                      placeholder="e.g. Priya &amp; Rahul"
+                      className="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-xs text-fg placeholder:text-muted focus:border-accent focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="giftMsg" className="text-xs text-muted block mb-1">
+                      Personal Message for Greeting Card:
+                    </Label>
+                    <textarea
+                      id="giftMsg"
+                      rows={2}
+                      maxLength={180}
+                      value={giftMessage}
+                      onChange={(e) => setGiftMessage(e.target.value)}
+                      placeholder="e.g. Happy 1st Anniversary! Forever and always ❤️"
+                      className="w-full rounded-lg border border-border bg-surface p-2.5 text-xs text-fg placeholder:text-muted focus:border-accent focus:outline-none resize-none"
+                    />
+                    <div className="flex justify-between text-[10px] text-muted mt-0.5">
+                      <span>We will print this onto a metallic foil card.</span>
+                      <span>{giftMessage.length}/180</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Step 5: Quantity & Bulk Tier */}
@@ -672,12 +722,12 @@ function LithophaneStudioPage() {
                 </div>
               ) : (
                 <p className="text-[11px] text-muted">
-                  Order 5+ units for 5% off, 10+ for 10% off, 20+ for 15% off.
+                  Need multiple for event giveaways or family? 5+ get 5% off, 10+ get 10% off.
                 </p>
               )}
             </div>
 
-            {/* Price Summary & Submit */}
+            {/* Price Summary & Submit Button */}
             <div className="pt-3 border-t border-border space-y-3">
               <div className="flex items-baseline justify-between">
                 <div>
@@ -687,7 +737,7 @@ function LithophaneStudioPage() {
                   </span>
                 </div>
                 <span className="text-xs text-muted text-right">
-                  {qty > 1 && `${formatINR(unitPrice)} × ${qty} pcs`}
+                  {qty > 1 && `${formatINR(finalUnitPrice)} × ${qty} pcs`}
                   <br />
                   <span className="text-emerald-500 font-semibold">Free shipping included</span>
                 </span>
@@ -701,7 +751,7 @@ function LithophaneStudioPage() {
                 className="w-full gap-2 font-semibold shadow-md cursor-pointer"
               >
                 <ShoppingBag className="size-4" />
-                Add Customized Lamp to Cart
+                Add to Cart · {formatINR(finalTotal)}
               </Button>
             </div>
           </div>
