@@ -28,6 +28,11 @@ import {
 } from "lucide-react";
 import type { CartItem } from "@/lib/cart-store";
 import type { Address } from "@/lib/orders-store";
+import {
+  generateLithophaneMeshData,
+  buildLithophaneBambu3mf,
+  buildLithophaneStl,
+} from "@/lib/lithophane-export";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -38,340 +43,7 @@ function isLithophaneItem(item: CartItem): boolean {
   return n.includes("lithophane") || notes.includes("shape:") || notes.includes("lithophane");
 }
 
-/**
- * Build a minimal Bambu Studio .3mf project file (ZIP) pre-loaded with
- * lithophane print settings. Bambu Studio reads the plate config XML
- * inside the archive and applies the settings on open.
- *
- * Format ref: https://github.com/bambulab/BambuStudio/wiki/3MF-file-format
- */
-function buildLithophaneBambu3mf(
-  orderNumber: string,
-  item: CartItem
-): Blob {
-  // Detect plate dimensions from item.size e.g. "150 × 100 mm (Standard)"
-  const sizeMatch = item.size?.match(/(\d+)\s*[×x]\s*(\d+)/);
-  const plateW = sizeMatch ? parseInt(sizeMatch[1]) : 150;
-  const plateH = sizeMatch ? parseInt(sizeMatch[2]) : 100;
 
-  // ── 3MF XML: model file ───────────────────────────────────────────────────
-  // A valid .3mf needs at minimum a model XML and a Bambu plate config XML.
-  // We create a flat plate with a placeholder 1mm box so Bambu loads the project;
-  // the actual STL should be imported separately after opening.
-  const modelXml = `<?xml version="1.0" encoding="UTF-8"?>
-<model unit="millimeter" xml:lang="en-US"
-  xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02"
-  xmlns:p="http://schemas.microsoft.com/3dmanufacturing/production/2015/06">
-  <metadata name="Title">Prynth Lithophane – ${orderNumber}</metadata>
-  <metadata name="Designer">Prynth Custom Studio</metadata>
-  <metadata name="Description">Lithophane: ${item.name} – ${item.size ?? ""}</metadata>
-  <resources>
-    <object id="1" type="model">
-      <mesh>
-        <vertices>
-          <vertex x="0" y="0" z="0" />
-          <vertex x="${plateW}" y="0" z="0" />
-          <vertex x="${plateW}" y="${plateH}" z="0" />
-          <vertex x="0" y="${plateH}" z="0" />
-          <vertex x="0" y="0" z="1" />
-          <vertex x="${plateW}" y="0" z="1" />
-          <vertex x="${plateW}" y="${plateH}" z="1" />
-          <vertex x="0" y="${plateH}" z="1" />
-        </vertices>
-        <triangles>
-          <triangle v1="0" v2="1" v3="2" /><triangle v1="0" v2="2" v3="3" />
-          <triangle v1="4" v2="6" v3="5" /><triangle v1="4" v2="7" v3="6" />
-          <triangle v1="0" v2="4" v3="5" /><triangle v1="0" v2="5" v3="1" />
-          <triangle v1="1" v2="5" v3="6" /><triangle v1="1" v2="6" v3="2" />
-          <triangle v1="2" v2="6" v3="7" /><triangle v1="2" v2="7" v3="3" />
-          <triangle v1="3" v2="7" v3="4" /><triangle v1="3" v2="4" v3="0" />
-        </triangles>
-      </mesh>
-    </object>
-  </resources>
-  <build>
-    <item objectid="1" />
-  </build>
-</model>`;
-
-  // ── Bambu Studio plate / process config XML ───────────────────────────────
-  // This is the key part: Bambu reads these settings and pre-fills the slicer.
-  const configXml = `<?xml version="1.0" encoding="UTF-8"?>
-<config>
-  <plate>
-    <metadata key="plater_id" value="1" />
-    <metadata key="plate_name" value="Prynth Lithophane" />
-    <object_config object_id="1">
-      <metadata key="name" value="${item.name}" />
-    </object_config>
-  </plate>
-  <plate_settings>
-    <process>
-      <!-- Lithophane requires ultra-fine layer height for maximum detail -->
-      <metadata key="layer_height" value="0.12" />
-      <metadata key="first_layer_height" value="0.2" />
-      <metadata key="sparse_infill_density" value="20" />
-      <metadata key="sparse_infill_pattern" value="rectilinear" />
-      <metadata key="wall_loops" value="2" />
-      <metadata key="top_shell_layers" value="3" />
-      <metadata key="bottom_shell_layers" value="3" />
-      <!-- No supports needed – lithophane prints flat on the bed -->
-      <metadata key="enable_support" value="0" />
-      <metadata key="brim_type" value="auto" />
-      <metadata key="ironing_type" value="no" />
-      <metadata key="fuzzy_skin" value="none" />
-      <metadata key="print_sequence" value="by_layer" />
-    </process>
-    <filament index="0">
-      <!-- Lithophane White PLA – high transmission, optical grade -->
-      <metadata key="filament_type" value="PLA" />
-      <metadata key="filament_colour" value="#F5F5F0" />
-      <metadata key="filament_vendor" value="Bambu Lab" />
-      <metadata key="nozzle_temperature" value="220" />
-      <metadata key="nozzle_temperature_initial_layer" value="220" />
-      <metadata key="bed_temperature" value="55" />
-      <metadata key="fan_cooling_enabled" value="1" />
-      <metadata key="fan_min_speed" value="100" />
-      <metadata key="fan_max_speed" value="100" />
-    </filament>
-    <machine>
-      <metadata key="machine_name" value="Bambu Lab P1S" />
-      <metadata key="nozzle_diameter" value="0.4" />
-    </machine>
-  </plate_settings>
-</config>`;
-
-  // ── Build ZIP (3MF = ZIP with specific structure) ─────────────────────────
-  // We build a minimal ZIP manually since we can't import jszip in the browser
-  // without a bundler import. We'll use a simple structure that Bambu accepts.
-  // (For a production-quality export, wire in fflate or jszip via npm.)
-  //
-  // Instead we produce a valid .3mf by writing the binary ZIP structure.
-  function makeZip(files: Record<string, string>): Uint8Array {
-    const encoder = new TextEncoder();
-    const entries: { name: Uint8Array; data: Uint8Array; offset: number }[] = [];
-    const parts: Uint8Array[] = [];
-    let offset = 0;
-
-    for (const [name, content] of Object.entries(files)) {
-      const nameBytes = encoder.encode(name);
-      const dataBytes = encoder.encode(content);
-      // Local file header
-      const header = new Uint8Array(30 + nameBytes.length);
-      const dv = new DataView(header.buffer);
-      dv.setUint32(0, 0x04034b50, true); // signature
-      dv.setUint16(4, 20, true); // version
-      dv.setUint16(6, 0, true); // flags
-      dv.setUint16(8, 0, true); // no compression
-      dv.setUint16(10, 0, true); // mod time
-      dv.setUint16(12, 0, true); // mod date
-      dv.setUint32(14, 0, true); // crc-32 (skip)
-      dv.setUint32(18, dataBytes.length, true); // compressed size
-      dv.setUint32(22, dataBytes.length, true); // uncompressed size
-      dv.setUint16(26, nameBytes.length, true); // file name length
-      dv.setUint16(28, 0, true); // extra field length
-      header.set(nameBytes, 30);
-      entries.push({ name: nameBytes, data: dataBytes, offset });
-      parts.push(header, dataBytes);
-      offset += header.length + dataBytes.length;
-    }
-
-    // Central directory
-    const cdParts: Uint8Array[] = [];
-    let cdSize = 0;
-    for (const entry of entries) {
-      const cd = new Uint8Array(46 + entry.name.length);
-      const dv = new DataView(cd.buffer);
-      dv.setUint32(0, 0x02014b50, true);
-      dv.setUint16(4, 20, true);
-      dv.setUint16(6, 20, true);
-      dv.setUint16(8, 0, true);
-      dv.setUint16(10, 0, true);
-      dv.setUint16(12, 0, true);
-      dv.setUint16(14, 0, true);
-      dv.setUint32(16, 0, true);
-      dv.setUint32(20, entry.data.length, true);
-      dv.setUint32(24, entry.data.length, true);
-      dv.setUint16(28, entry.name.length, true);
-      dv.setUint16(30, 0, true);
-      dv.setUint16(32, 0, true);
-      dv.setUint16(34, 0, true);
-      dv.setUint16(36, 0, true);
-      dv.setUint32(38, 0, true);
-      dv.setUint32(42, entry.offset, true);
-      cd.set(entry.name, 46);
-      cdParts.push(cd);
-      cdSize += cd.length;
-    }
-
-    // End of central directory
-    const eocd = new Uint8Array(22);
-    const eocdDv = new DataView(eocd.buffer);
-    eocdDv.setUint32(0, 0x06054b50, true);
-    eocdDv.setUint16(4, 0, true);
-    eocdDv.setUint16(6, 0, true);
-    eocdDv.setUint16(8, entries.length, true);
-    eocdDv.setUint16(10, entries.length, true);
-    eocdDv.setUint32(12, cdSize, true);
-    eocdDv.setUint32(16, offset, true);
-    eocdDv.setUint16(20, 0, true);
-
-    const allParts = [...parts, ...cdParts, eocd];
-    const total = allParts.reduce((s, p) => s + p.length, 0);
-    const out = new Uint8Array(total);
-    let pos = 0;
-    for (const p of allParts) { out.set(p, pos); pos += p.length; }
-    return out;
-  }
-
-  const zipBytes = makeZip({
-    "[Content_Types].xml": `<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml" /><Default Extension="xml" ContentType="application/xml" /><Override PartName="/3D/3dmodel.model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml" /></Types>`,
-    "_rels/.rels": `<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rel-1" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel" Target="/3D/3dmodel.model" /></Relationships>`,
-    "3D/3dmodel.model": modelXml,
-    "Metadata/Slic3r_PE.config": configXml,
-    "Metadata/plate_1.config": configXml,
-  });
-
-  return new Blob([zipBytes], { type: "model/3mf" });
-}
-
-/**
- * Generate a binary STL from the lithophane reference photo.
- * Samples the image luminance on a grid and displaces vertices by height.
- * Returns null if the photo is unavailable (stripped from DB).
- */
-async function generateLithophaneStl(
-  photo: string,
-  widthMm: number,
-  heightMm: number,
-  shape: "flat" | "heart"
-): Promise<ArrayBuffer | null> {
-  if (!photo || photo === "[photo-stripped]" || photo === "[photo-stripped-cleanup]") {
-    return null;
-  }
-
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      const RES = 150; // vertices per axis
-      const MAX_DEPTH = 3.5; // mm
-      const BASE_THICK = 0.8; // mm
-
-      const canvas = document.createElement("canvas");
-      canvas.width = RES;
-      canvas.height = RES;
-      const ctx = canvas.getContext("2d")!;
-      ctx.drawImage(img, 0, 0, RES, RES);
-      const imgData = ctx.getImageData(0, 0, RES, RES);
-      const { data } = imgData;
-
-      // Heart boundary (matching lithophane-viewer.tsx)
-      function isInsideHeart(u: number, v: number): boolean {
-        const nx = (u - 0.5) * 2.4;
-        const ny = (0.5 - v) * 2.4 + 0.28;
-        const x2 = nx * nx; const y2 = ny * ny;
-        const term = x2 + y2 - 1.0;
-        return term * term * term - x2 * (ny * ny * ny) <= 0.0;
-      }
-
-      const triangles: number[] = [];
-
-      function addTri(ax: number, ay: number, az: number, bx: number, by: number, bz: number, cx: number, cy: number, cz: number) {
-        const ux = bx - ax, uy = by - ay, uz = bz - az;
-        const vx = cx - ax, vy = cy - ay, vz = cz - az;
-        const nx2 = uy * vz - uz * vy, ny2 = uz * vx - ux * vz, nz2 = ux * vy - uy * vx;
-        triangles.push(nx2, ny2, nz2, ax, ay, az, bx, by, bz, cx, cy, cz);
-      }
-
-      type V = [number, number, number];
-      const verts: (V | null)[][] = [];
-
-      for (let row = 0; row <= RES; row++) {
-        verts[row] = [];
-        for (let col = 0; col <= RES; col++) {
-          const u = col / RES;
-          const v = row / RES;
-          if (shape === "heart" && !isInsideHeart(u, v)) {
-            verts[row][col] = null;
-            continue;
-          }
-          const px = Math.min(RES - 1, Math.round(u * (RES - 1)));
-          const py = Math.min(RES - 1, Math.round(v * (RES - 1)));
-          const idx = (py * RES + px) * 4;
-          const lum = (0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2]) / 255;
-          const z = BASE_THICK + (1 - lum) * MAX_DEPTH;
-          const x = u * widthMm;
-          const y = (1 - v) * heightMm;
-          verts[row][col] = [x, y, z];
-        }
-      }
-
-      // Front face
-      for (let row = 0; row < RES; row++) {
-        for (let col = 0; col < RES; col++) {
-          const tl = verts[row][col], tr = verts[row][col + 1];
-          const bl = verts[row + 1][col], br = verts[row + 1][col + 1];
-          if (tl && tr && bl && br) {
-            addTri(tl[0], tl[1], tl[2], tr[0], tr[1], tr[2], bl[0], bl[1], bl[2]);
-            addTri(tr[0], tr[1], tr[2], br[0], br[1], br[2], bl[0], bl[1], bl[2]);
-          } else if (tl && tr && bl) addTri(tl[0], tl[1], tl[2], tr[0], tr[1], tr[2], bl[0], bl[1], bl[2]);
-          else if (tr && br && bl) addTri(tr[0], tr[1], tr[2], br[0], br[1], br[2], bl[0], bl[1], bl[2]);
-        }
-      }
-
-      // Back face (flat base at z=0)
-      for (let row = 0; row < RES; row++) {
-        for (let col = 0; col < RES; col++) {
-          const u0 = col / RES, u1 = (col + 1) / RES;
-          const v0 = row / RES, v1 = (row + 1) / RES;
-          if (shape === "heart") {
-            if (!isInsideHeart((u0 + u1) / 2, (v0 + v1) / 2)) continue;
-          }
-          const x0 = u0 * widthMm, x1 = u1 * widthMm;
-          const y0 = (1 - v0) * heightMm, y1 = (1 - v1) * heightMm;
-          addTri(x0, y1, 0, x1, y0, 0, x0, y0, 0);
-          addTri(x0, y1, 0, x1, y1, 0, x1, y0, 0);
-        }
-      }
-
-      // Binary STL: 80-byte header + 4-byte tri count + 50 bytes per triangle
-      const triCount = triangles.length / 12;
-      const buffer = new ArrayBuffer(84 + triCount * 50);
-      const view = new DataView(buffer);
-      // Header
-      const headerText = `Prynth Lithophane STL – ${widthMm}x${heightMm}mm`;
-      for (let i = 0; i < 80; i++) view.setUint8(i, i < headerText.length ? headerText.charCodeAt(i) : 0);
-      view.setUint32(80, triCount, true);
-
-      let offset = 84;
-      for (let t = 0; t < triCount; t++) {
-        const base = t * 12;
-        // Normal
-        view.setFloat32(offset, triangles[base], true); offset += 4;
-        view.setFloat32(offset, triangles[base + 1], true); offset += 4;
-        view.setFloat32(offset, triangles[base + 2], true); offset += 4;
-        // Vertex 1
-        view.setFloat32(offset, triangles[base + 3], true); offset += 4;
-        view.setFloat32(offset, triangles[base + 4], true); offset += 4;
-        view.setFloat32(offset, triangles[base + 5], true); offset += 4;
-        // Vertex 2
-        view.setFloat32(offset, triangles[base + 6], true); offset += 4;
-        view.setFloat32(offset, triangles[base + 7], true); offset += 4;
-        view.setFloat32(offset, triangles[base + 8], true); offset += 4;
-        // Vertex 3
-        view.setFloat32(offset, triangles[base + 9], true); offset += 4;
-        view.setFloat32(offset, triangles[base + 10], true); offset += 4;
-        view.setFloat32(offset, triangles[base + 11], true); offset += 4;
-        // Attribute byte count
-        view.setUint16(offset, 0, true); offset += 2;
-      }
-      resolve(buffer);
-    };
-    img.onerror = () => resolve(null);
-    img.src = photo;
-  });
-}
 
 export function OrderDetailsDialog({
   order,
@@ -464,16 +136,45 @@ export function OrderDetailsDialog({
     toast.success("Launching Orca Slicer…");
   }
 
-  /** Download a .3mf Bambu Studio project pre-loaded with lithophane settings */
-  function handleDownloadBambu3mf(item: CartItem) {
-    const blob = buildLithophaneBambu3mf(order.order_number, item);
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `prynth-lithophane-${order.order_number}.3mf`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success("Bambu Studio .3mf downloaded — open it in Bambu Studio and import your STL.");
+  /** Download a .3mf Bambu Studio project containing the real 3D lithophane model & print settings */
+  async function handleDownloadBambu3mf(item: CartItem) {
+    const photos = item.custom?.referencePhotos ?? [];
+    const photo = photos[0] ?? "";
+
+    if (!photo || photo.startsWith("[")) {
+      toast.error("Customer photo unavailable for this older order (it was cleaned up earlier to save space). Please re-open the lithophane page with the original photo to generate the 3MF.");
+      return;
+    }
+
+    const sizeMatch = item.size?.match(/(\d+)\s*[×x]\s*(\d+)/);
+    const wMm = sizeMatch ? parseInt(sizeMatch[1]) : 150;
+    const hMm = sizeMatch ? parseInt(sizeMatch[2]) : 100;
+    const notesLower = (item.custom?.notes ?? "").toLowerCase();
+    const shape: "flat" | "heart" = notesLower.includes("heart") ? "heart" : "flat";
+
+    const toastId = toast.loading("Generating full 3D model and Bambu Studio .3mf project…");
+    try {
+      const mesh = await generateLithophaneMeshData(photo, wMm, hMm, shape);
+      if (!mesh) {
+        toast.dismiss(toastId);
+        toast.error("Could not generate 3D model from photo.");
+        return;
+      }
+
+      const blob = buildLithophaneBambu3mf(order.order_number, item.name, mesh);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `prynth-lithophane-${order.order_number}.3mf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.dismiss(toastId);
+      toast.success("Bambu Studio .3mf downloaded with full 3D model & 0.12mm lithophane profile!");
+    } catch (err) {
+      toast.dismiss(toastId);
+      toast.error("Failed to generate .3mf file.");
+      console.error(err);
+    }
   }
 
   /** Download the lithophane as a binary STL generated from the reference photo */
@@ -482,7 +183,7 @@ export function OrderDetailsDialog({
     const photo = photos[0] ?? "";
 
     if (!photo || photo.startsWith("[")) {
-      toast.error("The reference photo for this order was stripped from the database to save space. Re-open the lithophane page with the original photo to download the STL.");
+      toast.error("Customer photo unavailable for this older order (it was cleaned up earlier to save space). Please re-open the lithophane page with the original photo to generate the STL.");
       return;
     }
 
@@ -495,12 +196,13 @@ export function OrderDetailsDialog({
 
     const toastId = toast.loading("Generating STL from photo…");
     try {
-      const stlBuffer = await generateLithophaneStl(photo, wMm, hMm, shape);
-      if (!stlBuffer) {
+      const mesh = await generateLithophaneMeshData(photo, wMm, hMm, shape);
+      if (!mesh) {
         toast.dismiss(toastId);
         toast.error("Could not generate STL — photo unavailable.");
         return;
       }
+      const stlBuffer = buildLithophaneStl(wMm, hMm, mesh);
       const blob = new Blob([stlBuffer], { type: "application/octet-stream" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
