@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, ContactShadows } from "@react-three/drei";
 import * as THREE from "three";
 import {
@@ -481,84 +481,6 @@ const lithophaneShader = {
   `,
 };
 
-// 100% 3D-Printed Desktop Display Stand (Printed in Matte Charcoal PLA)
-function PrintedDesktopStand({
-  widthMm,
-  heightMm,
-  shape,
-}: {
-  widthMm: number;
-  heightMm: number;
-  shape: LithophaneShape;
-}) {
-  const standW = Math.max(widthMm * 0.82, 84);
-  const standDepth = 48;
-  const standH = 12;
-
-  if (shape === "heart") {
-    // Custom sculpted heart cradle stand with angled V-notch and dual support brackets
-    return (
-      <group position={[0, -heightMm * 0.44, 0]}>
-        {/* Main weighted base pedestal */}
-        <mesh receiveShadow castShadow position={[0, -standH / 2, 6]}>
-          <boxGeometry args={[standW, standH, standDepth]} />
-          <meshStandardMaterial color="#1e2229" roughness={0.7} metalness={0.08} />
-        </mesh>
-
-        {/* Center V-cradle where the lower point of the heart rests */}
-        <mesh position={[0, 2, 6]}>
-          <boxGeometry args={[26, 8, 12]} />
-          <meshStandardMaterial color="#16191f" roughness={0.8} />
-        </mesh>
-
-        {/* Left angled support wing */}
-        <mesh position={[-standW * 0.28, 4, 6]} rotation={[0, 0, 0.15]}>
-          <boxGeometry args={[14, 12, 10]} />
-          <meshStandardMaterial color="#222730" roughness={0.75} />
-        </mesh>
-
-        {/* Right angled support wing */}
-        <mesh position={[standW * 0.28, 4, 6]} rotation={[0, 0, -0.15]}>
-          <boxGeometry args={[14, 12, 10]} />
-          <meshStandardMaterial color="#222730" roughness={0.75} />
-        </mesh>
-
-        {/* Chamfered front bevel */}
-        <mesh position={[0, -standH / 4, standDepth / 2 + 3]} rotation={[0.4, 0, 0]}>
-          <boxGeometry args={[standW, 6, 8]} />
-          <meshStandardMaterial color="#262b33" roughness={0.75} />
-        </mesh>
-      </group>
-    );
-  }
-
-  return (
-    <group position={[0, -heightMm * 0.48, 0]}>
-      {/* Sleek slotted desktop pedestal stand */}
-      <mesh receiveShadow castShadow position={[0, -standH / 2, 6]}>
-        <boxGeometry args={[standW, standH, standDepth]} />
-        <meshStandardMaterial
-          color="#1e2229"
-          roughness={0.7}
-          metalness={0.08}
-        />
-      </mesh>
-
-      {/* Chamfered front bevel */}
-      <mesh position={[0, -standH / 4, standDepth / 2 + 3]} rotation={[0.4, 0, 0]}>
-        <boxGeometry args={[standW, 6, 8]} />
-        <meshStandardMaterial color="#262b33" roughness={0.75} />
-      </mesh>
-
-      {/* Recessed slot where the lithophane rests */}
-      <mesh position={[0, -1, 3]}>
-        <boxGeometry args={[widthMm + 4, 6, 7]} />
-        <meshStandardMaterial color="#12151a" roughness={0.9} />
-      </mesh>
-    </group>
-  );
-}
-
 // Scene Content
 function LithophaneScene({
   imgData,
@@ -584,6 +506,10 @@ function LithophaneScene({
   imgNaturalDim: { width: number; height: number } | null;
 }) {
   const meshRef = useRef<THREE.Group>(null);
+  // Direct ref to the ShaderMaterial so we can update uniforms inside useFrame
+  const materialRef = useRef<THREE.ShaderMaterial>(null);
+  // Smooth-lerp light intensity so the backlight fades in/out
+  const lightIntensity = useRef(backlightOn ? 1.0 : 0.0);
 
   const uvScale = useMemo(() => {
     if (fitMode === "stretch" || !imgNaturalDim || imgNaturalDim.width <= 0 || imgNaturalDim.height <= 0) {
@@ -592,10 +518,8 @@ function LithophaneScene({
     const plateAspect = sizeMm.width / sizeMm.height;
     const imgAspect = imgNaturalDim.width / imgNaturalDim.height;
     if (plateAspect > imgAspect) {
-      // Plate is wider than photo -> fit width, crop height
       return new THREE.Vector2(1.0, imgAspect / plateAspect);
     } else {
-      // Plate is taller than photo -> fit height, crop width
       return new THREE.Vector2(plateAspect / imgAspect, 1.0);
     }
   }, [fitMode, sizeMm.width, sizeMm.height, imgNaturalDim]);
@@ -620,41 +544,51 @@ function LithophaneScene({
     };
   }, [geometry]);
 
-  // Lithophane Shader Material Uniforms
-  const shaderUniforms = useMemo(() => {
-    return {
-      uTexture: { value: photoTexture },
-      uLightIntensity: { value: backlightOn ? 1.0 : 0.0 },
-      uLightColor: { value: new THREE.Color("#fff2d6") },
-      uPlasticColor: { value: new THREE.Color("#f6f5ef") },
-      uContrast: { value: contrast ?? 1.15 },
-      uInvert: { value: invert ? 1.0 : 0.0 },
-      uDimensionsMm: { value: new THREE.Vector2(sizeMm.width, sizeMm.height) },
-      uIsHeart: { value: shape === "heart" ? 1.0 : 0.0 },
-      uUvScale: { value: uvScale },
-    };
-  }, [photoTexture, sizeMm.width, sizeMm.height, shape, uvScale]);
+  // Stable uniforms object — created once, updated imperatively via useFrame
+  const shaderUniforms = useMemo(() => ({
+    uTexture: { value: photoTexture },
+    uLightIntensity: { value: backlightOn ? 1.0 : 0.0 },
+    uLightColor: { value: new THREE.Color("#fff2d6") },
+    uPlasticColor: { value: new THREE.Color("#fbf9f4") },
+    uContrast: { value: contrast ?? 1.15 },
+    uInvert: { value: invert ? 1.0 : 0.0 },
+    uDimensionsMm: { value: new THREE.Vector2(sizeMm.width, sizeMm.height) },
+    uIsHeart: { value: shape === "heart" ? 1.0 : 0.0 },
+    uUvScale: { value: uvScale },
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), []); // intentionally created once; all updates go through useFrame
 
-  // Update animated uniforms dynamically
-  useEffect(() => {
-    shaderUniforms.uLightIntensity.value = backlightOn ? 1.0 : 0.0;
-    shaderUniforms.uContrast.value = contrast ?? 1.15;
-    shaderUniforms.uInvert.value = invert ? 1.0 : 0.0;
-    shaderUniforms.uTexture.value = photoTexture;
-    shaderUniforms.uDimensionsMm.value.set(sizeMm.width, sizeMm.height);
-    shaderUniforms.uIsHeart.value = shape === "heart" ? 1.0 : 0.0;
-    shaderUniforms.uUvScale.value = uvScale;
-  }, [backlightOn, contrast, invert, photoTexture, sizeMm, shape, shaderUniforms, uvScale]);
+  // useFrame runs inside the R3F render loop — the correct place to push
+  // uniform updates. useEffect cannot invalidate the canvas.
+  useFrame((_, delta) => {
+    const mat = materialRef.current;
+    if (!mat) return;
 
-  const yOffset = sizeMm.height / 2;
+    // Smooth cross-fade between relief (0) and backlit (1)
+    const target = backlightOn ? 1.0 : 0.0;
+    lightIntensity.current = THREE.MathUtils.lerp(
+      lightIntensity.current,
+      target,
+      Math.min(1.0, delta * 5.0) // ~200ms blend
+    );
+
+    mat.uniforms.uLightIntensity.value = lightIntensity.current;
+    mat.uniforms.uContrast.value = contrast ?? 1.15;
+    mat.uniforms.uInvert.value = invert ? 1.0 : 0.0;
+    mat.uniforms.uTexture.value = photoTexture;
+    mat.uniforms.uDimensionsMm.value.set(sizeMm.width, sizeMm.height);
+    mat.uniforms.uIsHeart.value = shape === "heart" ? 1.0 : 0.0;
+    mat.uniforms.uUvScale.value = uvScale;
+  });
 
   return (
-    <group position={[0, -sizeMm.height * 0.45, 0]}>
-      {/* The Lithophane Physical 3D Model with custom translucent shader */}
-      <group ref={meshRef} position={[0, yOffset, 0]}>
+    <group position={[0, 0, 0]}>
+      {/* The Lithophane Physical 3D Model with custom translucent shader (Cleanly floating, no stand) */}
+      <group ref={meshRef} position={[0, 0, 0]}>
         {geometry && (
           <mesh geometry={geometry} castShadow receiveShadow>
             <shaderMaterial
+              ref={materialRef}
               vertexShader={lithophaneShader.vertexShader}
               fragmentShader={lithophaneShader.fragmentShader}
               uniforms={shaderUniforms}
@@ -664,12 +598,9 @@ function LithophaneScene({
         )}
       </group>
 
-      {/* 100% 3D-Printed Desktop Display Stand included with every print */}
-      <PrintedDesktopStand widthMm={sizeMm.width} heightMm={sizeMm.height} shape={shape} />
-
       {/* Real Backlight Source placed physically BEHIND the lithophane (Window sunlight / lamp) */}
       {backlightOn && (
-        <group position={[0, yOffset, -40]}>
+        <group position={[0, 0, -40]}>
           {/* Visible warm light source (window / lamp beacon) when viewing from behind */}
           <mesh>
             <sphereGeometry args={[5, 16, 16]} />
@@ -689,12 +620,12 @@ function LithophaneScene({
         </group>
       )}
 
-      {/* Ground Contact Shadow */}
+      {/* Subtle Ground Contact Shadow */}
       <ContactShadows
-        position={[0, -12, 0]}
-        opacity={0.6}
+        position={[0, -sizeMm.height * 0.55, 0]}
+        opacity={0.35}
         scale={Math.max(sizeMm.width * 2, 260)}
-        blur={1.8}
+        blur={2.0}
         far={100}
       />
     </group>
@@ -826,7 +757,7 @@ export function LithophaneViewer({
         <Canvas
           shadows
           camera={{
-            position: [0, sizeMm.height * 0.08, cameraDist],
+            position: [0, 0, cameraDist],
             fov: 38,
             near: 1,
             far: 2000,

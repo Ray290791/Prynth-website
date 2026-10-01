@@ -234,7 +234,7 @@ function LithophaneStudioPage() {
       color: "Optical Jade White",
       material: "Lithophane White PLA (0.12mm)",
       dimensions: `${currentDims.width} × ${currentDims.height} mm (${shapeLabel})`,
-      notes: `Shape: ${shapeLabel} · Fit: ${fitMode === "dynamic" ? "Dynamic Scale (Preserve Ratio)" : "Strict Frame (Stretch to Fit)"} · Includes Free 3D-Printed Desktop Stand${giftNotes}`,
+      notes: `Shape: ${shapeLabel} · Fit: ${fitMode === "dynamic" ? "Dynamic Scale (Preserve Ratio)" : "Strict Frame (Stretch to Fit)"}${giftNotes}`,
       referencePhotos: [photoUrl],
     };
 
@@ -274,7 +274,7 @@ function LithophaneStudioPage() {
           Turn Your Memories into a Sunlit 3D Lithophane
         </h1>
         <p className="text-sm sm:text-base text-muted leading-relaxed">
-          Custom carved in optical Jade White PLA. Place it on your window sill where sunlight naturally streams through from behind, revealing your photo in rich continuous-tone detail. Every piece includes a free matching 3D-printed display stand.
+          Custom carved in optical Jade White PLA. Place it on your window sill where sunlight streams through from behind, revealing your photo in rich continuous-tone relief detail — no electronics, no batteries, just pure light and polymer.
         </p>
       </div>
 
@@ -299,8 +299,8 @@ function LithophaneStudioPage() {
                 <RotateCw className="size-3 text-accent" />
                 Drag to rotate 360° · Scroll to inspect 3D carved relief texture
               </span>
-              <span className="text-fg font-medium">
-                Shown with Included 3D-Printed Desktop Display Stand
+              <span className="text-muted">
+                ☀️ Place on a window sill — sunlight lights it from behind
               </span>
             </div>
           </div>
@@ -559,10 +559,10 @@ function LithophaneStudioPage() {
             <div className="rounded-xl border border-border bg-surface p-3.5 space-y-1">
               <div className="flex items-center gap-1.5 text-accent font-semibold text-xs">
                 <ShieldCheck className="size-3.5 shrink-0" />
-                <span>Free Stand Included</span>
+                <span>Lifetime Durability</span>
               </div>
               <p className="text-[11px] text-muted leading-relaxed">
-                Every print includes a custom-angled 3D-printed pedestal stand in Matte Charcoal PLA at no extra cost.
+                100% in-house 3D printed in food-safe optical PLA. Zero electronics, zero batteries — pure light and polymer that lasts decades.
               </p>
             </div>
           </div>
@@ -703,7 +703,7 @@ function LithophaneStudioPage() {
               </div>
               <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-[11px] text-emerald-400 font-medium flex items-center gap-2">
                 <Check className="size-3.5 text-emerald-400 shrink-0" />
-                <span>Includes free 3D-printed desktop display stand with every size!</span>
+                <span>Free shipping included with every order · 100% in-house printed</span>
               </div>
             </div>
 
