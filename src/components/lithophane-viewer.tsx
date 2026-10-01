@@ -8,7 +8,7 @@ import {
   RotateCw,
   Camera,
   Layers,
-  Lightbulb,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -22,7 +22,6 @@ export interface LithophaneViewerProps {
   onToggleBacklight: () => void;
   contrast?: number; // 0.8 to 1.6
   invert?: boolean;
-  hasWoodenBase?: boolean;
   className?: string;
 }
 
@@ -87,9 +86,6 @@ function buildLithophaneGeometry(
       lum = Math.pow(Math.max(0, Math.min(1, lum)), contrast);
       if (invert) lum = 1.0 - lum;
 
-      // In authentic 3D printed lithophanes:
-      // Dark areas = THICK polymer (up to 3.4mm)
-      // Bright areas = THIN polymer (down to 0.8mm)
       let t = minT + (1.0 - lum) * (maxT - minT);
 
       // Heart boundary smooth masking
@@ -207,8 +203,8 @@ function buildLithophaneGeometry(
   return geometry;
 }
 
-// Custom True-Lithophane Shader Material
-// Models physical 0.12mm 3D-printed White PLA relief with internal warm backlight transmission
+// True-Lithophane Physics Shader Material
+// Simulates light transmission through translucent white PLA polymer from a rear light source
 const lithophaneShader = {
   vertexShader: `
     varying vec2 vUv;
@@ -282,20 +278,17 @@ const lithophaneShader = {
       float spec = pow(max(dot(surfaceNormal, halfDir), 0.0), 28.0) * 0.22;
 
       // Authentic unlit 3D carved white plastic appearance
-      // Highlights & micro-shadows along the raised physical relief
       vec3 unlitPlastic = uPlasticColor * (0.38 + 0.62 * NdotL) + vec3(spec);
 
       // 2. Physical Backlight Transmission:
-      // In real lithophanes, light shines from behind through the translucent polymer:
-      // Thin areas (high lum) allow light to pass brightly with warm tungsten glow
-      // Thick areas (low lum) absorb light, showing as deep rich shadows
+      // Sunlight or lamp shining directly from behind through the translucent polymer
       float transmission = 0.06 + 0.94 * pow(lum, 1.25);
       vec3 backlitGlow = uLightColor * transmission;
 
-      // Backlit state combines the warm internal transmission with subtle surface specular reflection
+      // Backlit state combines the warm natural internal transmission with subtle surface specular reflection
       vec3 litPlastic = unlitPlastic * 0.22 + backlitGlow * 1.1 + vec3(spec * 0.4);
 
-      // Smooth transition between Backlight OFF (Sculptural PLA) and Backlight ON (Warm Lamp Glow)
+      // Smooth transition between Backlight OFF (Sculptural PLA) and Backlight ON (Sunlit Window / Lamp Glow)
       vec3 finalColor = mix(unlitPlastic, litPlastic, uLightIntensity);
 
       gl_FragColor = vec4(finalColor, 1.0);
@@ -303,88 +296,40 @@ const lithophaneShader = {
   `,
 };
 
-// Solid Beech Wood Night Lamp Oval Base with Recessed Slot
-function WoodenBase({
-  widthMm,
-  depthMm = 65,
-  heightMm = 20,
-  backlightOn,
-}: {
-  widthMm: number;
-  depthMm?: number;
-  heightMm?: number;
-  backlightOn: boolean;
-}) {
-  const baseW = Math.max(widthMm * 1.05, 130);
-
-  return (
-    <group position={[0, -heightMm / 2, 0]}>
-      {/* Sleek rounded beech wood base body */}
-      <mesh receiveShadow castShadow position={[0, 0, 0]}>
-        <boxGeometry args={[baseW, heightMm, depthMm]} />
-        <meshStandardMaterial
-          color="#9b6e45"
-          roughness={0.65}
-          metalness={0.03}
-        />
-      </mesh>
-
-      {/* Recessed slot where the lithophane sits */}
-      <mesh position={[0, heightMm / 2 - 2, 0]}>
-        <boxGeometry args={[widthMm + 6, 4.5, 9]} />
-        <meshStandardMaterial color="#2d1c10" roughness={0.9} />
-      </mesh>
-
-      {/* Internal warm LED light strip nestled inside slot */}
-      <mesh position={[0, heightMm / 2 - 1, 0]}>
-        <boxGeometry args={[widthMm, 1.5, 4]} />
-        <meshStandardMaterial
-          color={backlightOn ? "#fff5dc" : "#221a14"}
-          emissive={backlightOn ? "#ffc66d" : "#000000"}
-          emissiveIntensity={backlightOn ? 2.5 : 0}
-          roughness={0.2}
-        />
-      </mesh>
-
-      {/* Rear USB braided cable relief */}
-      <mesh position={[0, -heightMm / 4, -depthMm / 2 - 3]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[2, 2, 8, 16]} />
-        <meshStandardMaterial color="#1a1a1a" roughness={0.9} />
-      </mesh>
-    </group>
-  );
-}
-
-// Minimalist Tabletop Easel Stand for "Printed Lithophane Only"
-function TabletopEaselStand({
+// 100% 3D-Printed Desktop Display Stand (Printed in Matte Charcoal PLA)
+function PrintedDesktopStand({
   widthMm,
   heightMm,
 }: {
   widthMm: number;
   heightMm: number;
 }) {
-  const legW = 12;
-  const legH = heightMm * 0.55;
-  const spread = Math.min(widthMm * 0.65, 80);
+  const standW = Math.max(widthMm * 0.85, 90);
+  const standDepth = 48;
+  const standH = 12;
 
   return (
-    <group position={[0, 0, -8]}>
-      {/* Left easel support foot */}
-      <mesh position={[-spread / 2, -heightMm * 0.42, -10]} rotation={[0.25, 0, 0]}>
-        <boxGeometry args={[legW, legH, 6]} />
-        <meshStandardMaterial color="#22262d" roughness={0.7} />
+    <group position={[0, -heightMm * 0.48, 0]}>
+      {/* Sleek slotted desktop pedestal stand */}
+      <mesh receiveShadow castShadow position={[0, -standH / 2, 6]}>
+        <boxGeometry args={[standW, standH, standDepth]} />
+        <meshStandardMaterial
+          color="#1e2229"
+          roughness={0.7}
+          metalness={0.08}
+        />
       </mesh>
 
-      {/* Right easel support foot */}
-      <mesh position={[spread / 2, -heightMm * 0.42, -10]} rotation={[0.25, 0, 0]}>
-        <boxGeometry args={[legW, legH, 6]} />
-        <meshStandardMaterial color="#22262d" roughness={0.7} />
+      {/* Chamfered front bevel */}
+      <mesh position={[0, -standH / 4, standDepth / 2 + 3]} rotation={[0.4, 0, 0]}>
+        <boxGeometry args={[standW, 6, 8]} />
+        <meshStandardMaterial color="#262b33" roughness={0.75} />
       </mesh>
 
-      {/* Cross brace */}
-      <mesh position={[0, -heightMm * 0.46, -6]}>
-        <boxGeometry args={[spread + 10, 6, 6]} />
-        <meshStandardMaterial color="#22262d" roughness={0.7} />
+      {/* Recessed slot where the lithophane rests */}
+      <mesh position={[0, -1, 3]}>
+        <boxGeometry args={[widthMm + 4, 6, 7]} />
+        <meshStandardMaterial color="#12151a" roughness={0.9} />
       </mesh>
     </group>
   );
@@ -399,7 +344,6 @@ function LithophaneScene({
   backlightOn,
   contrast,
   invert,
-  hasWoodenBase,
   autoRotate,
 }: {
   imgData: ImageData | null;
@@ -409,7 +353,6 @@ function LithophaneScene({
   backlightOn: boolean;
   contrast?: number;
   invert?: boolean;
-  hasWoodenBase?: boolean;
   autoRotate: boolean;
 }) {
   const meshRef = useRef<THREE.Group>(null);
@@ -437,7 +380,7 @@ function LithophaneScene({
     return {
       uTexture: { value: photoTexture },
       uLightIntensity: { value: backlightOn ? 1.0 : 0.0 },
-      uLightColor: { value: new THREE.Color("#ffe0a4") },
+      uLightColor: { value: new THREE.Color("#fff2d6") },
       uPlasticColor: { value: new THREE.Color("#f6f5ef") },
       uContrast: { value: contrast ?? 1.15 },
       uInvert: { value: invert ? 1.0 : 0.0 },
@@ -456,11 +399,10 @@ function LithophaneScene({
     shaderUniforms.uIsHeart.value = shape === "heart" ? 1.0 : 0.0;
   }, [backlightOn, contrast, invert, photoTexture, sizeMm, shape, shaderUniforms]);
 
-  // Center lithophane seated into the wooden base slot or easel
-  const yOffset = sizeMm.height / 2 - (hasWoodenBase ? 4 : 0);
+  const yOffset = sizeMm.height / 2;
 
   return (
-    <group position={[0, -sizeMm.height * 0.45 + (hasWoodenBase ? 16 : 6), 0]}>
+    <group position={[0, -sizeMm.height * 0.45, 0]}>
       {/* The Lithophane Physical 3D Model with custom translucent shader */}
       <group ref={meshRef} position={[0, yOffset, 0]}>
         {geometry && (
@@ -475,39 +417,35 @@ function LithophaneScene({
         )}
       </group>
 
-      {/* Display Base: Either Beech Wood LED Base OR Tabletop Easel Stand */}
-      {hasWoodenBase ? (
-        <WoodenBase widthMm={sizeMm.width} backlightOn={backlightOn} />
-      ) : (
-        <TabletopEaselStand widthMm={sizeMm.width} heightMm={sizeMm.height} />
-      )}
+      {/* 100% 3D-Printed Desktop Display Stand included with every print */}
+      <PrintedDesktopStand widthMm={sizeMm.width} heightMm={sizeMm.height} />
 
-      {/* Real Backlight Source placed physically BEHIND the lithophane plate */}
+      {/* Real Backlight Source placed physically BEHIND the lithophane (Window sunlight / lamp) */}
       {backlightOn && (
-        <group position={[0, yOffset, -30]}>
-          {/* Glowing warm LED light bulb mesh visible when camera looks behind */}
+        <group position={[0, yOffset, -40]}>
+          {/* Visible warm light source (window / lamp beacon) when viewing from behind */}
           <mesh>
-            <sphereGeometry args={[4, 16, 16]} />
-            <meshBasicMaterial color="#ffe6b0" />
+            <sphereGeometry args={[5, 16, 16]} />
+            <meshBasicMaterial color="#fff3d6" />
           </mesh>
           <pointLight
             intensity={2800}
-            distance={260}
-            color="#ffe2a4"
+            distance={280}
+            color="#fff0d0"
           />
           <pointLight
-            position={[0, -15, 10]}
-            intensity={1400}
-            distance={160}
-            color="#ffd07b"
+            position={[0, -10, 15]}
+            intensity={1200}
+            distance={180}
+            color="#ffe2a4"
           />
         </group>
       )}
 
       {/* Ground Contact Shadow */}
       <ContactShadows
-        position={[0, hasWoodenBase ? -20 : -4, 0]}
-        opacity={0.65}
+        position={[0, -12, 0]}
+        opacity={0.6}
         scale={Math.max(sizeMm.width * 2, 260)}
         blur={1.8}
         far={100}
@@ -524,7 +462,6 @@ export function LithophaneViewer({
   onToggleBacklight,
   contrast = 1.15,
   invert = false,
-  hasWoodenBase = true,
   className,
 }: LithophaneViewerProps) {
   const [imgData, setImgData] = useState<ImageData | null>(null);
@@ -534,7 +471,6 @@ export function LithophaneViewer({
   const [darkRoom, setDarkRoom] = useState(true);
   const controlsRef = useRef<any>(null);
 
-  // Process image, generate high-resolution texture map and heightmap data
   useEffect(() => {
     if (!imageSrc) {
       setImgData(null);
@@ -549,7 +485,6 @@ export function LithophaneViewer({
 
     img.onload = () => {
       try {
-        // High-resolution canvas for crystal-clear texture mapping
         const maxTexDim = 1024;
         let tw = img.width;
         let th = img.height;
@@ -579,7 +514,6 @@ export function LithophaneViewer({
         tex.needsUpdate = true;
         setPhotoTexture(tex);
 
-        // Heightmap data for physical geometry displacement
         const maxDispDim = 320;
         let dw = img.width;
         let dh = img.height;
@@ -638,7 +572,7 @@ export function LithophaneViewer({
         <Canvas
           shadows
           camera={{
-            position: [0, sizeMm.height * 0.1, cameraDist],
+            position: [0, sizeMm.height * 0.08, cameraDist],
             fov: 38,
             near: 1,
             far: 2000,
@@ -669,7 +603,6 @@ export function LithophaneViewer({
             backlightOn={backlightOn}
             contrast={contrast}
             invert={invert}
-            hasWoodenBase={hasWoodenBase}
             autoRotate={autoRotate}
           />
 
@@ -711,7 +644,7 @@ export function LithophaneViewer({
 
           {/* Quick Viewer Toggles */}
           <div className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-border/80 bg-surface/85 p-1 backdrop-blur-md shadow-xs">
-            {/* Dark Room vs Studio Day Mode */}
+            {/* Dark Room vs Daylight Studio */}
             <button
               type="button"
               onClick={() => setDarkRoom(!darkRoom)}
@@ -761,8 +694,8 @@ export function LithophaneViewer({
                 : "bg-surface/90 text-fg border-border hover:bg-surface hover:border-accent/40"
             )}
           >
-            <Lightbulb className={cn("size-4", backlightOn ? "fill-current text-stone-950" : "text-muted")} />
-            <span>{backlightOn ? "💡 Backlight: ON (Warm Glow)" : "Turn Backlight ON (See Glow)"}</span>
+            <Sun className={cn("size-4", backlightOn ? "text-stone-950 fill-current" : "text-muted")} />
+            <span>{backlightOn ? "☀️ Sunlight Backlit: ON (Window / Lamp)" : "Simulate Sunlight Backlight"}</span>
           </button>
         </div>
       </div>

@@ -12,9 +12,10 @@ import {
   ShieldCheck,
   Truck,
   Gift,
-  Lightbulb,
+  Sun,
   Sliders,
   ArrowRight,
+  Info,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -32,18 +33,17 @@ export const Route = createFileRoute("/lithophane")({
   component: LithophaneStudioPage,
   head: () => ({
     meta: [
-      { title: "Custom 3D Lithophane Photo Lamp & Keepsake | prynth!" },
+      { title: "Custom 3D Printed Lithophanes & Window Keepsakes | prynth!" },
       {
         name: "description",
         content:
-          "Turn your favorite photos into glowing 3D printed lithophane lamps and romantic heart keepsakes. Custom carved in optical white PLA with warm solid wood LED bases.",
+          "Transform your favorite memories into tactile 3D printed lithophanes illuminated naturally by window sunlight or ambient room light. Includes a free 3D-printed display stand.",
       },
     ],
   }),
 });
 
 type AspectRatio = "landscape" | "portrait" | "square";
-type KitChoice = "lithophane_only" | "lithophane_with_light_base";
 type SizeTier = "medium" | "standard" | "large";
 
 interface ShapeOption {
@@ -58,61 +58,28 @@ const SHAPES: ShapeOption[] = [
     id: "flat",
     name: "Classic Flat Panel",
     tag: "Popular",
-    description: "Architectural flat portrait relief with precision beveled border. Clean & versatile for all photos.",
+    description: "Architectural flat portrait relief with precision beveled border. Clean & versatile for window sills and desks.",
   },
   {
     id: "heart",
     name: "Heart Keepsake",
     tag: "Romantic",
-    description: "Heart contour tailored for couples, anniversaries, weddings, and Valentine's Day gifts.",
-  },
-];
-
-const KITS: {
-  id: KitChoice;
-  name: string;
-  price: number;
-  tag: string;
-  description: string;
-  includes: string[];
-}[] = [
-  {
-    id: "lithophane_only",
-    name: "Printed Lithophane Only",
-    price: 399,
-    tag: "Minimalist",
-    description: "The custom 3D printed lithophane plate with an angled tabletop kickstand easel. (No light source included)",
-    includes: [
-      "Custom 0.12mm High-Resolution Lithophane",
-      "Tabletop Kickstand Display Easel",
-      "Illuminates beautifully in window sunlight or with your own lamp",
-    ],
-  },
-  {
-    id: "lithophane_with_light_base",
-    name: "Lithophane + LED Wooden Light Base & Stand",
-    price: 749,
-    tag: "Recommended",
-    description: "The complete setup: Lithophane plate + Solid Beech Wood Oval Base that serves as both the sturdy stand and the warm light source.",
-    includes: [
-      "Custom 0.12mm High-Resolution Lithophane",
-      "Solid Beech Wood Oval LED Base (Stand + Light)",
-      "Warm Tungsten Light with USB Cable & Switch",
-      "Plug into any phone charger, laptop, or powerbank",
-    ],
+    description: "Heart contour tailored for couples, anniversaries, weddings, and memorable keepsake gifts.",
   },
 ];
 
 const SIZES: {
   id: SizeTier;
   label: string;
-  extraPrice: number;
+  basePrice: number;
+  description: string;
   dims: Record<AspectRatio, { width: number; height: number }>;
 }[] = [
   {
     id: "medium",
-    label: "Medium (Bedside)",
-    extraPrice: 0,
+    label: "Medium",
+    basePrice: 399,
+    description: "Compact & intimate. Ideal for window sills and cozy desks.",
     dims: {
       landscape: { width: 120, height: 90 },
       portrait: { width: 90, height: 120 },
@@ -121,8 +88,9 @@ const SIZES: {
   },
   {
     id: "standard",
-    label: "Standard (Living Room)",
-    extraPrice: 150,
+    label: "Standard",
+    basePrice: 549,
+    description: "Our most popular size. High definition micro-detail.",
     dims: {
       landscape: { width: 150, height: 100 },
       portrait: { width: 100, height: 150 },
@@ -131,8 +99,9 @@ const SIZES: {
   },
   {
     id: "large",
-    label: "Deluxe (Mantlepiece)",
-    extraPrice: 350,
+    label: "Deluxe",
+    basePrice: 749,
+    description: "Maximum photographic resolution and gallery presence.",
     dims: {
       landscape: { width: 190, height: 130 },
       portrait: { width: 130, height: 190 },
@@ -141,7 +110,7 @@ const SIZES: {
   },
 ];
 
-const GIFT_PACKAGING_FEE = 149;
+const GIFT_PACKAGING_FEE = 99;
 
 function LithophaneStudioPage() {
   const navigate = useNavigate();
@@ -152,7 +121,6 @@ function LithophaneStudioPage() {
   const [activeSample, setActiveSample] = useState<string>("couple");
   const [aspect, setAspect] = useState<AspectRatio>("landscape");
   const [shape, setShape] = useState<LithophaneShape>("flat");
-  const [kit, setKit] = useState<KitChoice>("lithophane_with_light_base");
   const [size, setSize] = useState<SizeTier>("standard");
   const [backlightOn, setBacklightOn] = useState<boolean>(true);
   const [contrast, setContrast] = useState<number>(1.15);
@@ -170,21 +138,11 @@ function LithophaneStudioPage() {
     setPhotoUrl(SAMPLE_PHOTOS[0].url);
   }, []);
 
-  // Sync backlight and base when kit changes
-  useEffect(() => {
-    if (kit === "lithophane_only") {
-      setBacklightOn(false);
-    } else {
-      setBacklightOn(true);
-    }
-  }, [kit]);
-
   const selectedSizeConfig = SIZES.find((s) => s.id === size)!;
   const currentDims = selectedSizeConfig.dims[aspect];
-  const selectedKitConfig = KITS.find((k) => k.id === kit)!;
 
-  // Base unit price calculations
-  const baseUnitPrice = selectedKitConfig.price + selectedSizeConfig.extraPrice;
+  // Base unit price calculations (100% in-house 3D printed + free stand included)
+  const baseUnitPrice = selectedSizeConfig.basePrice;
   const giftFeePerItem = isGift ? GIFT_PACKAGING_FEE : 0;
   const finalUnitPrice = baseUnitPrice + giftFeePerItem;
   const rawSubtotal = finalUnitPrice * qty;
@@ -246,13 +204,9 @@ function LithophaneStudioPage() {
     }
 
     const shapeLabel = shape === "heart" ? "Heart Keepsake" : "Classic Flat Panel";
-    const kitLabel =
-      kit === "lithophane_with_light_base"
-        ? "Lithophane + Wooden LED Light Base"
-        : "Lithophane Plate Only (with Stand)";
 
     const giftNotes = isGift
-      ? ` [GIFT PACKAGING REQUESTED: Luxury Black Ribbon Box, Conceal Invoice Prices${
+      ? ` [GIFT PACKAGING REQUESTED: Luxury Ribbon Gift Box, Conceal Invoice Prices${
           recipientName.trim() ? ` · To: ${recipientName.trim()}` : ""
         }${giftMessage.trim() ? ` · Message Card: "${giftMessage.trim()}"` : ""}]`
       : "";
@@ -264,7 +218,7 @@ function LithophaneStudioPage() {
       color: "Optical Jade White",
       material: "Lithophane White PLA (0.12mm)",
       dimensions: `${currentDims.width} × ${currentDims.height} mm (${shapeLabel})`,
-      notes: `Shape: ${shapeLabel} · Package: ${kitLabel}${giftNotes}`,
+      notes: `Shape: ${shapeLabel} · Includes Free 3D-Printed Desktop Stand${giftNotes}`,
       referencePhotos: [photoUrl],
     };
 
@@ -298,13 +252,13 @@ function LithophaneStudioPage() {
       <div className="max-w-3xl space-y-3">
         <div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-xs font-semibold text-accent">
           <Sparkles className="size-3.5" />
-          <span>Precision 3D Lithophane Studio · 0.12mm Micro-Carving</span>
+          <span>100% In-House 3D Printed · 0.12mm Micro-Carving</span>
         </div>
         <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl text-fg">
-          Turn Your Memories into a Glowing 3D Lithophane Lamp
+          Turn Your Memories into a Sunlit 3D Lithophane
         </h1>
         <p className="text-sm sm:text-base text-muted leading-relaxed">
-          Order just the carved 3D lithophane plate, or get the complete setup with a solid beech wood LED light base that doubles as a sturdy desktop stand.
+          Custom carved in optical Jade White PLA. Place it on your window sill where sunlight naturally streams through from behind, revealing your photo in rich continuous-tone detail. Every piece includes a free matching 3D-printed display stand.
         </p>
       </div>
 
@@ -322,17 +276,14 @@ function LithophaneStudioPage() {
               onToggleBacklight={() => setBacklightOn(!backlightOn)}
               contrast={contrast}
               invert={invert}
-              hasWoodenBase={kit === "lithophane_with_light_base"}
             />
             <div className="flex items-center justify-between px-1 text-xs text-muted">
               <span className="flex items-center gap-1.5">
                 <RotateCw className="size-3 text-accent" />
                 Drag to rotate 360° · Scroll to zoom
               </span>
-              <span>
-                {kit === "lithophane_with_light_base"
-                  ? "Shown on Solid Beech Wood LED Base"
-                  : "Shown on Minimalist Desktop Kickstand"}
+              <span className="text-fg font-medium">
+                Shown with Included 3D-Printed Desktop Display Stand
               </span>
             </div>
           </div>
@@ -346,7 +297,7 @@ function LithophaneStudioPage() {
                   <span>Choose or Upload Your Photo</span>
                 </h3>
                 <p className="text-xs text-muted mt-0.5">
-                  High-contrast photos with clear faces look breathtaking when illuminated.
+                  High-contrast photos with clear faces look breathtaking when backlit by sunlight.
                 </p>
               </div>
 
@@ -465,31 +416,56 @@ function LithophaneStudioPage() {
             <div className="rounded-xl border border-border bg-surface p-3.5 space-y-1">
               <div className="flex items-center gap-1.5 text-accent font-semibold text-xs">
                 <Sparkles className="size-3.5 shrink-0" />
-                <span>0.12mm Resolution</span>
+                <span>0.12mm Micro-Layers</span>
               </div>
               <p className="text-[11px] text-muted leading-relaxed">
-                Vertical 3D printed with 100% solid infill for smooth photographic continuous-tone shadows.
+                Printed vertically with 100% solid infill for seamless continuous-tone photographic contrast.
               </p>
             </div>
 
             <div className="rounded-xl border border-border bg-surface p-3.5 space-y-1">
               <div className="flex items-center gap-1.5 text-accent font-semibold text-xs">
-                <Truck className="size-3.5 shrink-0" />
-                <span>48h Dispatch</span>
+                <Sun className="size-3.5 shrink-0" />
+                <span>Sunlight Backlit</span>
               </div>
               <p className="text-[11px] text-muted leading-relaxed">
-                Custom manufactured in Bengaluru. High-density shock-proof bubble packaging ensures zero transit damage.
+                Zero wires or batteries needed. Place it on a window sill or desk lamp to reveal the illuminated image.
               </p>
             </div>
 
             <div className="rounded-xl border border-border bg-surface p-3.5 space-y-1">
               <div className="flex items-center gap-1.5 text-accent font-semibold text-xs">
                 <ShieldCheck className="size-3.5 shrink-0" />
-                <span>Solid Beech Wood</span>
+                <span>Free Stand Included</span>
               </div>
               <p className="text-[11px] text-muted leading-relaxed">
-                Optional LED base is carved from solid natural beech wood with warm 3000K LED and USB switch.
+                Every print includes a custom-angled 3D-printed pedestal stand in Matte Charcoal PLA at no extra cost.
               </p>
+            </div>
+          </div>
+
+          {/* Educational Feature Section: Why Lithophanes Need Rear Light */}
+          <div className="rounded-2xl border border-border bg-surface-2/30 p-5 space-y-3">
+            <div className="flex items-center gap-2 text-sm font-semibold text-fg">
+              <Info className="size-4 text-accent" />
+              <span>How Lithophanes Work: The Magic of Rear Sunlight</span>
+            </div>
+            <p className="text-xs text-muted leading-relaxed">
+              Unlike ordinary 2D photo prints or bottom-lit acrylics, a true 3D lithophane is an optical light filter sculpted in polymer relief:
+            </p>
+            <div className="grid sm:grid-cols-2 gap-3 pt-1 text-xs">
+              <div className="rounded-xl border border-border/80 bg-surface p-3 space-y-1">
+                <span className="font-semibold text-fg block">☀️ Light from the Back</span>
+                <p className="text-muted text-[11px] leading-relaxed">
+                  Thin plastic sections (0.8mm) let sunlight pass through as bright highlights, while thicker sections (3.4mm) block light to create rich, deep shadows.
+                </p>
+              </div>
+              <div className="rounded-xl border border-border/80 bg-surface p-3 space-y-1">
+                <span className="font-semibold text-fg block">🌱 Zero Electronic Hassle</span>
+                <p className="text-muted text-[11px] leading-relaxed">
+                  No cheap LED strips that burn out, no messy USB cables, and no batteries to replace. 100% durable in-house 3D printing that lasts a lifetime.
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -538,57 +514,11 @@ function LithophaneStudioPage() {
               </div>
             </div>
 
-            {/* Step 2: Light Source & Stand Option */}
+            {/* Step 2: Size Selection (All include free 3D-printed stand) */}
             <div className="space-y-2.5">
               <div className="flex items-center justify-between">
                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted">
-                  2. Choose Setup &amp; Light Source
-                </Label>
-              </div>
-              <div className="grid gap-2.5">
-                {KITS.map((k) => (
-                  <div
-                    key={k.id}
-                    onClick={() => setKit(k.id)}
-                    className={cn(
-                      "rounded-xl border p-3.5 transition-all cursor-pointer",
-                      kit === k.id
-                        ? "border-accent bg-accent/5 ring-1 ring-accent"
-                        : "border-border bg-surface-2/30 hover:border-accent/40"
-                    )}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-fg">{k.name}</span>
-                          <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-semibold text-accent">
-                            {k.tag}
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted mt-1 leading-relaxed">{k.description}</p>
-                        <ul className="mt-2 space-y-0.5 text-[11px] text-muted">
-                          {k.includes.map((inc, i) => (
-                            <li key={i} className="flex items-center gap-1.5">
-                              <Check className="size-3 text-accent shrink-0" />
-                              <span>{inc}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      <span className="text-sm font-bold tabular-nums text-accent shrink-0">
-                        {formatINR(k.price)}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Step 3: Size Selection */}
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-muted">
-                  3. Select Size
+                  2. Select Size
                 </Label>
                 <span className="text-xs text-muted tabular-nums">
                   {currentDims.width} × {currentDims.height} mm
@@ -607,19 +537,23 @@ function LithophaneStudioPage() {
                         : "border-border bg-surface-2/40 text-muted hover:text-fg"
                     )}
                   >
-                    <span className="text-xs font-semibold">{s.label.split(" ")[0]}</span>
+                    <span className="text-xs font-semibold">{s.label}</span>
                     <span className="text-[10px] text-muted mt-0.5">
                       {s.dims[aspect].width}×{s.dims[aspect].height}mm
                     </span>
-                    <span className="text-[10px] font-semibold text-accent mt-0.5">
-                      {s.extraPrice === 0 ? "Included" : `+${formatINR(s.extraPrice)}`}
+                    <span className="text-xs font-bold text-accent mt-1">
+                      {formatINR(s.basePrice)}
                     </span>
                   </button>
                 ))}
               </div>
+              <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-[11px] text-emerald-400 font-medium flex items-center gap-2">
+                <Check className="size-3.5 text-emerald-400 shrink-0" />
+                <span>Includes free 3D-printed desktop display stand with every size!</span>
+              </div>
             </div>
 
-            {/* Step 4: "Make this a Gift" Option Card */}
+            {/* Step 3: "Make this a Gift" Option Card */}
             <div
               className={cn(
                 "rounded-xl border p-4 transition-all space-y-3",
@@ -640,10 +574,10 @@ function LithophaneStudioPage() {
                     <span className="text-xs font-semibold text-fg flex items-center gap-1.5">
                       <Gift className="size-3.5 text-accent" />
                       <span>Make this a gift</span>
-                      <span className="text-[10px] text-accent font-medium">+₹149</span>
+                      <span className="text-[10px] text-accent font-medium">+{formatINR(GIFT_PACKAGING_FEE)}</span>
                     </span>
                     <span className="text-[11px] text-muted block mt-0.5">
-                      Packed in a luxury matte black presentation box with ribbon, prices concealed on packing slips, and a custom printed gift message card.
+                      Packed in a luxury presentation gift box with ribbon, concealed invoice prices, and a custom printed metallic greeting card.
                     </span>
                   </div>
                 </label>
@@ -689,7 +623,7 @@ function LithophaneStudioPage() {
               )}
             </div>
 
-            {/* Step 5: Quantity & Bulk Tier */}
+            {/* Step 4: Quantity & Bulk Tier */}
             <div className="pt-2 border-t border-border/60 space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="text-xs font-semibold text-fg">Quantity</Label>
@@ -722,7 +656,7 @@ function LithophaneStudioPage() {
                 </div>
               ) : (
                 <p className="text-[11px] text-muted">
-                  Need multiple for event giveaways or family? 5+ get 5% off, 10+ get 10% off.
+                  Ordering for wedding favors or family? 5+ get 5% off, 10+ get 10% off, 20+ get 15% off.
                 </p>
               )}
             </div>
