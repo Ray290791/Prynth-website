@@ -13,6 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 
 export type LithophaneShape = "flat" | "heart";
+export type LithophaneFitMode = "dynamic" | "stretch";
 
 export interface LithophaneViewerProps {
   imageSrc: string | null;
@@ -22,6 +23,7 @@ export interface LithophaneViewerProps {
   onToggleBacklight: () => void;
   contrast?: number; // 0.8 to 1.6
   invert?: boolean;
+  fitMode?: LithophaneFitMode;
   className?: string;
 }
 
@@ -69,6 +71,41 @@ function isInsideHeart(u: number, v: number): boolean {
   return term * term * term - x2 * (ny * ny * ny) <= 0.0;
 }
 
+// Calculate aspect-preserving mapped UV for dynamic scaling
+function getMappedUv(
+  u: number,
+  v: number,
+  plateW: number,
+  plateH: number,
+  fitMode: LithophaneFitMode = "dynamic",
+  imgNaturalDim: { width: number; height: number } | null = null
+): { u: number; v: number } {
+  if (fitMode === "stretch" || !imgNaturalDim || imgNaturalDim.width <= 0 || imgNaturalDim.height <= 0) {
+    return { u, v };
+  }
+
+  const plateAspect = plateW / plateH;
+  const imgAspect = imgNaturalDim.width / imgNaturalDim.height;
+
+  let mappedU = u;
+  let mappedV = v;
+
+  if (plateAspect > imgAspect) {
+    // Plate is wider than photo -> fit width, crop height
+    const scale = imgAspect / plateAspect;
+    mappedV = (v - 0.5) * scale + 0.5;
+  } else {
+    // Plate is taller than photo -> fit height, crop width
+    const scale = plateAspect / imgAspect;
+    mappedU = (u - 0.5) * scale + 0.5;
+  }
+
+  return {
+    u: Math.max(0, Math.min(1, mappedU)),
+    v: Math.max(0, Math.min(1, mappedV)),
+  };
+}
+
 // Build solid 3D manifold geometry with genuine tactile relief depth
 function buildLithophaneGeometry(
   imgData: ImageData,
@@ -76,7 +113,9 @@ function buildLithophaneGeometry(
   widthMm: number,
   heightMm: number,
   contrast = 1.15,
-  invert = false
+  invert = false,
+  fitMode: LithophaneFitMode = "dynamic",
+  imgNaturalDim: { width: number; height: number } | null = null
 ): THREE.BufferGeometry {
   const { width: imgW, height: imgH, data } = imgData;
   const minT = 0.8; // Minimum printable wall thickness in mm (translucent highlights)
@@ -107,11 +146,12 @@ function buildLithophaneGeometry(
           continue;
         }
 
-        let lum = sampleBilinearLuminance(data, imgW, imgH, u, v);
+        const { u: sU, v: sV } = getMappedUv(u, v, widthMm, heightMm, fitMode, imgNaturalDim);
+        let lum = sampleBilinearLuminance(data, imgW, imgH, sU, sV);
         // Slicer mechanical layer quantization
         const layerSteps = Math.round(heightMm / 0.20);
-        const vQuant = Math.floor(v * layerSteps) / layerSteps;
-        let lumQuant = sampleBilinearLuminance(data, imgW, imgH, u, vQuant);
+        const vQuant = Math.floor(sV * layerSteps) / layerSteps;
+        let lumQuant = sampleBilinearLuminance(data, imgW, imgH, sU, vQuant);
         lum = lum * 0.5 + lumQuant * 0.5;
 
         lum = Math.pow(Math.max(0, Math.min(1, lum)), contrast);
@@ -210,11 +250,12 @@ function buildLithophaneGeometry(
     for (let c = 0; c < cols; c++) {
       const u = c / (cols - 1);
 
-      let lum = sampleBilinearLuminance(data, imgW, imgH, u, v);
+      const { u: sU, v: sV } = getMappedUv(u, v, widthMm, heightMm, fitMode, imgNaturalDim);
+      let lum = sampleBilinearLuminance(data, imgW, imgH, sU, sV);
       // Slicer mechanical layer quantization
       const layerSteps = Math.round(heightMm / 0.20);
-      const vQuant = Math.floor(v * layerSteps) / layerSteps;
-      let lumQuant = sampleBilinearLuminance(data, imgW, imgH, u, vQuant);
+      const vQuant = Math.floor(sV * layerSteps) / layerSteps;
+      let lumQuant = sampleBilinearLuminance(data, imgW, imgH, sU, vQuant);
       lum = lum * 0.5 + lumQuant * 0.5;
 
       lum = Math.pow(Math.max(0, Math.min(1, lum)), contrast);
@@ -353,6 +394,7 @@ const lithophaneShader = {
     uniform float uInvert;
     uniform vec2 uDimensionsMm;
     uniform float uIsHeart;
+    uniform vec2 uUvScale;
 
     varying vec2 vUv;
     varying vec3 vNormal;
@@ -373,6 +415,10 @@ const lithophaneShader = {
         }
       }
 
+      // Dynamic aspect-ratio preserve mapping
+      vec2 mappedUv = (vUv - 0.5) * uUvScale + 0.5;
+      mappedUv = clamp(mappedUv, 0.0, 1.0);
+
       // ── Physical FDM 3D Printing Layer Calculations ──
       // Physical layer height on Bambu Lab machines is 0.12mm - 0.16mm
       float layerHeightMm = 0.16; // Visible mechanical layer thickness
@@ -384,10 +430,12 @@ const lithophaneShader = {
       // Slicer Discrete Toolpath Quantization:
       // The extruder deposits discrete horizontal passes. Slicers sample image rows discretely.
       float yQuantized = 1.0 - (layerIdx + 0.5) / totalLayers;
+      float mappedYQuantized = (yQuantized - 0.5) * uUvScale.y + 0.5;
+      mappedYQuantized = clamp(mappedYQuantized, 0.0, 1.0);
 
-      // Sample continuous image & quantized layer slice
-      vec4 texColorCont = texture2D(uTexture, vUv);
-      vec4 texColorQuant = texture2D(uTexture, vec2(vUv.x, yQuantized));
+      // Sample continuous image & quantized layer slice using aspect-mapped UVs
+      vec4 texColorCont = texture2D(uTexture, mappedUv);
+      vec4 texColorQuant = texture2D(uTexture, vec2(mappedUv.x, mappedYQuantized));
 
       float lumCont = 0.299 * texColorCont.r + 0.587 * texColorCont.g + 0.114 * texColorCont.b;
       float lumQuant = 0.299 * texColorQuant.r + 0.587 * texColorQuant.g + 0.114 * texColorQuant.b;
@@ -405,10 +453,10 @@ const lithophaneShader = {
 
       // Micro-relief surface normal gradients from heightmap
       vec2 texel = vec2(1.0 / 800.0, 1.0 / 600.0);
-      float lumR = texture2D(uTexture, vUv + vec2(texel.x, 0.0)).r;
-      float lumL = texture2D(uTexture, vUv - vec2(texel.x, 0.0)).r;
-      float lumU = texture2D(uTexture, vUv + vec2(0.0, texel.y)).r;
-      float lumD = texture2D(uTexture, vUv - vec2(0.0, texel.y)).r;
+      float lumR = texture2D(uTexture, clamp(mappedUv + vec2(texel.x, 0.0), 0.0, 1.0)).r;
+      float lumL = texture2D(uTexture, clamp(mappedUv - vec2(texel.x, 0.0), 0.0, 1.0)).r;
+      float lumU = texture2D(uTexture, clamp(mappedUv + vec2(0.0, texel.y), 0.0, 1.0)).r;
+      float lumD = texture2D(uTexture, clamp(mappedUv - vec2(0.0, texel.y), 0.0, 1.0)).r;
 
       vec3 surfaceNormal = normalize(vNormal + vec3((lumL - lumR) * 0.35, (lumD - lumU) * 0.35, 0.0));
 
@@ -546,6 +594,8 @@ function LithophaneScene({
   contrast,
   invert,
   autoRotate,
+  fitMode = "dynamic",
+  imgNaturalDim,
 }: {
   imgData: ImageData | null;
   photoTexture: THREE.CanvasTexture | null;
@@ -555,8 +605,25 @@ function LithophaneScene({
   contrast?: number;
   invert?: boolean;
   autoRotate: boolean;
+  fitMode?: LithophaneFitMode;
+  imgNaturalDim: { width: number; height: number } | null;
 }) {
   const meshRef = useRef<THREE.Group>(null);
+
+  const uvScale = useMemo(() => {
+    if (fitMode === "stretch" || !imgNaturalDim || imgNaturalDim.width <= 0 || imgNaturalDim.height <= 0) {
+      return new THREE.Vector2(1.0, 1.0);
+    }
+    const plateAspect = sizeMm.width / sizeMm.height;
+    const imgAspect = imgNaturalDim.width / imgNaturalDim.height;
+    if (plateAspect > imgAspect) {
+      // Plate is wider than photo -> fit width, crop height
+      return new THREE.Vector2(1.0, imgAspect / plateAspect);
+    } else {
+      // Plate is taller than photo -> fit height, crop width
+      return new THREE.Vector2(plateAspect / imgAspect, 1.0);
+    }
+  }, [fitMode, sizeMm.width, sizeMm.height, imgNaturalDim]);
 
   const geometry = useMemo(() => {
     if (!imgData) return null;
@@ -566,9 +633,11 @@ function LithophaneScene({
       sizeMm.width,
       sizeMm.height,
       contrast,
-      invert
+      invert,
+      fitMode,
+      imgNaturalDim
     );
-  }, [imgData, shape, sizeMm.width, sizeMm.height, contrast, invert]);
+  }, [imgData, shape, sizeMm.width, sizeMm.height, contrast, invert, fitMode, imgNaturalDim]);
 
   useEffect(() => {
     return () => {
@@ -587,8 +656,9 @@ function LithophaneScene({
       uInvert: { value: invert ? 1.0 : 0.0 },
       uDimensionsMm: { value: new THREE.Vector2(sizeMm.width, sizeMm.height) },
       uIsHeart: { value: shape === "heart" ? 1.0 : 0.0 },
+      uUvScale: { value: uvScale },
     };
-  }, [photoTexture, sizeMm.width, sizeMm.height, shape]);
+  }, [photoTexture, sizeMm.width, sizeMm.height, shape, uvScale]);
 
   // Update animated uniforms dynamically
   useEffect(() => {
@@ -598,7 +668,8 @@ function LithophaneScene({
     shaderUniforms.uTexture.value = photoTexture;
     shaderUniforms.uDimensionsMm.value.set(sizeMm.width, sizeMm.height);
     shaderUniforms.uIsHeart.value = shape === "heart" ? 1.0 : 0.0;
-  }, [backlightOn, contrast, invert, photoTexture, sizeMm, shape, shaderUniforms]);
+    shaderUniforms.uUvScale.value = uvScale;
+  }, [backlightOn, contrast, invert, photoTexture, sizeMm, shape, shaderUniforms, uvScale]);
 
   const yOffset = sizeMm.height / 2;
 
@@ -663,10 +734,12 @@ export function LithophaneViewer({
   onToggleBacklight,
   contrast = 1.15,
   invert = false,
+  fitMode = "dynamic",
   className,
 }: LithophaneViewerProps) {
   const [imgData, setImgData] = useState<ImageData | null>(null);
   const [photoTexture, setPhotoTexture] = useState<THREE.CanvasTexture | null>(null);
+  const [imgNaturalDim, setImgNaturalDim] = useState<{ width: number; height: number } | null>(null);
   const [loading, setLoading] = useState(false);
   const [autoRotate, setAutoRotate] = useState(false);
   const [darkRoom, setDarkRoom] = useState(true);
@@ -676,6 +749,7 @@ export function LithophaneViewer({
     if (!imageSrc) {
       setImgData(null);
       setPhotoTexture(null);
+      setImgNaturalDim(null);
       return;
     }
 
@@ -686,6 +760,10 @@ export function LithophaneViewer({
 
     img.onload = () => {
       try {
+        setImgNaturalDim({
+          width: img.naturalWidth || img.width,
+          height: img.naturalHeight || img.height,
+        });
         const maxTexDim = 1024;
         let tw = img.width;
         let th = img.height;
@@ -805,6 +883,8 @@ export function LithophaneViewer({
             contrast={contrast}
             invert={invert}
             autoRotate={autoRotate}
+            fitMode={fitMode}
+            imgNaturalDim={imgNaturalDim}
           />
 
           <OrbitControls
@@ -847,6 +927,16 @@ export function LithophaneViewer({
             <div className="hidden sm:flex items-center gap-1 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 text-[11px] font-semibold text-accent backdrop-blur-md shadow-xs">
               <span>0.12mm Layer Lines Visible</span>
             </div>
+
+            {fitMode === "stretch" ? (
+              <div className="hidden sm:flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-300 backdrop-blur-md shadow-xs">
+                <span>Strict Frame (Stretched)</span>
+              </div>
+            ) : (
+              <div className="hidden md:flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-300 backdrop-blur-md shadow-xs">
+                <span>Dynamic 1:1 Scale</span>
+              </div>
+            )}
           </div>
 
           {/* Quick Viewer Toggles */}

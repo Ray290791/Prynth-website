@@ -17,6 +17,7 @@ import {
   ArrowRight,
   Info,
   Crop,
+  Maximize2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ import { cn } from "@/lib/utils";
 import {
   LithophaneViewer,
   type LithophaneShape,
+  type LithophaneFitMode,
 } from "@/components/lithophane-viewer";
 import {
   LithophaneFramingModal,
@@ -133,6 +135,7 @@ function LithophaneStudioPage() {
   const [backlightOn, setBacklightOn] = useState<boolean>(true);
   const [contrast, setContrast] = useState<number>(1.15);
   const [invert, setInvert] = useState<boolean>(false);
+  const [fitMode, setFitMode] = useState<LithophaneFitMode>("dynamic");
   const [isGift, setIsGift] = useState<boolean>(false);
   const [giftMessage, setGiftMessage] = useState<string>("");
   const [recipientName, setRecipientName] = useState<string>("");
@@ -231,7 +234,7 @@ function LithophaneStudioPage() {
       color: "Optical Jade White",
       material: "Lithophane White PLA (0.12mm)",
       dimensions: `${currentDims.width} × ${currentDims.height} mm (${shapeLabel})`,
-      notes: `Shape: ${shapeLabel} · Includes Free 3D-Printed Desktop Stand${giftNotes}`,
+      notes: `Shape: ${shapeLabel} · Fit: ${fitMode === "dynamic" ? "Dynamic Scale (Preserve Ratio)" : "Strict Frame (Stretch to Fit)"} · Includes Free 3D-Printed Desktop Stand${giftNotes}`,
       referencePhotos: [photoUrl],
     };
 
@@ -289,6 +292,7 @@ function LithophaneStudioPage() {
               onToggleBacklight={() => setBacklightOn(!backlightOn)}
               contrast={contrast}
               invert={invert}
+              fitMode={fitMode}
             />
             <div className="flex items-center justify-between px-1 text-xs text-muted">
               <span className="flex items-center gap-1.5">
@@ -421,6 +425,78 @@ function LithophaneStudioPage() {
                     {a.label}
                   </button>
                 ))}
+              </div>
+            </div>
+
+            {/* Image Scaling on Ratio Change (Dynamic vs Strict) */}
+            <div className="pt-2 border-t border-border/60 space-y-2.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-medium text-fg flex items-center gap-1.5">
+                  <Maximize2 className="size-3.5 text-accent" />
+                  <span>Image Scaling on Ratio Change:</span>
+                </span>
+                <span className="text-muted text-[11px]">
+                  {fitMode === "dynamic" ? "Locked 1:1 (No distortion)" : "Stretched edge-to-edge"}
+                </span>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFitMode("dynamic")}
+                  className={cn(
+                    "flex flex-col items-start p-3 rounded-xl border text-left transition-all cursor-pointer relative",
+                    fitMode === "dynamic"
+                      ? "border-accent bg-accent/10 ring-1 ring-accent text-fg"
+                      : "border-border bg-surface-2/40 text-muted hover:text-fg hover:border-accent/30"
+                  )}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-xs font-semibold flex items-center gap-1.5">
+                      <span>Dynamic Scale</span>
+                      <span className="rounded-full bg-accent/20 px-1.5 py-0.2 text-[9px] font-bold text-accent uppercase">
+                        Recommended
+                      </span>
+                    </span>
+                    <div
+                      className={cn(
+                        "size-3.5 rounded-full border flex items-center justify-center shrink-0",
+                        fitMode === "dynamic" ? "border-accent bg-accent text-ink" : "border-border"
+                      )}
+                    >
+                      {fitMode === "dynamic" && <Check className="size-2.5 stroke-[3]" />}
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-muted mt-1 leading-snug">
+                    Maintains natural proportions. Ratio changes adapt smoothly with zero stretching or squishing of faces.
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setFitMode("stretch")}
+                  className={cn(
+                    "flex flex-col items-start p-3 rounded-xl border text-left transition-all cursor-pointer relative",
+                    fitMode === "stretch"
+                      ? "border-accent bg-accent/10 ring-1 ring-accent text-fg"
+                      : "border-border bg-surface-2/40 text-muted hover:text-fg hover:border-accent/30"
+                  )}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-xs font-semibold">Strict Frame</span>
+                    <div
+                      className={cn(
+                        "size-3.5 rounded-full border flex items-center justify-center shrink-0",
+                        fitMode === "stretch" ? "border-accent bg-accent text-ink" : "border-border"
+                      )}
+                    >
+                      {fitMode === "stretch" && <Check className="size-2.5 stroke-[3]" />}
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-muted mt-1 leading-snug">
+                    Stretches or squeezes the entire image to fill the exact plate borders without any cropping.
+                  </p>
+                </button>
               </div>
             </div>
 
@@ -570,12 +646,38 @@ function LithophaneStudioPage() {
             <div className="space-y-2.5">
               <div className="flex items-center justify-between">
                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted">
-                  2. Select Size
+                  2. Select Orientation &amp; Size
                 </Label>
                 <span className="text-xs text-muted tabular-nums">
                   {currentDims.width} × {currentDims.height} mm
                 </span>
               </div>
+
+              {/* Quick orientation pills */}
+              <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-surface-2/60 border border-border">
+                {(
+                  [
+                    { id: "landscape", label: "Landscape (3:2)" },
+                    { id: "portrait", label: "Portrait (2:3)" },
+                    { id: "square", label: "Square (1:1)" },
+                  ] as const
+                ).map((a) => (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => setAspect(a.id)}
+                    className={cn(
+                      "py-1.5 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer text-center",
+                      aspect === a.id
+                        ? "bg-accent text-ink shadow-xs"
+                        : "text-muted hover:text-fg"
+                    )}
+                  >
+                    {a.label}
+                  </button>
+                ))}
+              </div>
+
               <div className="grid grid-cols-3 gap-2">
                 {SIZES.map((s) => (
                   <button
