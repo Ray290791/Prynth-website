@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import {
   ZoomIn,
   ZoomOut,
@@ -7,13 +7,13 @@ import {
   Check,
   X,
   Heart,
-  Sparkles,
   Move,
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { LithophaneShape } from "@/components/lithophane-viewer";
+import { isInsideHeart } from "@/lib/lithophane-export";
 
 export interface CropConfig {
   scale: number;
@@ -26,15 +26,39 @@ interface LithophaneFramingModalProps {
   onClose: () => void;
   imageSrc: string;
   shape: LithophaneShape;
+  sizeMm?: { width: number; height: number };
   initialCrop?: CropConfig;
   onApply: (croppedDataUrl: string, config: CropConfig) => void;
 }
+
+// Precompute exact Taubin heart boundary points normalized to [0, 1] x [0, 1]
+const HEART_BOUNDARY_POINTS: [number, number][] = (() => {
+  const pts: [number, number][] = [];
+  const cx = 0.5, cy = 0.45;
+  const N = 80;
+  for (let i = 0; i < N; i++) {
+    const theta = (i / N) * 2 * Math.PI - Math.PI / 2;
+    const cosT = Math.cos(theta);
+    const sinT = Math.sin(theta);
+    let low = 0, high = 0.65;
+    for (let step = 0; step < 24; step++) {
+      const mid = (low + high) / 2;
+      const u = cx + mid * cosT;
+      const v = cy + mid * sinT;
+      if (isInsideHeart(u, v)) low = mid;
+      else high = mid;
+    }
+    pts.push([cx + low * cosT, cy + low * sinT]);
+  }
+  return pts;
+})();
 
 export function LithophaneFramingModal({
   isOpen,
   onClose,
   imageSrc,
   shape,
+  sizeMm,
   initialCrop,
   onApply,
 }: LithophaneFramingModalProps) {
@@ -43,6 +67,7 @@ export function LithophaneFramingModal({
   const [panY, setPanY] = useState<number>(initialCrop?.panY ?? 0);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [imgLoaded, setImgLoaded] = useState<boolean>(false);
+  const [containerDim, setContainerDim] = useState<{ w: number; h: number }>({ w: 340, h: 340 });
 
   const containerRef = useRef<HTMLDivElement>(null);
   const imageElementRef = useRef<HTMLImageElement | null>(null);
@@ -53,6 +78,35 @@ export function LithophaneFramingModal({
     panY: 0,
   });
 
+  // Calculate target aspect ratio based on shape and physical dimensions
+  const targetAspect = useMemo(() => {
+    if (shape === "heart") return 1.0;
+    if (sizeMm && sizeMm.width > 0 && sizeMm.height > 0) {
+      return sizeMm.width / sizeMm.height;
+    }
+    return 1.5;
+  }, [shape, sizeMm]);
+
+  // Keep track of container dimensions for pixel-perfect frame sizing
+  useEffect(() => {
+    if (!isOpen) return;
+    const updateDim = () => {
+      if (containerRef.current) {
+        const r = containerRef.current.getBoundingClientRect();
+        if (r.width > 0 && r.height > 0) {
+          setContainerDim({ w: r.width, h: r.height });
+        }
+      }
+    };
+    updateDim();
+    const timer = setTimeout(updateDim, 50);
+    window.addEventListener("resize", updateDim);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", updateDim);
+    };
+  }, [isOpen]);
+
   // Reset or initialize state when opening
   useEffect(() => {
     if (isOpen) {
@@ -61,8 +115,7 @@ export function LithophaneFramingModal({
         setPanX(initialCrop.panX);
         setPanY(initialCrop.panY);
       } else {
-        // Defaults: slightly zoomed in for heart so it fills nicely
-        setScale(shape === "heart" ? 1.25 : 1.0);
+        setScale(shape === "heart" ? 1.25 : 1.05);
         setPanX(0);
         setPanY(shape === "heart" ? -10 : 0);
       }
@@ -115,28 +168,59 @@ export function LithophaneFramingModal({
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     e.preventDefault();
     const delta = -e.deltaY * 0.0015;
-    setScale((prev) => Math.min(3.5, Math.max(0.8, prev + delta)));
+    setScale((prev) => Math.min(3.5, Math.max(0.6, prev + delta)));
   };
 
-  // Quick preset actions
+  // Compute framing window geometry inside the stage
+  const stageW = containerDim.w || 340;
+  const stageH = containerDim.h || 340;
+  const maxW = stageW * 0.88;
+  const maxH = stageH * 0.88;
+  let windowW: number;
+  let windowH: number;
+  if (maxW / maxH > targetAspect) {
+    windowH = maxH;
+    windowW = windowH * targetAspect;
+  } else {
+    windowW = maxW;
+    windowH = windowW / targetAspect;
+  }
+  const windowLeft = (stageW - windowW) / 2;
+  const windowTop = (stageH - windowH) / 2;
+
+  // Preset actions
   const handleCenter = () => {
     setPanX(0);
     setPanY(0);
-    setScale(1.1);
+    setScale(1.05);
   };
 
   const handleCouplePreset = () => {
-    // Zoom in on couple faces and elevate slightly into the two lobes of the heart
     setScale(1.4);
     setPanX(0);
     setPanY(-20);
   };
 
-  const handleFillHeart = () => {
-    setScale(1.6);
+  const handleFill = () => {
+    const img = imageElementRef.current;
+    if (!img) return;
+    const imgAspect = (img.naturalWidth || img.width) / (img.naturalHeight || img.height);
+    let containW: number;
+    let containH: number;
+    if (imgAspect >= stageW / stageH) {
+      containW = stageW;
+      containH = stageW / imgAspect;
+    } else {
+      containH = stageH;
+      containW = stageH * imgAspect;
+    }
+    const reqScale = Math.max(windowW / containW, windowH / containH);
+    setScale(parseFloat(reqScale.toFixed(2)));
+    setPanX(0);
+    setPanY(0);
   };
 
-  // Render cropped result to canvas and apply
+  // Render cropped result to canvas: EXACTLY what is bounded inside the yellow outline
   const handleApply = useCallback(() => {
     const img = imageElementRef.current;
     const container = containerRef.current;
@@ -145,17 +229,32 @@ export function LithophaneFramingModal({
       return;
     }
 
-    const rect = container.getBoundingClientRect();
-    const stageSize = Math.min(rect.width, rect.height) || 400;
+    const curStageW = container.clientWidth || stageW;
+    const curStageH = container.clientHeight || stageH;
 
-    // Bounded export resolution: 600px is 4x oversampled vs 150x150 mesh vertex grid,
-    // producing razor-sharp lithophanes while keeping the compressed payload under 45 KB.
-    const exportDim = 600;
-    const factor = exportDim / stageSize;
+    const curMaxW = curStageW * 0.88;
+    const curMaxH = curStageH * 0.88;
+    let curWindowW: number;
+    let curWindowH: number;
+    if (curMaxW / curMaxH > targetAspect) {
+      curWindowH = curMaxH;
+      curWindowW = curWindowH * targetAspect;
+    } else {
+      curWindowW = curMaxW;
+      curWindowH = curWindowW / targetAspect;
+    }
+
+    // High resolution export matching target lithophane aspect ratio
+    const baseExportDim = 1200;
+    const exportW = targetAspect >= 1 ? baseExportDim : Math.round(baseExportDim * targetAspect);
+    const exportH = targetAspect >= 1 ? Math.round(baseExportDim / targetAspect) : baseExportDim;
+
+    // Scale factor from screen framing window to export canvas
+    const scaleFactor = exportW / curWindowW;
 
     const canvas = document.createElement("canvas");
-    canvas.width = exportDim;
-    canvas.height = exportDim;
+    canvas.width = exportW;
+    canvas.height = exportH;
     const ctx = canvas.getContext("2d");
 
     if (!ctx) {
@@ -163,50 +262,37 @@ export function LithophaneFramingModal({
       return;
     }
 
-    // High quality bicubic resampling
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
 
-    // Clean neutral background (white plastic base)
     ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, exportDim, exportDim);
+    ctx.fillRect(0, 0, exportW, exportH);
 
-    // ── Match exactly what the preview shows ──
-    // The preview container is a square of stageSize × stageSize.
-    // Inside it the image is rendered with CSS object-contain, which means
-    // the image is letterboxed/pillarboxed so it fits entirely within the
-    // square. The user's pan/zoom is applied on top of that contained size.
-    // We must replicate the same geometry on the canvas so what was visible
-    // in the preview is exactly what gets exported.
-    const imgAspect = img.width / img.height;
+    // Geometry of photo inside the preview stage (CSS object-contain within container)
+    const imgAspect = (img.naturalWidth || img.width) / (img.naturalHeight || img.height);
     let containW: number;
     let containH: number;
-    if (imgAspect >= 1) {
-      // Landscape or square: width fills stage, height is smaller
-      containW = stageSize;
-      containH = stageSize / imgAspect;
+    if (imgAspect >= curStageW / curStageH) {
+      containW = curStageW;
+      containH = curStageW / imgAspect;
     } else {
-      // Portrait: height fills stage, width is smaller
-      containH = stageSize;
-      containW = stageSize * imgAspect;
+      containH = curStageH;
+      containW = curStageH * imgAspect;
     }
 
-    // Scale those contain dimensions up to canvas resolution
-    const drawW = containW * factor;
-    const drawH = containH * factor;
+    const drawW_canvas = containW * scale * scaleFactor;
+    const drawH_canvas = containH * scale * scaleFactor;
 
-    // Apply translation and scaling relative to canvas center
     ctx.save();
-    ctx.translate(exportDim / 2, exportDim / 2);
-    ctx.translate(panX * factor, panY * factor);
-    ctx.scale(scale, scale);
-    ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
+    // Center of canvas + user pan offset scaled to canvas resolution
+    ctx.translate(exportW / 2 + panX * scaleFactor, exportH / 2 + panY * scaleFactor);
+    ctx.drawImage(img, -drawW_canvas / 2, -drawH_canvas / 2, drawW_canvas, drawH_canvas);
     ctx.restore();
 
     const croppedDataUrl = canvas.toDataURL("image/jpeg", 0.95);
     onApply(croppedDataUrl, { scale, panX, panY });
     onClose();
-  }, [onApply, onClose, panX, panY, scale]);
+  }, [onApply, onClose, panX, panY, scale, stageH, stageW, targetAspect]);
 
   if (!isOpen) return null;
 
@@ -238,8 +324,8 @@ export function LithophaneFramingModal({
               </h3>
               <p className="text-xs text-muted">
                 {shape === "heart"
-                  ? "Drag to reposition · Zoom to center faces inside the heart"
-                  : "Drag to reposition · Zoom to frame the perfect composition"}
+                  ? "Drag to reposition · Zoom to fit within the glowing heart outline"
+                  : "Drag to reposition · The photo inside the yellow box is what becomes your lithophane"}
               </p>
             </div>
           </div>
@@ -281,7 +367,6 @@ export function LithophaneFramingModal({
                   draggable={false}
                   className="max-h-full max-w-full object-contain pointer-events-none select-none"
                   style={{
-                    // Prevent image smoothing blur during live drag
                     imageRendering: "auto",
                   }}
                 />
@@ -291,23 +376,27 @@ export function LithophaneFramingModal({
             {/* Shape Overlay Cutout */}
             <div className="absolute inset-0 pointer-events-none">
               <svg
-                viewBox="0 0 100 100"
-                preserveAspectRatio="none"
+                viewBox={`0 0 ${stageW} ${stageH}`}
                 className="h-full w-full"
               >
                 <defs>
-                  {/* Mask: White shows outer dark scrim, Black cuts out the heart window */}
-                  <mask id="heart-scrim-mask">
-                    <rect x="0" y="0" width="100" height="100" fill="white" />
+                  {/* Mask: White shows outer dark scrim, Black cuts out the framing window */}
+                  <mask id="framing-scrim-mask">
+                    <rect x="0" y="0" width={stageW} height={stageH} fill="white" />
                     {shape === "heart" ? (
-                      // Authentic smooth heart cutout matching heartTaubin bounds
-                      <path
-                        d="M 50 94 C 35 80, 5 62, 5 38 C 5 20, 16 6, 28 6 C 37 6, 45 10, 50 14 C 55 10, 63 6, 72 6 C 84 6, 95 20, 95 38 C 95 62, 65 80, 50 94 Z"
+                      <polygon
+                        points={HEART_BOUNDARY_POINTS.map(([u, v]) => `${windowLeft + u * windowW},${windowTop + v * windowH}`).join(" ")}
                         fill="black"
                       />
                     ) : (
-                      // Rectangular window
-                      <rect x="6" y="6" width="88" height="88" rx="4" fill="black" />
+                      <rect
+                        x={windowLeft}
+                        y={windowTop}
+                        width={windowW}
+                        height={windowH}
+                        rx={6}
+                        fill="black"
+                      />
                     )}
                   </mask>
                 </defs>
@@ -316,75 +405,65 @@ export function LithophaneFramingModal({
                 <rect
                   x="0"
                   y="0"
-                  width="100"
-                  height="100"
+                  width={stageW}
+                  height={stageH}
                   fill="rgba(5, 7, 10, 0.76)"
-                  mask="url(#heart-scrim-mask)"
+                  mask="url(#framing-scrim-mask)"
                 />
 
                 {/* Glowing Shape Outline & Guides */}
                 {shape === "heart" ? (
                   <>
-                    {/* Glowing outer heart silhouette */}
-                    <path
-                      d="M 50 94 C 35 80, 5 62, 5 38 C 5 20, 16 6, 28 6 C 37 6, 45 10, 50 14 C 55 10, 63 6, 72 6 C 84 6, 95 20, 95 38 C 95 62, 65 80, 50 94 Z"
+                    <polygon
+                      points={HEART_BOUNDARY_POINTS.map(([u, v]) => `${windowLeft + u * windowW},${windowTop + v * windowH}`).join(" ")}
                       fill="none"
                       stroke="#f59e0b"
-                      strokeWidth="1.8"
+                      strokeWidth="2.2"
                       className="filter drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]"
                     />
 
-                    {/* Subtle dashed inner guideline */}
-                    <path
-                      d="M 50 90 C 37 77, 8 60, 8 39 C 8 23, 18 10, 28 10 C 36 10, 44 14, 50 17 C 56 14, 64 10, 72 10 C 82 10, 92 23, 92 39 C 92 60, 63 77, 50 90 Z"
-                      fill="none"
-                      stroke="#f59e0b"
-                      strokeWidth="0.75"
-                      strokeDasharray="2 3"
-                      opacity="0.6"
-                    />
-
-                    {/* Lobe sweet-spot guides (where faces sit best) */}
-                    <circle
-                      cx="32"
-                      cy="30"
-                      r="11"
-                      fill="none"
-                      stroke="rgba(255,255,255,0.25)"
-                      strokeWidth="0.8"
-                      strokeDasharray="2 2"
-                    />
-                    <circle
-                      cx="68"
-                      cy="30"
-                      r="11"
-                      fill="none"
-                      stroke="rgba(255,255,255,0.25)"
-                      strokeWidth="0.8"
-                      strokeDasharray="2 2"
-                    />
-
-                    {/* Center cleft line */}
+                    {/* Subtle center cleft line */}
                     <line
-                      x1="50"
-                      y1="20"
-                      x2="50"
-                      y2="85"
-                      stroke="rgba(255,255,255,0.15)"
-                      strokeWidth="0.6"
+                      x1={windowLeft + 0.5 * windowW}
+                      y1={windowTop + 0.15 * windowH}
+                      x2={windowLeft + 0.5 * windowW}
+                      y2={windowTop + 0.95 * windowH}
+                      stroke="rgba(255,255,255,0.2)"
+                      strokeWidth="0.8"
                       strokeDasharray="3 3"
+                    />
+
+                    {/* Lobe sweet-spot guides */}
+                    <circle
+                      cx={windowLeft + 0.28 * windowW}
+                      cy={windowTop + 0.30 * windowH}
+                      r={windowW * 0.11}
+                      fill="none"
+                      stroke="rgba(255,255,255,0.22)"
+                      strokeWidth="0.8"
+                      strokeDasharray="2 2"
+                    />
+                    <circle
+                      cx={windowLeft + 0.72 * windowW}
+                      cy={windowTop + 0.30 * windowH}
+                      r={windowW * 0.11}
+                      fill="none"
+                      stroke="rgba(255,255,255,0.22)"
+                      strokeWidth="0.8"
+                      strokeDasharray="2 2"
                     />
                   </>
                 ) : (
                   <rect
-                    x="6"
-                    y="6"
-                    width="88"
-                    height="88"
-                    rx="4"
+                    x={windowLeft}
+                    y={windowTop}
+                    width={windowW}
+                    height={windowH}
+                    rx={6}
                     fill="none"
                     stroke="#f59e0b"
-                    strokeWidth="1.5"
+                    strokeWidth="2.2"
+                    className="filter drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]"
                   />
                 )}
               </svg>
@@ -392,7 +471,7 @@ export function LithophaneFramingModal({
               {/* Floating Helper Pill */}
               <div className="absolute top-2.5 left-1/2 -translate-x-1/2 rounded-full border border-white/15 bg-black/65 px-3 py-1 text-[11px] font-medium text-white/90 backdrop-blur-md flex items-center gap-1.5 shadow-md">
                 <Move className="size-3 text-accent" />
-                <span>Drag photo to center faces</span>
+                <span>Drag photo to position · Yellow box is your lithophane</span>
               </div>
             </div>
           </div>
@@ -406,7 +485,7 @@ export function LithophaneFramingModal({
             <div className="flex items-center gap-2 flex-1">
               <button
                 type="button"
-                onClick={() => setScale((s) => Math.max(0.8, s - 0.1))}
+                onClick={() => setScale((s) => Math.max(0.6, s - 0.1))}
                 className="flex size-7 items-center justify-center rounded-lg border border-border text-muted hover:text-fg cursor-pointer"
                 title="Zoom out"
               >
@@ -414,7 +493,7 @@ export function LithophaneFramingModal({
               </button>
               <input
                 type="range"
-                min="0.8"
+                min="0.6"
                 max="3.0"
                 step="0.05"
                 value={scale}
@@ -448,10 +527,10 @@ export function LithophaneFramingModal({
               )}
               <button
                 type="button"
-                onClick={handleFillHeart}
+                onClick={handleFill}
                 className="rounded-lg border border-border bg-surface-2/60 px-2.5 py-1 text-[11px] font-semibold text-fg hover:border-accent hover:text-accent transition-colors cursor-pointer"
               >
-                Fill
+                Fill Frame
               </button>
               <button
                 type="button"

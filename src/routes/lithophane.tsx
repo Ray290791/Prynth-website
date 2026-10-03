@@ -733,6 +733,7 @@ function LithophaneStudioPage() {
         onClose={() => setIsFramingOpen(false)}
         imageSrc={rawPhotoUrl || photoUrl}
         shape={shape}
+        sizeMm={currentDims}
         initialCrop={cropConfig}
         onApply={(croppedUrl, newConfig) => {
           setPhotoUrl(croppedUrl);
