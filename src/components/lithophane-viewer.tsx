@@ -9,6 +9,7 @@ import {
   Camera,
   Layers,
   Sparkles,
+  Lightbulb,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isInsideHeart, computeHeartBorderDistances } from "@/lib/lithophane-export";
@@ -26,6 +27,7 @@ export interface LithophaneViewerProps {
   invert?: boolean;
   fitMode?: LithophaneFitMode;
   className?: string;
+  hasLightBox?: boolean;
 }
 
 // Sub-pixel bilinear interpolation for physical vertex height displacement
@@ -517,6 +519,7 @@ function LithophaneScene({
   autoRotate,
   fitMode = "dynamic",
   imgNaturalDim,
+  hasLightBox = false,
 }: {
   imgData: ImageData | null;
   photoTexture: THREE.CanvasTexture | null;
@@ -528,6 +531,7 @@ function LithophaneScene({
   autoRotate: boolean;
   fitMode?: LithophaneFitMode;
   imgNaturalDim: { width: number; height: number } | null;
+  hasLightBox?: boolean;
 }) {
   const meshRef = useRef<THREE.Group>(null);
   // Direct ref to the ShaderMaterial so we can update uniforms inside useFrame
@@ -644,6 +648,39 @@ function LithophaneScene({
         </group>
       )}
 
+      {/* 3D Physical Light Box Enclosure (Rendered when Light Box bundle is selected) */}
+      {hasLightBox && shape === "flat" && (
+        <group position={[0, 0, -8]}>
+          {/* Outer matte/wooden enclosure box */}
+          <mesh position={[0, 0, -3.5]} castShadow receiveShadow>
+            <boxGeometry args={[sizeMm.width + 12, sizeMm.height + 12, 16]} />
+            <meshStandardMaterial color="#262320" roughness={0.7} metalness={0.1} />
+          </mesh>
+          {/* Inner warm diffuser plate */}
+          <mesh position={[0, 0, -0.4]}>
+            <planeGeometry args={[sizeMm.width + 2, sizeMm.height + 2]} />
+            <meshBasicMaterial color={backlightOn ? "#ffebbd" : "#322d28"} />
+          </mesh>
+        </group>
+      )}
+
+      {hasLightBox && (shape === "heart" || shape === "curved") && (
+        <group position={[0, -sizeMm.height * 0.5 - 7, 0]}>
+          {/* Illuminated Pedestal Base Housing */}
+          <mesh castShadow receiveShadow>
+            <boxGeometry args={[sizeMm.width * 0.85, 14, 34]} />
+            <meshStandardMaterial color="#262320" roughness={0.7} metalness={0.1} />
+          </mesh>
+          {/* LED light emission slot */}
+          {backlightOn && (
+            <mesh position={[0, 7.1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+              <planeGeometry args={[sizeMm.width * 0.75, 10]} />
+              <meshBasicMaterial color="#ffebbd" />
+            </mesh>
+          )}
+        </group>
+      )}
+
       {/* Subtle Ground Contact Shadow */}
       <ContactShadows
         position={[0, -sizeMm.height * 0.55, 0]}
@@ -666,6 +703,7 @@ export function LithophaneViewer({
   invert = false,
   fitMode = "dynamic",
   className,
+  hasLightBox = false,
 }: LithophaneViewerProps) {
   const [imgData, setImgData] = useState<ImageData | null>(null);
   const [photoTexture, setPhotoTexture] = useState<THREE.CanvasTexture | null>(null);
@@ -816,6 +854,7 @@ export function LithophaneViewer({
             autoRotate={autoRotate}
             fitMode={fitMode}
             imgNaturalDim={imgNaturalDim}
+            hasLightBox={hasLightBox}
           />
 
           <OrbitControls
@@ -845,7 +884,11 @@ export function LithophaneViewer({
           {/* Shape & Dimensions Badge */}
           <div className="pointer-events-auto flex items-center gap-2">
             <div className="flex items-center gap-1.5 rounded-full border border-border/80 bg-surface/85 px-3 py-1 text-xs backdrop-blur-md shadow-xs">
-              <Sparkles className="size-3.5 text-accent" />
+              {hasLightBox ? (
+                <Lightbulb className="size-3.5 text-amber-400 shrink-0" />
+              ) : (
+                <Sparkles className="size-3.5 text-accent shrink-0" />
+              )}
               <span className="font-medium text-fg">
                 {shape === "heart"
                   ? "Heart Keepsake"
@@ -857,6 +900,12 @@ export function LithophaneViewer({
               <span className="text-muted tabular-nums">
                 {sizeMm.width} × {sizeMm.height} mm
               </span>
+              {hasLightBox && (
+                <>
+                  <span className="text-muted">·</span>
+                  <span className="text-amber-400 font-semibold text-[11px]">LED Light Box</span>
+                </>
+              )}
             </div>
           </div>
 
@@ -915,8 +964,12 @@ export function LithophaneViewer({
                   : "text-muted hover:text-fg"
               )}
             >
-              <Sun className={cn("size-3.5 shrink-0", backlightOn && "fill-stone-950 text-stone-950")} />
-              <span>Sunlit Glow</span>
+              {hasLightBox ? (
+                <Lightbulb className={cn("size-3.5 shrink-0", backlightOn && "fill-stone-950 text-stone-950")} />
+              ) : (
+                <Sun className={cn("size-3.5 shrink-0", backlightOn && "fill-stone-950 text-stone-950")} />
+              )}
+              <span>{hasLightBox ? "LED Glow ON" : "Sunlit Glow"}</span>
             </button>
             <button
               type="button"

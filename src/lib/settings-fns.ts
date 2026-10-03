@@ -56,6 +56,17 @@ export type SiteSettings = {
   resend_from_email?: string;
   razorpay_key_id?: string;
   razorpay_key_secret?: string;
+  // Lithophane Studio Pricing & Options
+  lithophane_price_medium?: string;
+  lithophane_price_standard?: string;
+  lithophane_price_large?: string;
+  lithophane_lightbox_addon_medium?: string;
+  lithophane_lightbox_addon_standard?: string;
+  lithophane_lightbox_addon_large?: string;
+  lithophane_gift_packaging_fee?: string;
+  lithophane_bulk_discount_5?: string;
+  lithophane_bulk_discount_10?: string;
+  lithophane_bulk_discount_20?: string;
 };
 
 export const getSiteSettings = createServerFn({ method: "GET" }).handler(
@@ -106,6 +117,16 @@ export const getSiteSettings = createServerFn({ method: "GET" }).handler(
       custom_pricing_infills: JSON.stringify(INFILLS),
       custom_pricing_size_presets: JSON.stringify(SIZE_PRESETS),
       custom_pricing_complexities: JSON.stringify(COMPLEXITY),
+      lithophane_price_medium: "399",
+      lithophane_price_standard: "549",
+      lithophane_price_large: "749",
+      lithophane_lightbox_addon_medium: "249",
+      lithophane_lightbox_addon_standard: "299",
+      lithophane_lightbox_addon_large: "399",
+      lithophane_gift_packaging_fee: "99",
+      lithophane_bulk_discount_5: "5",
+      lithophane_bulk_discount_10: "10",
+      lithophane_bulk_discount_20: "15",
     };
 
     for (const row of rows) {
@@ -199,6 +220,16 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
     custom_pricing_infills: z.string().optional(),
     custom_pricing_size_presets: z.string().optional(),
     custom_pricing_complexities: z.string().optional(),
+    lithophane_price_medium: z.string().optional(),
+    lithophane_price_standard: z.string().optional(),
+    lithophane_price_large: z.string().optional(),
+    lithophane_lightbox_addon_medium: z.string().optional(),
+    lithophane_lightbox_addon_standard: z.string().optional(),
+    lithophane_lightbox_addon_large: z.string().optional(),
+    lithophane_gift_packaging_fee: z.string().optional(),
+    lithophane_bulk_discount_5: z.string().optional(),
+    lithophane_bulk_discount_10: z.string().optional(),
+    lithophane_bulk_discount_20: z.string().optional(),
   }).partial())
   .handler(async ({ data, context }) => {
     if (!context.userId) throw new Error("Unauthorized");

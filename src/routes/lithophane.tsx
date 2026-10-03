@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, getRouteApi } from "@tanstack/react-router";
 import {
   Upload,
   RotateCw,
@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   Gift,
   Sun,
+  Lightbulb,
   Crop,
   Truck,
   Award,
@@ -34,15 +35,17 @@ import {
 import { DEFAULT_SAMPLE_PHOTO } from "@/lib/lithophane-samples";
 import { compressImageDataUrl } from "@/lib/image-utils";
 
+const rootRoute = getRouteApi("__root__");
+
 export const Route = createFileRoute("/lithophane")({
   component: LithophaneStudioPage,
   head: () => ({
     meta: [
-      { title: "Custom 3D Printed Lithophanes & Window Keepsakes | prynth!" },
+      { title: "Custom 3D Printed Lithophanes & Light Boxes | prynth!" },
       {
         name: "description",
         content:
-          "Transform your favorite memories into glowing 3D sunlit lithophanes. Illuminated naturally by window sunlight or ambient room light. Includes a matching display stand and free delivery.",
+          "Transform your favorite memories into glowing 3D lithophanes. Available as sunlit window keepsakes or with warm LED light boxes. Includes display setup and free delivery across India.",
       },
     ],
   }),
@@ -50,6 +53,7 @@ export const Route = createFileRoute("/lithophane")({
 
 type AspectRatio = "landscape" | "portrait" | "square";
 type SizeTier = "medium" | "standard" | "large";
+type DisplayStyle = "sunlit" | "lightbox";
 
 interface ShapeOption {
   id: LithophaneShape;
@@ -64,13 +68,13 @@ const SHAPES: ShapeOption[] = [
     id: "flat",
     name: "Classic Flat Panel",
     tag: "Timeless",
-    description: "Sleek architectural relief with included matching display stand. Clean, balanced, and versatile.",
+    description: "Sleek architectural relief. Mounts in a matching desktop stand or our custom wooden LED light box.",
   },
   {
     id: "curved",
     name: "Self-Standing Arc",
     tag: "Desk Favorite",
-    description: "Gentle 37° curved panoramic arc that balances stably on any desk or shelf without needing a stand.",
+    description: "Gentle 37° curved panoramic arc that balances stably on any desk or shelf. Available with glowing pedestal.",
   },
   {
     id: "heart",
@@ -80,10 +84,9 @@ const SHAPES: ShapeOption[] = [
   },
 ];
 
-const SIZES: {
+const SIZE_CONFIGS: {
   id: SizeTier;
   label: string;
-  basePrice: number;
   popular?: boolean;
   description: string;
   dims: Record<AspectRatio, { width: number; height: number }>;
@@ -91,7 +94,6 @@ const SIZES: {
   {
     id: "medium",
     label: "Medium",
-    basePrice: 399,
     description: "Compact & intimate. Ideal for window sills and cozy nightstands.",
     dims: {
       landscape: { width: 120, height: 90 },
@@ -102,7 +104,6 @@ const SIZES: {
   {
     id: "standard",
     label: "Standard",
-    basePrice: 549,
     popular: true,
     description: "Our most popular size with rich detail and balanced presence.",
     dims: {
@@ -114,7 +115,6 @@ const SIZES: {
   {
     id: "large",
     label: "Deluxe",
-    basePrice: 749,
     description: "Maximum size with stunning gallery clarity and depth.",
     dims: {
       landscape: { width: 190, height: 130 },
@@ -124,20 +124,22 @@ const SIZES: {
   },
 ];
 
-const GIFT_PACKAGING_FEE = 99;
-
 const FAQS = [
   {
+    q: "What is the difference between the Sunlit Keepsake and the LED Light Box?",
+    a: "The Sunlit Keepsake is 100% wire-free and relies on natural daylight passing through the translucent relief from behind (includes our custom matching display stand). The LED Light Box option includes a custom illuminated wooden/matte frame housing (or pedestal base) with built-in warm-white LED backlighting and a USB cable, allowing your lithophane to glow anywhere, day or night — ideal for nightstands, desks, and bookshelves!",
+  },
+  {
     q: "How does the lithophane light up without wires or batteries?",
-    a: "Lithophanes work through optical translucency. When placed in front of a sunlit window or desk lamp, thicker sculpted areas block more light (creating shadows) while thinner areas allow light to pass through (creating highlights). It is 100% powered by natural daylight!",
+    a: "Lithophanes work through physical optical translucency. When placed in front of a sunlit window or desk lamp, thicker sculpted areas block more light (creating shadows) while thinner areas allow light to pass through (creating highlights). It is 100% powered by natural daylight!",
   },
   {
     q: "What type of photo works best?",
     a: "Clear photos with good contrast and well-lit faces look phenomenal. High resolution family portraits, wedding pictures, vacation sunsets, and pet photos all translate into stunning 3D bas-reliefs.",
   },
   {
-    q: "Does it come with a display stand?",
-    a: "Yes! The Classic Flat Panel includes a precision-matched minimalist display stand. The Self-Standing Arc and Heart Keepsake are engineered to balance securely on any flat surface on their own.",
+    q: "Does it come with a display stand or power cable?",
+    a: "Yes! If you choose the Sunlit Keepsake, a precision-matched display stand is included. If you choose the LED Light Box bundle, it arrives completely assembled in its custom illuminated frame with a USB power cable and on/off switch ready to plug into any phone charger or computer port.",
   },
 ];
 
@@ -145,7 +147,31 @@ function LithophaneStudioPage() {
   const navigate = useNavigate();
   const add = useCart((s) => s.add);
 
+  // Dynamic pricing loaded from Admin Site Settings
+  const { settings } = rootRoute.useLoaderData();
+
+  const priceMedium = Number(settings?.lithophane_price_medium || "399");
+  const priceStandard = Number(settings?.lithophane_price_standard || "549");
+  const priceLarge = Number(settings?.lithophane_price_large || "749");
+
+  const lightboxAddonMedium = Number(settings?.lithophane_lightbox_addon_medium || "249");
+  const lightboxAddonStandard = Number(settings?.lithophane_lightbox_addon_standard || "299");
+  const lightboxAddonLarge = Number(settings?.lithophane_lightbox_addon_large || "399");
+
+  const giftPackagingFee = Number(settings?.lithophane_gift_packaging_fee || "99");
+
+  const bulkTier5 = Number(settings?.lithophane_bulk_discount_5 || "5") / 100;
+  const bulkTier10 = Number(settings?.lithophane_bulk_discount_10 || "10") / 100;
+  const bulkTier20 = Number(settings?.lithophane_bulk_discount_20 || "15") / 100;
+
+  const sizePricing: Record<SizeTier, { basePrice: number; lightboxAddon: number }> = {
+    medium: { basePrice: priceMedium, lightboxAddon: lightboxAddonMedium },
+    standard: { basePrice: priceStandard, lightboxAddon: lightboxAddonStandard },
+    large: { basePrice: priceLarge, lightboxAddon: lightboxAddonLarge },
+  };
+
   // Customizer state
+  const [displayStyle, setDisplayStyle] = useState<DisplayStyle>("sunlit");
   const [rawPhotoUrl, setRawPhotoUrl] = useState<string>("");
   const [photoUrl, setPhotoUrl] = useState<string>("");
   const [cropConfig, setCropConfig] = useState<CropConfig>({ scale: 1.25, panX: 0, panY: -10 });
@@ -170,20 +196,22 @@ function LithophaneStudioPage() {
     setPhotoUrl(DEFAULT_SAMPLE_PHOTO.url);
   }, []);
 
-  const selectedSizeConfig = SIZES.find((s) => s.id === size)!;
+  const selectedSizeConfig = SIZE_CONFIGS.find((s) => s.id === size)!;
   const currentDims = selectedSizeConfig.dims[aspect];
+  const currentPricing = sizePricing[size];
 
   // Pricing calculations
-  const baseUnitPrice = selectedSizeConfig.basePrice;
-  const giftFeePerItem = isGift ? GIFT_PACKAGING_FEE : 0;
+  const displayAddon = displayStyle === "lightbox" ? currentPricing.lightboxAddon : 0;
+  const baseUnitPrice = currentPricing.basePrice + displayAddon;
+  const giftFeePerItem = isGift ? giftPackagingFee : 0;
   const finalUnitPrice = baseUnitPrice + giftFeePerItem;
   const rawSubtotal = finalUnitPrice * qty;
 
   // Bulk discount
   let bulkDiscountRate = 0;
-  if (qty >= 20) bulkDiscountRate = 0.15;
-  else if (qty >= 10) bulkDiscountRate = 0.1;
-  else if (qty >= 5) bulkDiscountRate = 0.05;
+  if (qty >= 20) bulkDiscountRate = bulkTier20;
+  else if (qty >= 10) bulkDiscountRate = bulkTier10;
+  else if (qty >= 5) bulkDiscountRate = bulkTier5;
 
   const totalDiscount = Math.round(rawSubtotal * bulkDiscountRate);
   const finalTotal = rawSubtotal - totalDiscount;
@@ -247,6 +275,11 @@ function LithophaneStudioPage() {
         ? "Self-Standing Arc"
         : "Classic Flat Panel";
 
+    const displayStyleLabel =
+      displayStyle === "lightbox"
+        ? "With Warm LED Light Box (USB Powered)"
+        : "Sunlit Keepsake (Display Stand Included)";
+
     const giftNotes = isGift
       ? ` [GIFT PACKAGING: Luxury Presentation Box, Conceal Prices${
           recipientName.trim() ? ` · Recipient: ${recipientName.trim()}` : ""
@@ -258,15 +291,16 @@ function LithophaneStudioPage() {
       quality: "Ultra-fine (0.12mm)",
       infill: "100% Solid",
       color: "Optical Jade White",
-      material: "Lithophane White PLA (0.12mm)",
+      material: displayStyle === "lightbox" ? "Lithophane + LED Light Box" : "Lithophane White PLA (0.12mm)",
       dimensions: `${currentDims.width} × ${currentDims.height} mm (${shapeLabel})`,
-      notes: `Shape: ${shapeLabel} · Size: ${selectedSizeConfig.label} (${aspect})${giftNotes}`,
+      notes: `Display: ${displayStyleLabel} · Shape: ${shapeLabel} · Size: ${selectedSizeConfig.label} (${aspect})${giftNotes}`,
       referencePhotos: [finalPhoto],
     };
 
-    const cartTitle = isGift
-      ? `3D Lithophane · ${shapeLabel} 🎁 (Gift Wrapped)`
-      : `3D Lithophane · ${shapeLabel}`;
+    const cartTitle =
+      displayStyle === "lightbox"
+        ? `3D Lithophane + LED Light Box · ${shapeLabel}${isGift ? " 🎁" : ""}`
+        : `3D Lithophane · ${shapeLabel}${isGift ? " 🎁" : ""}`;
 
     add({
       kind: "custom",
@@ -274,18 +308,23 @@ function LithophaneStudioPage() {
       image: finalPhoto,
       color: "Optical Jade White",
       size: `${currentDims.width} × ${currentDims.height} mm (${selectedSizeConfig.label})`,
-      material: "Lithophane White PLA (0.12mm)",
+      material: displayStyle === "lightbox" ? "With LED Light Box" : "Sunlit Stand",
       unitPrice: finalUnitPrice,
       qty,
       custom: customSpec,
     });
 
-    toast.success("Custom Lithophane added to cart!", {
-      action: {
-        label: "View Cart",
-        onClick: () => void navigate({ to: "/cart" }),
-      },
-    });
+    toast.success(
+      displayStyle === "lightbox"
+        ? "Lithophane with LED Light Box added to cart!"
+        : "Custom Lithophane added to cart!",
+      {
+        action: {
+          label: "View Cart",
+          onClick: () => void navigate({ to: "/cart" }),
+        },
+      }
+    );
   };
 
   return (
@@ -309,31 +348,31 @@ function LithophaneStudioPage() {
         <div className="max-w-3xl space-y-4">
           <div className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-surface/80 px-3.5 py-1 text-xs font-medium text-fg shadow-xs backdrop-blur-md">
             <span className="flex size-2 rounded-full bg-accent animate-pulse" />
-            <span className="font-semibold text-accent">Sunlit Keepsake Studio</span>
+            <span className="font-semibold text-accent">Sunlit &amp; Light Box Studio</span>
             <span className="text-muted/60">·</span>
-            <span className="text-muted">Sculpted 3D Daylight Art</span>
+            <span className="text-muted">Sculpted 3D Keepsakes</span>
           </div>
 
           <h1 className="font-display text-3xl font-semibold tracking-tight text-fg sm:text-4xl lg:text-5xl leading-[1.12]">
             Transform Your Favorite Photo into a{" "}
             <span className="bg-gradient-to-r from-accent via-teal-400 to-amber-400 bg-clip-text text-transparent">
-              Sunlit 3D Keepsake
+              Glowing 3D Keepsake
             </span>
           </h1>
 
           <p className="text-sm sm:text-base text-muted leading-relaxed">
-            Carved in heirloom-grade matte white polymer with 0.12mm optical precision. Sunlight streams through the physical relief from behind, illuminating your cherished memory in natural glowing contrast — zero wires, zero batteries, pure daylight.
+            Carved in heirloom-grade matte white polymer with 0.12mm optical precision. Enjoy it wire-free by a sunlit window, or choose our warm LED light box bundle to illuminate your cherished memory day and night with an ambient golden glow.
           </p>
 
           <div className="flex flex-wrap items-center gap-4 pt-1 text-xs text-muted">
             <span className="flex items-center gap-1.5">
               <Sun className="size-3.5 text-amber-400" />
-              Powered by window sunlight
+              Sunlit Window or Warm LED Box
             </span>
             <span className="text-border">·</span>
             <span className="flex items-center gap-1.5">
               <Award className="size-3.5 text-accent" />
-              Matching stand included
+              Complete display setup included
             </span>
             <span className="text-border">·</span>
             <span className="flex items-center gap-1.5">
@@ -359,6 +398,7 @@ function LithophaneStudioPage() {
                   contrast={1.15}
                   invert={false}
                   fitMode="dynamic"
+                  hasLightBox={displayStyle === "lightbox"}
                 />
               </div>
 
@@ -369,8 +409,17 @@ function LithophaneStudioPage() {
                   Drag to rotate 360° · Scroll to zoom
                 </span>
                 <span className="hidden sm:inline-flex items-center gap-1.5 text-muted">
-                  <Sparkle className="size-3 text-amber-400" />
-                  Toggle mode to see light transmission
+                  {displayStyle === "lightbox" ? (
+                    <>
+                      <Lightbulb className="size-3 text-amber-400" />
+                      LED Light Box active in 3D preview
+                    </>
+                  ) : (
+                    <>
+                      <Sparkle className="size-3 text-amber-400" />
+                      Toggle mode to see light transmission
+                    </>
+                  )}
                 </span>
               </div>
             </div>
@@ -489,11 +538,11 @@ function LithophaneStudioPage() {
             <div className="grid sm:grid-cols-3 gap-3.5">
               <div className="rounded-2xl border border-border/80 bg-surface/70 p-4 space-y-2 shadow-xs backdrop-blur-xs">
                 <div className="size-8 rounded-xl bg-amber-400/15 flex items-center justify-center text-amber-400">
-                  <Sun className="size-4.5" />
+                  <Lightbulb className="size-4.5" />
                 </div>
-                <h4 className="font-semibold text-xs text-fg">Powered by Sunlight</h4>
+                <h4 className="font-semibold text-xs text-fg">Daylight or LED Glow</h4>
                 <p className="text-xs text-muted leading-relaxed">
-                  Place on your window sill. Natural daylight streams through the relief, glowing warmly without batteries or cords.
+                  Choose between wire-free window sunlight or our plug-in warm LED light box bundle for nighttime ambiance.
                 </p>
               </div>
 
@@ -511,9 +560,9 @@ function LithophaneStudioPage() {
                 <div className="size-8 rounded-xl bg-emerald-400/15 flex items-center justify-center text-emerald-400">
                   <Award className="size-4.5" />
                 </div>
-                <h4 className="font-semibold text-xs text-fg">Complete Display Setup</h4>
+                <h4 className="font-semibold text-xs text-fg">Ready to Display</h4>
                 <p className="text-xs text-muted leading-relaxed">
-                  Arrives ready to display with our matching minimalist stand, packaged securely in eco-friendly protective casing.
+                  Arrives complete with matching stand or illuminated LED frame, safely packaged in eco-friendly protective casing.
                 </p>
               </div>
             </div>
@@ -522,11 +571,110 @@ function LithophaneStudioPage() {
           {/* Right Column: Tactile Configurator & Sticky Checkout (5 cols) */}
           <div className="space-y-6 lg:col-span-5">
             <div className="rounded-3xl border border-border/80 bg-surface/90 p-6 backdrop-blur-xl shadow-xl lg:sticky lg:top-24 space-y-6">
-              {/* Step 1: Shape Selection */}
+              {/* Step 1: Display & Illumination Style */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-semibold uppercase tracking-wider text-muted">
-                    1. Choose Silhouette
+                    1. Choose Display &amp; Illumination
+                  </Label>
+                  <span className="text-[11px] text-accent font-medium">Display Options</span>
+                </div>
+
+                <div className="grid gap-2.5">
+                  {/* Option A: Sunlit Keepsake */}
+                  <button
+                    type="button"
+                    onClick={() => setDisplayStyle("sunlit")}
+                    className={cn(
+                      "group relative flex items-start justify-between p-3.5 rounded-2xl border text-left transition-all duration-150 cursor-pointer",
+                      displayStyle === "sunlit"
+                        ? "border-accent bg-accent/10 ring-1 ring-accent shadow-xs"
+                        : "border-border/80 bg-surface-2/40 hover:border-accent/40 hover:bg-surface-2/70"
+                    )}
+                  >
+                    <div className="pr-3">
+                      <div className="flex items-center gap-2">
+                        <Sun className="size-4 text-amber-500" />
+                        <span className="text-sm font-semibold text-fg tracking-tight">
+                          Sunlit Keepsake
+                        </span>
+                        <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-semibold text-accent">
+                          100% Wire-Free
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted mt-1 leading-relaxed">
+                        Illuminated by natural window daylight. Includes our precision-matched desktop display stand.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col items-end shrink-0 gap-1.5 mt-0.5">
+                      <div
+                        className={cn(
+                          "size-5 rounded-full border flex items-center justify-center transition-colors",
+                          displayStyle === "sunlit"
+                            ? "border-accent bg-accent text-ink"
+                            : "border-border bg-surface"
+                        )}
+                      >
+                        {displayStyle === "sunlit" && <Check className="size-3 stroke-[3]" />}
+                      </div>
+                      <span className="text-[11px] font-semibold text-muted">Included</span>
+                    </div>
+                  </button>
+
+                  {/* Option B: Lithophane with Warm LED Light Box */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDisplayStyle("lightbox");
+                      if (!backlightOn) setBacklightOn(true);
+                    }}
+                    className={cn(
+                      "group relative flex items-start justify-between p-3.5 rounded-2xl border text-left transition-all duration-150 cursor-pointer",
+                      displayStyle === "lightbox"
+                        ? "border-amber-400 bg-amber-400/10 ring-1 ring-amber-400 shadow-xs"
+                        : "border-border/80 bg-surface-2/40 hover:border-amber-400/40 hover:bg-surface-2/70"
+                    )}
+                  >
+                    <div className="pr-3">
+                      <div className="flex items-center gap-2">
+                        <Lightbulb className="size-4 text-amber-400 fill-amber-400/20" />
+                        <span className="text-sm font-semibold text-fg tracking-tight">
+                          With Warm LED Light Box
+                        </span>
+                        <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] font-bold text-amber-500">
+                          Day &amp; Night Glow
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted mt-1 leading-relaxed">
+                        Includes custom illuminated wooden/matte frame or glowing base. Plugs into USB for a cozy bedside glow.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col items-end shrink-0 gap-1.5 mt-0.5">
+                      <div
+                        className={cn(
+                          "size-5 rounded-full border flex items-center justify-center transition-colors",
+                          displayStyle === "lightbox"
+                            ? "border-amber-400 bg-amber-400 text-stone-950 font-bold"
+                            : "border-border bg-surface"
+                        )}
+                      >
+                        {displayStyle === "lightbox" && <Check className="size-3 stroke-[3]" />}
+                      </div>
+                      <span className="text-[11px] font-bold text-amber-500">
+                        +{formatINR(currentPricing.lightboxAddon)}
+                      </span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Step 2: Shape Selection */}
+              <div className="space-y-3 pt-4 border-t border-border/60">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted">
+                    2. Choose Silhouette
                   </Label>
                   <span className="text-[11px] text-accent font-medium">3 Heirloom Styles</span>
                 </div>
@@ -584,11 +732,11 @@ function LithophaneStudioPage() {
                 </div>
               </div>
 
-              {/* Step 2: Orientation & Size Selection */}
+              {/* Step 3: Orientation & Size Selection */}
               <div className="space-y-3 pt-4 border-t border-border/60">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-semibold uppercase tracking-wider text-muted">
-                    2. Orientation &amp; Dimensions
+                    3. Orientation &amp; Dimensions
                   </Label>
                   <span className="text-xs font-mono text-muted tabular-nums">
                     {currentDims.width} × {currentDims.height} mm
@@ -620,44 +768,54 @@ function LithophaneStudioPage() {
                   ))}
                 </div>
 
-                {/* Size Tiers Cards */}
+                {/* Size Tiers Cards with Dynamic Pricing */}
                 <div className="grid grid-cols-3 gap-2 pt-1">
-                  {SIZES.map((s) => (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => setSize(s.id)}
-                      className={cn(
-                        "relative flex flex-col items-center justify-center p-3 rounded-2xl border text-center transition-all duration-150 cursor-pointer",
-                        size === s.id
-                          ? "border-accent bg-accent/10 ring-1 ring-accent text-fg shadow-xs"
-                          : "border-border/80 bg-surface-2/40 text-muted hover:text-fg hover:border-accent/40"
-                      )}
-                    >
-                      {s.popular && (
-                        <span className="absolute -top-2 left-1/2 -translate-x-1/2 rounded-full bg-accent px-2 py-0.2 text-[9px] font-bold text-ink uppercase tracking-wider shadow-xs">
-                          Popular
+                  {SIZE_CONFIGS.map((s) => {
+                    const tierPricing = sizePricing[s.id];
+                    const tierDisplayPrice =
+                      tierPricing.basePrice + (displayStyle === "lightbox" ? tierPricing.lightboxAddon : 0);
+
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => setSize(s.id)}
+                        className={cn(
+                          "relative flex flex-col items-center justify-center p-3 rounded-2xl border text-center transition-all duration-150 cursor-pointer",
+                          size === s.id
+                            ? "border-accent bg-accent/10 ring-1 ring-accent text-fg shadow-xs"
+                            : "border-border/80 bg-surface-2/40 text-muted hover:text-fg hover:border-accent/40"
+                        )}
+                      >
+                        {s.popular && (
+                          <span className="absolute -top-2 left-1/2 -translate-x-1/2 rounded-full bg-accent px-2 py-0.2 text-[9px] font-bold text-ink uppercase tracking-wider shadow-xs">
+                            Popular
+                          </span>
+                        )}
+                        <span className="text-xs font-semibold text-fg">{s.label}</span>
+                        <span className="text-[10px] text-muted mt-0.5 tabular-nums">
+                          {s.dims[aspect].width}×{s.dims[aspect].height}mm
                         </span>
-                      )}
-                      <span className="text-xs font-semibold text-fg">{s.label}</span>
-                      <span className="text-[10px] text-muted mt-0.5 tabular-nums">
-                        {s.dims[aspect].width}×{s.dims[aspect].height}mm
-                      </span>
-                      <span className="text-xs font-bold text-accent mt-1.5">
-                        {formatINR(s.basePrice)}
-                      </span>
-                    </button>
-                  ))}
+                        <span className="text-xs font-bold text-accent mt-1.5">
+                          {formatINR(tierDisplayPrice)}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
 
                 {/* Inclusion reassurance */}
                 <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-[11px] text-emerald-400 font-medium flex items-center gap-2">
                   <Check className="size-3.5 text-emerald-400 shrink-0 stroke-[2.5]" />
-                  <span>Matching display stand included · Free express shipping</span>
+                  <span>
+                    {displayStyle === "lightbox"
+                      ? "USB cable & LED light box included · Free express shipping"
+                      : "Matching display stand included · Free express shipping"}
+                  </span>
                 </div>
               </div>
 
-              {/* Step 3: Luxury Gift Box Option */}
+              {/* Step 4: Luxury Gift Box Option */}
               <div
                 className={cn(
                   "rounded-2xl border p-4 transition-all duration-200 space-y-3",
@@ -680,7 +838,7 @@ function LithophaneStudioPage() {
                         Luxury Gift Box &amp; Card
                       </span>
                       <span className="rounded-full bg-accent/20 px-1.5 py-0.2 text-[10px] font-bold text-accent">
-                        +{formatINR(GIFT_PACKAGING_FEE)}
+                        +{formatINR(giftPackagingFee)}
                       </span>
                     </div>
                     <p className="text-[11px] text-muted leading-relaxed">
@@ -762,12 +920,12 @@ function LithophaneStudioPage() {
                 {/* Bulk tier notification */}
                 {bulkDiscountRate > 0 ? (
                   <div className="rounded-xl bg-accent/15 border border-accent/30 px-3 py-2 text-xs text-accent font-semibold flex items-center justify-between">
-                    <span>🎉 Bulk discount applied! ({bulkDiscountRate * 100}% OFF)</span>
+                    <span>🎉 Bulk discount applied! ({Math.round(bulkDiscountRate * 100)}% OFF)</span>
                     <span className="tabular-nums font-bold">−{formatINR(totalDiscount)}</span>
                   </div>
                 ) : (
                   <p className="text-[11px] text-muted">
-                    Ordering for wedding favors or family gifts? 5+ get 5% off, 10+ get 10% off, 20+ get 15% off.
+                    Ordering for wedding favors or family gifts? 5+ get {Math.round(bulkTier5 * 100)}% off, 10+ get {Math.round(bulkTier10 * 100)}% off, 20+ get {Math.round(bulkTier20 * 100)}% off.
                   </p>
                 )}
               </div>
@@ -824,7 +982,7 @@ function LithophaneStudioPage() {
               A New Way to Experience Photography
             </h2>
             <p className="text-sm text-muted leading-relaxed">
-              Traditional photos fade in albums or get lost on phone screens. Our 3D lithophanes turn your favorite captures into permanent, light-reactive sculptures that come to life every morning as the sun rises.
+              Traditional photos fade in albums or get lost on phone screens. Our 3D lithophanes turn your favorite captures into permanent, light-reactive sculptures that come to life every morning with sunlight or at night with our custom warm LED light box.
             </p>
           </div>
 
@@ -880,3 +1038,4 @@ function LithophaneStudioPage() {
     </div>
   );
 }
+

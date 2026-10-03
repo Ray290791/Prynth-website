@@ -17,6 +17,7 @@ import { getMaterialsAdmin, createMaterial, updateMaterial, deleteMaterial, type
 import { getAllProductsAdmin, deleteProduct, updateProduct, createProduct, updateProductInventory } from "@/lib/products-fns";
 import { getAdminSiteSettings, getSiteSettings, updateSiteSettings } from "@/lib/settings-fns";
 import { CustomPricingSettings } from "@/components/custom-pricing-settings";
+import { LithophanePricingSettings } from "@/components/lithophane-pricing-settings";
 import { getCouponsAdmin, createCoupon, deleteCoupon, getAnalyticsAdmin } from "@/lib/ecommerce-fns";
 import { getAdminTeam, addAdmin, removeAdmin, getAdminProfile, setAdminPin, requestPinResetOTP, resetAdminPinWithOTP, getAllUsersAdmin } from "@/lib/admin-fns";
 import { getFaqsAdmin, createFaq, updateFaq, deleteFaq, reorderFaqs } from "@/lib/faq-fns";
@@ -984,6 +985,16 @@ function SettingsTab() {
       custom_pricing_infills: ((fd.get("custom_pricing_infills") as string) || settings?.custom_pricing_infills || "").trim(),
       custom_pricing_size_presets: ((fd.get("custom_pricing_size_presets") as string) || settings?.custom_pricing_size_presets || "").trim(),
       custom_pricing_complexities: ((fd.get("custom_pricing_complexities") as string) || settings?.custom_pricing_complexities || "").trim(),
+      lithophane_price_medium: ((fd.get("lithophane_price_medium") as string) || settings?.lithophane_price_medium || "399").trim(),
+      lithophane_price_standard: ((fd.get("lithophane_price_standard") as string) || settings?.lithophane_price_standard || "549").trim(),
+      lithophane_price_large: ((fd.get("lithophane_price_large") as string) || settings?.lithophane_price_large || "749").trim(),
+      lithophane_lightbox_addon_medium: ((fd.get("lithophane_lightbox_addon_medium") as string) || settings?.lithophane_lightbox_addon_medium || "249").trim(),
+      lithophane_lightbox_addon_standard: ((fd.get("lithophane_lightbox_addon_standard") as string) || settings?.lithophane_lightbox_addon_standard || "299").trim(),
+      lithophane_lightbox_addon_large: ((fd.get("lithophane_lightbox_addon_large") as string) || settings?.lithophane_lightbox_addon_large || "399").trim(),
+      lithophane_gift_packaging_fee: ((fd.get("lithophane_gift_packaging_fee") as string) || settings?.lithophane_gift_packaging_fee || "99").trim(),
+      lithophane_bulk_discount_5: ((fd.get("lithophane_bulk_discount_5") as string) || settings?.lithophane_bulk_discount_5 || "5").trim(),
+      lithophane_bulk_discount_10: ((fd.get("lithophane_bulk_discount_10") as string) || settings?.lithophane_bulk_discount_10 || "10").trim(),
+      lithophane_bulk_discount_20: ((fd.get("lithophane_bulk_discount_20") as string) || settings?.lithophane_bulk_discount_20 || "15").trim(),
       payment_online_enabled: fd.get("payment_online_enabled") === "on" ? "true" : "false",
       payment_cod_enabled: fd.get("payment_cod_enabled") === "on" ? "true" : "false",
       payment_upi_enabled: fd.get("payment_upi_enabled") === "on" ? "true" : "false",
@@ -1212,6 +1223,13 @@ function SettingsTab() {
 
         {/* CUSTOM PRINT PRICING & FORMULAS SECTION */}
         <CustomPricingSettings
+          settings={settings}
+          onQuickSave={handleQuickSavePricing}
+          isSaving={updateMutation.isPending}
+        />
+
+        {/* LITHOPHANE STUDIO & LIGHT BOX PRICING SECTION */}
+        <LithophanePricingSettings
           settings={settings}
           onQuickSave={handleQuickSavePricing}
           isSaving={updateMutation.isPending}
