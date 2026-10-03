@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   Upload,
-  Image as ImageIcon,
   RotateCw,
   ShoppingBag,
   Sparkles,
@@ -10,14 +9,9 @@ import {
   Layers,
   Check,
   ShieldCheck,
-  Truck,
   Gift,
   Sun,
-  Sliders,
-  ArrowRight,
-  Info,
   Crop,
-  Maximize2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -28,7 +22,6 @@ import { cn } from "@/lib/utils";
 import {
   LithophaneViewer,
   type LithophaneShape,
-  type LithophaneFitMode,
 } from "@/components/lithophane-viewer";
 import {
   LithophaneFramingModal,
@@ -36,7 +29,6 @@ import {
 } from "@/components/lithophane-framing-modal";
 import { SAMPLE_PHOTOS } from "@/lib/lithophane-samples";
 import { compressImageDataUrl } from "@/lib/image-utils";
-
 
 export const Route = createFileRoute("/lithophane")({
   component: LithophaneStudioPage,
@@ -46,7 +38,7 @@ export const Route = createFileRoute("/lithophane")({
       {
         name: "description",
         content:
-          "Transform your favorite memories into tactile 3D printed lithophanes illuminated naturally by window sunlight or ambient room light. Includes a free 3D-printed display stand.",
+          "Transform your favorite memories into glowing 3D sunlit lithophanes. Illuminated naturally by window sunlight or ambient room light. Includes a matching display stand and free delivery.",
       },
     ],
   }),
@@ -67,19 +59,19 @@ const SHAPES: ShapeOption[] = [
     id: "flat",
     name: "Classic Flat Panel",
     tag: "Popular",
-    description: "Architectural flat portrait relief with precision beveled border and integrated standing base. Clean & versatile.",
+    description: "Sleek architectural relief with matching display stand. Clean, timeless, and versatile.",
   },
   {
     id: "curved",
     name: "Self-Standing Arc",
     tag: "Best for Desks",
-    description: "Elegant 37° cylindrical curved panorama. Completely self-supporting on any desk or shelf with zero wobble.",
+    description: "Gentle 37° curved panoramic arc that balances stably on any desk or shelf without a stand.",
   },
   {
     id: "heart",
     name: "Heart Keepsake",
     tag: "Romantic",
-    description: "Heart contour with integrated display pedestal, tailored for couples, anniversaries, and keepsake gifts.",
+    description: "Romantic sculpted heart silhouette with built-in pedestal base. Perfect for couples & anniversaries.",
   },
 ];
 
@@ -94,7 +86,7 @@ const SIZES: {
     id: "medium",
     label: "Medium",
     basePrice: 399,
-    description: "Compact & intimate. Ideal for window sills and cozy desks.",
+    description: "Compact & intimate. Ideal for window sills and cozy nightstands.",
     dims: {
       landscape: { width: 120, height: 90 },
       portrait: { width: 90, height: 120 },
@@ -105,7 +97,7 @@ const SIZES: {
     id: "standard",
     label: "Standard",
     basePrice: 549,
-    description: "Our most popular size. High definition micro-detail.",
+    description: "Our most popular size with rich detail and presence.",
     dims: {
       landscape: { width: 150, height: 100 },
       portrait: { width: 100, height: 150 },
@@ -116,7 +108,7 @@ const SIZES: {
     id: "large",
     label: "Deluxe",
     basePrice: 749,
-    description: "Maximum photographic resolution and gallery presence.",
+    description: "Maximum size with stunning gallery clarity.",
     dims: {
       landscape: { width: 190, height: 130 },
       portrait: { width: 130, height: 190 },
@@ -141,9 +133,6 @@ function LithophaneStudioPage() {
   const [shape, setShape] = useState<LithophaneShape>("flat");
   const [size, setSize] = useState<SizeTier>("standard");
   const [backlightOn, setBacklightOn] = useState<boolean>(true);
-  const [contrast, setContrast] = useState<number>(1.15);
-  const [invert, setInvert] = useState<boolean>(false);
-  const [fitMode, setFitMode] = useState<LithophaneFitMode>("dynamic");
   const [isGift, setIsGift] = useState<boolean>(false);
   const [giftMessage, setGiftMessage] = useState<string>("");
   const [recipientName, setRecipientName] = useState<string>("");
@@ -161,13 +150,13 @@ function LithophaneStudioPage() {
   const selectedSizeConfig = SIZES.find((s) => s.id === size)!;
   const currentDims = selectedSizeConfig.dims[aspect];
 
-  // Base unit price calculations (100% in-house 3D printed + free stand included)
+  // Pricing calculations
   const baseUnitPrice = selectedSizeConfig.basePrice;
   const giftFeePerItem = isGift ? GIFT_PACKAGING_FEE : 0;
   const finalUnitPrice = baseUnitPrice + giftFeePerItem;
   const rawSubtotal = finalUnitPrice * qty;
 
-  // Bulk tier discount calculation
+  // Bulk discount
   let bulkDiscountRate = 0;
   if (qty >= 20) bulkDiscountRate = 0.15;
   else if (qty >= 10) bulkDiscountRate = 0.1;
@@ -182,12 +171,12 @@ function LithophaneStudioPage() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      toast.error("Please upload a valid image file (JPEG, PNG, or WebP)");
+      toast.error("Please upload an image file (JPEG, PNG, or WebP)");
       return;
     }
 
-    if (file.size > 20 * 1024 * 1024) {
-      toast.error("Image file is too large (max 20MB)");
+    if (file.size > 25 * 1024 * 1024) {
+      toast.error("Image file is too large (max 25MB)");
       return;
     }
 
@@ -199,8 +188,8 @@ function LithophaneStudioPage() {
         setRawPhotoUrl(result);
         setPhotoUrl(result);
         setActiveSample("");
-        toast.success("Photo loaded!");
-        // Automatically open the framing modal so user can fit faces into the shape
+        toast.success("Photo uploaded successfully!");
+        // Open framing modal so user can center faces
         setIsFramingOpen(true);
       }
       setIsProcessing(false);
@@ -227,7 +216,7 @@ function LithophaneStudioPage() {
       return;
     }
 
-    // Preserve high resolution (1200px max, quality 0.92) to eliminate DCT blockiness
+    // Preserve high resolution (1200px max, quality 0.92) to eliminate pixelation
     let finalPhoto = photoUrl;
     if (photoUrl.startsWith("data:")) {
       try {
@@ -245,9 +234,9 @@ function LithophaneStudioPage() {
         : "Classic Flat Panel";
 
     const giftNotes = isGift
-      ? ` [GIFT PACKAGING REQUESTED: Luxury Ribbon Gift Box, Conceal Invoice Prices${
-          recipientName.trim() ? ` · To: ${recipientName.trim()}` : ""
-        }${giftMessage.trim() ? ` · Message Card: "${giftMessage.trim()}"` : ""}]`
+      ? ` [GIFT PACKAGING: Luxury Presentation Box, Conceal Prices${
+          recipientName.trim() ? ` · Recipient: ${recipientName.trim()}` : ""
+        }${giftMessage.trim() ? ` · Greeting Card: "${giftMessage.trim()}"` : ""}]`
       : "";
 
     const customSpec: CustomSpec = {
@@ -257,12 +246,12 @@ function LithophaneStudioPage() {
       color: "Optical Jade White",
       material: "Lithophane White PLA (0.12mm)",
       dimensions: `${currentDims.width} × ${currentDims.height} mm (${shapeLabel})`,
-      notes: `Shape: ${shapeLabel} · Fit: ${fitMode === "dynamic" ? "Dynamic Scale (Preserve Ratio)" : "Strict Frame (Stretch to Fit)"}${giftNotes}`,
+      notes: `Shape: ${shapeLabel} · Size: ${selectedSizeConfig.label} (${aspect})${giftNotes}`,
       referencePhotos: [finalPhoto],
     };
 
     const cartTitle = isGift
-      ? `3D Lithophane · ${shapeLabel} 🎁 (Gift Packed)`
+      ? `3D Lithophane · ${shapeLabel} 🎁 (Gift Wrapped)`
       : `3D Lithophane · ${shapeLabel}`;
 
     add({
@@ -285,27 +274,25 @@ function LithophaneStudioPage() {
     });
   };
 
-
-
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 md:px-6 md:py-12">
-      {/* Header & Headings */}
+      {/* Header */}
       <div className="max-w-3xl space-y-3">
         <div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-xs font-semibold text-accent">
           <Sparkles className="size-3.5" />
-          <span>100% In-House 3D Printed · 0.12mm Micro-Carving</span>
+          <span>Handcrafted Photo Keepsake · Illuminated by Sunlight</span>
         </div>
         <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl text-fg">
-          Turn Your Memories into a Sunlit 3D Lithophane
+          Turn Your Favorite Photo into a Sunlit 3D Keepsake
         </h1>
         <p className="text-sm sm:text-base text-muted leading-relaxed">
-          Custom carved in optical Jade White PLA. Place it on your window sill where sunlight streams through from behind, revealing your photo in rich continuous-tone relief detail — no electronics, no batteries, just pure light and polymer.
+          Carved in heirloom-grade matte white polymer. Place it on your window sill where natural sunlight shines through from behind, revealing your photo in breathtaking 3D sculptural relief — zero wires, zero batteries, just pure light.
         </p>
       </div>
 
       {/* Main Studio Grid */}
       <div className="mt-8 grid gap-8 lg:grid-cols-12">
-        {/* Left Column: 3D Viewer & Photo Adjustment Tools (7 cols) */}
+        {/* Left Column: 3D Interactive Viewer & Photo (7 cols) */}
         <div className="space-y-6 lg:col-span-7">
           {/* 3D WebGL Lithophane Viewer */}
           <div className="space-y-2">
@@ -315,47 +302,55 @@ function LithophaneStudioPage() {
               sizeMm={currentDims}
               backlightOn={backlightOn}
               onToggleBacklight={() => setBacklightOn(!backlightOn)}
-              contrast={contrast}
-              invert={invert}
-              fitMode={fitMode}
+              contrast={1.15}
+              invert={false}
+              fitMode="dynamic"
             />
             <div className="flex items-center justify-between px-1 text-xs text-muted">
               <span className="flex items-center gap-1.5">
                 <RotateCw className="size-3 text-accent" />
-                Drag to rotate 360° · Scroll to inspect 3D carved relief texture
+                Drag to rotate 360° · Scroll to zoom
               </span>
               <span className="text-muted">
-                ☀️ Place on a window sill — sunlight lights it from behind
+                ☀️ Click "Sunlit Window Glow" to see it illuminate
               </span>
             </div>
-
           </div>
 
-          {/* Photo Source & Uploader Card */}
+          {/* Photo Selection Card */}
           <div className="rounded-2xl border border-border bg-surface p-5 space-y-4 shadow-xs">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-sm text-fg flex items-center gap-2">
-                  <ImageIcon className="size-4 text-accent" />
-                  <span>Choose or Upload Your Photo</span>
-                </h3>
-                <p className="text-xs text-muted mt-0.5">
-                  High-contrast photos with clear faces look breathtaking when backlit by sunlight.
-                </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="relative size-12 shrink-0 rounded-xl overflow-hidden border border-border/80 bg-surface-2">
+                  {photoUrl ? (
+                    <img
+                      src={photoUrl}
+                      alt="Selected memory"
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    <div className="size-full flex items-center justify-center text-muted">
+                      <Sparkles className="size-4" />
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm text-fg flex items-center gap-2">
+                    <span>Your Photo</span>
+                    {activeSample && (
+                      <span className="text-[10px] text-accent font-medium bg-accent/10 px-2 py-0.5 rounded-full">
+                        Sample Preview
+                      </span>
+                    )}
+                  </h3>
+                  <p className="text-xs text-muted">
+                    Clear photos with happy faces look breathtaking when backlit by sunlight.
+                  </p>
+                </div>
               </div>
 
-              {/* Upload & Framing Action Buttons */}
+              {/* Action Buttons */}
               <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsFramingOpen(true)}
-                  className="gap-1.5 cursor-pointer font-semibold text-xs border-accent/40 bg-accent/5 hover:bg-accent/10 text-accent"
-                >
-                  <Crop className="size-3.5" />
-                  <span>Adjust Framing</span>
-                </Button>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -365,24 +360,33 @@ function LithophaneStudioPage() {
                 />
                 <Button
                   type="button"
-                  variant="outline"
                   size="sm"
                   onClick={() => fileInputRef.current?.click()}
-                  className="gap-2 cursor-pointer font-semibold"
+                  className="gap-2 cursor-pointer font-semibold shadow-xs"
                 >
                   <Upload className="size-3.5" />
                   Upload Photo
                 </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsFramingOpen(true)}
+                  className="gap-1.5 cursor-pointer font-medium text-xs border-accent/30 text-accent hover:bg-accent/10"
+                >
+                  <Crop className="size-3.5" />
+                  Crop &amp; Frame
+                </Button>
               </div>
             </div>
 
-            {/* Heart Silhouette helper prompt */}
+            {/* Romantic tip if Heart Keepsake is selected */}
             {shape === "heart" && (
-              <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs animate-in fade-in duration-150">
-                <div className="flex items-center gap-2 text-rose-300">
+              <div className="rounded-xl border border-rose-500/25 bg-rose-500/10 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs text-rose-300 animate-in fade-in duration-150">
+                <div className="flex items-center gap-2">
                   <Heart className="size-4 shrink-0 fill-rose-500 text-rose-500" />
                   <span>
-                    <strong>Heart Cutout Active:</strong> Drag and scale faces into the upper lobes so they aren't cut off by the heart outline.
+                    <strong>Heart Keepsake:</strong> Position faces near the center &amp; upper lobes for a romantic fit.
                   </span>
                 </div>
                 <Button
@@ -393,14 +397,14 @@ function LithophaneStudioPage() {
                   className="shrink-0 h-7 text-xs font-semibold gap-1.5 cursor-pointer bg-surface text-fg hover:bg-surface-2 self-start sm:self-auto"
                 >
                   <Crop className="size-3 text-accent" />
-                  <span>Fit into Heart</span>
+                  <span>Adjust Framing</span>
                 </Button>
               </div>
             )}
 
-            {/* Quick Sample Presets */}
-            <div className="space-y-1.5">
-              <span className="text-xs font-medium text-muted">Or preview with high-res sample photos:</span>
+            {/* Sample Presets */}
+            <div className="pt-2 border-t border-border/60 space-y-1.5">
+              <span className="text-xs text-muted">Or preview with sample photos:</span>
               <div className="grid grid-cols-3 gap-2">
                 {SAMPLE_PHOTOS.map((sample) => (
                   <button
@@ -408,224 +412,72 @@ function LithophaneStudioPage() {
                     type="button"
                     onClick={() => selectSample(sample.id)}
                     className={cn(
-                      "flex flex-col items-start p-2.5 rounded-xl border text-left transition-colors cursor-pointer",
+                      "flex items-center gap-2.5 p-2 rounded-xl border text-left transition-all cursor-pointer",
                       activeSample === sample.id
-                        ? "border-accent bg-accent/10 ring-1 ring-accent"
-                        : "border-border bg-surface-2/40 hover:border-accent/40"
+                        ? "border-accent bg-accent/10 ring-1 ring-accent text-fg"
+                        : "border-border bg-surface-2/40 text-muted hover:border-accent/40 hover:text-fg"
                     )}
                   >
-                    <span className="text-xs font-semibold text-fg line-clamp-1">{sample.name}</span>
-                    <span className="text-[10px] text-accent mt-0.5">{sample.tag}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Photo Crop & Aspect Ratio */}
-            <div className="pt-2 border-t border-border/60 space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-medium text-fg">Aspect Ratio &amp; Orientation:</span>
-                <span className="text-muted">
-                  {aspect === "landscape" ? "3:2 Horizontal" : aspect === "portrait" ? "2:3 Vertical" : "1:1 Square"}
-                </span>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                {(
-                  [
-                    { id: "landscape", label: "Landscape (3:2)" },
-                    { id: "portrait", label: "Portrait (2:3)" },
-                    { id: "square", label: "Square (1:1)" },
-                  ] as const
-                ).map((a) => (
-                  <button
-                    key={a.id}
-                    type="button"
-                    onClick={() => setAspect(a.id)}
-                    className={cn(
-                      "py-2 px-3 rounded-lg text-xs font-semibold transition-colors border cursor-pointer",
-                      aspect === a.id
-                        ? "border-accent bg-accent text-ink"
-                        : "border-border bg-surface-2 text-muted hover:text-fg"
-                    )}
-                  >
-                    {a.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Image Scaling on Ratio Change (Dynamic vs Strict) */}
-            <div className="pt-2 border-t border-border/60 space-y-2.5">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-medium text-fg flex items-center gap-1.5">
-                  <Maximize2 className="size-3.5 text-accent" />
-                  <span>Image Scaling on Ratio Change:</span>
-                </span>
-                <span className="text-muted text-[11px]">
-                  {fitMode === "dynamic" ? "Locked 1:1 (No distortion)" : "Stretched edge-to-edge"}
-                </span>
-              </div>
-
-              <div className="grid sm:grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setFitMode("dynamic")}
-                  className={cn(
-                    "flex flex-col items-start p-3 rounded-xl border text-left transition-all cursor-pointer relative",
-                    fitMode === "dynamic"
-                      ? "border-accent bg-accent/10 ring-1 ring-accent text-fg"
-                      : "border-border bg-surface-2/40 text-muted hover:text-fg hover:border-accent/30"
-                  )}
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <span className="text-xs font-semibold flex items-center gap-1.5">
-                      <span>Dynamic Scale</span>
-                      <span className="rounded-full bg-accent/20 px-1.5 py-0.2 text-[9px] font-bold text-accent uppercase">
-                        Recommended
+                    <img
+                      src={sample.url}
+                      alt={sample.name}
+                      className="size-8 rounded-lg object-cover shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <span className="text-xs font-medium block truncate leading-tight">
+                        {sample.name}
                       </span>
-                    </span>
-                    <div
-                      className={cn(
-                        "size-3.5 rounded-full border flex items-center justify-center shrink-0",
-                        fitMode === "dynamic" ? "border-accent bg-accent text-ink" : "border-border"
-                      )}
-                    >
-                      {fitMode === "dynamic" && <Check className="size-2.5 stroke-[3]" />}
+                      <span className="text-[10px] text-accent block leading-tight mt-0.5">
+                        {sample.tag}
+                      </span>
                     </div>
-                  </div>
-                  <p className="text-[11px] text-muted mt-1 leading-snug">
-                    Maintains natural proportions. Ratio changes adapt smoothly with zero stretching or squishing of faces.
-                  </p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setFitMode("stretch")}
-                  className={cn(
-                    "flex flex-col items-start p-3 rounded-xl border text-left transition-all cursor-pointer relative",
-                    fitMode === "stretch"
-                      ? "border-accent bg-accent/10 ring-1 ring-accent text-fg"
-                      : "border-border bg-surface-2/40 text-muted hover:text-fg hover:border-accent/30"
-                  )}
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <span className="text-xs font-semibold">Strict Frame</span>
-                    <div
-                      className={cn(
-                        "size-3.5 rounded-full border flex items-center justify-center shrink-0",
-                        fitMode === "stretch" ? "border-accent bg-accent text-ink" : "border-border"
-                      )}
-                    >
-                      {fitMode === "stretch" && <Check className="size-2.5 stroke-[3]" />}
-                    </div>
-                  </div>
-                  <p className="text-[11px] text-muted mt-1 leading-snug">
-                    Stretches or squeezes the entire image to fill the exact plate borders without any cropping.
-                  </p>
-                </button>
-              </div>
-            </div>
-
-            {/* Fine-Tuning Sliders: Contrast & Invert */}
-            <div className="pt-2 border-t border-border/60 grid sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-medium text-fg flex items-center gap-1">
-                    <Sliders className="size-3 text-muted" /> Contrast Relief:
-                  </span>
-                  <span className="font-mono text-muted">{contrast.toFixed(2)}x</span>
-                </div>
-                <input
-                  type="range"
-                  min="0.8"
-                  max="1.5"
-                  step="0.05"
-                  value={contrast}
-                  onChange={(e) => setContrast(parseFloat(e.target.value))}
-                  className="w-full accent-accent cursor-pointer"
-                />
-              </div>
-
-              <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0">
-                <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-fg">
-                  <input
-                    type="checkbox"
-                    checked={invert}
-                    onChange={(e) => setInvert(e.target.checked)}
-                    className="size-4 rounded border-border accent-accent cursor-pointer"
-                  />
-                  <span>Invert Negative</span>
-                </label>
+                  </button>
+                ))}
               </div>
             </div>
           </div>
 
           {/* Value Badges */}
           <div className="grid sm:grid-cols-3 gap-3">
-            <div className="rounded-xl border border-border bg-surface p-3.5 space-y-1">
-              <div className="flex items-center gap-1.5 text-accent font-semibold text-xs">
-                <Sparkles className="size-3.5 shrink-0" />
-                <span>3D Bas-Relief Depth</span>
-              </div>
-              <p className="text-[11px] text-muted leading-relaxed">
-                Carved in 0.8mm – 3.4mm physical polymer depth. Every facial contour and background detail has real sculptural relief.
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border bg-surface p-3.5 space-y-1">
-              <div className="flex items-center gap-1.5 text-accent font-semibold text-xs">
-                <Sun className="size-3.5 shrink-0" />
+            <div className="rounded-xl border border-border bg-surface p-4 space-y-1.5 shadow-xs">
+              <div className="flex items-center gap-2 text-accent font-semibold text-xs">
+                <Sun className="size-4 shrink-0" />
                 <span>Sunlight Backlit</span>
               </div>
-              <p className="text-[11px] text-muted leading-relaxed">
-                Zero wires or batteries needed. Place it on a window sill or desk lamp to reveal the illuminated image.
+              <p className="text-xs text-muted leading-relaxed">
+                Place it on a window sill or near a desk lamp. Warm natural sunlight illuminates the photo from behind.
               </p>
             </div>
 
-            <div className="rounded-xl border border-border bg-surface p-3.5 space-y-1">
-              <div className="flex items-center gap-1.5 text-accent font-semibold text-xs">
-                <ShieldCheck className="size-3.5 shrink-0" />
-                <span>Lifetime Durability</span>
+            <div className="rounded-xl border border-border bg-surface p-4 space-y-1.5 shadow-xs">
+              <div className="flex items-center gap-2 text-accent font-semibold text-xs">
+                <Layers className="size-4 shrink-0" />
+                <span>3D Bas-Relief Depth</span>
               </div>
-              <p className="text-[11px] text-muted leading-relaxed">
-                100% in-house 3D printed in food-safe optical PLA. Zero electronics, zero batteries — pure light and polymer that lasts decades.
+              <p className="text-xs text-muted leading-relaxed">
+                Sculpted in physical polymer relief that you can feel with your fingers. Never fades or degrades with time.
               </p>
             </div>
-          </div>
 
-          {/* Educational Feature Section: Why Lithophanes Need Rear Light */}
-          <div className="rounded-2xl border border-border bg-surface-2/30 p-5 space-y-3">
-            <div className="flex items-center gap-2 text-sm font-semibold text-fg">
-              <Info className="size-4 text-accent" />
-              <span>How Lithophanes Work: The Magic of Rear Sunlight</span>
-            </div>
-            <p className="text-xs text-muted leading-relaxed">
-              Unlike ordinary 2D photo prints or bottom-lit acrylics, a true 3D lithophane is an optical light filter sculpted in polymer relief:
-            </p>
-            <div className="grid sm:grid-cols-2 gap-3 pt-1 text-xs">
-              <div className="rounded-xl border border-border/80 bg-surface p-3 space-y-1">
-                <span className="font-semibold text-fg block">☀️ Light from the Back</span>
-                <p className="text-muted text-[11px] leading-relaxed">
-                  Thin plastic sections (0.8mm) let sunlight pass through as bright highlights, while thicker sections (3.4mm) block light to create rich, deep shadows.
-                </p>
+            <div className="rounded-xl border border-border bg-surface p-4 space-y-1.5 shadow-xs">
+              <div className="flex items-center gap-2 text-accent font-semibold text-xs">
+                <ShieldCheck className="size-4 shrink-0" />
+                <span>Lifetime Heirloom</span>
               </div>
-              <div className="rounded-xl border border-border/80 bg-surface p-3 space-y-1">
-                <span className="font-semibold text-fg block">🌱 Zero Electronic Hassle</span>
-                <p className="text-muted text-[11px] leading-relaxed">
-                  No cheap LED strips that burn out, no messy USB cables, and no batteries to replace. 100% durable in-house 3D printing that lasts a lifetime.
-                </p>
-              </div>
+              <p className="text-xs text-muted leading-relaxed">
+                100% durable in-house 3D printing. No batteries, cables, or electronics — pure light and polymer.
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Right Column: Configurator & Order Summary (5 cols, sticky) */}
+        {/* Right Column: Clean Configurator & Checkout (5 cols, sticky) */}
         <div className="space-y-6 lg:col-span-5">
           <div className="rounded-2xl border border-border bg-surface p-5 space-y-6 shadow-xs lg:sticky lg:top-24">
             {/* Step 1: Shape Selection */}
             <div className="space-y-2.5">
               <Label className="text-xs font-semibold uppercase tracking-wider text-muted">
-                1. Select Shape
+                1. Choose Shape
               </Label>
               <div className="grid gap-2">
                 {SHAPES.map((s) => (
@@ -669,23 +521,23 @@ function LithophaneStudioPage() {
               </div>
             </div>
 
-            {/* Step 2: Size Selection (All include free 3D-printed stand) */}
+            {/* Step 2: Orientation & Size Selection */}
             <div className="space-y-2.5">
               <div className="flex items-center justify-between">
                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted">
-                  2. Select Orientation &amp; Size
+                  2. Choose Orientation &amp; Size
                 </Label>
                 <span className="text-xs text-muted tabular-nums">
                   {currentDims.width} × {currentDims.height} mm
                 </span>
               </div>
 
-              {/* Quick orientation pills */}
+              {/* Orientation toggle */}
               <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-surface-2/60 border border-border">
                 {(
                   [
-                    { id: "landscape", label: "Landscape (3:2)" },
-                    { id: "portrait", label: "Portrait (2:3)" },
+                    { id: "landscape", label: "Landscape (Wide)" },
+                    { id: "portrait", label: "Portrait (Tall)" },
                     { id: "square", label: "Square (1:1)" },
                   ] as const
                 ).map((a) => (
@@ -705,6 +557,7 @@ function LithophaneStudioPage() {
                 ))}
               </div>
 
+              {/* Size tiers */}
               <div className="grid grid-cols-3 gap-2">
                 {SIZES.map((s) => (
                   <button
@@ -728,13 +581,14 @@ function LithophaneStudioPage() {
                   </button>
                 ))}
               </div>
+
               <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-[11px] text-emerald-400 font-medium flex items-center gap-2">
                 <Check className="size-3.5 text-emerald-400 shrink-0" />
-                <span>Free shipping included with every order · 100% in-house printed</span>
+                <span>Matching display stand included · Free shipping across India</span>
               </div>
             </div>
 
-            {/* Step 3: "Make this a Gift" Option Card */}
+            {/* Step 3: Gift Packaging (Optional) */}
             <div
               className={cn(
                 "rounded-xl border p-4 transition-all space-y-3",
@@ -758,13 +612,13 @@ function LithophaneStudioPage() {
                       <span className="text-[10px] text-accent font-medium">+{formatINR(GIFT_PACKAGING_FEE)}</span>
                     </span>
                     <span className="text-[11px] text-muted block mt-0.5">
-                      Packed in a luxury presentation gift box with ribbon, concealed invoice prices, and a custom printed metallic greeting card.
+                      Delivered in a luxury presentation box with ribbon, concealed invoice prices, and a personalized printed card.
                     </span>
                   </div>
                 </label>
               </div>
 
-              {/* Gift Message Inputs when checked */}
+              {/* Gift Message Card */}
               {isGift && (
                 <div className="space-y-2.5 pt-2 border-t border-border/60 animate-in fade-in duration-150">
                   <div>
@@ -796,7 +650,7 @@ function LithophaneStudioPage() {
                       className="w-full rounded-lg border border-border bg-surface p-2.5 text-xs text-fg placeholder:text-muted focus:border-accent focus:outline-none resize-none"
                     />
                     <div className="flex justify-between text-[10px] text-muted mt-0.5">
-                      <span>We will print this onto a metallic foil card.</span>
+                      <span>Printed onto a keepsake card.</span>
                       <span>{giftMessage.length}/180</span>
                     </div>
                   </div>
@@ -804,7 +658,7 @@ function LithophaneStudioPage() {
               )}
             </div>
 
-            {/* Step 4: Quantity & Bulk Tier */}
+            {/* Quantity & Bulk Savings */}
             <div className="pt-2 border-t border-border/60 space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="text-xs font-semibold text-fg">Quantity</Label>
@@ -837,7 +691,7 @@ function LithophaneStudioPage() {
                 </div>
               ) : (
                 <p className="text-[11px] text-muted">
-                  Ordering for wedding favors or family? 5+ get 5% off, 10+ get 10% off, 20+ get 15% off.
+                  Ordering for wedding favors or family gifts? 5+ get 5% off, 10+ get 10% off, 20+ get 15% off.
                 </p>
               )}
             </div>
@@ -872,6 +726,7 @@ function LithophaneStudioPage() {
           </div>
         </div>
       </div>
+
       {/* Interactive Photo Framing & Crop Modal */}
       <LithophaneFramingModal
         isOpen={isFramingOpen}

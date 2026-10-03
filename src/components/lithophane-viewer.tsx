@@ -839,68 +839,26 @@ export function LithophaneViewer({
 
         {/* Top Control Overlay Bar */}
         <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
-          {/* Shape, Dimensions & Relief Mode Badge */}
+          {/* Shape & Dimensions Badge */}
           <div className="pointer-events-auto flex items-center gap-2">
             <div className="flex items-center gap-1.5 rounded-full border border-border/80 bg-surface/85 px-3 py-1 text-xs backdrop-blur-md shadow-xs">
-              <Layers className="size-3.5 text-accent" />
-              <span className="font-semibold text-fg capitalize">
-                {shape === "heart" ? "Heart Keepsake" : "Classic Flat Panel"}
+              <Sparkles className="size-3.5 text-accent" />
+              <span className="font-medium text-fg">
+                {shape === "heart"
+                  ? "Heart Keepsake"
+                  : shape === "curved"
+                  ? "Self-Standing Arc"
+                  : "Classic Flat Panel"}
               </span>
               <span className="text-muted">·</span>
               <span className="text-muted tabular-nums">
                 {sizeMm.width} × {sizeMm.height} mm
               </span>
             </div>
-
-            {backlightOn ? (
-              <div className="hidden sm:flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-300 backdrop-blur-md shadow-xs">
-                <span>☀️ Sunlit Window Glow</span>
-              </div>
-            ) : (
-              <div className="hidden sm:flex items-center gap-1 rounded-full border border-accent/40 bg-accent/15 px-2.5 py-1 text-[11px] font-semibold text-accent backdrop-blur-md shadow-xs">
-                <span>🗿 3D Carved Relief Texture</span>
-              </div>
-            )}
-
-            {fitMode === "stretch" ? (
-              <div className="hidden md:flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-300 backdrop-blur-md shadow-xs">
-                <span>Strict Frame</span>
-              </div>
-            ) : (
-              <div className="hidden md:flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-300 backdrop-blur-md shadow-xs">
-                <span>Dynamic 1:1 Scale</span>
-              </div>
-            )}
           </div>
 
-          {/* Quick Viewer Toggles */}
+          {/* Quick Controls */}
           <div className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-border/80 bg-surface/85 p-1 backdrop-blur-md shadow-xs">
-            {/* View Mode Toggle: Backlit vs 3D Relief Texture */}
-            <button
-              type="button"
-              onClick={onToggleBacklight}
-              title={backlightOn ? "Switch to 3D Carved Relief Texture (Inspect Physical Print)" : "Switch to Sunlight Backlit View"}
-              className={cn(
-                "flex size-7 items-center justify-center rounded-full transition-colors cursor-pointer",
-                backlightOn ? "text-amber-400 hover:text-amber-300" : "bg-accent/20 text-accent font-bold"
-              )}
-            >
-              {backlightOn ? <Sun className="size-3.5" /> : <Layers className="size-3.5" />}
-            </button>
-
-            {/* Dark Room vs Daylight Studio */}
-            <button
-              type="button"
-              onClick={() => setDarkRoom(!darkRoom)}
-              title={darkRoom ? "Switch to daylight studio" : "Switch to dark cozy room"}
-              className={cn(
-                "flex size-7 items-center justify-center rounded-full transition-colors cursor-pointer",
-                darkRoom ? "bg-accent/20 text-accent" : "text-muted hover:text-fg"
-              )}
-            >
-              {darkRoom ? <Moon className="size-3.5" /> : <Sun className="size-3.5" />}
-            </button>
-
             {/* Auto-Rotate */}
             <button
               type="button"
@@ -912,6 +870,19 @@ export function LithophaneViewer({
               )}
             >
               <RotateCw className={cn("size-3.5", autoRotate && "animate-spin")} />
+            </button>
+
+            {/* Dark Room vs Daylight Studio */}
+            <button
+              type="button"
+              onClick={() => setDarkRoom(!darkRoom)}
+              title={darkRoom ? "Daylight view" : "Ambient view"}
+              className={cn(
+                "flex size-7 items-center justify-center rounded-full transition-colors cursor-pointer",
+                darkRoom ? "bg-accent/20 text-accent" : "text-muted hover:text-fg"
+              )}
+            >
+              {darkRoom ? <Moon className="size-3.5" /> : <Sun className="size-3.5" />}
             </button>
 
             {/* Reset Camera */}
@@ -926,27 +897,27 @@ export function LithophaneViewer({
           </div>
         </div>
 
-        {/* Bottom Prominent Dual-Mode Switcher Button */}
+        {/* Bottom Dual-Mode Switcher */}
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 pointer-events-auto">
           <button
             type="button"
             onClick={onToggleBacklight}
             className={cn(
-              "flex items-center gap-2.5 rounded-full px-5 py-2.5 text-xs font-semibold shadow-xl transition-all duration-200 cursor-pointer border",
+              "flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold shadow-lg transition-all duration-200 cursor-pointer border backdrop-blur-md",
               backlightOn
-                ? "bg-amber-400 text-stone-950 border-amber-300 ring-4 ring-amber-400/20 shadow-amber-500/30 font-bold"
-                : "bg-surface/95 text-fg border-accent/50 ring-4 ring-accent/20 shadow-accent/25 hover:bg-surface font-bold"
+                ? "bg-amber-400 text-stone-950 border-amber-300 ring-2 ring-amber-400/30"
+                : "bg-surface/95 text-fg border-accent/40 ring-2 ring-accent/20 hover:bg-surface"
             )}
           >
             {backlightOn ? (
               <>
-                <Sun className="size-4 text-stone-950 fill-current shrink-0" />
-                <span>☀️ Sunlight Backlit: ON · Click to Inspect 3D Relief Texture</span>
+                <Sun className="size-3.5 text-stone-950 fill-current shrink-0" />
+                <span>☀️ Sunlit Window Glow</span>
               </>
             ) : (
               <>
-                <Layers className="size-4 text-accent shrink-0" />
-                <span>🗿 3D Carved Relief: ON · Click for Sunlight Backlight</span>
+                <Layers className="size-3.5 text-accent shrink-0" />
+                <span>🗿 3D Carved Relief</span>
               </>
             )}
           </button>
