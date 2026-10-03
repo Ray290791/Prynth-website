@@ -503,6 +503,12 @@ export const getAllOrdersAdmin = createServerFn({ method: "GET" })
       console.warn("Failed to cleanup pending razorpay orders:", e);
     }
 
+    // Trigger opportunistic background storage maintenance
+    try {
+      const { runDatabaseMaintenance } = await import("./maintenance.server");
+      runDatabaseMaintenance(sql).catch((err) => console.warn("Maintenance error:", err));
+    } catch (_mErr) {}
+
     const res = await sql`
       SELECT orders.*, "user".email as user_email, "user".name as user_name 
       FROM orders 
@@ -528,21 +534,50 @@ export const updateOrderStatus = createServerFn({ method: "POST" })
 
     await sql`UPDATE orders SET status = ${data.status} WHERE order_number = ${data.order_number}`;
 
-    // Fetch customer email to send update
+    // Fetch customer email to send update — supports both registered users and guests
     const orderRes = await sql`
-      SELECT "user".email, "user".name 
+      SELECT orders.guest_email, orders.shipping_address, "user".email as user_email, "user".name as user_name 
       FROM orders 
-      JOIN "user" ON orders.user_id = "user".id 
-      WHERE order_number = ${data.order_number}
+      LEFT JOIN "user" ON orders.user_id = "user".id 
+      WHERE orders.order_number = ${data.order_number}
     `;
-    const orderUser = orderRes[0] as { email: string; name: string } | undefined;
+    
+    if (orderRes.length > 0) {
+      const row = orderRes[0];
+      let addressEmail = "";
+      let addressName = "";
+      try {
+        const addr = typeof row.shipping_address === "string" ? JSON.parse(row.shipping_address) : row.shipping_address;
+        addressEmail = addr?.email || "";
+        addressName = addr?.name || "";
+      } catch (_e) {}
 
-    if (orderUser?.email) {
-      await sendOrderStatusUpdateEmail(data.order_number, orderUser.email, data.status);
-      console.log(`[Mock WhatsApp] Notification sent to ${orderUser.name} (${orderUser.email}): Your order ${data.order_number} is now ${data.status}.`);
+      const recipientEmail = String(row.user_email || row.guest_email || addressEmail || "").trim();
+      const recipientName = String(row.user_name || addressName || "Customer").trim();
+
+      if (recipientEmail) {
+        try {
+          await sendOrderStatusUpdateEmail(data.order_number, recipientEmail, data.status);
+          console.log(`[Status Email] Notification sent to ${recipientName} (${recipientEmail}): Your order ${data.order_number} is now ${data.status}.`);
+        } catch (emailErr) {
+          console.error("Failed to send order status update email:", emailErr);
+        }
+      }
     }
 
     return { success: true };
+  });
+
+export const triggerDatabaseMaintenance = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => {
+    const sql = await getSql();
+    const admin = await verifyAdminRole(context.userId, sql);
+    if (!admin) throw new Error("Unauthorized");
+
+    const { runDatabaseMaintenance } = await import("./maintenance.server");
+    const report = await runDatabaseMaintenance(sql, true);
+    return { success: true, report };
   });
 
 export const deleteOrderAdmin = createServerFn({ method: "POST" })

@@ -126,16 +126,18 @@ function Home() {
       {/* ── Hero ───────────────────────────────────────────── */}
       <section className="relative overflow-hidden">
         {/* Floating promo pill */}
-        <div className="mx-auto max-w-6xl px-4 pt-6 md:px-6">
-          <Link
-            to="/shop"
-            className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-1.5 text-xs sm:text-sm font-medium text-fg transition-colors hover:border-accent hover:text-accent shadow-xs"
-          >
-            <Zap className="size-3.5 shrink-0 text-accent" strokeWidth={2} />
-            <span>{settings.promo_banner || `Free delivery across India on orders over ₹${settings.free_shipping_threshold || 799}`}</span>
-            <ArrowRight className="size-3.5 shrink-0 text-muted" strokeWidth={2} />
-          </Link>
-        </div>
+        {settings.announcement_enabled !== "false" && (
+          <div className="mx-auto max-w-6xl px-4 pt-6 md:px-6">
+            <Link
+              to="/shop"
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-1.5 text-xs sm:text-sm font-medium text-fg transition-colors hover:border-accent hover:text-accent shadow-xs"
+            >
+              <Zap className="size-3.5 shrink-0 text-accent" strokeWidth={2} />
+              <span>{settings.promo_banner || `Free delivery across India on orders over ₹${settings.free_shipping_threshold || 799}`}</span>
+              <ArrowRight className="size-3.5 shrink-0 text-muted" strokeWidth={2} />
+            </Link>
+          </div>
+        )}
 
         <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-10 md:grid-cols-12 md:px-6 md:py-16 lg:gap-16 lg:py-20">
           {/* Left: headline + CTA */}

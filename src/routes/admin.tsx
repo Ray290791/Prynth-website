@@ -1,5 +1,5 @@
 import { createFileRoute, useRouter, useNavigate } from "@tanstack/react-router";
-import { getAllOrdersAdmin, updateOrderStatus, deleteOrderAdmin } from "@/lib/orders-fns";
+import { getAllOrdersAdmin, updateOrderStatus, deleteOrderAdmin, triggerDatabaseMaintenance } from "@/lib/orders-fns";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatINR } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
@@ -119,10 +119,15 @@ function AdminPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-12 flex flex-col md:flex-row gap-8">
-      {/* Sidebar */}
-      <aside className="w-full shrink-0 space-y-2 sm:w-64">
-        <h1 className="font-display text-2xl font-semibold tracking-tight mb-6">Admin Panel</h1>
-        <nav className="flex flex-col gap-1 p-4 rounded-3xl border border-white/20 dark:border-white/10 bg-surface/30 backdrop-blur-2xl backdrop-saturate-150 shadow-xl shadow-black/5">
+      {/* Responsive Navigation: horizontal swipeable ribbon on mobile/tablet, vertical sidebar on desktop */}
+      <aside className="w-full shrink-0 md:w-64">
+        <div className="flex items-center justify-between mb-3 md:mb-6">
+          <h1 className="font-display text-xl sm:text-2xl font-semibold tracking-tight">Admin Console</h1>
+          <span className="md:hidden text-[11px] text-muted font-medium bg-surface-2 px-2.5 py-1 rounded-full border border-border">
+            Swipe tabs →
+          </span>
+        </div>
+        <nav className="flex md:flex-col gap-1.5 p-2 sm:p-2.5 md:p-3 rounded-2xl md:rounded-3xl border border-white/20 dark:border-white/10 bg-surface/30 backdrop-blur-2xl backdrop-saturate-150 shadow-xl shadow-black/5 overflow-x-auto md:overflow-visible no-scrollbar">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -131,14 +136,14 @@ function AdminPage() {
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
                 className={cn(
-                  "flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors leading-none",
+                  "flex items-center gap-2 md:gap-3 rounded-xl px-3.5 py-2 md:px-4 md:py-2.5 text-xs sm:text-sm font-medium transition-all leading-none shrink-0 whitespace-nowrap cursor-pointer",
                   isActive
                     ? "bg-accent text-ink font-semibold shadow-xs"
                     : "text-muted hover:bg-surface-2 hover:text-fg"
                 )}
               >
-                <Icon className="h-4 w-4" />
-                {item.label}
+                <Icon className="h-4 w-4 shrink-0" />
+                <span>{item.label}</span>
               </button>
             );
           })}
@@ -951,6 +956,30 @@ function SettingsTab() {
     }
   };
 
+  const [maintenanceStatus, setMaintenanceStatus] = useState<string | null>(null);
+  const [isCleaning, setIsCleaning] = useState(false);
+
+  const handleRunMaintenance = async () => {
+    setIsCleaning(true);
+    try {
+      const res = await triggerDatabaseMaintenance();
+      if (res.report) {
+        toast.success(
+          `Storage cleanup complete! Pruned ${res.report.cartSessionsDeleted} carts, ${res.report.customFilesDeleted} temporary files, and ${res.report.recentlyViewedDeleted} logs.`
+        );
+        setMaintenanceStatus(
+          `Last cleaned: ${new Date().toLocaleTimeString()} (Pruned ${res.report.customFilesDeleted} temp files, ${res.report.cartSessionsDeleted} carts)`
+        );
+      } else {
+        toast.success("Storage is healthy and up-to-date.");
+      }
+    } catch (err: any) {
+      toast.error("Cleanup failed: " + (err.message || String(err)));
+    } finally {
+      setIsCleaning(false);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
@@ -995,6 +1024,19 @@ function SettingsTab() {
       lithophane_bulk_discount_5: ((fd.get("lithophane_bulk_discount_5") as string) || settings?.lithophane_bulk_discount_5 || "5").trim(),
       lithophane_bulk_discount_10: ((fd.get("lithophane_bulk_discount_10") as string) || settings?.lithophane_bulk_discount_10 || "10").trim(),
       lithophane_bulk_discount_20: ((fd.get("lithophane_bulk_discount_20") as string) || settings?.lithophane_bulk_discount_20 || "15").trim(),
+      brand_name: ((fd.get("brand_name") as string) || settings?.brand_name || "prynth!").trim(),
+      announcement_enabled: fd.get("announcement_enabled") === "on" ? "true" : "false",
+      about_headline: ((fd.get("about_headline") as string) || settings?.about_headline || "").trim(),
+      about_pillar1_title: ((fd.get("about_pillar1_title") as string) || settings?.about_pillar1_title || "").trim(),
+      about_pillar1_desc: ((fd.get("about_pillar1_desc") as string) || settings?.about_pillar1_desc || "").trim(),
+      about_pillar2_title: ((fd.get("about_pillar2_title") as string) || settings?.about_pillar2_title || "").trim(),
+      about_pillar2_desc: ((fd.get("about_pillar2_desc") as string) || settings?.about_pillar2_desc || "").trim(),
+      about_pillar3_title: ((fd.get("about_pillar3_title") as string) || settings?.about_pillar3_title || "").trim(),
+      about_pillar3_desc: ((fd.get("about_pillar3_desc") as string) || settings?.about_pillar3_desc || "").trim(),
+      contact_hours: ((fd.get("contact_hours") as string) || settings?.contact_hours || "").trim(),
+      contact_whatsapp: ((fd.get("contact_whatsapp") as string) || settings?.contact_whatsapp || "").trim(),
+      social_twitter: ((fd.get("social_twitter") as string) || settings?.social_twitter || "").trim(),
+      social_youtube: ((fd.get("social_youtube") as string) || settings?.social_youtube || "").trim(),
       payment_online_enabled: fd.get("payment_online_enabled") === "on" ? "true" : "false",
       payment_cod_enabled: fd.get("payment_cod_enabled") === "on" ? "true" : "false",
       payment_upi_enabled: fd.get("payment_upi_enabled") === "on" ? "true" : "false",
@@ -1020,6 +1062,23 @@ function SettingsTab() {
         {/* HOMEPAGE SECTION */}
         <section className="space-y-5">
           <h3 className="text-lg font-semibold border-b border-border pb-2">Homepage & Hero Showcase</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Brand Name / Store Name</label>
+              <input name="brand_name" defaultValue={settings.brand_name || "prynth!"} required className="w-full rounded border border-border bg-surface p-2 text-sm" />
+            </div>
+            <div className="flex items-center pt-6">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="announcement_enabled"
+                  defaultChecked={settings.announcement_enabled !== "false"}
+                  className="size-4 rounded border-border accent-accent"
+                />
+                <span className="text-sm font-medium">Show Announcement Promo Pill on Homepage</span>
+              </label>
+            </div>
+          </div>
           <div>
             <label className="block text-sm font-medium mb-1">Hero Tagline</label>
             <input name="hero_tagline" defaultValue={settings.hero_tagline} required className="w-full rounded border border-border bg-surface p-2 text-sm" />
@@ -1255,15 +1314,80 @@ function SettingsTab() {
         <section className="space-y-4">
           <h3 className="text-lg font-semibold border-b border-border pb-2">About Us</h3>
           <div>
+            <label className="block text-sm font-medium mb-1">About Page Headline</label>
+            <input
+              name="about_headline"
+              defaultValue={settings.about_headline || "Honest prices. Good prints. For people who just need the thing."}
+              required
+              className="w-full rounded border border-border bg-surface p-2 text-sm"
+            />
+          </div>
+          <div>
             <label className="block text-sm font-medium mb-1">Our Story (paragraphs separated by blank lines)</label>
-            <textarea name="about_story" defaultValue={settings.about_story} required rows={10} className="w-full rounded border border-border bg-surface p-2 text-sm" />
+            <textarea name="about_story" defaultValue={settings.about_story} required rows={8} className="w-full rounded border border-border bg-surface p-2 text-sm" />
+          </div>
+
+          <div className="rounded-xl border border-border bg-surface-2/40 p-4 space-y-4">
+            <h4 className="text-sm font-semibold text-fg">Three Core Value Pillars</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="space-y-2 p-3 rounded-lg border border-border bg-surface">
+                <span className="text-xs font-semibold text-accent uppercase">Pillar 1</span>
+                <input
+                  name="about_pillar1_title"
+                  defaultValue={settings.about_pillar1_title || "The price is the price"}
+                  placeholder="Pillar 1 Title"
+                  className="w-full rounded border border-border bg-surface-2 p-1.5 text-xs font-medium"
+                />
+                <textarea
+                  name="about_pillar1_desc"
+                  defaultValue={settings.about_pillar1_desc || "No setup surprises, no colour upcharge on the listed palette, no 'from' pricing."}
+                  placeholder="Pillar 1 Description"
+                  rows={3}
+                  className="w-full rounded border border-border bg-surface-2 p-1.5 text-xs"
+                />
+              </div>
+
+              <div className="space-y-2 p-3 rounded-lg border border-border bg-surface">
+                <span className="text-xs font-semibold text-accent uppercase">Pillar 2</span>
+                <input
+                  name="about_pillar2_title"
+                  defaultValue={settings.about_pillar2_title || "Everyday, not exclusive"}
+                  placeholder="Pillar 2 Title"
+                  className="w-full rounded border border-border bg-surface-2 p-1.5 text-xs font-medium"
+                />
+                <textarea
+                  name="about_pillar2_desc"
+                  defaultValue={settings.about_pillar2_desc || "Built for people who want a stand or a hook, not a lecture on nozzles."}
+                  placeholder="Pillar 2 Description"
+                  rows={3}
+                  className="w-full rounded border border-border bg-surface-2 p-1.5 text-xs"
+                />
+              </div>
+
+              <div className="space-y-2 p-3 rounded-lg border border-border bg-surface">
+                <span className="text-xs font-semibold text-accent uppercase">Pillar 3</span>
+                <input
+                  name="about_pillar3_title"
+                  defaultValue={settings.about_pillar3_title || "If it's wrong, we redo it"}
+                  placeholder="Pillar 3 Title"
+                  className="w-full rounded border border-border bg-surface-2 p-1.5 text-xs font-medium"
+                />
+                <textarea
+                  name="about_pillar3_desc"
+                  defaultValue={settings.about_pillar3_desc || "Prints are checked. Returns are simple. See the returns page for the details."}
+                  placeholder="Pillar 3 Description"
+                  rows={3}
+                  className="w-full rounded border border-border bg-surface-2 p-1.5 text-xs"
+                />
+              </div>
+            </div>
           </div>
         </section>
 
         {/* CONTACT SECTION */}
         <section className="space-y-4">
           <h3 className="text-lg font-semibold border-b border-border pb-2">Contact Page</h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Support Email</label>
               <input type="email" name="contact_email" defaultValue={settings.contact_email} className="w-full rounded border border-border bg-surface p-2 text-sm" />
@@ -1273,14 +1397,24 @@ function SettingsTab() {
               <input name="contact_instagram" defaultValue={settings.contact_instagram} className="w-full rounded border border-border bg-surface p-2 text-sm" />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Phone Number</label>
               <input name="contact_phone" defaultValue={settings.contact_phone} className="w-full rounded border border-border bg-surface p-2 text-sm" />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Physical Address</label>
-              <input name="contact_address" defaultValue={settings.contact_address} className="w-full rounded border border-border bg-surface p-2 text-sm" />
+              <label className="block text-sm font-medium mb-1">WhatsApp Number / Direct Chat</label>
+              <input name="contact_whatsapp" defaultValue={settings.contact_whatsapp || "+91 98765 43210"} placeholder="+91 98765 43210" className="w-full rounded border border-border bg-surface p-2 text-sm" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Operating Business Hours</label>
+              <input name="contact_hours" defaultValue={settings.contact_hours || "Monday – Saturday: 10:00 AM – 7:00 PM IST"} className="w-full rounded border border-border bg-surface p-2 text-sm" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Physical Operating Address</label>
+              <input name="contact_address" defaultValue={settings.contact_address} placeholder="City, State, India" className="w-full rounded border border-border bg-surface p-2 text-sm" />
             </div>
           </div>
         </section>
@@ -1483,7 +1617,17 @@ function SettingsTab() {
               <input name="instagram" defaultValue={settings.instagram} required className="w-full rounded border border-border bg-surface p-2 text-sm" />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Twitter / X Handle</label>
+              <input name="social_twitter" defaultValue={settings.social_twitter || "@prynth"} placeholder="@prynth" className="w-full rounded border border-border bg-surface p-2 text-sm" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">YouTube Channel URL</label>
+              <input name="social_youtube" defaultValue={settings.social_youtube || ""} placeholder="https://youtube.com/@prynth" className="w-full rounded border border-border bg-surface p-2 text-sm" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Copyright Text</label>
               <input name="copyright" defaultValue={settings.copyright} required className="w-full rounded border border-border bg-surface p-2 text-sm" />
@@ -1495,8 +1639,35 @@ function SettingsTab() {
           </div>
         </section>
 
-        <div className="pt-6 border-t border-border">
-          <button type="submit" disabled={updateMutation.isPending} className="px-6 py-3 rounded-lg bg-accent text-ink hover:opacity-90 text-sm font-medium">
+        {/* DATABASE STORAGE & PERFORMANCE MAINTENANCE */}
+        <section className="space-y-4 rounded-2xl border border-border bg-surface-2/40 p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="text-base font-semibold flex items-center gap-2">
+                <span>🧹</span> Database Storage &amp; Cache Maintenance
+              </h3>
+              <p className="text-xs text-muted mt-0.5">
+                Automatically prunes expired guest carts, stale visitor history, and abandoned 3D files to keep your Neon PostgreSQL database lean and responsive.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleRunMaintenance}
+              disabled={isCleaning}
+              className="shrink-0 px-4 py-2 rounded-xl bg-surface hover:bg-surface-2 border border-border text-xs font-semibold text-fg transition-all shadow-xs cursor-pointer flex items-center gap-2"
+            >
+              <span>{isCleaning ? "Optimizing Storage..." : "⚡ Run Storage Cleanup Now"}</span>
+            </button>
+          </div>
+          {maintenanceStatus && (
+            <p className="text-xs text-emerald-500 font-medium bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg">
+              {maintenanceStatus}
+            </p>
+          )}
+        </section>
+
+        <div className="pt-6 border-t border-border flex items-center justify-between">
+          <button type="submit" disabled={updateMutation.isPending} className="px-6 py-3 rounded-lg bg-accent text-ink hover:opacity-90 text-sm font-medium cursor-pointer shadow-xs">
             {updateMutation.isPending ? "Saving..." : "Save All Settings"}
           </button>
         </div>

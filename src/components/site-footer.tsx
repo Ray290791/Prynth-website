@@ -32,23 +32,55 @@ export function SiteFooter() {
           <p className="mt-3 max-w-sm text-sm text-muted">
             {settings.tagline}
           </p>
-          <div className="mt-5 flex flex-col gap-2 text-sm">
+          <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm">
             <a
               href={`mailto:${settings.email}`}
-              className="inline-flex items-center gap-2 text-fg hover:text-accent"
+              className="inline-flex items-center gap-1.5 text-muted hover:text-accent transition-colors"
             >
               <Mail className="size-4" strokeWidth={1.75} />
-              {settings.email}
+              <span>{settings.email}</span>
             </a>
-            <a
-              href={`https://instagram.com/${settings.instagram.replace('@', '')}`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 text-fg hover:text-accent"
-            >
-              <Instagram className="size-4" strokeWidth={1.75} />
-              {settings.instagram}
-            </a>
+            {settings.contact_whatsapp && (
+              <a
+                href={`https://wa.me/${settings.contact_whatsapp.replace(/[^\d]/g, "")}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-muted hover:text-emerald-400 transition-colors"
+              >
+                <span>💬 WhatsApp</span>
+              </a>
+            )}
+            {settings.instagram && (
+              <a
+                href={`https://instagram.com/${settings.instagram.replace('@', '')}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-muted hover:text-accent transition-colors"
+              >
+                <Instagram className="size-4" strokeWidth={1.75} />
+                <span>{settings.instagram}</span>
+              </a>
+            )}
+            {settings.social_twitter && (
+              <a
+                href={`https://x.com/${settings.social_twitter.replace('@', '')}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-muted hover:text-accent transition-colors"
+              >
+                <span>𝕏 {settings.social_twitter}</span>
+              </a>
+            )}
+            {settings.social_youtube && (
+              <a
+                href={settings.social_youtube.startsWith("http") ? settings.social_youtube : `https://youtube.com/${settings.social_youtube}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-muted hover:text-red-400 transition-colors"
+              >
+                <span>▶ YouTube</span>
+              </a>
+            )}
           </div>
         </div>
 

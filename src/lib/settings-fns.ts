@@ -67,6 +67,20 @@ export type SiteSettings = {
   lithophane_bulk_discount_5?: string;
   lithophane_bulk_discount_10?: string;
   lithophane_bulk_discount_20?: string;
+  // Editorial, Brand & Social customization
+  brand_name?: string;
+  announcement_enabled?: string;
+  about_headline?: string;
+  about_pillar1_title?: string;
+  about_pillar1_desc?: string;
+  about_pillar2_title?: string;
+  about_pillar2_desc?: string;
+  about_pillar3_title?: string;
+  about_pillar3_desc?: string;
+  contact_hours?: string;
+  contact_whatsapp?: string;
+  social_twitter?: string;
+  social_youtube?: string;
 };
 
 export const getSiteSettings = createServerFn({ method: "GET" }).handler(
@@ -127,11 +141,31 @@ export const getSiteSettings = createServerFn({ method: "GET" }).handler(
       lithophane_bulk_discount_5: "5",
       lithophane_bulk_discount_10: "10",
       lithophane_bulk_discount_20: "15",
+      brand_name: "prynth!",
+      announcement_enabled: "true",
+      about_headline: "Honest prices. Good prints. For people who just need the thing.",
+      about_pillar1_title: "The price is the price",
+      about_pillar1_desc: "No setup surprises, no colour upcharge on the listed palette, no 'from' pricing.",
+      about_pillar2_title: "Everyday, not exclusive",
+      about_pillar2_desc: "Built for people who want a stand or a hook, not a lecture on nozzles.",
+      about_pillar3_title: "If it's wrong, we redo it",
+      about_pillar3_desc: "Prints are checked. Returns are simple. See the returns page for the details.",
+      contact_hours: "Monday – Saturday: 10:00 AM – 7:00 PM IST",
+      contact_whatsapp: "+91 98765 43210",
+      social_twitter: "@prynth",
+      social_youtube: "",
     };
 
     for (const row of rows) {
-      // Security: NEVER expose private credentials (e.g. razorpay_key_secret) in public site settings
-      if (row.key === "razorpay_key_secret") continue;
+      // Security: NEVER expose private credentials (e.g. razorpay_key_secret, notification tokens) in public site settings
+      if (
+        row.key === "razorpay_key_secret" ||
+        row.key.includes("secret") ||
+        row.key.includes("token") ||
+        row.key.includes("apikey")
+      ) {
+        continue;
+      }
       if (row.key in settings) {
         settings[row.key as keyof SiteSettings] = row.value;
       }
@@ -230,6 +264,19 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
     lithophane_bulk_discount_5: z.string().optional(),
     lithophane_bulk_discount_10: z.string().optional(),
     lithophane_bulk_discount_20: z.string().optional(),
+    brand_name: z.string().optional(),
+    announcement_enabled: z.string().optional(),
+    about_headline: z.string().optional(),
+    about_pillar1_title: z.string().optional(),
+    about_pillar1_desc: z.string().optional(),
+    about_pillar2_title: z.string().optional(),
+    about_pillar2_desc: z.string().optional(),
+    about_pillar3_title: z.string().optional(),
+    about_pillar3_desc: z.string().optional(),
+    contact_hours: z.string().optional(),
+    contact_whatsapp: z.string().optional(),
+    social_twitter: z.string().optional(),
+    social_youtube: z.string().optional(),
   }).partial())
   .handler(async ({ data, context }) => {
     if (!context.userId) throw new Error("Unauthorized");

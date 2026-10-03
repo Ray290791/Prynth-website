@@ -1,7 +1,16 @@
 import { createFileRoute, getRouteApi } from "@tanstack/react-router";
-
-const rootRoute = getRouteApi("__root__");
-import { Instagram, Mail, Phone, MapPin, Clock } from "lucide-react";
+import {
+  Instagram,
+  Mail,
+  Phone,
+  MapPin,
+  Clock,
+  MessageSquare,
+  Check,
+  Copy,
+  Sparkles,
+  Send,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -10,16 +19,41 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { submitContactMessage } from "@/lib/contact-fns";
 
-export const Route = createFileRoute("/contact")({ component: ContactPage });
+const rootRoute = getRouteApi("__root__");
 
-function ContactPage() {
+export const Route = createFileRoute("/contact")({
+  component: ContactPage,
+  head: () => ({
+    meta: [
+      { title: "Contact Us | prynth!" },
+      {
+        name: "description",
+        content:
+          "Have a question about a print, custom 3D model, or order in progress? Get in touch with our studio team.",
+      },
+    ],
+  }),
+});
+
+export function ContactPage() {
   const { settings } = rootRoute.useLoaderData();
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  const contactEmail = settings.contact_email || "hello@prynth.in";
+  const contactEmail = settings.contact_email || settings.email || "hello@prynth.in";
   const contactPhone = settings.contact_phone || "+91 98765 43210";
+  const contactWhatsApp = settings.contact_whatsapp || contactPhone;
   const contactAddress = settings.contact_address || "Bengaluru, Karnataka, India";
+  const businessHours =
+    settings.contact_hours || "Monday – Saturday: 10:00 AM – 7:00 PM IST";
+
+  const copyToClipboard = (text: string, key: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    toast.success(`Copied ${text} to clipboard!`);
+    setTimeout(() => setCopiedKey(null), 2000);
+  };
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -27,135 +61,293 @@ function ContactPage() {
     const name = String(data.get("name") ?? "").trim();
     const email = String(data.get("email") ?? "").trim();
     const message = String(data.get("message") ?? "").trim();
-    // Honeypot: if the hidden field has a value, it's a bot submission — silently drop it
+
+    // Honeypot: silent drop for bots
     const honeypot = String(data.get("_hp") ?? "");
-    if (honeypot) { setSent(true); return; }
-    if (name.length < 2 || !email.includes("@") || message.length < 8) {
-      toast.error("Please fill in your name, email, and a short message.");
+    if (honeypot) {
+      setSent(true);
       return;
     }
+
+    if (name.length < 2 || !email.includes("@") || message.length < 6) {
+      toast.error("Please enter your name, a valid email, and your message.");
+      return;
+    }
+
     setBusy(true);
     try {
       await submitContactMessage({ data: { name, email, message } });
       setSent(true);
-      toast.success("Message saved. We'll reply to that email.");
-    } catch {
-      toast.error("Failed to send message. Please try again.");
+      toast.success("Message received. Our team will email you shortly.");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to send message. Please try again.");
     } finally {
       setBusy(false);
     }
   }
 
+  const cleanWhatsAppNumber = contactWhatsApp.replace(/[^\d]/g, "");
+
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-16">
-      <p className="text-[11px] font-medium tracking-[0.18em] text-subtle uppercase">
-        Contact
-      </p>
-      <h1 className="mt-2 font-display text-4xl font-semibold tracking-tight md:text-5xl">
-        Say hello
-      </h1>
-      <p className="mt-3 max-w-xl text-muted">
-        Questions about a print, a custom idea, or an order that's already in
-        the works. We read everything that lands here.
-      </p>
+    <div className="mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-20 animate-in fade-in duration-300">
+      {/* Title */}
+      <div className="max-w-2xl">
+        <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3.5 py-1 text-xs font-semibold text-accent">
+          <MessageSquare className="size-3.5" />
+          <span>Support &amp; Studio Inquiries</span>
+        </div>
+        <h1 className="mt-4 font-display text-4xl sm:text-5xl font-semibold tracking-tight text-fg">
+          Say Hello
+        </h1>
+        <p className="mt-3 text-base sm:text-lg text-muted leading-relaxed">
+          Questions about ready-made pieces, custom CAD modeling, or an order
+          already on the printer bench. We reply to every message.
+        </p>
+      </div>
 
-      <div className="mt-10 grid gap-10 md:grid-cols-12">
-        <div className="md:col-span-5">
-          <div className="space-y-4 rounded-3xl bg-surface p-6 shadow-[var(--shadow-border)]">
-            <a
-              href={`mailto:${contactEmail}`}
-              className="flex items-center gap-3 rounded-2xl p-3 hover:bg-surface-2 transition-colors"
-            >
-              <Mail className="size-5 text-accent shrink-0" strokeWidth={1.75} />
-              <div>
-                <span className="block text-xs font-medium text-subtle uppercase tracking-wider">Email</span>
-                <span className="text-sm font-medium">{contactEmail}</span>
-              </div>
-            </a>
+      <div className="mt-12 grid gap-8 lg:grid-cols-12 items-start">
+        {/* Contact Info Cards */}
+        <div className="lg:col-span-5 space-y-4">
+          <div className="rounded-3xl border border-border bg-surface p-6 shadow-xs space-y-4">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-muted px-1">
+              Direct Contact Channels
+            </h2>
 
-            <a
-              href={`tel:${contactPhone.replace(/\s+/g, '')}`}
-              className="flex items-center gap-3 rounded-2xl p-3 hover:bg-surface-2 transition-colors"
-            >
-              <Phone className="size-5 text-accent shrink-0" strokeWidth={1.75} />
-              <div>
-                <span className="block text-xs font-medium text-subtle uppercase tracking-wider">Phone / WhatsApp</span>
-                <span className="text-sm font-medium">{contactPhone}</span>
-              </div>
-            </a>
-
-            <div className="flex items-start gap-3 rounded-2xl p-3">
-              <MapPin className="size-5 text-accent shrink-0 mt-0.5" strokeWidth={1.75} />
-              <div>
-                <span className="block text-xs font-medium text-subtle uppercase tracking-wider">Operating Address</span>
-                <span className="text-sm font-medium leading-relaxed">{contactAddress}</span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 rounded-2xl p-3">
-              <Clock className="size-5 text-accent shrink-0" strokeWidth={1.75} />
-              <div>
-                <span className="block text-xs font-medium text-subtle uppercase tracking-wider">Business Hours</span>
-                <span className="text-sm">Monday – Saturday: 10:00 AM – 7:00 PM IST</span>
-              </div>
-            </div>
-
-            {settings.contact_instagram && (
+            {/* Email Card */}
+            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-surface-2/60 border border-border/60 hover:border-accent/40 transition-colors">
               <a
-                href={`https://instagram.com/${settings.contact_instagram.replace('@', '')}`}
+                href={`mailto:${contactEmail}`}
+                className="flex items-center gap-3 min-w-0"
+              >
+                <div className="size-9 rounded-xl bg-accent/10 text-accent flex items-center justify-center shrink-0">
+                  <Mail className="size-4.5" />
+                </div>
+                <div className="truncate">
+                  <span className="block text-[11px] font-semibold text-muted uppercase tracking-wider">
+                    Studio Email
+                  </span>
+                  <span className="text-sm font-medium text-fg truncate">
+                    {contactEmail}
+                  </span>
+                </div>
+              </a>
+              <button
+                type="button"
+                onClick={() => copyToClipboard(contactEmail, "email")}
+                className="size-8 rounded-lg flex items-center justify-center text-muted hover:text-fg hover:bg-surface transition-colors cursor-pointer shrink-0 ml-2"
+                title="Copy email"
+              >
+                {copiedKey === "email" ? (
+                  <Check className="size-4 text-emerald-400" />
+                ) : (
+                  <Copy className="size-4" />
+                )}
+              </button>
+            </div>
+
+            {/* WhatsApp / Phone Card */}
+            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-surface-2/60 border border-border/60 hover:border-accent/40 transition-colors">
+              <a
+                href={
+                  cleanWhatsAppNumber
+                    ? `https://wa.me/${cleanWhatsAppNumber}`
+                    : `tel:${contactPhone.replace(/\s+/g, "")}`
+                }
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-3 rounded-2xl p-3 hover:bg-surface-2 transition-colors"
+                className="flex items-center gap-3 min-w-0"
               >
-                <Instagram className="size-5 text-accent shrink-0" strokeWidth={1.75} />
+                <div className="size-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+                  <Phone className="size-4.5" />
+                </div>
+                <div className="truncate">
+                  <span className="block text-[11px] font-semibold text-muted uppercase tracking-wider">
+                    WhatsApp &amp; Phone
+                  </span>
+                  <span className="text-sm font-medium text-fg truncate">
+                    {contactWhatsApp}
+                  </span>
+                </div>
+              </a>
+              <button
+                type="button"
+                onClick={() => copyToClipboard(contactWhatsApp, "phone")}
+                className="size-8 rounded-lg flex items-center justify-center text-muted hover:text-fg hover:bg-surface transition-colors cursor-pointer shrink-0 ml-2"
+                title="Copy phone"
+              >
+                {copiedKey === "phone" ? (
+                  <Check className="size-4 text-emerald-400" />
+                ) : (
+                  <Copy className="size-4" />
+                )}
+              </button>
+            </div>
+
+            {/* Operating Hours */}
+            <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-surface-2/60 border border-border/60">
+              <div className="size-9 rounded-xl bg-surface text-accent flex items-center justify-center shrink-0 mt-0.5">
+                <Clock className="size-4.5" />
+              </div>
+              <div>
+                <span className="block text-[11px] font-semibold text-muted uppercase tracking-wider">
+                  Operating Hours
+                </span>
+                <span className="text-sm text-fg leading-relaxed">
+                  {businessHours}
+                </span>
+              </div>
+            </div>
+
+            {/* Address */}
+            <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-surface-2/60 border border-border/60">
+              <div className="size-9 rounded-xl bg-surface text-accent flex items-center justify-center shrink-0 mt-0.5">
+                <MapPin className="size-4.5" />
+              </div>
+              <div>
+                <span className="block text-[11px] font-semibold text-muted uppercase tracking-wider">
+                  Print Studio &amp; Dispatch
+                </span>
+                <span className="text-sm text-fg leading-relaxed">
+                  {contactAddress}
+                </span>
+              </div>
+            </div>
+
+            {/* Instagram */}
+            {settings.contact_instagram && (
+              <a
+                href={`https://instagram.com/${settings.contact_instagram.replace("@", "")}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-3 p-3.5 rounded-2xl bg-surface-2/60 border border-border/60 hover:border-accent/40 transition-colors"
+              >
+                <div className="size-9 rounded-xl bg-pink-500/10 text-pink-400 flex items-center justify-center shrink-0">
+                  <Instagram className="size-4.5" />
+                </div>
                 <div>
-                  <span className="block text-xs font-medium text-subtle uppercase tracking-wider">Instagram</span>
-                  <span className="text-sm font-medium">{settings.contact_instagram}</span>
+                  <span className="block text-[11px] font-semibold text-muted uppercase tracking-wider">
+                    Instagram Showcase
+                  </span>
+                  <span className="text-sm font-medium text-fg">
+                    {settings.contact_instagram}
+                  </span>
                 </div>
               </a>
             )}
 
-            <div className="px-3 pt-2 text-xs text-muted border-t border-border/50">
-              For order queries, please mention your PRY- order number for faster assistance.
+            <div className="px-3 pt-3 text-xs text-muted border-t border-border/60">
+              💡 For questions regarding an existing order, please mention your{" "}
+              <strong className="text-fg">PRY-…</strong> order number for
+              faster dispatch status.
             </div>
           </div>
         </div>
-        <div className="md:col-span-7">
+
+        {/* Message Form */}
+        <div className="lg:col-span-7">
           {sent ? (
-            <div className="rounded-3xl bg-surface p-8 shadow-[var(--shadow-border)]">
-              <h2 className="font-display text-2xl font-semibold">Got it.</h2>
-              <p className="mt-2 text-muted">
-                We'll write back at the email you left. If it's urgent, mail
-                hello@prynth.in directly.
+            <div className="rounded-3xl border border-emerald-500/20 bg-emerald-500/5 p-8 sm:p-10 shadow-sm text-center space-y-4">
+              <div className="size-12 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
+                <Check className="size-6 stroke-[2.5]" />
+              </div>
+              <h2 className="font-display text-2xl sm:text-3xl font-semibold text-fg">
+                Message Received!
+              </h2>
+              <p className="text-sm text-muted max-w-md mx-auto leading-relaxed">
+                Thank you for reaching out. We will write back to you shortly at
+                the email you provided. For urgent inquiries, email{" "}
+                <a
+                  href={`mailto:${contactEmail}`}
+                  className="text-accent underline"
+                >
+                  {contactEmail}
+                </a>
+                .
               </p>
-              <Button className="mt-6" variant="secondary" onClick={() => setSent(false)}>
-                Send another
+              <Button
+                variant="outline"
+                onClick={() => setSent(false)}
+                className="mt-4 cursor-pointer"
+              >
+                Send Another Note
               </Button>
             </div>
           ) : (
             <form
               onSubmit={onSubmit}
-              className="space-y-4 rounded-3xl bg-surface p-6 shadow-[var(--shadow-border)] md:p-8"
+              className="space-y-5 rounded-3xl border border-border bg-surface p-6 sm:p-8 shadow-xs"
             >
-              {/* Honeypot field — hidden from real users, bots fill it in */}
-              <input name="_hp" type="text" autoComplete="off" tabIndex={-1} aria-hidden="true" className="absolute -top-[9999px] -left-[9999px] opacity-0 pointer-events-none" />
+              {/* Honeypot field */}
+              <input
+                name="_hp"
+                type="text"
+                autoComplete="off"
+                tabIndex={-1}
+                aria-hidden="true"
+                className="absolute -top-[9999px] -left-[9999px] opacity-0 pointer-events-none"
+              />
+
               <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <Label htmlFor="name">Name</Label>
-                  <Input id="name" name="name" autoComplete="name" required />
+                <div className="space-y-1.5">
+                  <Label htmlFor="name" className="text-xs font-semibold">
+                    Your Name
+                  </Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    autoComplete="name"
+                    placeholder="e.g. Rahul Sharma"
+                    required
+                  />
                 </div>
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" name="email" type="email" autoComplete="email" required />
+                <div className="space-y-1.5">
+                  <Label htmlFor="email" className="text-xs font-semibold">
+                    Email Address
+                  </Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="name@example.com"
+                    required
+                  />
                 </div>
               </div>
-              <div>
-                <Label htmlFor="message">Message</Label>
-                <Textarea id="message" name="message" required />
+
+              <div className="space-y-1.5">
+                <Label htmlFor="message" className="text-xs font-semibold">
+                  How Can We Help?
+                </Label>
+                <Textarea
+                  id="message"
+                  name="message"
+                  rows={5}
+                  placeholder="Tell us about the piece you need printed, dimensions, color preferences, or your order question..."
+                  required
+                />
               </div>
-              <Button type="submit" size="lg" disabled={busy}>
-                {busy ? "Sending..." : "Send"}
-              </Button>
+
+              <div className="flex items-center justify-between pt-2">
+                <p className="text-[11px] text-muted">
+                  We typically reply within 2–4 business hours.
+                </p>
+                <Button
+                  type="submit"
+                  size="lg"
+                  disabled={busy}
+                  className="cursor-pointer shadow-xs"
+                >
+                  {busy ? (
+                    "Sending..."
+                  ) : (
+                    <>
+                      <Send className="size-4 mr-2" />
+                      <span>Send Note</span>
+                    </>
+                  )}
+                </Button>
+              </div>
             </form>
           )}
         </div>

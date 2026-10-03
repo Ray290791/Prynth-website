@@ -11,7 +11,6 @@ import { ThemeProvider } from "@/lib/theme";
 import { Toaster } from "sonner";
 import { getSiteSettings } from "@/lib/settings-fns";
 import { CartSync } from "@/components/cart-sync";
-import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { CookieConsent } from "@/components/cookie-consent";
 import appCss from "../styles.css?url";
 
@@ -172,7 +171,6 @@ function Root() {
         <script src="https://checkout.razorpay.com/v1/checkout.js" async />
       </head>
       <body className="antialiased">
-        <PreviewHostBridge />
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <ThemeProvider>
