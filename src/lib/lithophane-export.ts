@@ -88,20 +88,17 @@ function sampleBilateralLuminance(
 }
 
 /**
- * Mathematical boundary test for heart shape with integrated flat display pedestal at the bottom.
+ * Mathematical boundary test for true heart cutout.
  */
 export function isInsideHeart(u: number, v: number): boolean {
-  // Integrated bottom pedestal: supports the pointy tip so it prints vertically and self-stands
-  if (v >= 0.88 && Math.abs(u - 0.5) <= 0.16) {
-    return true;
-  }
-
-  const nx = (u - 0.5) * 2.4;
-  const ny = (0.5 - v) * 2.4 + 0.28;
-  const x2 = nx * nx;
-  const y2 = ny * ny;
+  // u in [0, 1] (0 is left, 1 is right)
+  // v in [0, 1] (0 is top, 1 is bottom)
+  const x = (u - 0.5) * 2.5;
+  const y = (0.55 - v) * 2.5;
+  const x2 = x * x;
+  const y2 = y * y;
   const term = x2 + y2 - 1.0;
-  return term * term * term - x2 * (ny * ny * ny) <= 0.0;
+  return term * term * term - x2 * (y * y * y) <= 0.0;
 }
 
 /**

@@ -61,14 +61,14 @@ function sampleBilinearLuminance(
 
 // Mathematical boundary test for true heart cutout
 function isInsideHeart(u: number, v: number): boolean {
-  // Map u in [0,1] to nx in [-1.2, 1.2], map v in [0,1] to ny in [1.2, -1.2]
-  // Shift ny upward slightly so the cleft sits at the top and the point at the bottom
-  const nx = (u - 0.5) * 2.4;
-  const ny = (0.5 - v) * 2.4 + 0.28;
-  const x2 = nx * nx;
-  const y2 = ny * ny;
+  // u in [0, 1] (0 is left, 1 is right)
+  // v in [0, 1] (0 is top, 1 is bottom)
+  const x = (u - 0.5) * 2.5;
+  const y = (0.55 - v) * 2.5;
+  const x2 = x * x;
+  const y2 = y * y;
   const term = x2 + y2 - 1.0;
-  return term * term * term - x2 * (ny * ny * ny) <= 0.0;
+  return term * term * term - x2 * (y * y * y) <= 0.0;
 }
 
 // Calculate aspect-preserving mapped UV for dynamic scaling
@@ -123,8 +123,8 @@ function buildLithophaneGeometry(
 
   // 1. TRUE PHYSICAL 3D HEART CUTOUT MESH
   if (shape === "heart") {
-    const cols = 130;
-    const rows = 130;
+    const cols = 160;
+    const rows = 160;
     const positions: number[] = [];
     const uvs: number[] = [];
     const indices: number[] = [];
@@ -436,19 +436,6 @@ const lithophaneShader = {
     varying vec3 vWorldPosition;
 
     void main() {
-      // Smooth Heart mask if heart shape
-      if (uIsHeart > 0.5) {
-        float nx = (vUv.x - 0.5) * 2.4;
-        float ny = (0.5 - vUv.y) * 2.4 + 0.28;
-        float x2 = nx * nx;
-        float y2 = ny * ny;
-        float term = x2 + y2 - 1.0;
-        float heartDist = term * term * term - x2 * (ny * ny * ny);
-        if (heartDist > 0.012) {
-          discard;
-        }
-      }
-
       // Dynamic aspect-ratio preserve mapping
       vec2 mappedUv = (vUv - 0.5) * uUvScale + 0.5;
       mappedUv = clamp(mappedUv, 0.0, 1.0);

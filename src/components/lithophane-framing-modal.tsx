@@ -300,9 +300,9 @@ export function LithophaneFramingModal({
                   <mask id="heart-scrim-mask">
                     <rect x="0" y="0" width="100" height="100" fill="white" />
                     {shape === "heart" ? (
-                      // Authentic smooth heart cutout (normalized to 100x100)
+                      // Authentic smooth heart cutout matching heartTaubin bounds
                       <path
-                        d="M 50 85 C 50 85, 8 58, 8 32 C 8 18, 18 10, 29 10 C 37 10, 44 14, 50 20 C 56 14, 63 10, 71 10 C 82 10, 92 18, 92 32 C 92 58, 50 85, 50 85 Z"
+                        d="M 50 94 C 35 80, 5 62, 5 38 C 5 20, 16 6, 28 6 C 37 6, 45 10, 50 14 C 55 10, 63 6, 72 6 C 84 6, 95 20, 95 38 C 95 62, 65 80, 50 94 Z"
                         fill="black"
                       />
                     ) : (
@@ -327,7 +327,7 @@ export function LithophaneFramingModal({
                   <>
                     {/* Glowing outer heart silhouette */}
                     <path
-                      d="M 50 85 C 50 85, 8 58, 8 32 C 8 18, 18 10, 29 10 C 37 10, 44 14, 50 20 C 56 14, 63 10, 71 10 C 82 10, 92 18, 92 32 C 92 58, 50 85, 50 85 Z"
+                      d="M 50 94 C 35 80, 5 62, 5 38 C 5 20, 16 6, 28 6 C 37 6, 45 10, 50 14 C 55 10, 63 6, 72 6 C 84 6, 95 20, 95 38 C 95 62, 65 80, 50 94 Z"
                       fill="none"
                       stroke="#f59e0b"
                       strokeWidth="1.8"
@@ -336,7 +336,7 @@ export function LithophaneFramingModal({
 
                     {/* Subtle dashed inner guideline */}
                     <path
-                      d="M 50 82 C 50 82, 11 57, 11 33 C 11 20, 20 13, 30 13 C 38 13, 45 17, 50 22 C 55 17, 62 13, 70 13 C 80 13, 89 20, 89 33 C 89 57, 50 82, 50 82 Z"
+                      d="M 50 90 C 37 77, 8 60, 8 39 C 8 23, 18 10, 28 10 C 36 10, 44 14, 50 17 C 56 14, 64 10, 72 10 C 82 10, 92 23, 92 39 C 92 60, 63 77, 50 90 Z"
                       fill="none"
                       stroke="#f59e0b"
                       strokeWidth="0.75"

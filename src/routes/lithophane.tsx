@@ -18,8 +18,6 @@ import {
   Info,
   Crop,
   Maximize2,
-  Box,
-  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -38,11 +36,7 @@ import {
 } from "@/components/lithophane-framing-modal";
 import { SAMPLE_PHOTOS } from "@/lib/lithophane-samples";
 import { compressImageDataUrl } from "@/lib/image-utils";
-import {
-  generateLithophaneMeshData,
-  buildLithophaneBambu3mf,
-  buildLithophaneStl,
-} from "@/lib/lithophane-export";
+
 
 export const Route = createFileRoute("/lithophane")({
   component: LithophaneStudioPage,
@@ -291,91 +285,7 @@ function LithophaneStudioPage() {
     });
   };
 
-  const [isExporting3mf, setIsExporting3mf] = useState(false);
-  const [isExportingStl, setIsExportingStl] = useState(false);
 
-  const handleExportBambu3mf = async () => {
-    if (!photoUrl) {
-      toast.error("Please upload or select a photo first.");
-      return;
-    }
-    setIsExporting3mf(true);
-    const toastId = toast.loading("Generating full 3D model & Bambu Studio .3mf…");
-    try {
-      const mesh = await generateLithophaneMeshData(
-        photoUrl,
-        currentDims.width,
-        currentDims.height,
-        shape
-      );
-      if (!mesh) {
-        toast.dismiss(toastId);
-        toast.error("Could not generate 3D model from photo.");
-        setIsExporting3mf(false);
-        return;
-      }
-      const title =
-        shape === "heart"
-          ? "Heart Keepsake"
-          : shape === "curved"
-          ? "Self-Standing Arc"
-          : "Flat Panel";
-      const blob = buildLithophaneBambu3mf("Studio", `Lithophane ${title}`, mesh);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `prynth-lithophane-${shape}-${currentDims.width}x${currentDims.height}.3mf`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.dismiss(toastId);
-      toast.success("Bambu Studio .3mf downloaded with full 3D model & 0.12mm profile!");
-    } catch (err) {
-      toast.dismiss(toastId);
-      toast.error("Failed to generate .3mf");
-      console.error(err);
-    } finally {
-      setIsExporting3mf(false);
-    }
-  };
-
-  const handleExportStl = async () => {
-    if (!photoUrl) {
-      toast.error("Please upload or select a photo first.");
-      return;
-    }
-    setIsExportingStl(true);
-    const toastId = toast.loading("Generating binary STL from photo…");
-    try {
-      const mesh = await generateLithophaneMeshData(
-        photoUrl,
-        currentDims.width,
-        currentDims.height,
-        shape
-      );
-      if (!mesh) {
-        toast.dismiss(toastId);
-        toast.error("Could not generate STL from photo.");
-        setIsExportingStl(false);
-        return;
-      }
-      const buffer = buildLithophaneStl(currentDims.width, currentDims.height, mesh);
-      const blob = new Blob([buffer], { type: "application/octet-stream" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `prynth-lithophane-${shape}-${currentDims.width}x${currentDims.height}.stl`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.dismiss(toastId);
-      toast.success("Lithophane STL downloaded — open in Fusion 360 or Bambu Studio!");
-    } catch (err) {
-      toast.dismiss(toastId);
-      toast.error("Failed to generate STL");
-      console.error(err);
-    } finally {
-      setIsExportingStl(false);
-    }
-  };
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 md:px-6 md:py-12">
@@ -419,39 +329,6 @@ function LithophaneStudioPage() {
               </span>
             </div>
 
-            {/* Direct 3D Print File Downloads */}
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/70 bg-surface/50 p-2.5 shadow-2xs">
-              <span className="text-xs font-medium text-fg flex items-center gap-1.5">
-                <Box className="size-3.5 text-accent" />
-                <span>Export 3D Model:</span>
-              </span>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleExportBambu3mf}
-                  disabled={!photoUrl || isExporting3mf}
-                  className="h-8 gap-1.5 text-xs font-semibold hover:border-emerald-500/50 hover:text-emerald-500 cursor-pointer"
-                  title="Download full 3D project pre-configured for Bambu Studio"
-                >
-                  <Download className="size-3 text-emerald-500" />
-                  <span>Bambu .3mf</span>
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleExportStl}
-                  disabled={!photoUrl || isExportingStl}
-                  className="h-8 gap-1.5 text-xs font-semibold hover:border-accent hover:text-accent cursor-pointer"
-                  title="Download binary STL for Fusion 360 or any slicer"
-                >
-                  <Download className="size-3 text-accent" />
-                  <span>Download STL</span>
-                </Button>
-              </div>
-            </div>
           </div>
 
           {/* Photo Source & Uploader Card */}
