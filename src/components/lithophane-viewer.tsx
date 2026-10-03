@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type LithophaneShape = "flat" | "heart";
+export type LithophaneShape = "flat" | "heart" | "curved";
 export type LithophaneFitMode = "dynamic" | "stretch";
 
 export interface LithophaneViewerProps {
@@ -151,7 +151,8 @@ function buildLithophaneGeometry(
         lum = Math.pow(Math.max(0, Math.min(1, lum)), contrast);
         if (invert) lum = 1.0 - lum;
 
-        const t = minT + (1.0 - lum) * (maxT - minT);
+        const lumOpt = Math.pow(Math.max(0.001, Math.min(1, lum)), 0.72);
+        const t = minT + (1.0 - lumOpt) * (maxT - minT);
 
         const fIdx = positions.length / 3;
         positions.push(x, y, t);
@@ -249,7 +250,8 @@ function buildLithophaneGeometry(
       lum = Math.pow(Math.max(0, Math.min(1, lum)), contrast);
       if (invert) lum = 1.0 - lum;
 
-      let t = minT + (1.0 - lum) * (maxT - minT);
+      const lumOpt = Math.pow(Math.max(0.001, Math.min(1, lum)), 0.72);
+      let t = minT + (1.0 - lumOpt) * (maxT - minT);
 
       // Architectural framed perimeter border (like LithophaneMaker framed prints)
       const borderDistX = Math.min(c, cols - 1 - c) * (widthMm / (cols - 1));
@@ -270,22 +272,54 @@ function buildLithophaneGeometry(
   const uvs: number[] = [];
   const indices: number[] = [];
 
-  for (let r = 0; r < rows; r++) {
-    const v = r / (rows - 1);
-    const y = (0.5 - v) * heightMm;
+  if (shape === "curved") {
+    const arcAngle = 0.65;
+    const radius = widthMm / arcAngle;
 
-    for (let c = 0; c < cols; c++) {
-      const u = c / (cols - 1);
-      const t = thicknessGrid[r][c];
-      const x = (u - 0.5) * widthMm;
+    for (let r = 0; r < rows; r++) {
+      const v = r / (rows - 1);
+      const y = (0.5 - v) * heightMm;
 
-      // Front Face (Z displaced according to physical polymer thickness)
-      positions.push(x, y, t);
-      uvs.push(u, 1.0 - v);
+      for (let c = 0; c < cols; c++) {
+        const u = c / (cols - 1);
+        const t = thicknessGrid[r][c];
 
-      // Back Face (smooth flat back at Z = 0)
-      positions.push(x, y, 0);
-      uvs.push(u, 1.0 - v);
+        const phi = (u - 0.5) * arcAngle;
+        const sinP = Math.sin(phi);
+        const cosP = Math.cos(phi);
+
+        // Center curve around Z=0, bowing gently backwards
+        const xBack = radius * sinP;
+        const zBack = radius * cosP - radius;
+
+        const xFront = (radius + t) * sinP;
+        const zFront = (radius + t) * cosP - radius;
+
+        positions.push(xFront, y, zFront);
+        uvs.push(u, 1.0 - v);
+
+        positions.push(xBack, y, zBack);
+        uvs.push(u, 1.0 - v);
+      }
+    }
+  } else {
+    for (let r = 0; r < rows; r++) {
+      const v = r / (rows - 1);
+      const y = (0.5 - v) * heightMm;
+
+      for (let c = 0; c < cols; c++) {
+        const u = c / (cols - 1);
+        const t = thicknessGrid[r][c];
+        const x = (u - 0.5) * widthMm;
+
+        // Front Face (Z displaced according to physical polymer thickness)
+        positions.push(x, y, t);
+        uvs.push(u, 1.0 - v);
+
+        // Back Face (smooth flat back at Z = 0)
+        positions.push(x, y, 0);
+        uvs.push(u, 1.0 - v);
+      }
     }
   }
 

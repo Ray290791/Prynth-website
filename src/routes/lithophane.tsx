@@ -73,13 +73,19 @@ const SHAPES: ShapeOption[] = [
     id: "flat",
     name: "Classic Flat Panel",
     tag: "Popular",
-    description: "Architectural flat portrait relief with precision beveled border. Clean & versatile for window sills and desks.",
+    description: "Architectural flat portrait relief with precision beveled border and integrated standing base. Clean & versatile.",
+  },
+  {
+    id: "curved",
+    name: "Self-Standing Arc",
+    tag: "Best for Desks",
+    description: "Elegant 37° cylindrical curved panorama. Completely self-supporting on any desk or shelf with zero wobble.",
   },
   {
     id: "heart",
     name: "Heart Keepsake",
     tag: "Romantic",
-    description: "Heart contour tailored for couples, anniversaries, weddings, and memorable keepsake gifts.",
+    description: "Heart contour with integrated display pedestal, tailored for couples, anniversaries, and keepsake gifts.",
   },
 ];
 
@@ -227,17 +233,22 @@ function LithophaneStudioPage() {
       return;
     }
 
-    // Ensure photo payload is compressed to ~35-45 KB so it won't inflate DB or cart
+    // Preserve high resolution (1200px max, quality 0.92) to eliminate DCT blockiness
     let finalPhoto = photoUrl;
     if (photoUrl.startsWith("data:")) {
       try {
-        finalPhoto = await compressImageDataUrl(photoUrl, 600, 0.82);
+        finalPhoto = await compressImageDataUrl(photoUrl, 1200, 0.92);
       } catch (err) {
         console.warn("Could not compress photo before adding to cart:", err);
       }
     }
 
-    const shapeLabel = shape === "heart" ? "Heart Keepsake" : "Classic Flat Panel";
+    const shapeLabel =
+      shape === "heart"
+        ? "Heart Keepsake"
+        : shape === "curved"
+        ? "Self-Standing Arc"
+        : "Classic Flat Panel";
 
     const giftNotes = isGift
       ? ` [GIFT PACKAGING REQUESTED: Luxury Ribbon Gift Box, Conceal Invoice Prices${
@@ -303,7 +314,12 @@ function LithophaneStudioPage() {
         setIsExporting3mf(false);
         return;
       }
-      const title = shape === "heart" ? "Heart Keepsake" : "Flat Panel";
+      const title =
+        shape === "heart"
+          ? "Heart Keepsake"
+          : shape === "curved"
+          ? "Self-Standing Arc"
+          : "Flat Panel";
       const blob = buildLithophaneBambu3mf("Studio", `Lithophane ${title}`, mesh);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -756,6 +772,7 @@ function LithophaneStudioPage() {
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-semibold text-fg">{s.name}</span>
                         {s.id === "heart" && <Heart className="size-3.5 text-rose-500 fill-rose-500" />}
+                        {s.id === "curved" && <Sparkles className="size-3.5 text-accent" />}
                         <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-semibold text-accent">
                           {s.tag}
                         </span>

@@ -150,7 +150,11 @@ export function OrderDetailsDialog({
     const wMm = sizeMatch ? parseInt(sizeMatch[1]) : 150;
     const hMm = sizeMatch ? parseInt(sizeMatch[2]) : 100;
     const notesLower = (item.custom?.notes ?? "").toLowerCase();
-    const shape: "flat" | "heart" = notesLower.includes("heart") ? "heart" : "flat";
+    const shape: "flat" | "heart" | "curved" = notesLower.includes("heart")
+      ? "heart"
+      : notesLower.includes("curved") || notesLower.includes("arc")
+      ? "curved"
+      : "flat";
 
     const toastId = toast.loading("Generating full 3D model and Bambu Studio .3mf project…");
     try {
@@ -192,7 +196,11 @@ export function OrderDetailsDialog({
     const wMm = sizeMatch ? parseInt(sizeMatch[1]) : 150;
     const hMm = sizeMatch ? parseInt(sizeMatch[2]) : 100;
     const notesLower = (item.custom?.notes ?? "").toLowerCase();
-    const shape: "flat" | "heart" = notesLower.includes("heart") ? "heart" : "flat";
+    const shape: "flat" | "heart" | "curved" = notesLower.includes("heart")
+      ? "heart"
+      : notesLower.includes("curved") || notesLower.includes("arc")
+      ? "curved"
+      : "flat";
 
     const toastId = toast.loading("Generating STL from photo…");
     try {

@@ -203,7 +203,7 @@ export function LithophaneFramingModal({
     ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
     ctx.restore();
 
-    const croppedDataUrl = canvas.toDataURL("image/jpeg", 0.82);
+    const croppedDataUrl = canvas.toDataURL("image/jpeg", 0.95);
     onApply(croppedDataUrl, { scale, panX, panY });
     onClose();
   }, [onApply, onClose, panX, panY, scale]);
@@ -225,13 +225,21 @@ export function LithophaneFramingModal({
             </div>
             <div>
               <h3 className="text-sm font-semibold text-fg flex items-center gap-2">
-                <span>{shape === "heart" ? "Frame Photo for Heart Keepsake" : "Adjust Photo Framing"}</span>
+                <span>
+                  {shape === "heart"
+                    ? "Frame Photo for Heart Keepsake"
+                    : shape === "curved"
+                    ? "Frame Photo for Self-Standing Arc"
+                    : "Adjust Photo Framing"}
+                </span>
                 <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">
                   Interactive Crop
                 </span>
               </h3>
               <p className="text-xs text-muted">
-                Drag to reposition · Zoom to center faces inside the heart
+                {shape === "heart"
+                  ? "Drag to reposition · Zoom to center faces inside the heart"
+                  : "Drag to reposition · Zoom to frame the perfect composition"}
               </p>
             </div>
           </div>
