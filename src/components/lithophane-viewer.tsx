@@ -11,6 +11,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { isInsideHeart, computeHeartBorderDistances } from "@/lib/lithophane-export";
 
 export type LithophaneShape = "flat" | "heart" | "curved";
 export type LithophaneFitMode = "dynamic" | "stretch";
@@ -57,18 +58,6 @@ function sampleBilinearLuminance(
   const top = l00 * (1 - dx) + l10 * dx;
   const bot = l01 * (1 - dx) + l11 * dx;
   return top * (1 - dy) + bot * dy;
-}
-
-// Mathematical boundary test for true heart cutout
-function isInsideHeart(u: number, v: number): boolean {
-  // u in [0, 1] (0 is left, 1 is right)
-  // v in [0, 1] (0 is top, 1 is bottom)
-  const x = (u - 0.5) * 2.5;
-  const y = (0.55 - v) * 2.5;
-  const x2 = x * x;
-  const y2 = y * y;
-  const term = x2 + y2 - 1.0;
-  return term * term * term - x2 * (y * y * y) <= 0.0;
 }
 
 // Calculate aspect-preserving mapped UV for dynamic scaling
@@ -125,6 +114,10 @@ function buildLithophaneGeometry(
   if (shape === "heart") {
     const cols = 160;
     const rows = 160;
+    const cellW_mm = widthMm / (cols - 1);
+    const cellH_mm = heightMm / (rows - 1);
+    const minCell = Math.min(cellW_mm, cellH_mm);
+    const heartBorderDist = computeHeartBorderDistances(rows, cols, cellW_mm, cellH_mm);
     const positions: number[] = [];
     const uvs: number[] = [];
     const indices: number[] = [];
@@ -152,7 +145,17 @@ function buildLithophaneGeometry(
         if (invert) lum = 1.0 - lum;
 
         const lumOpt = Math.pow(Math.max(0.001, Math.min(1, lum)), 0.72);
-        const t = minT + (1.0 - lumOpt) * (maxT - minT);
+        let t = minT + (1.0 - lumOpt) * (maxT - minT);
+
+        // Architectural raised framed border around heart perimeter (matching flat panel & arc)
+        const rawDist = heartBorderDist[r * cols + c];
+        const borderDist = Math.max(0, rawDist - minCell * 0.5);
+        const borderWidthMm = 2.8;
+        if (borderDist < borderWidthMm) {
+          const borderT = 3.6;
+          const factor = Math.sin((borderDist / borderWidthMm) * Math.PI * 0.5);
+          t = borderT * (1.0 - factor) + t * factor;
+        }
 
         const fIdx = positions.length / 3;
         positions.push(x, y, t);

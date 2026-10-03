@@ -102,6 +102,177 @@ export function isInsideHeart(u: number, v: number): boolean {
 }
 
 /**
+ * Fast 2-pass Euclidean distance transform to compute exact physical distance (in mm)
+ * from every point inside the heart to the nearest heart perimeter boundary.
+ */
+export function computeHeartBorderDistances(
+  rows: number,
+  cols: number,
+  cellW_mm: number,
+  cellH_mm: number
+): Float32Array {
+  const total = rows * cols;
+  const vx = new Int16Array(total);
+  const vy = new Int16Array(total);
+  const INF = 9999;
+
+  for (let r = 0; r < rows; r++) {
+    const v = r / (rows - 1);
+    const rowOffset = r * cols;
+    for (let c = 0; c < cols; c++) {
+      const u = c / (cols - 1);
+      const idx = rowOffset + c;
+      if (!isInsideHeart(u, v)) {
+        vx[idx] = 0;
+        vy[idx] = 0;
+      } else {
+        vx[idx] = INF;
+        vy[idx] = INF;
+      }
+    }
+  }
+
+  // Pass 1: top-left to bottom-right
+  for (let r = 0; r < rows; r++) {
+    const rowOffset = r * cols;
+    for (let c = 0; c < cols; c++) {
+      const idx = rowOffset + c;
+      let curVx = vx[idx];
+      let curVy = vy[idx];
+      if (curVx === 0 && curVy === 0) continue;
+
+      let curDistSq = (curVx * cellW_mm) ** 2 + (curVy * cellH_mm) ** 2;
+
+      if (r > 0) {
+        const nIdx = (r - 1) * cols + c;
+        const nVx = vx[nIdx];
+        const nVy = vy[nIdx] + 1;
+        const dSq = (nVx * cellW_mm) ** 2 + (nVy * cellH_mm) ** 2;
+        if (dSq < curDistSq) {
+          curDistSq = dSq;
+          curVx = nVx;
+          curVy = nVy;
+        }
+
+        if (c > 0) {
+          const diagIdx = (r - 1) * cols + (c - 1);
+          const diagVx = vx[diagIdx] + 1;
+          const diagVy = vy[diagIdx] + 1;
+          const dSqDiag = (diagVx * cellW_mm) ** 2 + (diagVy * cellH_mm) ** 2;
+          if (dSqDiag < curDistSq) {
+            curDistSq = dSqDiag;
+            curVx = diagVx;
+            curVy = diagVy;
+          }
+        }
+
+        if (c < cols - 1) {
+          const diagIdx = (r - 1) * cols + (c + 1);
+          const diagVx = vx[diagIdx] - 1;
+          const diagVy = vy[diagIdx] + 1;
+          const dSqDiag = (diagVx * cellW_mm) ** 2 + (diagVy * cellH_mm) ** 2;
+          if (dSqDiag < curDistSq) {
+            curDistSq = dSqDiag;
+            curVx = diagVx;
+            curVy = diagVy;
+          }
+        }
+      }
+
+      if (c > 0) {
+        const nIdx = rowOffset + (c - 1);
+        const nVx = vx[nIdx] + 1;
+        const nVy = vy[nIdx];
+        const dSq = (nVx * cellW_mm) ** 2 + (nVy * cellH_mm) ** 2;
+        if (dSq < curDistSq) {
+          curDistSq = dSq;
+          curVx = nVx;
+          curVy = nVy;
+        }
+      }
+
+      vx[idx] = curVx;
+      vy[idx] = curVy;
+    }
+  }
+
+  // Pass 2: bottom-right to top-left
+  for (let r = rows - 1; r >= 0; r--) {
+    const rowOffset = r * cols;
+    for (let c = cols - 1; c >= 0; c--) {
+      const idx = rowOffset + c;
+      let curVx = vx[idx];
+      let curVy = vy[idx];
+      if (curVx === 0 && curVy === 0) continue;
+
+      let curDistSq = (curVx * cellW_mm) ** 2 + (curVy * cellH_mm) ** 2;
+
+      if (r < rows - 1) {
+        const nIdx = (r + 1) * cols + c;
+        const nVx = vx[nIdx];
+        const nVy = vy[nIdx] - 1;
+        const dSq = (nVx * cellW_mm) ** 2 + (nVy * cellH_mm) ** 2;
+        if (dSq < curDistSq) {
+          curDistSq = dSq;
+          curVx = nVx;
+          curVy = nVy;
+        }
+
+        if (c < cols - 1) {
+          const diagIdx = (r + 1) * cols + (c + 1);
+          const diagVx = vx[diagIdx] - 1;
+          const diagVy = vy[diagIdx] - 1;
+          const dSqDiag = (diagVx * cellW_mm) ** 2 + (diagVy * cellH_mm) ** 2;
+          if (dSqDiag < curDistSq) {
+            curDistSq = dSqDiag;
+            curVx = diagVx;
+            curVy = diagVy;
+          }
+        }
+
+        if (c > 0) {
+          const diagIdx = (r + 1) * cols + (c - 1);
+          const diagVx = vx[diagIdx] + 1;
+          const diagVy = vy[diagIdx] - 1;
+          const dSqDiag = (diagVx * cellW_mm) ** 2 + (diagVy * cellH_mm) ** 2;
+          if (dSqDiag < curDistSq) {
+            curDistSq = dSqDiag;
+            curVx = diagVx;
+            curVy = diagVy;
+          }
+        }
+      }
+
+      if (c < cols - 1) {
+        const nIdx = rowOffset + (c + 1);
+        const nVx = vx[nIdx] - 1;
+        const nVy = vy[nIdx];
+        const dSq = (nVx * cellW_mm) ** 2 + (nVy * cellH_mm) ** 2;
+        if (dSq < curDistSq) {
+          curDistSq = dSq;
+          curVx = nVx;
+          curVy = nVy;
+        }
+      }
+
+      vx[idx] = curVx;
+      vy[idx] = curVy;
+    }
+  }
+
+  const distMm = new Float32Array(total);
+  for (let i = 0; i < total; i++) {
+    if (vx[i] >= INF || vy[i] >= INF) {
+      distMm[i] = 999;
+    } else {
+      distMm[i] = Math.sqrt((vx[i] * cellW_mm) ** 2 + (vy[i] * cellH_mm) ** 2);
+    }
+  }
+
+  return distMm;
+}
+
+/**
  * Generates an ultra-high-definition, watertight 3D manifold mesh directly from the photo.
  *
  * Upgrades for gallery-grade sellable prints:
@@ -163,6 +334,10 @@ export async function generateLithophaneMeshData(
         // High density grid for heart contour (320x320)
         const cols = 320;
         const rows = 320;
+        const cellW_mm = widthMm / (cols - 1);
+        const cellH_mm = heightMm / (rows - 1);
+        const minCell = Math.min(cellW_mm, cellH_mm);
+        const heartBorderDist = computeHeartBorderDistances(rows, cols, cellW_mm, cellH_mm);
         const vertMap: ({ front: number; back: number } | null)[][] = [];
 
         for (let r = 0; r < rows; r++) {
@@ -182,6 +357,16 @@ export async function generateLithophaneMeshData(
             }
 
             let t = computeThickness(u, v);
+
+            // Architectural raised framed border around heart perimeter
+            const rawDist = heartBorderDist[r * cols + c];
+            const borderDist = Math.max(0, rawDist - minCell * 0.5);
+            const borderWidthMm = 2.8;
+            if (borderDist < borderWidthMm) {
+              const borderT = 3.6;
+              const factor = Math.sin((borderDist / borderWidthMm) * Math.PI * 0.5);
+              t = borderT * (1.0 - factor) + t * factor;
+            }
 
             // Sturdy pedestal footing at the base (bottom 5mm) to secure bed adhesion
             let backFooting = 0;
