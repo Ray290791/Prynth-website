@@ -18,6 +18,7 @@ import { getAllProductsAdmin, deleteProduct, updateProduct, createProduct, updat
 import { getAdminSiteSettings, getSiteSettings, updateSiteSettings } from "@/lib/settings-fns";
 import { CustomPricingSettings } from "@/components/custom-pricing-settings";
 import { LithophanePricingSettings } from "@/components/lithophane-pricing-settings";
+import { PegboardSettings } from "@/components/pegboard-settings";
 import { getCouponsAdmin, createCoupon, deleteCoupon, getAnalyticsAdmin } from "@/lib/ecommerce-fns";
 import { getAdminTeam, addAdmin, removeAdmin, getAdminProfile, setAdminPin, requestPinResetOTP, resetAdminPinWithOTP, getAllUsersAdmin } from "@/lib/admin-fns";
 import { getFaqsAdmin, createFaq, updateFaq, deleteFaq, reorderFaqs } from "@/lib/faq-fns";
@@ -1037,6 +1038,17 @@ function SettingsTab() {
       contact_whatsapp: ((fd.get("contact_whatsapp") as string) || settings?.contact_whatsapp || "").trim(),
       social_twitter: ((fd.get("social_twitter") as string) || settings?.social_twitter || "").trim(),
       social_youtube: ((fd.get("social_youtube") as string) || settings?.social_youtube || "").trim(),
+      pegboard_hero_title: ((fd.get("pegboard_hero_title") as string) || settings?.pegboard_hero_title || "").trim(),
+      pegboard_hero_subtitle: ((fd.get("pegboard_hero_subtitle") as string) || settings?.pegboard_hero_subtitle || "").trim(),
+      pegboard_badge: ((fd.get("pegboard_badge") as string) || settings?.pegboard_badge || "").trim(),
+      pegboard_price_compact: ((fd.get("pegboard_price_compact") as string) || settings?.pegboard_price_compact || "699").trim(),
+      pegboard_price_studio: ((fd.get("pegboard_price_studio") as string) || settings?.pegboard_price_studio || "999").trim(),
+      pegboard_price_executive: ((fd.get("pegboard_price_executive") as string) || settings?.pegboard_price_executive || "1499").trim(),
+      pegboard_price_duo: ((fd.get("pegboard_price_duo") as string) || settings?.pegboard_price_duo || "1799").trim(),
+      pegboard_addon_tech_price: ((fd.get("pegboard_addon_tech_price") as string) || settings?.pegboard_addon_tech_price || "299").trim(),
+      pegboard_addon_desk_price: ((fd.get("pegboard_addon_desk_price") as string) || settings?.pegboard_addon_desk_price || "249").trim(),
+      pegboard_addon_botanical_price: ((fd.get("pegboard_addon_botanical_price") as string) || settings?.pegboard_addon_botanical_price || "279").trim(),
+      pegboard_story: ((fd.get("pegboard_story") as string) || settings?.pegboard_story || "").trim(),
       payment_online_enabled: fd.get("payment_online_enabled") === "on" ? "true" : "false",
       payment_cod_enabled: fd.get("payment_cod_enabled") === "on" ? "true" : "false",
       payment_upi_enabled: fd.get("payment_upi_enabled") === "on" ? "true" : "false",
@@ -1289,6 +1301,13 @@ function SettingsTab() {
 
         {/* LITHOPHANE STUDIO & LIGHT BOX PRICING SECTION */}
         <LithophanePricingSettings
+          settings={settings}
+          onQuickSave={handleQuickSavePricing}
+          isSaving={updateMutation.isPending}
+        />
+
+        {/* STAR PRODUCT: MODULAR PEGBOARD SETTINGS */}
+        <PegboardSettings
           settings={settings}
           onQuickSave={handleQuickSavePricing}
           isSaving={updateMutation.isPending}

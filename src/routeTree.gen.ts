@@ -20,6 +20,7 @@ import { Route as FaqRouteImport } from './routes/faq'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as LithophaneRouteImport } from './routes/lithophane'
 import { Route as MaterialsRouteImport } from './routes/materials'
+import { Route as PegboardRouteImport } from './routes/pegboard'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ReturnsRouteImport } from './routes/returns'
@@ -87,6 +88,11 @@ const LithophaneRoute = LithophaneRouteImport.update({
 const MaterialsRoute = MaterialsRouteImport.update({
   id: '/materials',
   path: '/materials',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PegboardRoute = PegboardRouteImport.update({
+  id: '/pegboard',
+  path: '/pegboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -167,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/history': typeof HistoryRoute
   '/lithophane': typeof LithophaneRoute
   '/materials': typeof MaterialsRoute
+  '/pegboard': typeof PegboardRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/returns': typeof ReturnsRoute
@@ -193,6 +200,7 @@ export interface FileRoutesByTo {
   '/history': typeof HistoryRoute
   '/lithophane': typeof LithophaneRoute
   '/materials': typeof MaterialsRoute
+  '/pegboard': typeof PegboardRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/returns': typeof ReturnsRoute
@@ -220,6 +228,7 @@ export interface FileRoutesById {
   '/history': typeof HistoryRoute
   '/lithophane': typeof LithophaneRoute
   '/materials': typeof MaterialsRoute
+  '/pegboard': typeof PegboardRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/returns': typeof ReturnsRoute
@@ -248,6 +257,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/lithophane'
     | '/materials'
+    | '/pegboard'
     | '/privacy'
     | '/profile'
     | '/returns'
@@ -274,6 +284,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/lithophane'
     | '/materials'
+    | '/pegboard'
     | '/privacy'
     | '/profile'
     | '/returns'
@@ -300,6 +311,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/lithophane'
     | '/materials'
+    | '/pegboard'
     | '/privacy'
     | '/profile'
     | '/returns'
@@ -327,6 +339,7 @@ export interface RootRouteChildren {
   HistoryRoute: typeof HistoryRoute
   LithophaneRoute: typeof LithophaneRoute
   MaterialsRoute: typeof MaterialsRoute
+  PegboardRoute: typeof PegboardRoute
   PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
   ReturnsRoute: typeof ReturnsRoute
@@ -419,6 +432,13 @@ declare module '@tanstack/react-router' {
       path: '/materials'
       fullPath: '/materials'
       preLoaderRoute: typeof MaterialsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pegboard': {
+      id: '/pegboard'
+      path: '/pegboard'
+      fullPath: '/pegboard'
+      preLoaderRoute: typeof PegboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -527,6 +547,7 @@ const rootRouteChildren: RootRouteChildren = {
   HistoryRoute: HistoryRoute,
   LithophaneRoute: LithophaneRoute,
   MaterialsRoute: MaterialsRoute,
+  PegboardRoute: PegboardRoute,
   PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
   ReturnsRoute: ReturnsRoute,

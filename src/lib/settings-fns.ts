@@ -81,6 +81,19 @@ export type SiteSettings = {
   contact_whatsapp?: string;
   social_twitter?: string;
   social_youtube?: string;
+  // Pegboard Star Product settings
+  pegboard_hero_title?: string;
+  pegboard_hero_subtitle?: string;
+  pegboard_badge?: string;
+  pegboard_price_compact?: string;
+  pegboard_price_studio?: string;
+  pegboard_price_executive?: string;
+  pegboard_price_duo?: string;
+  pegboard_addon_tech_price?: string;
+  pegboard_addon_desk_price?: string;
+  pegboard_addon_botanical_price?: string;
+  pegboard_story?: string;
+  pegboard_images?: string;
 };
 
 export const getSiteSettings = createServerFn({ method: "GET" }).handler(
@@ -154,6 +167,22 @@ export const getSiteSettings = createServerFn({ method: "GET" }).handler(
       contact_whatsapp: "+91 98765 43210",
       social_twitter: "@prynth",
       social_youtube: "",
+      pegboard_hero_title: "The Modular Pegboard System",
+      pegboard_hero_subtitle: "Precision 3D printed modular wall and desk organization. Engineered for creators, tech setups, and intentional workspaces.",
+      pegboard_badge: "Signature Star Product",
+      pegboard_price_compact: "699",
+      pegboard_price_studio: "999",
+      pegboard_price_executive: "1499",
+      pegboard_price_duo: "1799",
+      pegboard_addon_tech_price: "299",
+      pegboard_addon_desk_price: "249",
+      pegboard_addon_botanical_price: "279",
+      pegboard_story: "Every square millimetre of the Modular Pegboard was engineered with intention. 3D-printed from high-impact matte filament, it pairs an architectural silhouette with an ultra-versatile 25mm beveled grid. Whether you choose damage-free adhesive strips, desk edge clamps, or wall anchors, it transforms chaotic tool piles into a calm, focused craft sanctum.",
+      pegboard_images: JSON.stringify([
+        "/products/modular-pegboard.jpg",
+        "/products/pegboard-white.jpg",
+        "/products/pegboard-detail.jpg"
+      ]),
     };
 
     for (const row of rows) {
@@ -277,6 +306,18 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
     contact_whatsapp: z.string().optional(),
     social_twitter: z.string().optional(),
     social_youtube: z.string().optional(),
+    pegboard_hero_title: z.string().optional(),
+    pegboard_hero_subtitle: z.string().optional(),
+    pegboard_badge: z.string().optional(),
+    pegboard_price_compact: z.string().optional(),
+    pegboard_price_studio: z.string().optional(),
+    pegboard_price_executive: z.string().optional(),
+    pegboard_price_duo: z.string().optional(),
+    pegboard_addon_tech_price: z.string().optional(),
+    pegboard_addon_desk_price: z.string().optional(),
+    pegboard_addon_botanical_price: z.string().optional(),
+    pegboard_story: z.string().optional(),
+    pegboard_images: z.string().optional(),
   }).partial())
   .handler(async ({ data, context }) => {
     if (!context.userId) throw new Error("Unauthorized");

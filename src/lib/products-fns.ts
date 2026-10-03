@@ -82,6 +82,33 @@ async function seedProductsIfEmpty() {
       }
     }
   }
+
+  // Ensure the signature star product 'modular-pegboard' is present
+  try {
+    const pegboardExists = await sql<{ count: number }>`SELECT count(*) FROM products WHERE slug = 'modular-pegboard'`;
+    if (Number(pegboardExists[0]?.count || 0) === 0) {
+      const pegboard = staticProducts.find((p) => p.slug === "modular-pegboard");
+      if (pegboard) {
+        await sql`
+          INSERT INTO products (
+            slug, name, price, image, category, blurb, description, 
+            colors, size, material, print_time, featured, badge, includes, care,
+            in_stock, stock_count, sizes, gallery
+          ) VALUES (
+            ${pegboard.slug}, ${pegboard.name}, ${pegboard.price}, ${pegboard.image}, 
+            ${pegboard.category}, ${pegboard.blurb}, ${pegboard.description}, 
+            ${JSON.stringify(pegboard.colors)}, ${pegboard.size}, ${pegboard.material}, 
+            ${pegboard.printTime}, ${pegboard.featured ?? true}, ${pegboard.badge ?? "Favourite"}, 
+            ${pegboard.includes}, ${pegboard.care},
+            ${pegboard.inStock ?? true}, ${pegboard.stockCount ?? 30}, ${JSON.stringify(pegboard.sizes ?? [])},
+            ${JSON.stringify(pegboard.gallery ?? [])}
+          )
+        `;
+      }
+    }
+  } catch (_e) {
+    // Non-fatal if table doesn't have gallery column yet or already exists
+  }
 }
 
 // Maps the DB row (snake_case) to the Product type (camelCase)

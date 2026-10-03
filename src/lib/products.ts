@@ -56,6 +56,33 @@ export type Product = {
 
 export const products: Product[] = [
   {
+    slug: "modular-pegboard",
+    name: "Modular Desk Pegboard System",
+    price: 699,
+    image: "/products/modular-pegboard.jpg",
+    gallery: [
+      { url: "/products/pegboard-obsidian.jpg", tags: ["charcoal", "obsidian"] },
+      { url: "/products/pegboard-white.jpg", tags: ["bone", "white"] },
+      { url: "/products/pegboard-detail.jpg", tags: ["detail", "mechanism"] },
+    ],
+    category: "desk",
+    categories: ["desk", "home"],
+    blurb: "Our signature precision 3D-printed modular interlocking grid organizer for desks and walls.",
+    description:
+      "The Modular Pegboard System transforms cluttered workstations into calm, intentional creative spaces. Engineered with high-strength interlocking tiles, precision beveled holes, and whisper-firm snap-lock accessories. Mount using zero-damage adhesive strips, desk edge clamps, or screws.",
+    colors: ["charcoal", "bone", "stone", "teal"],
+    size: "30 × 30 cm",
+    sizes: ["Compact (20×20 cm)", "Studio (30×30 cm)", "Executive (40×40 cm)", "Dual Tile Duo"],
+    material: "PETG / PLA Matte",
+    printTime: "Printed to order · ships in 2–4 days",
+    featured: true,
+    badge: "Favourite",
+    includes: "Modular pegboard tile(s), mounting kit (damage-free strips + anchors), starter hooks, and alignment clips.",
+    care: "Wipe with a microfibre cloth. Rated up to 4.5 kg per tile when securely anchored.",
+    inStock: true,
+    stockCount: 30,
+  },
+  {
     slug: "wave-stand",
     name: "Wave Stand",
     price: 249,

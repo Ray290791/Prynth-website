@@ -17,6 +17,7 @@ import {
   PenTool,
   DraftingCompass,
   Send,
+  Sparkles,
 } from "lucide-react";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
@@ -318,6 +319,65 @@ function Home() {
 
       {/* ── Idea-to-Print Showcase Section ────────────────── */}
       <IdeaToPrintSection />
+
+      {/* ── Star Product Spotlight: Modular Pegboards ────────────── */}
+      <section className="mx-auto max-w-6xl px-4 py-6 md:px-6">
+        <div className="relative overflow-hidden rounded-3xl border border-white/20 dark:border-white/10 bg-surface/50 backdrop-blur-2xl p-6 sm:p-10 md:p-12 shadow-2xl shadow-black/10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div className="lg:col-span-7 space-y-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-accent text-ink">
+                <Sparkles className="size-3.5" />
+                <span>{settings.pegboard_badge || "Signature Star Product"}</span>
+              </div>
+              <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-fg">
+                {settings.pegboard_hero_title || "The Modular Pegboard System"}
+              </h2>
+              <p className="text-sm sm:text-base text-muted max-w-xl leading-relaxed">
+                {settings.pegboard_hero_subtitle ||
+                  "Precision 3D printed modular wall and desk organization. Engineered for creators, tech setups, and intentional workspaces."}
+              </p>
+              <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                <span className="text-xs font-semibold px-3 py-1 rounded-lg bg-surface-2 border border-border text-fg">
+                  Interlocking Grid
+                </span>
+                <span className="text-xs font-semibold px-3 py-1 rounded-lg bg-surface-2 border border-border text-fg">
+                  Zero-Damage Mount
+                </span>
+                <span className="text-xs font-semibold px-3 py-1 rounded-lg bg-surface-2 border border-border text-fg">
+                  5kg Tested Load
+                </span>
+              </div>
+              <div className="pt-3 flex flex-wrap items-center gap-4">
+                <Button asChild className="h-11 px-6 bg-accent text-ink font-semibold hover:opacity-90 shadow-lg shadow-accent/20 cursor-pointer">
+                  <Link to="/pegboard">
+                    <span>Configure Your Setup</span>
+                    <ArrowRight className="size-4 ml-1.5" />
+                  </Link>
+                </Button>
+                <span className="text-xs text-muted">
+                  From <strong className="text-fg font-bold">₹{settings.pegboard_price_compact || 699}</strong>
+                </span>
+              </div>
+            </div>
+
+            <div className="lg:col-span-5">
+              <Link to="/pegboard" className="block relative aspect-4/3 rounded-2xl overflow-hidden border border-border group cursor-pointer shadow-xl">
+                <img
+                  src="/products/modular-pegboard.jpg"
+                  alt="Modular Pegboard"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                  <span className="text-xs font-semibold text-white flex items-center gap-1.5">
+                    <span>View 3D Printed Pegboards</span>
+                    <ArrowRight className="size-3.5" />
+                  </span>
+                </div>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ── Featured Products ──────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 py-16 md:px-6 md:py-20">
