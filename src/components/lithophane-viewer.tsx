@@ -769,7 +769,7 @@ export function LithophaneViewer({
   return (
     <div
       className={cn(
-        "relative flex h-[380px] sm:h-[460px] md:h-[540px] w-full flex-col overflow-hidden rounded-2xl border transition-colors",
+        "relative flex h-[390px] sm:h-[470px] md:h-[550px] w-full flex-col overflow-hidden rounded-3xl border shadow-sm transition-colors",
         darkRoom
           ? "border-border/80 bg-[#07090c]"
           : "border-border bg-gradient-to-b from-surface to-surface-2",
@@ -900,30 +900,40 @@ export function LithophaneViewer({
           </div>
         </div>
 
-        {/* Bottom Dual-Mode Switcher */}
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 pointer-events-auto">
-          <button
-            type="button"
-            onClick={onToggleBacklight}
-            className={cn(
-              "flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold shadow-lg transition-all duration-200 cursor-pointer border backdrop-blur-md",
-              backlightOn
-                ? "bg-amber-400 text-stone-950 border-amber-300 ring-2 ring-amber-400/30"
-                : "bg-surface/95 text-fg border-accent/40 ring-2 ring-accent/20 hover:bg-surface"
-            )}
-          >
-            {backlightOn ? (
-              <>
-                <Sun className="size-3.5 text-stone-950 fill-current shrink-0" />
-                <span>☀️ Sunlit Window Glow</span>
-              </>
-            ) : (
-              <>
-                <Layers className="size-3.5 text-accent shrink-0" />
-                <span>🗿 3D Carved Relief</span>
-              </>
-            )}
-          </button>
+        {/* Bottom Modern Segmented Mode Control */}
+        <div className="absolute bottom-3.5 left-1/2 -translate-x-1/2 pointer-events-auto">
+          <div className="flex items-center p-1 rounded-full border border-border/80 bg-surface/90 backdrop-blur-md shadow-xl">
+            <button
+              type="button"
+              onClick={() => {
+                if (!backlightOn) onToggleBacklight();
+              }}
+              className={cn(
+                "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all duration-200 cursor-pointer select-none",
+                backlightOn
+                  ? "bg-amber-400 text-stone-950 shadow-xs"
+                  : "text-muted hover:text-fg"
+              )}
+            >
+              <Sun className={cn("size-3.5 shrink-0", backlightOn && "fill-stone-950 text-stone-950")} />
+              <span>Sunlit Glow</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (backlightOn) onToggleBacklight();
+              }}
+              className={cn(
+                "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all duration-200 cursor-pointer select-none",
+                !backlightOn
+                  ? "bg-accent text-ink shadow-xs"
+                  : "text-muted hover:text-fg"
+              )}
+            >
+              <Layers className="size-3.5 shrink-0" />
+              <span>3D Relief</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
