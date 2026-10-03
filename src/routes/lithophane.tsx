@@ -27,7 +27,7 @@ import {
   LithophaneFramingModal,
   type CropConfig,
 } from "@/components/lithophane-framing-modal";
-import { SAMPLE_PHOTOS } from "@/lib/lithophane-samples";
+import { DEFAULT_SAMPLE_PHOTO } from "@/lib/lithophane-samples";
 import { compressImageDataUrl } from "@/lib/image-utils";
 
 export const Route = createFileRoute("/lithophane")({
@@ -128,7 +128,7 @@ function LithophaneStudioPage() {
   const [photoUrl, setPhotoUrl] = useState<string>("");
   const [cropConfig, setCropConfig] = useState<CropConfig>({ scale: 1.25, panX: 0, panY: -10 });
   const [isFramingOpen, setIsFramingOpen] = useState<boolean>(false);
-  const [activeSample, setActiveSample] = useState<string>("couple");
+  const [isSample, setIsSample] = useState<boolean>(true);
   const [aspect, setAspect] = useState<AspectRatio>("landscape");
   const [shape, setShape] = useState<LithophaneShape>("flat");
   const [size, setSize] = useState<SizeTier>("standard");
@@ -141,10 +141,10 @@ function LithophaneStudioPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Initialize with sample photo
+  // Initialize with single curated sample photo
   useEffect(() => {
-    setRawPhotoUrl(SAMPLE_PHOTOS[0].url);
-    setPhotoUrl(SAMPLE_PHOTOS[0].url);
+    setRawPhotoUrl(DEFAULT_SAMPLE_PHOTO.url);
+    setPhotoUrl(DEFAULT_SAMPLE_PHOTO.url);
   }, []);
 
   const selectedSizeConfig = SIZES.find((s) => s.id === size)!;
@@ -187,7 +187,7 @@ function LithophaneStudioPage() {
       if (result) {
         setRawPhotoUrl(result);
         setPhotoUrl(result);
-        setActiveSample("");
+        setIsSample(false);
         toast.success("Photo uploaded successfully!");
         // Open framing modal so user can center faces
         setIsFramingOpen(true);
@@ -199,15 +199,6 @@ function LithophaneStudioPage() {
       setIsProcessing(false);
     };
     reader.readAsDataURL(file);
-  };
-
-  const selectSample = (sampleId: string) => {
-    setActiveSample(sampleId);
-    const sample = SAMPLE_PHOTOS.find((s) => s.id === sampleId);
-    if (sample) {
-      setRawPhotoUrl(sample.url);
-      setPhotoUrl(sample.url);
-    }
   };
 
   const handleAddToCart = async () => {
@@ -319,9 +310,9 @@ function LithophaneStudioPage() {
 
           {/* Photo Selection Card */}
           <div className="rounded-2xl border border-border bg-surface p-5 space-y-4 shadow-xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="relative size-12 shrink-0 rounded-xl overflow-hidden border border-border/80 bg-surface-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5 min-w-0">
+                <div className="relative size-14 shrink-0 rounded-xl overflow-hidden border border-border/80 bg-surface-2 shadow-xs">
                   {photoUrl ? (
                     <img
                       src={photoUrl}
@@ -330,27 +321,29 @@ function LithophaneStudioPage() {
                     />
                   ) : (
                     <div className="size-full flex items-center justify-center text-muted">
-                      <Sparkles className="size-4" />
+                      <Sparkles className="size-5" />
                     </div>
                   )}
                 </div>
-                <div>
-                  <h3 className="font-semibold text-sm text-fg flex items-center gap-2">
-                    <span>Your Photo</span>
-                    {activeSample && (
-                      <span className="text-[10px] text-accent font-medium bg-accent/10 px-2 py-0.5 rounded-full">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-sm text-fg">Your Photo</h3>
+                    {isSample && (
+                      <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">
                         Sample Preview
                       </span>
                     )}
-                  </h3>
-                  <p className="text-xs text-muted">
-                    Clear photos with happy faces look breathtaking when backlit by sunlight.
+                  </div>
+                  <p className="text-xs text-muted mt-0.5 leading-snug">
+                    {isSample
+                      ? "Sample photo shown · Upload your own memory to personalize"
+                      : "Photo uploaded · Click Crop & Frame to adjust composition"}
                   </p>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -365,7 +358,7 @@ function LithophaneStudioPage() {
                   className="gap-2 cursor-pointer font-semibold shadow-xs"
                 >
                   <Upload className="size-3.5" />
-                  Upload Photo
+                  <span>Upload Photo</span>
                 </Button>
                 <Button
                   type="button"
@@ -375,7 +368,7 @@ function LithophaneStudioPage() {
                   className="gap-1.5 cursor-pointer font-medium text-xs border-accent/30 text-accent hover:bg-accent/10"
                 >
                   <Crop className="size-3.5" />
-                  Crop &amp; Frame
+                  <span>Crop &amp; Frame</span>
                 </Button>
               </div>
             </div>
@@ -401,40 +394,6 @@ function LithophaneStudioPage() {
                 </Button>
               </div>
             )}
-
-            {/* Sample Presets */}
-            <div className="pt-2 border-t border-border/60 space-y-1.5">
-              <span className="text-xs text-muted">Or preview with sample photos:</span>
-              <div className="grid grid-cols-3 gap-2">
-                {SAMPLE_PHOTOS.map((sample) => (
-                  <button
-                    key={sample.id}
-                    type="button"
-                    onClick={() => selectSample(sample.id)}
-                    className={cn(
-                      "flex items-center gap-2.5 p-2 rounded-xl border text-left transition-all cursor-pointer",
-                      activeSample === sample.id
-                        ? "border-accent bg-accent/10 ring-1 ring-accent text-fg"
-                        : "border-border bg-surface-2/40 text-muted hover:border-accent/40 hover:text-fg"
-                    )}
-                  >
-                    <img
-                      src={sample.url}
-                      alt={sample.name}
-                      className="size-8 rounded-lg object-cover shrink-0"
-                    />
-                    <div className="min-w-0">
-                      <span className="text-xs font-medium block truncate leading-tight">
-                        {sample.name}
-                      </span>
-                      <span className="text-[10px] text-accent block leading-tight mt-0.5">
-                        {sample.tag}
-                      </span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
 
           {/* Value Badges */}
