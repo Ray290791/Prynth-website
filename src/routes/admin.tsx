@@ -914,6 +914,9 @@ function SettingsTab() {
     ];
   });
 
+  const [maintenanceStatus, setMaintenanceStatus] = useState<string | null>(null);
+  const [isCleaning, setIsCleaning] = useState(false);
+
   useEffect(() => {
     if (settings?.hero_featured_slots) {
       try {
@@ -955,9 +958,6 @@ function SettingsTab() {
       console.error("Failed to quick save custom pricing settings:", err);
     }
   };
-
-  const [maintenanceStatus, setMaintenanceStatus] = useState<string | null>(null);
-  const [isCleaning, setIsCleaning] = useState(false);
 
   const handleRunMaintenance = async () => {
     setIsCleaning(true);
