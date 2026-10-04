@@ -107,38 +107,65 @@ export function PegboardPage() {
 
   const [activeImageIdx, setActiveImageIdx] = useState(0);
 
-  // Sizing definitions mapped to settings pricing
-  const SIZES = [
-    {
-      id: "compact",
-      name: "Compact Desk",
-      dims: "20 × 20 cm",
-      desc: "Perfect for monitor risers & small headphone nooks",
-      price: Number(settings.pegboard_price_compact || 699),
-    },
-    {
-      id: "studio",
-      name: "Studio Standard",
-      dims: "30 × 30 cm",
-      desc: "Our flagship size. Ideal for full desk setups",
-      popular: true,
-      price: Number(settings.pegboard_price_studio || 999),
-    },
-    {
-      id: "executive",
-      name: "Executive Pro",
-      dims: "40 × 40 cm",
-      desc: "High-capacity grid for audio gear & tech tools",
-      price: Number(settings.pegboard_price_executive || 1499),
-    },
-    {
-      id: "duo",
-      name: "Dual Tile Duo",
-      dims: "30 × 60 cm (2 Tiles)",
-      desc: "Includes 2 interlocking panels + alignment clips",
-      price: Number(settings.pegboard_price_duo || 1799),
-    },
-  ];
+  // Dynamic sizing definitions mapped to settings or fallback
+  const SIZES = useMemo(() => {
+    try {
+      if (settings?.pegboard_size_presets) {
+        const parsed = JSON.parse(settings.pegboard_size_presets);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((p: any, idx: number) => ({
+            id: p.id || `size-${idx}`,
+            name: p.name || `Preset ${idx + 1}`,
+            dims: p.dims || "",
+            desc: p.desc || "",
+            price: Number(p.price || 0),
+            popular: Boolean(p.popular),
+          }));
+        }
+      }
+    } catch (_e) {}
+
+    return [
+      {
+        id: "compact",
+        name: "Compact Desk",
+        dims: "20 × 20 cm",
+        desc: "Perfect for monitor risers & small headphone nooks",
+        price: Number(settings?.pegboard_price_compact || 699),
+        popular: false,
+      },
+      {
+        id: "studio",
+        name: "Studio Standard",
+        dims: "30 × 30 cm",
+        desc: "Our flagship size. Ideal for full desk setups",
+        popular: true,
+        price: Number(settings?.pegboard_price_studio || 999),
+      },
+      {
+        id: "executive",
+        name: "Executive Pro",
+        dims: "40 × 40 cm",
+        desc: "High-capacity grid for audio gear & tech tools",
+        price: Number(settings?.pegboard_price_executive || 1499),
+        popular: false,
+      },
+      {
+        id: "duo",
+        name: "Dual Tile Duo",
+        dims: "30 × 60 cm (2 Tiles)",
+        desc: "Includes 2 interlocking panels + alignment clips",
+        price: Number(settings?.pegboard_price_duo || 1799),
+        popular: false,
+      },
+    ];
+  }, [
+    settings?.pegboard_size_presets,
+    settings?.pegboard_price_compact,
+    settings?.pegboard_price_studio,
+    settings?.pegboard_price_executive,
+    settings?.pegboard_price_duo,
+  ]);
 
   // Colors
   const COLORS = [
@@ -168,13 +195,27 @@ export function PegboardPage() {
   ];
 
   // Active selections
-  const [selectedSizeId, setSelectedSizeId] = useState("studio");
+  const [selectedSizeId, setSelectedSizeId] = useState<string | null>(null);
   const [selectedColorId, setSelectedColorId] = useState("charcoal");
   const [selectedMounting, setSelectedMounting] = useState("strips");
   const [selectedAddons, setSelectedAddons] = useState<string[]>(["tech"]);
 
-  // Calculate pricing
-  const currentSize = SIZES.find((s) => s.id === selectedSizeId) || SIZES[1];
+  // Calculate pricing & active preset
+  const currentSize = useMemo(() => {
+    if (selectedSizeId) {
+      const match = SIZES.find((s) => s.id === selectedSizeId);
+      if (match) return match;
+    }
+    const popular = SIZES.find((s) => s.popular);
+    return popular || SIZES[0] || {
+      id: "default",
+      name: "Modular Tile",
+      dims: "30 × 30 cm",
+      desc: "Standard modular tile",
+      price: 999,
+      popular: true,
+    };
+  }, [SIZES, selectedSizeId]);
   const currentColor = COLORS.find((c) => c.id === selectedColorId) || COLORS[0];
 
   const addonsTotal = selectedAddons.reduce((sum, addonId) => {
@@ -369,7 +410,7 @@ export function PegboardPage() {
                   onClick={() => setSelectedSizeId(size.id)}
                   className={cn(
                     "p-3 rounded-xl border text-left transition-all cursor-pointer relative",
-                    selectedSizeId === size.id
+                    currentSize.id === size.id
                       ? "border-accent bg-accent/10 shadow-xs ring-1 ring-accent"
                       : "border-border bg-surface hover:bg-surface-2 hover:border-fg/20"
                   )}

@@ -89,6 +89,7 @@ export type SiteSettings = {
   pegboard_price_studio?: string;
   pegboard_price_executive?: string;
   pegboard_price_duo?: string;
+  pegboard_size_presets?: string;
   pegboard_addon_tech_price?: string;
   pegboard_addon_desk_price?: string;
   pegboard_addon_botanical_price?: string;
@@ -170,6 +171,40 @@ function parseSiteSettings(rows: { key: string; value: string }[]): SiteSettings
     pegboard_price_studio: "999",
     pegboard_price_executive: "1499",
     pegboard_price_duo: "1799",
+    pegboard_size_presets: JSON.stringify([
+      {
+        id: "compact",
+        name: "Compact",
+        dims: "20 × 20 cm Tile",
+        desc: "Perfect for monitor risers & small headphone nooks",
+        price: 699,
+        popular: false,
+      },
+      {
+        id: "studio",
+        name: "Studio",
+        dims: "30 × 30 cm Tile",
+        desc: "Our flagship size. Ideal for full desk setups",
+        price: 999,
+        popular: true,
+      },
+      {
+        id: "executive",
+        name: "Executive",
+        dims: "40 × 40 cm Tile",
+        desc: "High-capacity grid for audio gear & tech tools",
+        price: 1499,
+        popular: false,
+      },
+      {
+        id: "duo",
+        name: "Dual Tile Duo",
+        dims: "2x 30 × 30 cm Tiles",
+        desc: "Includes 2 interlocking panels + alignment clips",
+        price: 1799,
+        popular: false,
+      },
+    ]),
     pegboard_addon_tech_price: "299",
     pegboard_addon_desk_price: "249",
     pegboard_addon_botanical_price: "279",
@@ -315,6 +350,7 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
     pegboard_price_studio: z.string().optional(),
     pegboard_price_executive: z.string().optional(),
     pegboard_price_duo: z.string().optional(),
+    pegboard_size_presets: z.string().optional(),
     pegboard_addon_tech_price: z.string().optional(),
     pegboard_addon_desk_price: z.string().optional(),
     pegboard_addon_botanical_price: z.string().optional(),
