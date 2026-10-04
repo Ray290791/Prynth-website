@@ -88,7 +88,7 @@
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 body {
@@ -96,7 +96,7 @@ body {
   color: var(--fg);
   font-family: var(--font-sans);
   line-height: 1.5;
-  overflow-x: hidden;
+  overflow-x: clip;
   min-height: 100dvh;
 }
 
@@ -160,12 +160,10 @@ img,
 @keyframes page-in {
   from {
     opacity: 0;
-    transform: translateY(6px);
   }
 
   to {
     opacity: 1;
-    transform: none;
   }
 }
 
@@ -217,4 +215,13 @@ body,
 
 ::-webkit-scrollbar-corner {
   background: transparent;
+}
+
+/* Utility to hide scrollbar while preserving scrollability */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
