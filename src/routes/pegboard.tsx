@@ -314,16 +314,6 @@ export function PegboardPage() {
               className="w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.02]"
             />
 
-            {/* Floating Photo Caption Badge */}
-            <div className="absolute bottom-4 left-4 right-4 sm:right-auto sm:max-w-md p-3.5 rounded-2xl border border-white/20 dark:border-white/10 bg-surface/80 backdrop-blur-xl shadow-lg">
-              <span className="text-xs font-semibold text-fg block">
-                {images[activeImageIdx]?.title || "Modular Pegboard"}
-              </span>
-              <span className="text-[11px] text-muted block mt-0.5">
-                {images[activeImageIdx]?.subtitle || "Engineered 3D printed organization"}
-              </span>
-            </div>
-
             {/* Star badge */}
             <div className="absolute top-4 left-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-accent text-ink shadow-md shadow-accent/20">
               <Sparkles className="size-3.5" />
@@ -385,13 +375,17 @@ export function PegboardPage() {
             </p>
           </div>
 
-          {/* Live Price Header */}
-          <div className="flex items-baseline gap-3 p-4 rounded-2xl border border-white/20 dark:border-white/10 bg-surface/60 backdrop-blur-xl">
-            <span className="text-3xl sm:text-4xl font-bold text-fg tracking-tight">
-              {formatINR(totalPrice)}
-            </span>
-            <span className="text-xs text-muted">
-              Includes mounting hardware & starter utility clips.
+          {/* Live Price Presentation */}
+          <div className="flex flex-wrap items-baseline justify-between gap-3 pb-3 border-b border-border/60">
+            <div className="flex items-baseline gap-2">
+              <span className="font-display text-3xl sm:text-4xl font-bold text-fg tracking-tight">
+                {formatINR(totalPrice)}
+              </span>
+              <span className="text-xs text-muted font-medium">tax incl.</span>
+            </div>
+            <span className="text-xs text-muted flex items-center gap-1.5 font-medium bg-surface-2/60 px-3 py-1.5 rounded-lg border border-border/50">
+              <Check className="size-3.5 text-accent shrink-0" />
+              Includes mounting hardware & starter utility clips
             </span>
           </div>
 
@@ -475,30 +469,45 @@ export function PegboardPage() {
           <div className="space-y-2.5">
             <span className="text-xs font-semibold text-fg block">3. Mounting Method</span>
             <div className="space-y-2">
-              {MOUNTING_OPTIONS.map((m) => (
-                <label
-                  key={m.id}
-                  onClick={() => setSelectedMounting(m.id)}
-                  className={cn(
-                    "flex items-start gap-3 p-3 rounded-xl border text-xs cursor-pointer transition-all",
-                    selectedMounting === m.id
-                      ? "border-accent/80 bg-accent/5 ring-1 ring-accent/30"
-                      : "border-border bg-surface hover:bg-surface-2"
-                  )}
-                >
-                  <input
-                    type="radio"
-                    name="mounting"
-                    checked={selectedMounting === m.id}
-                    onChange={() => setSelectedMounting(m.id)}
-                    className="mt-0.5 text-accent focus:ring-accent"
-                  />
-                  <div>
-                    <span className="font-semibold text-fg block">{m.name}</span>
-                    <span className="text-[11px] text-muted block mt-0.5">{m.detail}</span>
+              {MOUNTING_OPTIONS.map((m) => {
+                const isSelected = selectedMounting === m.id;
+                return (
+                  <div
+                    key={m.id}
+                    role="radio"
+                    aria-checked={isSelected}
+                    tabIndex={0}
+                    onClick={() => setSelectedMounting(m.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === " " || e.key === "Enter") {
+                        e.preventDefault();
+                        setSelectedMounting(m.id);
+                      }
+                    }}
+                    className={cn(
+                      "w-full flex items-start gap-3 p-3 rounded-xl border text-xs cursor-pointer transition-all select-none text-left",
+                      isSelected
+                        ? "border-accent bg-accent/5 ring-1 ring-accent/30 shadow-xs"
+                        : "border-border bg-surface hover:bg-surface-2 hover:border-fg/20"
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "size-4 rounded-full border mt-0.5 flex items-center justify-center shrink-0 transition-colors",
+                        isSelected
+                          ? "border-accent bg-accent"
+                          : "border-border bg-surface-2"
+                      )}
+                    >
+                      {isSelected && <span className="size-1.5 rounded-full bg-ink" />}
+                    </div>
+                    <div>
+                      <span className="font-semibold text-fg block">{m.name}</span>
+                      <span className="text-[11px] text-muted block mt-0.5">{m.detail}</span>
+                    </div>
                   </div>
-                </label>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -515,32 +524,45 @@ export function PegboardPage() {
                 const packPrice = Number(settings[pack.priceKey] || pack.defaultPrice);
 
                 return (
-                  <label
+                  <div
                     key={pack.id}
+                    role="checkbox"
+                    aria-checked={isChecked}
+                    tabIndex={0}
                     onClick={() => toggleAddon(pack.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === " " || e.key === "Enter") {
+                        e.preventDefault();
+                        toggleAddon(pack.id);
+                      }
+                    }}
                     className={cn(
-                      "flex items-start justify-between gap-3 p-3 rounded-xl border text-xs cursor-pointer transition-all",
+                      "w-full flex items-start justify-between gap-3 p-3.5 rounded-xl border text-xs cursor-pointer transition-all select-none text-left",
                       isChecked
-                        ? "border-accent bg-accent/5 ring-1 ring-accent/40"
-                        : "border-border bg-surface hover:bg-surface-2"
+                        ? "border-accent bg-accent/10 ring-1 ring-accent shadow-xs"
+                        : "border-border bg-surface hover:bg-surface-2 hover:border-fg/20"
                     )}
                   >
-                    <div className="flex items-start gap-2.5">
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => {}}
-                        className="mt-0.5 rounded text-accent focus:ring-accent"
-                      />
-                      <div>
-                        <span className="font-semibold text-fg block">{pack.name}</span>
-                        <span className="text-[11px] text-muted block mt-0.5">{pack.desc}</span>
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div
+                        className={cn(
+                          "size-5 rounded-md border mt-0.5 flex items-center justify-center shrink-0 transition-colors",
+                          isChecked
+                            ? "border-accent bg-accent text-ink"
+                            : "border-border bg-surface-2"
+                        )}
+                      >
+                        {isChecked && <Check className="size-3.5 stroke-[2.5]" />}
+                      </div>
+                      <div className="min-w-0">
+                        <span className="font-semibold text-fg block text-xs">{pack.name}</span>
+                        <span className="text-[11px] text-muted block mt-0.5 leading-snug">{pack.desc}</span>
                       </div>
                     </div>
-                    <span className="font-semibold text-accent shrink-0">
+                    <span className="font-semibold text-accent shrink-0 text-xs mt-0.5">
                       +{formatINR(packPrice)}
                     </span>
-                  </label>
+                  </div>
                 );
               })}
             </div>
