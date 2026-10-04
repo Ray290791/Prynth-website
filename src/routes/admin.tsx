@@ -121,36 +121,38 @@ function AdminPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-12 flex flex-col md:flex-row gap-8">
-      {/* Responsive Navigation: horizontal swipeable ribbon on mobile/tablet, vertical sidebar on desktop */}
-      <aside className="w-full shrink-0 md:w-64">
-        <div className="flex items-center justify-between mb-3 md:mb-6">
+    <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-12 flex flex-col md:flex-row gap-8 items-start">
+      {/* Responsive Navigation: horizontal swipeable ribbon on mobile/tablet, sticky vertical sidebar on desktop */}
+      <aside className="w-full shrink-0 md:w-64 md:sticky md:top-20 md:self-start md:z-20 md:max-h-[calc(100dvh-5.5rem)] md:overflow-y-auto no-scrollbar">
+        <div className="flex items-center justify-between mb-3 md:mb-5">
           <h1 className="font-display text-xl sm:text-2xl font-semibold tracking-tight">Admin Console</h1>
           <span className="md:hidden text-[11px] text-muted font-medium bg-surface-2 px-2.5 py-1 rounded-full border border-border">
             Swipe tabs →
           </span>
         </div>
-        <nav className="flex md:flex-col gap-1.5 p-2 sm:p-2.5 md:p-3 rounded-2xl md:rounded-3xl border border-white/20 dark:border-white/10 bg-surface/30 backdrop-blur-2xl backdrop-saturate-150 shadow-xl shadow-black/5 overflow-x-auto md:overflow-visible no-scrollbar">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={cn(
-                  "flex items-center gap-2 md:gap-3 rounded-xl px-3.5 py-2 md:px-4 md:py-2.5 text-xs sm:text-sm font-medium transition-all leading-none shrink-0 whitespace-nowrap cursor-pointer",
-                  isActive
-                    ? "bg-accent text-ink font-semibold shadow-xs"
-                    : "text-muted hover:bg-surface-2 hover:text-fg"
-                )}
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </nav>
+        <div className="sticky top-14 sm:top-16 z-30 md:static -mx-4 px-4 py-1.5 md:mx-0 md:px-0 md:py-0 bg-bg/85 md:bg-transparent backdrop-blur-xl md:backdrop-blur-none">
+          <nav className="flex md:flex-col gap-1.5 p-2 sm:p-2.5 md:p-3 rounded-2xl md:rounded-3xl border border-white/20 dark:border-white/10 bg-surface/50 backdrop-blur-2xl backdrop-saturate-150 shadow-xl shadow-black/5 overflow-x-auto md:overflow-visible no-scrollbar">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={cn(
+                    "flex items-center gap-2 md:gap-3 rounded-xl px-3.5 py-2 md:px-4 md:py-2.5 text-xs sm:text-sm font-medium transition-all leading-none shrink-0 whitespace-nowrap cursor-pointer",
+                    isActive
+                      ? "bg-accent text-ink font-semibold shadow-xs"
+                      : "text-muted hover:bg-surface-2 hover:text-fg"
+                  )}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </div>
       </aside>
 
       {/* Main Content */}
