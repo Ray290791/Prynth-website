@@ -30,7 +30,7 @@ export function CookieConsent() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 p-4 z-[9999] pointer-events-none flex justify-center sm:p-6">
-      <div className="bg-glass backdrop-blur-2xl backdrop-saturate-150 border border-glass-border rounded-2xl shadow-xl shadow-black/10 max-w-4xl w-full p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pointer-events-auto">
+      <div className="bg-surface/98 dark:bg-surface/98 backdrop-blur-3xl border border-border rounded-2xl shadow-2xl shadow-black/20 max-w-4xl w-full p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pointer-events-auto">
         <div className="text-sm text-fg/80 flex-1">
           <p className="font-medium text-fg mb-1">We use cookies</p>
           We use cookies and similar technologies to measure site traffic and improve your experience. 

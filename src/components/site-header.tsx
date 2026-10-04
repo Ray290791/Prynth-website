@@ -113,7 +113,7 @@ export function SiteHeader() {
       </div>
 
       {open ? (
-        <div className="border-t border-glass-border bg-glass backdrop-blur-2xl backdrop-saturate-150 md:hidden shadow-xl shadow-black/5 animate-in fade-in-0 duration-200">
+        <div className="border-t border-border bg-surface/98 dark:bg-surface/98 backdrop-blur-3xl md:hidden shadow-2xl shadow-black/20 animate-in fade-in-0 duration-200">
           <nav className="mx-auto flex max-w-6xl flex-col px-4 py-3 gap-1" aria-label="Mobile">
             {NAV.map((item) => (
               <Link
