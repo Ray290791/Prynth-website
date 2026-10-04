@@ -9,6 +9,9 @@ routes = [
   { pattern = "www.prynth.in", custom_domain = true }
 ]
 
+[limits]
+subrequests = 1000
+
 [vars]
 ADMIN_EMAIL = "prynth07@gmail.com"
 BETTER_AUTH_URL = "https://prynth.in"

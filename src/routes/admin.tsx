@@ -49,6 +49,8 @@ function AdminPage() {
       const data = await getAllOrdersAdmin();
       return data ?? [];
     },
+    enabled: activeTab === "orders" || activeTab === "users",
+    staleTime: 60_000,
   });
 
   const filteredOrders = orders?.filter((o: any) => {
@@ -891,11 +893,13 @@ function SettingsTab() {
   const { data: settings, isLoading, error } = useQuery({
     queryKey: ["adminSiteSettings"],
     queryFn: () => getAdminSiteSettings(),
+    staleTime: 60_000,
   });
 
   const { data: products } = useQuery({
     queryKey: ["adminProducts"],
     queryFn: () => getAllProductsAdmin(),
+    staleTime: 60_000,
   });
 
   const [heroSlots, setHeroSlots] = useState<{ slug: string; image?: string }[]>(() => {

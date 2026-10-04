@@ -4,14 +4,27 @@ import { products as staticProducts, type Product } from "./products";
 import { authMiddleware } from "./auth/middleware";
 import { verifyAdminRole } from "./admin-fns";
 
+let hasSeededProducts = false;
+
 /**
  * Ensures that the products table is seeded with the initial static products
  * if it is empty. This is necessary because PGLite is in-memory and resets,
  * or for the very first time running on Neon.
  */
 async function seedProductsIfEmpty() {
+  if (hasSeededProducts) return;
   const sql = await getSql();
-  
+
+  try {
+    const [{ count }] = await sql<{ count: number }>`SELECT count(*) FROM products`;
+    if (Number(count) > 0) {
+      hasSeededProducts = true;
+      return;
+    }
+  } catch (_e) {
+    // If the products table does not exist yet, proceed to create tables and seed
+  }
+
   // Ensure product_variants table exists in case the migration wasn't picked up by Vite glob caching
   await sql.query(`
     CREATE TABLE IF NOT EXISTS product_variants (
@@ -57,14 +70,15 @@ async function seedProductsIfEmpty() {
         INSERT INTO products (
           slug, name, price, image, category, blurb, description, 
           colors, size, material, print_time, featured, badge, includes, care,
-          in_stock, stock_count, sizes
+          in_stock, stock_count, sizes, gallery
         ) VALUES (
           ${product.slug}, ${product.name}, ${product.price}, ${product.image}, 
           ${product.category}, ${product.blurb}, ${product.description}, 
           ${JSON.stringify(product.colors)}, ${product.size}, ${product.material}, 
           ${product.printTime}, ${product.featured ?? false}, ${product.badge ?? null}, 
           ${product.includes}, ${product.care},
-          ${product.inStock ?? true}, ${product.stockCount ?? -1}, ${JSON.stringify(product.sizes ?? [])}
+          ${product.inStock ?? true}, ${product.stockCount ?? -1}, ${JSON.stringify(product.sizes ?? [])},
+          ${JSON.stringify(product.gallery ?? [])}
         )
       `;
       
@@ -83,32 +97,7 @@ async function seedProductsIfEmpty() {
     }
   }
 
-  // Ensure the signature star product 'modular-pegboard' is present
-  try {
-    const pegboardExists = await sql<{ count: number }>`SELECT count(*) FROM products WHERE slug = 'modular-pegboard'`;
-    if (Number(pegboardExists[0]?.count || 0) === 0) {
-      const pegboard = staticProducts.find((p) => p.slug === "modular-pegboard");
-      if (pegboard) {
-        await sql`
-          INSERT INTO products (
-            slug, name, price, image, category, blurb, description, 
-            colors, size, material, print_time, featured, badge, includes, care,
-            in_stock, stock_count, sizes, gallery
-          ) VALUES (
-            ${pegboard.slug}, ${pegboard.name}, ${pegboard.price}, ${pegboard.image}, 
-            ${pegboard.category}, ${pegboard.blurb}, ${pegboard.description}, 
-            ${JSON.stringify(pegboard.colors)}, ${pegboard.size}, ${pegboard.material}, 
-            ${pegboard.printTime}, ${pegboard.featured ?? true}, ${pegboard.badge ?? "Favourite"}, 
-            ${pegboard.includes}, ${pegboard.care},
-            ${pegboard.inStock ?? true}, ${pegboard.stockCount ?? 30}, ${JSON.stringify(pegboard.sizes ?? [])},
-            ${JSON.stringify(pegboard.gallery ?? [])}
-          )
-        `;
-      }
-    }
-  } catch (_e) {
-    // Non-fatal if table doesn't have gallery column yet or already exists
-  }
+  hasSeededProducts = true;
 }
 
 // Maps the DB row (snake_case) to the Product type (camelCase)

@@ -503,12 +503,6 @@ export const getAllOrdersAdmin = createServerFn({ method: "GET" })
       console.warn("Failed to cleanup pending razorpay orders:", e);
     }
 
-    // Trigger opportunistic background storage maintenance
-    try {
-      const { runDatabaseMaintenance } = await import("./maintenance.server");
-      runDatabaseMaintenance(sql).catch((err) => console.warn("Maintenance error:", err));
-    } catch (_mErr) {}
-
     const res = await sql`
       SELECT orders.*, "user".email as user_email, "user".name as user_name 
       FROM orders 
