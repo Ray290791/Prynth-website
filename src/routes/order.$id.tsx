@@ -17,7 +17,15 @@ import { useState } from "react";
 import { Star } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/order/$id")({ component: OrderPage });
+export const Route = createFileRoute("/order/$id")({
+  head: ({ params }) => ({
+    meta: [
+      { title: `Order #${params.id} Confirmation | prynth!` },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
+  component: OrderPage,
+});
 
 function OrderPage() {
   const { id } = Route.useParams();
@@ -95,18 +103,22 @@ function OrderPage() {
     <div className="mx-auto max-w-4xl px-4 py-12 md:px-6 md:py-16">
       <div className="flex items-start justify-between">
         <div>
-          <div className="flex size-12 items-center justify-center rounded-full bg-accent-soft text-accent">
-            <Check className="size-6" strokeWidth={2} />
+          <div className="flex items-center gap-3">
+            <div className="flex size-12 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shadow-xs">
+              <Check className="size-6" strokeWidth={2.5} />
+            </div>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+              🎉 Thank You — Order Confirmed
+            </span>
           </div>
-          <h1 className="mt-5 font-display text-4xl font-semibold tracking-tight">
-            Order details
+          <h1 className="mt-4 font-display text-4xl font-semibold tracking-tight">
+            Order #{order.order_number}
           </h1>
           <p className="mt-2 text-muted">
-            {order.order_number} · {formatDate(order.created_at)}
+            Placed on {formatDate(order.created_at)}
           </p>
-          <p className="mt-4 text-muted">
-            We'll print this to order and email {address?.email} when it ships.
-            Typical ready-made turnaround is 3–5 days before the courier has it.
+          <p className="mt-4 text-muted max-w-xl">
+            We've received your order and queued it for 3D printing. We will email tracking updates to <strong className="text-fg">{address?.email}</strong> once dispatched.
           </p>
           <div className="flex sm:hidden flex-wrap gap-2 mt-5 print:hidden">
             <Button variant="outline" size="sm" onClick={handlePrintInvoice}>

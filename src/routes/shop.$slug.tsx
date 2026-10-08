@@ -242,7 +242,12 @@ function ProductPage() {
                     onClick={() => setActiveImage(img)}
                     className={`shrink-0 snap-center rounded-xl overflow-hidden border-2 transition-all w-20 h-20 md:w-24 md:h-24 ${activeImage === img ? 'border-primary ring-2 ring-primary/20 scale-95' : 'border-transparent hover:border-border'}`}
                   >
-                    <img src={img} alt="" loading="lazy" className="w-full h-full object-cover bg-surface" />
+                    <img
+                      src={img}
+                      alt={`${product.name} — view ${i + 1}`}
+                      loading="lazy"
+                      className="w-full h-full object-cover bg-surface"
+                    />
                   </button>
                 ))}
               </div>

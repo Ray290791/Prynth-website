@@ -32,6 +32,23 @@ export const Route = createFileRoute("/")({
     const products = await getProductsPublic();
     return { featured, products };
   },
+  head: () => ({
+    meta: [
+      { title: "prynth! — Custom 3D Printing & Modern Ready-Made Prints" },
+      {
+        name: "description",
+        content:
+          "High quality 3D prints at honest prices. Desk accessories, functional organization, and on-demand custom 3D printing & design. Ships across India.",
+      },
+      { property: "og:title", content: "prynth! — Custom 3D Printing & Modern Ready-Made Prints" },
+      {
+        property: "og:description",
+        content:
+          "High quality 3D prints at honest prices. Desk accessories, functional organization, and on-demand custom 3D printing & design. Ships across India.",
+      },
+      { property: "og:url", content: "https://prynth.in/" },
+    ],
+  }),
   component: Home,
 });
 

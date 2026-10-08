@@ -66,12 +66,18 @@ function loadGoogleAnalytics() {
   // Avoid loading multiple times
   if (document.getElementById("ga-script")) return;
 
-  const GA_MEASUREMENT_ID = "G-XXXXXXXXXX"; // Placeholder GA ID
+  // Reads measurement ID from environment variable (e.g. VITE_GA_MEASUREMENT_ID=G-XXXXXXXXXX)
+  const gaId = typeof import.meta !== "undefined" ? import.meta.env?.VITE_GA_MEASUREMENT_ID : undefined;
+
+  // Don't inject script if no real ID is provided
+  if (!gaId || gaId === "G-XXXXXXXXXX") {
+    return;
+  }
 
   const script1 = document.createElement("script");
   script1.id = "ga-script";
   script1.async = true;
-  script1.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
+  script1.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
   document.head.appendChild(script1);
 
   const script2 = document.createElement("script");
@@ -80,7 +86,7 @@ function loadGoogleAnalytics() {
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    gtag('config', '${GA_MEASUREMENT_ID}');
+    gtag('config', '${gaId}', { anonymize_ip: true });
   `;
   document.head.appendChild(script2);
 }

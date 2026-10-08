@@ -10,6 +10,23 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/shop/")({
   loader: async () => await getProductsPublic(),
+  head: () => ({
+    meta: [
+      { title: "Shop 3D Printed Desk & Home Accessories | prynth!" },
+      {
+        name: "description",
+        content:
+          "Browse precision 3D printed desk organizers, headphone stands, cable management, modular pegboards, and modern functional decor. Ships across India.",
+      },
+      { property: "og:title", content: "Shop 3D Printed Desk & Home Accessories | prynth!" },
+      {
+        property: "og:description",
+        content:
+          "Browse precision 3D printed desk organizers, headphone stands, cable management, modular pegboards, and modern functional decor.",
+      },
+      { property: "og:url", content: "https://prynth.in/shop" },
+    ],
+  }),
   component: ShopPage,
 });
 

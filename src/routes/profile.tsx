@@ -16,6 +16,16 @@ import { cn } from "@/lib/utils";
 import { Layers, Clock, Camera, Package } from "lucide-react";
 
 export const Route = createFileRoute("/profile")({
+  head: () => ({
+    meta: [
+      { title: "Account & Orders | prynth!" },
+      {
+        name: "description",
+        content: "Manage your prynth! profile, shipping addresses, order status, and custom 3D design inquiries.",
+      },
+      { property: "og:title", content: "Account & Orders | prynth!" },
+    ],
+  }),
   component: ProfilePage,
 });
 

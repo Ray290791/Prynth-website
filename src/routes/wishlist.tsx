@@ -6,6 +6,16 @@ import { useCurrentUser } from "@/lib/auth/use-current-user";
 import { Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/wishlist")({
+  head: () => ({
+    meta: [
+      { title: "Saved Wishlist | prynth!" },
+      {
+        name: "description",
+        content: "View and manage your saved 3D printed items on prynth!.",
+      },
+      { property: "og:title", content: "Saved Wishlist | prynth!" },
+    ],
+  }),
   component: WishlistPage,
 });
 

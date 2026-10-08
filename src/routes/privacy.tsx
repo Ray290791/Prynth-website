@@ -42,6 +42,11 @@ export function PrivacyPage() {
       title: "4. Payment Security (Razorpay PCI-DSS Level 1)",
       body: "All online transactions (UPI, Credit/Debit cards, Netbanking) are processed directly by Razorpay Software Private Limited using bank-grade 128-bit SSL encryption. Razorpay complies with the highest Payment Card Industry Data Security Standards (PCI-DSS Level 1). We do not capture or store your UPI PINs, CVVs, or card numbers on our servers.",
     },
+    {
+      icon: Eye,
+      title: "5. Cookies, Local Storage & Analytics",
+      body: "We use essential local storage to remember your theme preferences and keep your active cart synchronized. Optional analytics tracking is strictly opt-in and is only initialized if you click 'Accept' on our Cookie Banner. You can revoke consent at any time by clearing your browser cookies.",
+    },
   ];
 
   return (

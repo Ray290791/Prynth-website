@@ -116,15 +116,56 @@ export const Route = createRootRoute({
       },
       { name: "theme-color", content: "#F6F5F2" },
       {
+        property: "og:site_name",
+        content: "prynth!",
+      },
+      {
+        property: "og:type",
+        content: "website",
+      },
+      {
+        property: "og:title",
+        content: "prynth! — Quality 3D Printing & Modern Functional Prints",
+      },
+      {
+        property: "og:description",
+        content:
+          "Quality 3D prints at honest prices. Ready-made pieces and custom print or design, ships across India.",
+      },
+      {
+        property: "og:image",
+        content: "https://prynth.in/og.jpg",
+      },
+      {
+        name: "twitter:card",
+        content: "summary_large_image",
+      },
+      {
+        name: "twitter:title",
+        content: "prynth! — Quality 3D Printing & Modern Functional Prints",
+      },
+      {
+        name: "twitter:description",
+        content:
+          "Quality 3D prints at honest prices. Ready-made pieces and custom print or design, ships across India.",
+      },
+      {
+        name: "twitter:image",
+        content: "https://prynth.in/og.jpg",
+      },
+      {
         name: "strix-verification",
         content: "strix-verify-e881dc2df817534b0d76e030da14de8e",
       },
     ],
     links: [
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+      { rel: "icon", type: "image/x-icon", href: "/favicon.ico" },
+      { rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon-32x32.png" },
+      { rel: "icon", type: "image/png", sizes: "16x16", href: "/favicon-16x16.png" },
       { rel: "stylesheet", href: appCss },
       { rel: "apple-touch-icon", href: "/brand/mark.png" },
-      { rel: "manifest", href: "/__grok/manifest.webmanifest" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       {
         rel: "preconnect",

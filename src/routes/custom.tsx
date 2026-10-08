@@ -47,6 +47,23 @@ export const Route = createFileRoute("/custom")({
     edit: typeof s.edit === "string" ? s.edit : undefined,
     idea: typeof s.idea === "string" ? s.idea : undefined,
   }),
+  head: () => ({
+    meta: [
+      { title: "Custom 3D Printing & Design Studio | prynth!" },
+      {
+        name: "description",
+        content:
+          "Bring your 3D models and ideas to reality. Instant slice & print estimation for STL/OBJ/STEP files, or submit concepts for custom modeling and fabrication. Ships across India.",
+      },
+      { property: "og:title", content: "Custom 3D Printing & Design Studio | prynth!" },
+      {
+        property: "og:description",
+        content:
+          "Bring your 3D models and ideas to reality. Instant slice & print estimation for STL/OBJ/STEP files, or submit concepts for custom modeling and fabrication.",
+      },
+      { property: "og:url", content: "https://prynth.in/custom" },
+    ],
+  }),
   component: CustomPage,
 });
 
@@ -297,6 +314,7 @@ function CustomPage() {
             editItem={editItem}
             onUpdateItem={updateItem}
             initialIdea={searchIdea}
+            settings={settings}
           />
         )}
       </div>
@@ -1393,6 +1411,7 @@ function IdeaForm({
   editItem,
   onUpdateItem,
   initialIdea,
+  settings,
 }: {
   add: ReturnType<typeof useCart.getState>["add"];
   pricingConfig: CustomPricingConfig;
@@ -1401,6 +1420,7 @@ function IdeaForm({
   editItem?: CartItem | null;
   onUpdateItem?: (id: string, updated: Partial<CartItem>) => void;
   initialIdea?: string;
+  settings?: any;
 }) {
   const navigate = useNavigate();
   const [selectedPrinterId, setSelectedPrinterId] = useState(() => {
@@ -2368,12 +2388,20 @@ function IdeaForm({
 
           <div className="pt-1 text-xs text-muted leading-relaxed">
             Have questions before submitting? Reach out on{" "}
-            <a href="https://wa.me/919876543210" target="_blank" rel="noreferrer" className="text-accent hover:underline font-medium">
+            <a
+              href={(settings?.contact_whatsapp || settings?.contact_phone || "").replace(/[^\d]/g, "") ? `https://wa.me/${(settings?.contact_whatsapp || settings?.contact_phone || "").replace(/[^\d]/g, "")}` : `mailto:${settings?.contact_email || settings?.email || "hello@prynth.in"}`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-accent hover:underline font-medium"
+            >
               WhatsApp
             </a>{" "}
             or email us at{" "}
-            <a href="mailto:hello@prynth.in" className="text-accent hover:underline font-medium">
-              hello@prynth.in
+            <a
+              href={`mailto:${settings?.contact_email || settings?.email || "hello@prynth.in"}`}
+              className="text-accent hover:underline font-medium"
+            >
+              {settings?.contact_email || settings?.email || "hello@prynth.in"}
             </a>
             .
           </div>

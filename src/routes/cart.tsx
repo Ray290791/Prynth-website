@@ -17,7 +17,24 @@ import { useHydrated } from "@/lib/use-hydrated";
 
 const rootRoute = getRouteApi("__root__");
 
-export const Route = createFileRoute("/cart")({ component: CartPage });
+export const Route = createFileRoute("/cart")({
+  head: () => ({
+    meta: [
+      { title: "Your Cart | prynth!" },
+      {
+        name: "description",
+        content:
+          "Review your selected 3D printed objects and custom fabrication orders. Free delivery across India on orders over ₹799.",
+      },
+      { property: "og:title", content: "Your Cart | prynth!" },
+      {
+        property: "og:description",
+        content: "Review your selected 3D printed objects and custom fabrication orders.",
+      },
+    ],
+  }),
+  component: CartPage,
+});
 
 function CartPage() {
   const { settings } = rootRoute.useLoaderData();
@@ -72,7 +89,7 @@ function CartPage() {
               {item.image ? (
                 <img
                   src={item.image}
-                  alt=""
+                  alt={item.name}
                   loading="lazy"
                   className="product-photo size-20 rounded-xl object-cover sm:size-28 shrink-0"
                 />
@@ -229,6 +246,19 @@ function CartPage() {
           </Button>
         </aside>
       </div>
+
+      {/* Sticky Mobile Checkout Bar */}
+      {items.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-surface/95 backdrop-blur-xl px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgba(0,0,0,0.08)] md:hidden flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[11px] text-muted uppercase font-medium tracking-wider">Est. Total</p>
+            <p className="text-base font-semibold tabular-nums text-fg">{formatINR(discountedSubtotal + ship)}</p>
+          </div>
+          <Button asChild size="md" className="shadow-xs cursor-pointer">
+            <Link to="/checkout">Checkout ({items.reduce((s, i) => s + i.qty, 0)})</Link>
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

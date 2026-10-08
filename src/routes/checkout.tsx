@@ -30,7 +30,20 @@ import { loadRazorpay } from "@/lib/razorpay-client";
 
 const rootRoute = getRouteApi("__root__");
 
-export const Route = createFileRoute("/checkout")({ component: CheckoutPage });
+export const Route = createFileRoute("/checkout")({
+  head: () => ({
+    meta: [
+      { title: "Secure Checkout | prynth!" },
+      {
+        name: "description",
+        content:
+          "Complete your order with secure UPI, Cards, Netbanking via Razorpay, or Cash on Delivery across India.",
+      },
+      { property: "og:title", content: "Secure Checkout | prynth!" },
+    ],
+  }),
+  component: CheckoutPage,
+});
 
 type Pay = "online" | "cod" | "upi";
 type Ship = "standard" | "express";
@@ -695,7 +708,7 @@ function CheckoutPage() {
                   className="shrink-0"
                 >
                   {item.image ? (
-                    <img src={item.image} alt="" loading="lazy" className="product-photo size-14 rounded-lg object-cover transition-opacity hover:opacity-80" />
+                    <img src={item.image} alt={item.name} loading="lazy" className="product-photo size-14 rounded-lg object-cover transition-opacity hover:opacity-80" />
                   ) : (
                     <div className="size-14 rounded-lg bg-accent-soft transition-opacity hover:opacity-80" />
                   )}

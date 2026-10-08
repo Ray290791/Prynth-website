@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { submitContactMessage } from "@/lib/contact-fns";
+import { cn } from "@/lib/utils";
 
 const rootRoute = getRouteApi("__root__");
 
@@ -40,6 +41,7 @@ export function ContactPage() {
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ name?: string; email?: string; message?: string }>({});
 
   const contactEmail = settings.contact_email || settings.email || "hello@prynth.in";
   const contactPhone = settings.contact_phone || "+91 98765 43210";
@@ -69,11 +71,18 @@ export function ContactPage() {
       return;
     }
 
-    if (name.length < 2 || !email.includes("@") || message.length < 6) {
-      toast.error("Please enter your name, a valid email, and your message.");
+    const errs: { name?: string; email?: string; message?: string } = {};
+    if (name.length < 2) errs.name = "Please enter your name.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = "Please enter a valid email address.";
+    if (message.length < 6) errs.message = "Please write a message with at least 6 characters.";
+
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      toast.error("Please fix the highlighted fields.");
       return;
     }
 
+    setFieldErrors({});
     setBusy(true);
     try {
       await submitContactMessage({ data: { name, email, message } });
@@ -297,8 +306,13 @@ export function ContactPage() {
                     name="name"
                     autoComplete="name"
                     placeholder="e.g. Rahul Sharma"
+                    aria-invalid={Boolean(fieldErrors.name)}
+                    className={cn(fieldErrors.name && "border-destructive focus-visible:ring-destructive/30")}
                     required
                   />
+                  {fieldErrors.name && (
+                    <p className="text-xs text-destructive mt-1 font-medium">{fieldErrors.name}</p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="email" className="text-xs font-semibold">
@@ -310,8 +324,13 @@ export function ContactPage() {
                     type="email"
                     autoComplete="email"
                     placeholder="name@example.com"
+                    aria-invalid={Boolean(fieldErrors.email)}
+                    className={cn(fieldErrors.email && "border-destructive focus-visible:ring-destructive/30")}
                     required
                   />
+                  {fieldErrors.email && (
+                    <p className="text-xs text-destructive mt-1 font-medium">{fieldErrors.email}</p>
+                  )}
                 </div>
               </div>
 
@@ -324,8 +343,13 @@ export function ContactPage() {
                   name="message"
                   rows={5}
                   placeholder="Tell us about the piece you need printed, dimensions, color preferences, or your order question..."
+                  aria-invalid={Boolean(fieldErrors.message)}
+                  className={cn(fieldErrors.message && "border-destructive focus-visible:ring-destructive/30")}
                   required
                 />
+                {fieldErrors.message && (
+                  <p className="text-xs text-destructive mt-1 font-medium">{fieldErrors.message}</p>
+                )}
               </div>
 
               <div className="flex items-center justify-between pt-2">
