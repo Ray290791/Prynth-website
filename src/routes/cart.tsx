@@ -55,12 +55,12 @@ function CartPage() {
   const remaining = Math.max(0, freeThreshold - discountedSubtotal);
 
   if (!hydrated) {
-    return <div className="mx-auto max-w-6xl px-4 py-16 md:px-6">Loading cart…</div>;
+    return <div className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12 py-16">Loading cart…</div>;
   }
 
   if (items.length === 0) {
     return (
-      <div className="mx-auto max-w-6xl px-4 py-24 text-center md:px-6">
+      <div className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12 py-24 text-center">
         <ShoppingBag className="mx-auto size-8 text-accent" strokeWidth={1.5} />
         <h1 className="mt-4 font-display text-3xl font-semibold">Your cart is empty</h1>
         <p className="mt-2 text-muted">Ready-made pieces, or a custom quote — both live here.</p>
@@ -77,7 +77,7 @@ function CartPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-16">
+    <div className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12 py-12 md:py-16">
       <h1 className="font-display text-4xl font-semibold tracking-tight">Cart</h1>
       <div className="mt-10 grid gap-10 md:grid-cols-12">
         <ul className="space-y-4 md:col-span-7">

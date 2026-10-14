@@ -41,7 +41,7 @@ function HistoryPage() {
   if (!mounted) return null;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-16 md:px-6 md:py-24">
+    <div className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12 py-16 md:py-24">
       <div className="flex items-center gap-3">
         <Clock className="h-8 w-8 text-accent" />
         <h1 className="font-display text-4xl font-semibold tracking-tight">Your History</h1>

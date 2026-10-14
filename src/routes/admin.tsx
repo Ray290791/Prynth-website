@@ -6,12 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useState, useEffect, useId } from "react";
 import { cn } from "@/lib/utils";
-import { Package, Box, X, Settings, Image as ImageIcon, BarChart3, Tag, ClipboardList, Shield, UserCog, HelpCircle, Users, Search, Trash2, Layers, Edit2, Plus, Eye, EyeOff, Printer as PrinterIcon, Disc, CreditCard, Mail, Bell } from "lucide-react";
+import { Package, Box, X, Settings, Image as ImageIcon, BarChart3, Tag, ClipboardList, Shield, UserCog, HelpCircle, Users, Search, Trash2, Layers, Edit2, Plus, Eye, EyeOff, Printer as PrinterIcon, Disc, CreditCard, Mail, Bell, DraftingCompass } from "lucide-react";
 import { InquiriesTab } from "@/components/inquiries-tab";
 import { PrintersTab } from "@/components/printers-tab";
 import { FilamentsTab } from "@/components/filaments-tab";
 import { PaymentOptionsTab } from "@/components/payment-options-tab";
 import { NotificationsTab } from "@/components/notifications-tab";
+import { ServicesTab } from "@/components/services-tab";
 import { OrderDetailsDialog } from "@/components/order-details-dialog";
 import { getMaterialsAdmin, createMaterial, updateMaterial, deleteMaterial, type Material, type MaterialInput } from "@/lib/materials-fns";
 import { getAllProductsAdmin, deleteProduct, updateProduct, createProduct, updateProductInventory } from "@/lib/products-fns";
@@ -105,6 +106,7 @@ function AdminPage() {
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     { id: "orders", label: "Orders", icon: Package },
     { id: "inquiries", label: "Inquiries", icon: Mail },
+    { id: "services", label: "Services", icon: DraftingCompass },
     { id: "printers", label: "Printers", icon: PrinterIcon },
     { id: "filaments", label: "Filaments", icon: Disc },
     { id: "products", label: "Products", icon: Box },
@@ -121,7 +123,7 @@ function AdminPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-12 flex flex-col md:flex-row gap-8 items-start">
+    <div className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12 py-8 md:py-12 flex flex-col md:flex-row gap-8 items-start">
       {/* Responsive Navigation: horizontal swipeable ribbon on mobile/tablet, sticky vertical sidebar on desktop */}
       <aside className="w-full shrink-0 md:w-64 md:sticky md:top-20 md:self-start md:z-20 md:max-h-[calc(100dvh-5.5rem)] md:overflow-y-auto no-scrollbar">
         <div className="flex items-center justify-between mb-3 md:mb-5">
@@ -289,6 +291,7 @@ function AdminPage() {
         )}
 
         {activeTab === "inquiries" && <InquiriesTab />}
+        {activeTab === "services" && <ServicesTab />}
         {activeTab === "printers" && <PrintersTab />}
         {activeTab === "filaments" && <FilamentsTab />}
 

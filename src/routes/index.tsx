@@ -145,7 +145,7 @@ function Home() {
       <section className="relative overflow-hidden">
         {/* Floating promo pill */}
         {settings.announcement_enabled !== "false" && (
-          <div className="mx-auto max-w-6xl px-4 pt-6 md:px-6">
+          <div className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12 pt-6">
             <Link
               to="/shop"
               className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-1.5 text-xs sm:text-sm font-medium text-fg transition-colors hover:border-accent hover:text-accent shadow-xs"
@@ -157,7 +157,7 @@ function Home() {
           </div>
         )}
 
-        <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-10 md:grid-cols-12 md:px-6 md:py-16 lg:gap-16 lg:py-20">
+        <div className="mx-auto grid max-w-[1600px] items-center gap-12 px-4 sm:px-6 md:px-8 xl:px-12 py-10 md:grid-cols-12 md:py-16 lg:gap-16 lg:py-20">
           {/* Left: headline + CTA */}
           <div className="relative z-10 md:col-span-6 lg:col-span-6">
             <p className="text-[11px] font-medium tracking-[0.18em] text-subtle uppercase">
@@ -269,7 +269,7 @@ function Home() {
 
       {/* ── Polymer Ticker ─────────────────────────────────── */}
       <section className="border-y border-border/60 bg-surface/40">
-        <div className="mx-auto max-w-6xl px-4 py-5 md:px-6">
+        <div className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12 py-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
             {/* Polymer pills */}
             <div className="flex gap-2 flex-wrap">
@@ -316,7 +316,7 @@ function Home() {
 
       {/* ── Trust Bar (Clean connected industrial divider) ──── */}
       <section className="border-b border-border/60 bg-surface/30">
-        <div className="mx-auto grid max-w-6xl divide-y divide-border/60 md:divide-y-0 md:divide-x md:grid-cols-3 px-4 py-6 md:px-6 md:py-8">
+        <div className="mx-auto grid max-w-[1600px] divide-y divide-border/60 md:divide-y-0 md:divide-x md:grid-cols-3 px-4 sm:px-6 md:px-8 xl:px-12 py-6 md:py-8">
           {trustItems.map((item) => (
             <div
               key={item.title}
@@ -338,7 +338,7 @@ function Home() {
       <IdeaToPrintSection />
 
       {/* ── Star Product Spotlight: Modular Pegboards ────────────── */}
-      <section className="mx-auto max-w-6xl px-4 py-6 md:px-6">
+      <section className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12 py-6">
         <div className="relative overflow-hidden rounded-3xl border border-white/20 dark:border-white/10 bg-surface/50 backdrop-blur-2xl p-6 sm:p-10 md:p-12 shadow-2xl shadow-black/10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-7 space-y-4">
@@ -397,7 +397,7 @@ function Home() {
       </section>
 
       {/* ── Featured Products ──────────────────────────────── */}
-      <section className="mx-auto max-w-6xl px-4 py-16 md:px-6 md:py-20">
+      <section className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12 py-16 md:py-20">
         <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
           <div>
             <p className="text-[11px] font-medium tracking-[0.18em] text-subtle uppercase">Shop</p>
@@ -422,7 +422,7 @@ function Home() {
 
       {/* ── Choose Your Path ──────────────────────────────── */}
       <section className="border-t border-border/60 bg-surface/30">
-        <div className="mx-auto max-w-6xl px-4 py-16 md:px-6 md:py-20">
+        <div className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12 py-16 md:py-20">
           <p className="text-[11px] font-medium tracking-[0.18em] text-subtle uppercase">Get started</p>
           <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight md:text-4xl">Choose your path</h2>
           <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -567,7 +567,7 @@ function IdeaToPrintSection() {
 
   return (
     <section className="relative overflow-hidden border-t border-border/60 bg-surface/20 py-16 md:py-24">
-      <div className="mx-auto max-w-6xl px-4 md:px-6">
+      <div className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3.5 py-1 text-xs font-medium text-muted shadow-2xs">
@@ -667,35 +667,80 @@ function IdeaToPrintSection() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-xl border border-border/70 bg-surface-2/30 p-4 space-y-2 hover:border-accent/40 transition-colors">
-              <div className="flex items-center gap-2 text-accent font-semibold text-sm">
-                <Wrench className="size-4 shrink-0" />
-                <span>Broken Appliance Parts</span>
+            <Link
+              to="/services/$slug"
+              params={{ slug: "reverse-engineering" }}
+              className="group rounded-xl border border-border/70 bg-surface-2/30 p-4 space-y-2 hover:border-accent/60 hover:bg-surface-2/60 transition-all flex flex-col justify-between cursor-pointer"
+            >
+              <div>
+                <div className="flex items-center justify-between text-accent font-semibold text-sm">
+                  <div className="flex items-center gap-2">
+                    <Wrench className="size-4 shrink-0" />
+                    <span>Broken Appliance Parts</span>
+                  </div>
+                  <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-semibold text-accent">
+                    Service
+                  </span>
+                </div>
+                <p className="text-xs text-muted leading-relaxed mt-2">
+                  Washing machine control dials, refrigerator drawer clips, AC vent slats, mixer safety locks. Don&apos;t discard a ₹20,000 appliance over a ₹200 plastic tab.
+                </p>
               </div>
-              <p className="text-xs text-muted leading-relaxed">
-                Washing machine control dials, refrigerator drawer clips, AC vent slats, mixer-grinder safety locks. Don&apos;t discard a ₹20,000 appliance over a ₹200 plastic tab.
-              </p>
-            </div>
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-accent pt-1 group-hover:translate-x-0.5 transition-transform">
+                <span>Broken Part Replication</span>
+                <ArrowRight className="size-3.5" />
+              </div>
+            </Link>
 
-            <div className="rounded-xl border border-border/70 bg-surface-2/30 p-4 space-y-2 hover:border-accent/40 transition-colors">
-              <div className="flex items-center gap-2 text-accent font-semibold text-sm">
-                <Bike className="size-4 shrink-0" />
-                <span>Bike, Helmet &amp; Car Mounts</span>
+            <Link
+              to="/services/$slug"
+              params={{ slug: "electronics-enclosures" }}
+              className="group rounded-xl border border-border/70 bg-surface-2/30 p-4 space-y-2 hover:border-accent/60 hover:bg-surface-2/60 transition-all flex flex-col justify-between cursor-pointer"
+            >
+              <div>
+                <div className="flex items-center justify-between text-accent font-semibold text-sm">
+                  <div className="flex items-center gap-2">
+                    <Layers className="size-4 shrink-0" />
+                    <span>IoT &amp; Electronics Cases</span>
+                  </div>
+                  <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-semibold text-accent">
+                    Service
+                  </span>
+                </div>
+                <p className="text-xs text-muted leading-relaxed mt-2">
+                  Snap-fit PCB enclosures, sensor pods, battery compartments, and thermal ventilation channels for ESP32, Arduino, Pi, or custom hardware.
+                </p>
               </div>
-              <p className="text-xs text-muted leading-relaxed">
-                Handlebar GPS clips, action cam chin mounts, sun-visor clips, bottle cages. Printed in UV-resistant ASA &amp; high-impact PETG built for Indian roads and heat.
-              </p>
-            </div>
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-accent pt-1 group-hover:translate-x-0.5 transition-transform">
+                <span>Enclosure Design Studio</span>
+                <ArrowRight className="size-3.5" />
+              </div>
+            </Link>
 
-            <div className="rounded-xl border border-border/70 bg-surface-2/30 p-4 space-y-2 hover:border-accent/40 transition-colors">
-              <div className="flex items-center gap-2 text-accent font-semibold text-sm">
-                <Headphones className="size-4 shrink-0" />
-                <span>Desk &amp; Setup Accessories</span>
+            <Link
+              to="/services/$slug"
+              params={{ slug: "3d-modelling" }}
+              className="group rounded-xl border border-border/70 bg-surface-2/30 p-4 space-y-2 hover:border-accent/60 hover:bg-surface-2/60 transition-all flex flex-col justify-between cursor-pointer"
+            >
+              <div>
+                <div className="flex items-center justify-between text-accent font-semibold text-sm">
+                  <div className="flex items-center gap-2">
+                    <PenTool className="size-4 shrink-0" />
+                    <span>3D CAD Modelling</span>
+                  </div>
+                  <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-semibold text-accent">
+                    Service
+                  </span>
+                </div>
+                <p className="text-xs text-muted leading-relaxed mt-2">
+                  Have an invention or mechanical concept? We build parametric STEP/STL CAD models with tolerance verification ready for fabrication.
+                </p>
               </div>
-              <p className="text-xs text-muted leading-relaxed">
-                Dual headphone under-desk hangers, stream deck docks, mechanical keyboard rests, cable raceways shaped exactly to your table thickness.
-              </p>
-            </div>
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-accent pt-1 group-hover:translate-x-0.5 transition-transform">
+                <span>CAD Modeling Service</span>
+                <ArrowRight className="size-3.5" />
+              </div>
+            </Link>
 
             <Link
               to="/lithophane"
@@ -798,7 +843,7 @@ function LastVisitedSection({ products }: { products: Product[] }) {
   if (!product) return null;
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-8 md:px-6">
+    <section className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12 py-8">
       <h2 className="font-display text-lg font-semibold tracking-tight text-muted">
         Pick up where you left off
       </h2>

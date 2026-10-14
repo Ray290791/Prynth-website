@@ -35,9 +35,14 @@ ALTER TABLE IF EXISTS faqs ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Public read access for faqs" ON faqs;
 CREATE POLICY "Public read access for faqs" ON faqs FOR SELECT USING (true);
 
-ALTER TABLE IF EXISTS reviews ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Public read access for reviews" ON reviews;
-CREATE POLICY "Public read access for reviews" ON reviews FOR SELECT USING (true);
+DO $$
+BEGIN
+  IF EXISTS (SELECT FROM pg_tables WHERE tablename = 'product_reviews') THEN
+    ALTER TABLE product_reviews ENABLE ROW LEVEL SECURITY;
+    DROP POLICY IF EXISTS "Public read access for product_reviews" ON product_reviews;
+    CREATE POLICY "Public read access for product_reviews" ON product_reviews FOR SELECT USING (true);
+  END IF;
+END $$;
 
 -- 3. Row-level policies for per-user data tables
 DROP POLICY IF EXISTS "Users can access own addresses" ON addresses;

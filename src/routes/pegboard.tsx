@@ -302,11 +302,11 @@ export function PegboardPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 md:px-6 md:py-14 space-y-16 sm:space-y-24">
+    <div className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12 py-8 md:py-14 space-y-16 sm:space-y-24">
       {/* HERO SECTION */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 xl:gap-16 items-start">
         {/* LEFT: INTERACTIVE PRODUCT GALLERY */}
-        <div className="lg:col-span-7 space-y-4">
+        <div className="lg:col-span-7 xl:col-span-7 space-y-4">
           <div className="relative aspect-4/3 overflow-hidden rounded-2xl md:rounded-3xl border border-white/20 dark:border-white/10 bg-surface/50 backdrop-blur-2xl shadow-2xl shadow-black/10 group">
             <img
               src={images[activeImageIdx]?.url || "/products/modular-pegboard.jpg"}
@@ -361,7 +361,7 @@ export function PegboardPage() {
         </div>
 
         {/* RIGHT: INTERACTIVE CONFIGURATOR */}
-        <div className="lg:col-span-5 space-y-6">
+        <div className="lg:col-span-5 xl:col-span-5 space-y-6">
           <div className="space-y-2">
             <span className="text-xs font-semibold tracking-wider text-accent uppercase block">
               Flagship Studio Hardware

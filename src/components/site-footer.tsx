@@ -7,9 +7,19 @@ const rootRoute = getRouteApi("__root__");
 const SHOP = [
   { to: "/shop", label: "Ready-made prints" },
   { to: "/custom", label: "Custom orders" },
+  { to: "/pegboard", label: "Modular Pegboards" },
   { to: "/lithophane", label: "3D Lithophanes" },
   { to: "/materials", label: "Filaments & Materials" },
   { to: "/cart", label: "Cart" },
+] as const;
+
+const SERVICES = [
+  { to: "/services" as const, label: "All Engineering Services" },
+  { to: "/services/$slug" as const, params: { slug: "3d-modelling" }, label: "3D CAD Modelling" },
+  { to: "/services/$slug" as const, params: { slug: "electronics-enclosures" }, label: "Enclosure Design" },
+  { to: "/services/$slug" as const, params: { slug: "reverse-engineering" }, label: "Broken Part Replication" },
+  { to: "/services/$slug" as const, params: { slug: "rapid-prototyping" }, label: "Rapid Prototyping" },
+  { to: "/services/$slug" as const, params: { slug: "batch-manufacturing" }, label: "Small-Batch Runs" },
 ] as const;
 
 const HELP = [
@@ -26,8 +36,8 @@ export function SiteFooter() {
 
   return (
     <footer className="mt-auto border-t border-border bg-surface">
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 md:grid-cols-12 md:px-6 lg:gap-12">
-        <div className="md:col-span-5 lg:col-span-6">
+      <div className="mx-auto grid max-w-[1600px] gap-10 px-4 py-14 md:grid-cols-12 md:px-8 xl:px-12 lg:gap-12">
+        <div className="md:col-span-4 lg:col-span-4">
           <Wordmark className="text-2xl" />
           <p className="mt-3 max-w-sm text-sm text-muted">
             {settings.tagline}
@@ -84,7 +94,7 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-8 md:col-span-7 lg:col-span-6 lg:grid-cols-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 md:col-span-8 lg:col-span-8">
           <div>
             <p className="text-xs font-medium tracking-[0.14em] text-subtle uppercase">
               Shop
@@ -95,6 +105,26 @@ export function SiteFooter() {
                   <Link to={l.to} className="text-sm text-muted hover:text-fg">
                     {l.label}
                   </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <p className="text-xs font-medium tracking-[0.14em] text-subtle uppercase">
+              Services
+            </p>
+            <ul className="mt-3 space-y-2">
+              {SERVICES.map((l) => (
+                <li key={l.label}>
+                  {"params" in l ? (
+                    <Link to={l.to} params={l.params} className="text-sm text-muted hover:text-fg">
+                      {l.label}
+                    </Link>
+                  ) : (
+                    <Link to={l.to} className="text-sm text-muted hover:text-fg">
+                      {l.label}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
@@ -121,7 +151,7 @@ export function SiteFooter() {
         </div>
       </div>
       <div className="border-t border-border">
-        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-5 text-xs text-subtle sm:flex-row sm:items-center sm:justify-between md:px-6">
+        <div className="mx-auto flex max-w-[1600px] flex-col gap-2 px-4 py-5 text-xs text-subtle sm:flex-row sm:items-center sm:justify-between md:px-8 xl:px-12">
           <p>© {new Date().getFullYear()} prynth! · {settings.copyright}</p>
           <p>{settings.bottom_text}</p>
         </div>

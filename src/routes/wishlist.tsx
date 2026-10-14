@@ -46,7 +46,7 @@ function WishlistPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-16">
+    <div className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12 py-12 md:py-16">
       <h1 className="font-display text-4xl font-semibold tracking-tight">Your Wishlist</h1>
       <p className="mt-2 text-muted">Items you've saved for later.</p>
 

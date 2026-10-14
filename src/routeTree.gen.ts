@@ -30,6 +30,8 @@ import { Route as WishlistRouteImport } from './routes/wishlist'
 import { Route as ApiCreateOrderRouteImport } from './routes/api/create-order'
 import { Route as ApiVerifyPaymentRouteImport } from './routes/api/verify-payment'
 import { Route as OrderIdRouteImport } from './routes/order.$id'
+import { Route as ServicesIndexRouteImport } from './routes/services.index'
+import { Route as ServicesSlugRouteImport } from './routes/services.$slug'
 import { Route as ShopIndexRouteImport } from './routes/shop.index'
 import { Route as ShopSlugRouteImport } from './routes/shop.$slug'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -140,6 +142,16 @@ const OrderIdRoute = OrderIdRouteImport.update({
   path: '/order/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ServicesIndexRoute = ServicesIndexRouteImport.update({
+  id: '/services/',
+  path: '/services/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ServicesSlugRoute = ServicesSlugRouteImport.update({
+  id: '/services/$slug',
+  path: '/services/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShopIndexRoute = ShopIndexRouteImport.update({
   id: '/shop/',
   path: '/shop/',
@@ -183,7 +195,9 @@ export interface FileRoutesByFullPath {
   '/api/create-order': typeof ApiCreateOrderRoute
   '/api/verify-payment': typeof ApiVerifyPaymentRoute
   '/order/$id': typeof OrderIdRoute
+  '/services/$slug': typeof ServicesSlugRoute
   '/shop/$slug': typeof ShopSlugRoute
+  '/services/': typeof ServicesIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/custom-model/$id': typeof ApiCustomModelIdRoute
@@ -210,7 +224,9 @@ export interface FileRoutesByTo {
   '/api/create-order': typeof ApiCreateOrderRoute
   '/api/verify-payment': typeof ApiVerifyPaymentRoute
   '/order/$id': typeof OrderIdRoute
+  '/services/$slug': typeof ServicesSlugRoute
   '/shop/$slug': typeof ShopSlugRoute
+  '/services': typeof ServicesIndexRoute
   '/shop': typeof ShopIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/custom-model/$id': typeof ApiCustomModelIdRoute
@@ -238,7 +254,9 @@ export interface FileRoutesById {
   '/api/create-order': typeof ApiCreateOrderRoute
   '/api/verify-payment': typeof ApiVerifyPaymentRoute
   '/order/$id': typeof OrderIdRoute
+  '/services/$slug': typeof ServicesSlugRoute
   '/shop/$slug': typeof ShopSlugRoute
+  '/services/': typeof ServicesIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/custom-model/$id': typeof ApiCustomModelIdRoute
@@ -267,7 +285,9 @@ export interface FileRouteTypes {
     | '/api/create-order'
     | '/api/verify-payment'
     | '/order/$id'
+    | '/services/$slug'
     | '/shop/$slug'
+    | '/services/'
     | '/shop/'
     | '/api/auth/$'
     | '/api/custom-model/$id'
@@ -294,7 +314,9 @@ export interface FileRouteTypes {
     | '/api/create-order'
     | '/api/verify-payment'
     | '/order/$id'
+    | '/services/$slug'
     | '/shop/$slug'
+    | '/services'
     | '/shop'
     | '/api/auth/$'
     | '/api/custom-model/$id'
@@ -321,7 +343,9 @@ export interface FileRouteTypes {
     | '/api/create-order'
     | '/api/verify-payment'
     | '/order/$id'
+    | '/services/$slug'
     | '/shop/$slug'
+    | '/services/'
     | '/shop/'
     | '/api/auth/$'
     | '/api/custom-model/$id'
@@ -349,7 +373,9 @@ export interface RootRouteChildren {
   ApiCreateOrderRoute: typeof ApiCreateOrderRoute
   ApiVerifyPaymentRoute: typeof ApiVerifyPaymentRoute
   OrderIdRoute: typeof OrderIdRoute
+  ServicesSlugRoute: typeof ServicesSlugRoute
   ShopSlugRoute: typeof ShopSlugRoute
+  ServicesIndexRoute: typeof ServicesIndexRoute
   ShopIndexRoute: typeof ShopIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiCustomModelIdRoute: typeof ApiCustomModelIdRoute
@@ -504,6 +530,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrderIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/services/': {
+      id: '/services/'
+      path: '/services'
+      fullPath: '/services/'
+      preLoaderRoute: typeof ServicesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/services/$slug': {
+      id: '/services/$slug'
+      path: '/services/$slug'
+      fullPath: '/services/$slug'
+      preLoaderRoute: typeof ServicesSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/shop/': {
       id: '/shop/'
       path: '/shop'
@@ -557,7 +597,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCreateOrderRoute: ApiCreateOrderRoute,
   ApiVerifyPaymentRoute: ApiVerifyPaymentRoute,
   OrderIdRoute: OrderIdRoute,
+  ServicesSlugRoute: ServicesSlugRoute,
   ShopSlugRoute: ShopSlugRoute,
+  ServicesIndexRoute: ServicesIndexRoute,
   ShopIndexRoute: ShopIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiCustomModelIdRoute: ApiCustomModelIdRoute,
