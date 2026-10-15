@@ -141,7 +141,7 @@ function ProductPage() {
 
   if (!product) {
     return (
-      <div className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12 py-24 text-center">
+      <div className="mx-auto max-w-6xl px-4 py-24 text-center md:px-6">
         <h1 className="font-display text-3xl font-semibold">We don't make that one</h1>
         <p className="mt-2 text-muted">It might have been renamed, or the link is old.</p>
         <Button asChild className="mt-6">
@@ -213,7 +213,7 @@ function ProductPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12 py-10 pb-32 md:py-16 md:pb-16 relative">
+    <div className="mx-auto max-w-6xl px-4 py-10 pb-32 md:px-6 md:py-16 md:pb-16 relative">
       <p className="text-sm text-subtle">
         <Link to="/shop" className="hover:text-fg">
           Shop

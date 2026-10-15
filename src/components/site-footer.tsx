@@ -36,7 +36,7 @@ export function SiteFooter() {
 
   return (
     <footer className="mt-auto border-t border-border bg-surface">
-      <div className="mx-auto grid max-w-[1600px] gap-10 px-4 py-14 md:grid-cols-12 md:px-8 xl:px-12 lg:gap-12">
+      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 md:grid-cols-12 md:px-6 lg:gap-12">
         <div className="md:col-span-4 lg:col-span-4">
           <Wordmark className="text-2xl" />
           <p className="mt-3 max-w-sm text-sm text-muted">
@@ -151,7 +151,7 @@ export function SiteFooter() {
         </div>
       </div>
       <div className="border-t border-border">
-        <div className="mx-auto flex max-w-[1600px] flex-col gap-2 px-4 py-5 text-xs text-subtle sm:flex-row sm:items-center sm:justify-between md:px-8 xl:px-12">
+        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-5 text-xs text-subtle sm:flex-row sm:items-center sm:justify-between md:px-6">
           <p>© {new Date().getFullYear()} prynth! · {settings.copyright}</p>
           <p>{settings.bottom_text}</p>
         </div>

@@ -145,7 +145,7 @@ function Home() {
       <section className="relative overflow-hidden">
         {/* Floating promo pill */}
         {settings.announcement_enabled !== "false" && (
-          <div className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12 pt-6">
+          <div className="mx-auto max-w-6xl px-4 pt-6 md:px-6">
             <Link
               to="/shop"
               className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-1.5 text-xs sm:text-sm font-medium text-fg transition-colors hover:border-accent hover:text-accent shadow-xs"
@@ -157,7 +157,7 @@ function Home() {
           </div>
         )}
 
-        <div className="mx-auto grid max-w-[1600px] items-center gap-12 px-4 sm:px-6 md:px-8 xl:px-12 py-10 md:grid-cols-12 md:py-16 lg:gap-16 lg:py-20">
+        <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-10 md:grid-cols-12 md:px-6 md:py-16 lg:gap-16 lg:py-20">
           {/* Left: headline + CTA */}
           <div className="relative z-10 md:col-span-6 lg:col-span-6">
             <p className="text-[11px] font-medium tracking-[0.18em] text-subtle uppercase">
@@ -269,7 +269,7 @@ function Home() {
 
       {/* ── Polymer Ticker ─────────────────────────────────── */}
       <section className="border-y border-border/60 bg-surface/40">
-        <div className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12 py-5">
+        <div className="mx-auto max-w-6xl px-4 py-5 md:px-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
             {/* Polymer pills */}
             <div className="flex gap-2 flex-wrap">
@@ -316,7 +316,7 @@ function Home() {
 
       {/* ── Trust Bar (Clean connected industrial divider) ──── */}
       <section className="border-b border-border/60 bg-surface/30">
-        <div className="mx-auto grid max-w-[1600px] divide-y divide-border/60 md:divide-y-0 md:divide-x md:grid-cols-3 px-4 sm:px-6 md:px-8 xl:px-12 py-6 md:py-8">
+        <div className="mx-auto grid max-w-6xl divide-y divide-border/60 md:divide-y-0 md:divide-x md:grid-cols-3 px-4 py-6 md:px-6 md:py-8">
           {trustItems.map((item) => (
             <div
               key={item.title}
@@ -338,7 +338,7 @@ function Home() {
       <IdeaToPrintSection />
 
       {/* ── Star Product Spotlight: Modular Pegboards ────────────── */}
-      <section className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12 py-6">
+      <section className="mx-auto max-w-6xl px-4 py-6 md:px-6">
         <div className="relative overflow-hidden rounded-3xl border border-white/20 dark:border-white/10 bg-surface/50 backdrop-blur-2xl p-6 sm:p-10 md:p-12 shadow-2xl shadow-black/10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-7 space-y-4">
@@ -397,7 +397,7 @@ function Home() {
       </section>
 
       {/* ── Featured Products ──────────────────────────────── */}
-      <section className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12 py-16 md:py-20">
+      <section className="mx-auto max-w-6xl px-4 py-16 md:px-6 md:py-20">
         <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
           <div>
             <p className="text-[11px] font-medium tracking-[0.18em] text-subtle uppercase">Shop</p>
@@ -422,7 +422,7 @@ function Home() {
 
       {/* ── Choose Your Path ──────────────────────────────── */}
       <section className="border-t border-border/60 bg-surface/30">
-        <div className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12 py-16 md:py-20">
+        <div className="mx-auto max-w-6xl px-4 py-16 md:px-6 md:py-20">
           <p className="text-[11px] font-medium tracking-[0.18em] text-subtle uppercase">Get started</p>
           <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight md:text-4xl">Choose your path</h2>
           <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -567,7 +567,7 @@ function IdeaToPrintSection() {
 
   return (
     <section className="relative overflow-hidden border-t border-border/60 bg-surface/20 py-16 md:py-24">
-      <div className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12">
+      <div className="mx-auto max-w-6xl px-4 md:px-6">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3.5 py-1 text-xs font-medium text-muted shadow-2xs">
@@ -843,7 +843,7 @@ function LastVisitedSection({ products }: { products: Product[] }) {
   if (!product) return null;
 
   return (
-    <section className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12 py-8">
+    <section className="mx-auto max-w-6xl px-4 py-8 md:px-6">
       <h2 className="font-display text-lg font-semibold tracking-tight text-muted">
         Pick up where you left off
       </h2>

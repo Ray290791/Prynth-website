@@ -29,7 +29,7 @@ export default function MaterialsPage() {
     : materials.filter(m => m.code.toLowerCase() === activeTab.toLowerCase());
 
   return (
-    <div className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12 py-12 md:py-20 animate-in fade-in duration-300">
+    <div className="mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-20 animate-in fade-in duration-300">
       {/* Hero Section */}
       <div className="relative rounded-2xl border border-border bg-surface p-8 md:p-12 shadow-xs">
         <div className="relative z-10 max-w-2xl">

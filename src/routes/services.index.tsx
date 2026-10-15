@@ -56,7 +56,7 @@ function ServicesIndexPage() {
     <div className="pb-24">
       {/* ── Hero ───────────────────────────────────────────── */}
       <section className="relative overflow-hidden border-b border-border/60 bg-surface/30 py-16 md:py-24">
-        <div className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12">
+        <div className="mx-auto max-w-6xl px-4 md:px-6">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3.5 py-1 text-xs font-semibold text-accent shadow-2xs">
               <Sparkles className="size-3.5" />
@@ -107,7 +107,7 @@ function ServicesIndexPage() {
       </section>
 
       {/* ── Services Grid ──────────────────────────────────── */}
-      <section className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12 py-16">
+      <section className="mx-auto max-w-6xl px-4 py-16 md:px-6">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <p className="text-[11px] font-medium tracking-[0.18em] text-accent uppercase">
             Capabilities Catalog
@@ -183,7 +183,7 @@ function ServicesIndexPage() {
 
       {/* ── Workflow Roadmap ───────────────────────────────── */}
       <section className="border-y border-border/60 bg-surface/30 py-16 md:py-20">
-        <div className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12">
+        <div className="mx-auto max-w-6xl px-4 md:px-6">
           <div className="text-center max-w-xl mx-auto mb-12">
             <p className="text-[11px] font-medium tracking-[0.18em] text-accent uppercase">
               Streamlined Process

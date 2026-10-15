@@ -123,7 +123,7 @@ function AdminPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12 py-8 md:py-12 flex flex-col md:flex-row gap-8 items-start">
+    <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-12 flex flex-col md:flex-row gap-8 items-start">
       {/* Responsive Navigation: horizontal swipeable ribbon on mobile/tablet, sticky vertical sidebar on desktop */}
       <aside className="w-full shrink-0 md:w-64 md:sticky md:top-20 md:self-start md:z-20 md:max-h-[calc(100dvh-5.5rem)] md:overflow-y-auto no-scrollbar">
         <div className="flex items-center justify-between mb-3 md:mb-5">

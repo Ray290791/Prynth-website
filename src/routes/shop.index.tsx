@@ -68,7 +68,7 @@ function ShopPage() {
   }, [category, query, sort, products]);
 
   return (
-    <div className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12 py-12 md:py-16">
+    <div className="mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-16">
       <p className="text-[11px] font-medium tracking-[0.18em] text-subtle uppercase">
         Ready-made
       </p>

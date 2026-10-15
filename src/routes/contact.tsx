@@ -98,7 +98,7 @@ export function ContactPage() {
   const cleanWhatsAppNumber = contactWhatsApp.replace(/[^\d]/g, "");
 
   return (
-    <div className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12 py-12 md:py-20 animate-in fade-in duration-300">
+    <div className="mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-20 animate-in fade-in duration-300">
       {/* Title */}
       <div className="max-w-2xl">
         <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3.5 py-1 text-xs font-semibold text-accent">

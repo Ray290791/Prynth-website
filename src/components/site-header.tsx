@@ -45,7 +45,7 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-glass-border bg-glass backdrop-blur-2xl backdrop-saturate-150 shadow-xl shadow-black/5">
-      <div className="mx-auto flex h-14 sm:h-16 max-w-[1600px] items-center justify-between gap-1 sm:gap-4 px-3 sm:px-6 md:h-[4.25rem] md:px-8 xl:px-12">
+      <div className="mx-auto flex h-14 sm:h-16 max-w-6xl items-center justify-between gap-1 sm:gap-4 px-3 sm:px-6 md:h-[4.25rem] md:px-6">
         <LogoLink className="shrink-0" />
 
         <nav className="hidden items-center gap-1 md:flex" aria-label="Primary">
@@ -140,7 +140,7 @@ export function SiteHeader() {
 
       {open ? (
         <div className="border-t border-border bg-surface/98 dark:bg-surface/98 backdrop-blur-3xl md:hidden shadow-2xl shadow-black/20 animate-in fade-in-0 duration-200 max-h-[calc(100dvh-3.5rem)] overflow-y-auto">
-          <nav className="mx-auto flex max-w-[1600px] flex-col px-4 sm:px-6 py-3 gap-1" aria-label="Mobile">
+          <nav className="mx-auto flex max-w-6xl flex-col px-4 py-3 gap-1" aria-label="Mobile">
             <Link
               to="/"
               className="rounded-xl px-3.5 py-2.5 text-base font-medium text-fg hover:bg-surface-2 transition-colors"

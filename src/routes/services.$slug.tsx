@@ -173,7 +173,7 @@ function ServiceDetailPage() {
     <div className="pb-24">
       {/* ── Breadcrumb & Back Link ─────────────────────────── */}
       <div className="border-b border-border/50 bg-surface/30">
-        <div className="mx-auto flex max-w-[1600px] items-center gap-2 px-4 sm:px-6 md:px-8 xl:px-12 py-3 text-xs text-subtle">
+        <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-3 text-xs text-subtle md:px-6">
           <Link to="/services" className="hover:text-fg transition-colors">
             Services
           </Link>
@@ -184,7 +184,7 @@ function ServiceDetailPage() {
 
       {/* ── Hero Section ───────────────────────────────────── */}
       <section className="relative overflow-hidden border-b border-border/60 bg-surface/40 py-12 md:py-20">
-        <div className="mx-auto grid max-w-[1600px] gap-10 px-4 sm:px-6 md:px-8 xl:px-12 md:grid-cols-12 lg:gap-14">
+        <div className="mx-auto grid max-w-6xl gap-10 px-4 md:px-6 md:grid-cols-12 lg:gap-14">
           <div className="md:col-span-7 lg:col-span-8">
             <div className="flex items-center gap-2 mb-3">
               <span className="rounded-full bg-accent/15 px-3 py-0.5 text-xs font-semibold text-accent">
@@ -266,7 +266,7 @@ function ServiceDetailPage() {
       </section>
 
       {/* ── Key Deliverables & Engineering Features ────────── */}
-      <section className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12 py-16">
+      <section className="mx-auto max-w-6xl px-4 py-16 md:px-6">
         <div className="grid gap-12 lg:grid-cols-2">
           {/* Deliverables */}
           <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8 shadow-xs">
@@ -323,7 +323,7 @@ function ServiceDetailPage() {
       {/* ── Process Steps ──────────────────────────────────── */}
       {service.process_steps && service.process_steps.length > 0 && (
         <section className="border-y border-border/60 bg-surface/30 py-16 md:py-20">
-          <div className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12">
+          <div className="mx-auto max-w-6xl px-4 md:px-6">
             <div className="text-center max-w-xl mx-auto mb-12">
               <p className="text-[11px] font-medium tracking-[0.18em] text-accent uppercase">
                 Step-by-Step
@@ -352,7 +352,7 @@ function ServiceDetailPage() {
 
       {/* ── Real-World Examples ────────────────────────────── */}
       {service.examples && service.examples.length > 0 && (
-        <section className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12 py-16">
+        <section className="mx-auto max-w-6xl px-4 py-16 md:px-6">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
             <div>
               <p className="text-[11px] font-medium tracking-[0.18em] text-accent uppercase">
@@ -611,7 +611,7 @@ function ServiceDetailPage() {
 
       {/* ── Other Services ─────────────────────────────────── */}
       {otherServices.length > 0 && (
-        <section className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8 xl:px-12 py-12 border-t border-border/60">
+        <section className="mx-auto max-w-6xl px-4 py-12 md:px-6 border-t border-border/60">
           <h2 className="font-display text-xl font-bold text-fg mb-6">
             Other Engineering &amp; Additive Services
           </h2>

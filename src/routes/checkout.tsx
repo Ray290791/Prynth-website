@@ -431,12 +431,12 @@ function CheckoutPage() {
   };
 
   if (!hydrated) {
-    return <div className="mx-auto max-w-6xl xl:max-w-7xl px-4 sm:px-6 md:px-8 xl:px-12 py-16">Loading checkout…</div>;
+    return <div className="mx-auto max-w-6xl px-4 py-16 md:px-6">Loading checkout…</div>;
   }
 
   if (empty) {
     return (
-      <div className="mx-auto max-w-6xl xl:max-w-7xl px-4 sm:px-6 md:px-8 xl:px-12 py-24 text-center">
+      <div className="mx-auto max-w-6xl px-4 py-24 text-center md:px-6">
         <h1 className="font-display text-3xl font-semibold">Nothing to check out</h1>
         <p className="mt-2 text-muted">Add something from the shop first.</p>
         <Button asChild className="mt-6">
@@ -447,7 +447,7 @@ function CheckoutPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl xl:max-w-7xl px-4 sm:px-6 md:px-8 xl:px-12 py-12 md:py-16">
+    <div className="mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-16">
       <h1 className="font-display text-4xl font-semibold tracking-tight">Checkout</h1>
       <form onSubmit={placeOrder} className="mt-10 grid gap-10 md:grid-cols-12">
         <div className="space-y-8 md:col-span-7">
