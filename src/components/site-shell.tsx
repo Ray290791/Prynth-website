@@ -18,6 +18,15 @@ export function SiteShell({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
 
+  // Dismiss "Add to Home Screen" floating window after 10 seconds
+  useEffect(() => {
+    if (!showPrompt) return;
+    const timer = setTimeout(() => {
+      setShowPrompt(false);
+    }, 10000);
+    return () => clearTimeout(timer);
+  }, [showPrompt]);
+
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
     deferredPrompt.prompt();

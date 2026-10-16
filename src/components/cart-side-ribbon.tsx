@@ -12,8 +12,6 @@ import {
   Truck,
   ShieldCheck,
   Sparkles,
-  Pin,
-  PinOff,
 } from "lucide-react";
 import { useCart, cartCount, cartSubtotal, FREE_SHIPPING_AT } from "@/lib/cart-store";
 import { formatINR } from "@/lib/format";
@@ -29,48 +27,70 @@ export function CartSideRibbon() {
   const subtotal = cartSubtotal(items);
 
   const [isOpen, setIsOpen] = useState(false);
-  const [isPinned, setIsPinned] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
   const prevCountRef = useRef(count);
-  const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const autoCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Load pinned preference
+  const closeRibbon = () => {
+    if (autoCloseTimerRef.current) {
+      clearTimeout(autoCloseTimerRef.current);
+      autoCloseTimerRef.current = null;
+    }
+    setIsOpen(false);
+  };
+
+  // Clean up any legacy pinned preference in storage
   useEffect(() => {
     try {
-      const savedPinned = localStorage.getItem("prynth_side_ribbon_pinned");
-      if (savedPinned === "true") {
-        setIsPinned(true);
-        setIsOpen(true);
-      }
+      localStorage.removeItem("prynth_side_ribbon_pinned");
     } catch {
       // ignore
     }
   }, []);
 
-  // Save pinned preference
-  const togglePin = () => {
-    const nextPinned = !isPinned;
-    setIsPinned(nextPinned);
-    if (nextPinned) {
-      setIsOpen(true);
-    }
-    try {
-      localStorage.setItem("prynth_side_ribbon_pinned", String(nextPinned));
-    } catch {
-      // ignore
-    }
-  };
+  // Close ribbon on route change
+  useEffect(() => {
+    closeRibbon();
+  }, [pathname]);
+
+  // Close ribbon when clicking anywhere outside or pressing Escape
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
+        closeRibbon();
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeRibbon();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
 
   // Auto-peek when new item is added to cart
   useEffect(() => {
-    if (count > prevCountRef.current && !isPinned) {
+    if (count > prevCountRef.current) {
       setIsOpen(true);
       if (autoCloseTimerRef.current) clearTimeout(autoCloseTimerRef.current);
       autoCloseTimerRef.current = setTimeout(() => {
-        setIsOpen((prev) => (isPinned ? true : false));
+        closeRibbon();
       }, 5000);
     }
     prevCountRef.current = count;
-  }, [count, isPinned]);
+  }, [count]);
 
   // Hide on checkout or admin routes
   if (pathname.startsWith("/checkout") || pathname.startsWith("/admin")) {
@@ -86,44 +106,46 @@ export function CartSideRibbon() {
       className="hidden xl:block pointer-events-none select-none"
     >
       {/* ── COLLAPSED VERTICAL TAB PILL ───────────────────────────────────── */}
-      {!isOpen && (
-        <button
-          type="button"
-          onClick={() => setIsOpen(true)}
-          className={cn(
-            "pointer-events-auto fixed right-0 top-1/2 -translate-y-1/2 z-40 group flex flex-col items-center gap-2",
-            "rounded-l-2xl border-l-2 border-y-2 border-accent/60 bg-surface/90 dark:bg-surface-2/95 backdrop-blur-2xl",
-            "p-2.5 shadow-2xl shadow-black/30 transition-all duration-300 hover:pr-3.5 hover:border-accent cursor-pointer"
-          )}
-          title="Open Cart Ribbon"
-        >
-          <div className="relative">
-            <ShoppingBag className="size-5 text-accent transition-transform group-hover:scale-110" />
-            {count > 0 && (
-              <span className="absolute -top-1.5 -right-2 flex size-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-ink">
-                {count > 9 ? "9+" : count}
-              </span>
-            )}
-          </div>
-
-          <span
-            className="text-[11px] font-semibold text-fg tracking-wider uppercase [writing-mode:vertical-rl] rotate-180 py-1"
-          >
-            Cart
-          </span>
-
-          {subtotal > 0 && (
-            <span className="rounded-md bg-accent/15 px-1.5 py-0.5 text-[10px] font-bold text-accent tabular-nums">
-              {formatINR(subtotal)}
+      <button
+        type="button"
+        onClick={() => setIsOpen(true)}
+        aria-hidden={isOpen}
+        tabIndex={isOpen ? -1 : 0}
+        className={cn(
+          "pointer-events-auto fixed right-0 top-1/2 -translate-y-1/2 z-30 group flex flex-col items-center gap-2",
+          "rounded-l-2xl border-l-2 border-y-2 border-accent/60 bg-surface/90 dark:bg-surface-2/95 backdrop-blur-2xl",
+          "p-2.5 shadow-2xl shadow-black/30 transition-all duration-300 hover:pr-3.5 hover:border-accent cursor-pointer",
+          isOpen && "opacity-0 pointer-events-none translate-x-4"
+        )}
+        title="Open Cart Ribbon"
+      >
+        <div className="relative">
+          <ShoppingBag className="size-5 text-accent transition-transform group-hover:scale-110" />
+          {count > 0 && (
+            <span className="absolute -top-1.5 -right-2 flex size-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-ink">
+              {count > 9 ? "9+" : count}
             </span>
           )}
+        </div>
 
-          <ChevronLeft className="size-3.5 text-muted group-hover:text-accent transition-transform group-hover:-translate-x-0.5" />
-        </button>
-      )}
+        <span
+          className="text-[11px] font-semibold text-fg tracking-wider uppercase [writing-mode:vertical-rl] rotate-180 py-1"
+        >
+          Cart
+        </span>
+
+        {subtotal > 0 && (
+          <span className="rounded-md bg-accent/15 px-1.5 py-0.5 text-[10px] font-bold text-accent tabular-nums">
+            {formatINR(subtotal)}
+          </span>
+        )}
+
+        <ChevronLeft className="size-3.5 text-muted group-hover:text-accent transition-transform group-hover:-translate-x-0.5" />
+      </button>
 
       {/* ── EXPANDED FLOATING DOCKED PANEL ────────────────────────────────── */}
       <div
+        ref={panelRef}
         className={cn(
           "pointer-events-auto fixed right-0 top-20 bottom-6 z-40 flex flex-col",
           "w-80 2xl:w-92 rounded-l-3xl border-l border-y border-white/20 dark:border-white/10",
@@ -151,21 +173,7 @@ export function CartSideRibbon() {
           <div className="flex items-center gap-1">
             <button
               type="button"
-              onClick={togglePin}
-              title={isPinned ? "Unpin ribbon (auto-collapses)" : "Pin ribbon open"}
-              className={cn(
-                "size-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer",
-                isPinned
-                  ? "bg-accent/15 text-accent hover:bg-accent/25"
-                  : "text-muted hover:bg-surface-2 hover:text-fg"
-              )}
-            >
-              {isPinned ? <PinOff className="size-3.5" /> : <Pin className="size-3.5" />}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
+              onClick={closeRibbon}
               title="Close ribbon"
               className="size-7 rounded-lg flex items-center justify-center text-muted hover:bg-surface-2 hover:text-fg transition-colors cursor-pointer"
             >
@@ -213,14 +221,14 @@ export function CartSideRibbon() {
               <div className="flex flex-col gap-1.5 w-full pt-2">
                 <Link
                   to="/pegboard"
-                  onClick={() => !isPinned && setIsOpen(false)}
+                  onClick={closeRibbon}
                   className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-fg hover:border-accent hover:text-accent transition-colors"
                 >
                   Explore Modular Pegboard
                 </Link>
                 <Link
                   to="/shop"
-                  onClick={() => !isPinned && setIsOpen(false)}
+                  onClick={closeRibbon}
                   className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-fg hover:border-accent hover:text-accent transition-colors"
                 >
                   Browse Ready-Made Prints
@@ -324,7 +332,7 @@ export function CartSideRibbon() {
                 asChild
                 className="w-full h-10 bg-accent text-ink hover:opacity-95 font-semibold text-xs cursor-pointer shadow-md shadow-accent/20"
               >
-                <Link to="/checkout" onClick={() => !isPinned && setIsOpen(false)}>
+                <Link to="/checkout" onClick={closeRibbon}>
                   <span>Express Checkout</span>
                   <ArrowRight className="size-3.5 ml-1.5" />
                 </Link>
@@ -335,7 +343,7 @@ export function CartSideRibbon() {
                 variant="outline"
                 className="w-full h-8 text-xs font-medium cursor-pointer border-border hover:bg-surface-2"
               >
-                <Link to="/cart" onClick={() => !isPinned && setIsOpen(false)}>
+                <Link to="/cart" onClick={closeRibbon}>
                   View Full Cart ({count})
                 </Link>
               </Button>

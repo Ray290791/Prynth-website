@@ -201,6 +201,17 @@ function Root() {
     <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
+        {/* Google tag (gtag.js) */}
+        <script async id="ga-script" src="https://www.googletagmanager.com/gtag/js?id=G-R1LGD7FBVN" />
+        <script
+          id="ga-script-init"
+          dangerouslySetInnerHTML={{
+            __html: `window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-R1LGD7FBVN');`,
+          }}
+        />
         <meta name="strix-verification" content="strix-verify-e881dc2df817534b0d76e030da14de8e" />
         {/* Theme boot — must be first so no flash */}
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />

@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 
+const GA_ID = "G-R1LGD7FBVN";
+
 export function CookieConsent() {
   const [showBanner, setShowBanner] = useState(false);
 
@@ -10,6 +12,10 @@ export function CookieConsent() {
     const consent = localStorage.getItem("prynth-cookie-consent");
     if (!consent) {
       setShowBanner(true);
+    } else if (consent === "denied") {
+      if (typeof window !== "undefined") {
+        (window as any)[`ga-disable-${GA_ID}`] = true;
+      }
     } else if (consent === "granted") {
       loadGoogleAnalytics();
     }
@@ -18,12 +24,18 @@ export function CookieConsent() {
   const handleAccept = () => {
     localStorage.setItem("prynth-cookie-consent", "granted");
     setShowBanner(false);
+    if (typeof window !== "undefined") {
+      (window as any)[`ga-disable-${GA_ID}`] = false;
+    }
     loadGoogleAnalytics();
   };
 
   const handleDecline = () => {
     localStorage.setItem("prynth-cookie-consent", "denied");
     setShowBanner(false);
+    if (typeof window !== "undefined") {
+      (window as any)[`ga-disable-${GA_ID}`] = true;
+    }
   };
 
   if (!showBanner) return null;
@@ -63,13 +75,13 @@ export function CookieConsent() {
 }
 
 function loadGoogleAnalytics() {
-  // Avoid loading multiple times
+  if (typeof window === "undefined") return;
+  (window as any)[`ga-disable-${GA_ID}`] = false;
+
+  // Avoid loading multiple times if already injected
   if (document.getElementById("ga-script")) return;
 
-  // Reads measurement ID from environment variable (e.g. VITE_GA_MEASUREMENT_ID=G-XXXXXXXXXX)
-  const gaId = typeof import.meta !== "undefined" ? import.meta.env?.VITE_GA_MEASUREMENT_ID : undefined;
-
-  // Don't inject script if no real ID is provided
+  const gaId = (typeof import.meta !== "undefined" ? import.meta.env?.VITE_GA_MEASUREMENT_ID : undefined) || GA_ID;
   if (!gaId || gaId === "G-XXXXXXXXXX") {
     return;
   }
@@ -86,7 +98,7 @@ function loadGoogleAnalytics() {
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    gtag('config', '${gaId}', { anonymize_ip: true });
+    gtag('config', '${gaId}');
   `;
   document.head.appendChild(script2);
 }
