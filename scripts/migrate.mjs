@@ -18,13 +18,14 @@ import { dirname, join } from "node:path";
 import pg from "pg";
 import { pendingMigrations } from "./migration-plan.mjs";
 
-const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl) {
+const rawDatabaseUrl = process.env.DATABASE_URL;
+if (!rawDatabaseUrl || !rawDatabaseUrl.trim()) {
   console.log(
     "[migrate] DATABASE_URL not set — skipping (the PGLite fallback migrates itself).",
   );
   process.exit(0);
 }
+const databaseUrl = rawDatabaseUrl.trim().replace(/[&?]channel_binding=[^&]+/g, "");
 
 const migrationsDir = join(dirname(fileURLToPath(import.meta.url)), "..", "migrations");
 
@@ -42,7 +43,7 @@ async function main() {
     return;
   }
 
-  const pool = new pg.Pool({ connectionString: databaseUrl, max: 1 });
+  const pool = new pg.Pool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 8000 });
   const client = await pool.connect();
   try {
     await client.query(
@@ -85,6 +86,17 @@ main().catch((err) => {
   // pg errors carry the context needed to debug a bad SQL file.
   for (const key of ["code", "detail", "hint", "position", "where"]) {
     if (err?.[key] != null) console.error(`[migrate]   ${key}: ${err[key]}`);
+  }
+  // In CI build sandboxes (e.g. Cloudflare Workers Builds), outbound TCP 5432 is often blocked.
+  // The serverless runtime will apply migrations or fallback on boot. Don't block the deployment.
+  if (
+    err?.code === "ECONNREFUSED" ||
+    err?.code === "ETIMEDOUT" ||
+    err?.message?.includes("timeout") ||
+    err?.message?.includes("connect")
+  ) {
+    console.warn("[migrate] DB is unreachable from build sandbox — skipping build-time migration.");
+    process.exit(0);
   }
   process.exit(1);
 });
