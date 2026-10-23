@@ -79,6 +79,7 @@ export type SiteSettings = {
   about_pillar3_desc?: string;
   contact_hours?: string;
   contact_whatsapp?: string;
+  whatsapp_enabled?: string;
   social_twitter?: string;
   social_youtube?: string;
   // Pegboard Star Product settings
@@ -166,7 +167,8 @@ function parseSiteSettings(rows: { key: string; value: string }[]): SiteSettings
     about_pillar3_title: "If it's wrong, we redo it",
     about_pillar3_desc: "Prints are checked. Returns are simple. See the returns page for the details.",
     contact_hours: "Monday – Saturday: 10:00 AM – 7:00 PM IST",
-    contact_whatsapp: "+91 98765 43210",
+    contact_whatsapp: "",
+    whatsapp_enabled: "false",
     social_twitter: "@prynth",
     social_youtube: "",
     pegboard_hero_title: "The Modular Pegboard System",
@@ -350,6 +352,7 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
     about_pillar3_desc: z.string().optional(),
     contact_hours: z.string().optional(),
     contact_whatsapp: z.string().optional(),
+    whatsapp_enabled: z.string().optional(),
     social_twitter: z.string().optional(),
     social_youtube: z.string().optional(),
     pegboard_hero_title: z.string().optional(),

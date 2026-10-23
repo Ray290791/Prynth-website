@@ -60,8 +60,8 @@ export function ContactPage() {
   const [fieldErrors, setFieldErrors] = useState<{ name?: string; email?: string; message?: string }>({});
 
   const contactEmail = settings.contact_email || settings.email || "hello@prynth.in";
-  const contactPhone = settings.contact_phone || "+91 98765 43210";
-  const contactWhatsApp = settings.contact_whatsapp || contactPhone;
+  const contactPhone = settings.contact_phone || "";
+  const contactWhatsApp = settings.whatsapp_enabled === "true" ? (settings.contact_whatsapp || contactPhone) : "";
   const contactAddress = settings.contact_address || "Mumbai, Maharashtra 400001, India";
   const businessHours =
     settings.contact_hours || "Monday – Saturday: 10:00 AM – 7:00 PM IST";
@@ -170,43 +170,45 @@ export function ContactPage() {
               </button>
             </div>
 
-            {/* WhatsApp / Phone Card */}
-            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-surface-2/60 border border-border/60 hover:border-accent/40 transition-colors">
-              <a
-                href={
-                  cleanWhatsAppNumber
-                    ? `https://wa.me/${cleanWhatsAppNumber}`
-                    : `tel:${contactPhone.replace(/\s+/g, "")}`
-                }
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-3 min-w-0"
-              >
-                <div className="size-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
-                  <Phone className="size-4.5" />
-                </div>
-                <div className="truncate">
-                  <span className="block text-[11px] font-semibold text-muted uppercase tracking-wider">
-                    WhatsApp &amp; Phone
-                  </span>
-                  <span className="text-sm font-medium text-fg truncate">
-                    {contactWhatsApp}
-                  </span>
-                </div>
-              </a>
-              <button
-                type="button"
-                onClick={() => copyToClipboard(contactWhatsApp, "phone")}
-                className="size-8 rounded-lg flex items-center justify-center text-muted hover:text-fg hover:bg-surface transition-colors cursor-pointer shrink-0 ml-2"
-                title="Copy phone"
-              >
-                {copiedKey === "phone" ? (
-                  <Check className="size-4 text-emerald-400" />
-                ) : (
-                  <Copy className="size-4" />
-                )}
-              </button>
-            </div>
+            {/* WhatsApp / Phone Card (only shown if configured/enabled) */}
+            {(contactWhatsApp || contactPhone) && (
+              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-surface-2/60 border border-border/60 hover:border-accent/40 transition-colors">
+                <a
+                  href={
+                    contactWhatsApp && cleanWhatsAppNumber
+                      ? `https://wa.me/${cleanWhatsAppNumber}`
+                      : `tel:${contactPhone.replace(/\s+/g, "")}`
+                  }
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-3 min-w-0"
+                >
+                  <div className="size-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+                    <Phone className="size-4.5" />
+                  </div>
+                  <div className="truncate">
+                    <span className="block text-[11px] font-semibold text-muted uppercase tracking-wider">
+                      {contactWhatsApp ? "WhatsApp & Phone" : "Phone Call"}
+                    </span>
+                    <span className="text-sm font-medium text-fg truncate">
+                      {contactWhatsApp || contactPhone}
+                    </span>
+                  </div>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(contactWhatsApp || contactPhone, "phone")}
+                  className="size-8 rounded-lg flex items-center justify-center text-muted hover:text-fg hover:bg-surface transition-colors cursor-pointer shrink-0 ml-2"
+                  title="Copy phone"
+                >
+                  {copiedKey === "phone" ? (
+                    <Check className="size-4 text-emerald-400" />
+                  ) : (
+                    <Copy className="size-4" />
+                  )}
+                </button>
+              </div>
+            )}
 
             {/* Operating Hours */}
             <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-surface-2/60 border border-border/60">

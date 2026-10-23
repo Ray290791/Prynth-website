@@ -2502,16 +2502,23 @@ function IdeaForm({
           </div>
 
           <div className="pt-1 text-xs text-muted leading-relaxed">
-            Have questions before submitting? Reach out on{" "}
-            <a
-              href={(settings?.contact_whatsapp || settings?.contact_phone || "").replace(/[^\d]/g, "") ? `https://wa.me/${(settings?.contact_whatsapp || settings?.contact_phone || "").replace(/[^\d]/g, "")}` : `mailto:${settings?.contact_email || settings?.email || "hello@prynth.in"}`}
-              target="_blank"
-              rel="noreferrer"
-              className="text-accent hover:underline font-medium"
-            >
-              WhatsApp
-            </a>{" "}
-            or email us at{" "}
+            Have questions before submitting?{" "}
+            {settings?.whatsapp_enabled === "true" && (settings?.contact_whatsapp || settings?.contact_phone || "").replace(/[^\d]/g, "") ? (
+              <>
+                Reach out on{" "}
+                <a
+                  href={`https://wa.me/${(settings?.contact_whatsapp || settings?.contact_phone || "").replace(/[^\d]/g, "")}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-accent hover:underline font-medium"
+                >
+                  WhatsApp
+                </a>{" "}
+                or email us at{" "}
+              </>
+            ) : (
+              <>Email our studio at </>
+            )}
             <a
               href={`mailto:${settings?.contact_email || settings?.email || "hello@prynth.in"}`}
               className="text-accent hover:underline font-medium"

@@ -1049,7 +1049,8 @@ function SettingsTab() {
       about_pillar3_title: ((fd.get("about_pillar3_title") as string) || settings?.about_pillar3_title || "").trim(),
       about_pillar3_desc: ((fd.get("about_pillar3_desc") as string) || settings?.about_pillar3_desc || "").trim(),
       contact_hours: ((fd.get("contact_hours") as string) || settings?.contact_hours || "").trim(),
-      contact_whatsapp: ((fd.get("contact_whatsapp") as string) || settings?.contact_whatsapp || "").trim(),
+      contact_whatsapp: ((fd.get("contact_whatsapp") as string) || "").trim(),
+      whatsapp_enabled: fd.get("whatsapp_enabled") === "on" ? "true" : "false",
       social_twitter: ((fd.get("social_twitter") as string) || settings?.social_twitter || "").trim(),
       social_youtube: ((fd.get("social_youtube") as string) || settings?.social_youtube || "").trim(),
       pegboard_hero_title: ((fd.get("pegboard_hero_title") as string) || settings?.pegboard_hero_title || "").trim(),
@@ -1482,14 +1483,40 @@ function SettingsTab() {
               <input name="contact_instagram" defaultValue={settings.contact_instagram} className="w-full rounded border border-border bg-surface p-2 text-sm" />
             </div>
           </div>
+          {/* WhatsApp Support Master Toggle */}
+          <div className="rounded-xl border border-border/80 bg-surface-2/40 p-4 space-y-3">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <label htmlFor="whatsapp_enabled" className="block text-sm font-semibold text-fg cursor-pointer">
+                  Enable WhatsApp Support &amp; Chat Buttons
+                </label>
+                <p className="text-xs text-muted mt-0.5">
+                  Master toggle to enable or disable all WhatsApp floating widgets, contact cards, and inquiry buttons across the entire website. Keep disabled until your dedicated studio number is active.
+                </p>
+              </div>
+              <input
+                id="whatsapp_enabled"
+                name="whatsapp_enabled"
+                type="checkbox"
+                defaultChecked={settings.whatsapp_enabled === "true"}
+                className="size-5 rounded border-border accent-accent cursor-pointer"
+              />
+            </div>
+            {settings.whatsapp_enabled !== "true" && (
+              <div className="text-xs text-amber-500/90 flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-lg">
+                <span>⚠️ WhatsApp chat buttons are currently hidden for all website visitors.</span>
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Phone Number</label>
-              <input name="contact_phone" defaultValue={settings.contact_phone} className="w-full rounded border border-border bg-surface p-2 text-sm" />
+              <input name="contact_phone" defaultValue={settings.contact_phone} placeholder="+91 98765 43210" className="w-full rounded border border-border bg-surface p-2 text-sm" />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">WhatsApp Number / Direct Chat</label>
-              <input name="contact_whatsapp" defaultValue={settings.contact_whatsapp || "+91 98765 43210"} placeholder="+91 98765 43210" className="w-full rounded border border-border bg-surface p-2 text-sm" />
+              <input name="contact_whatsapp" defaultValue={settings.contact_whatsapp || ""} placeholder="+91 98765 43210" className="w-full rounded border border-border bg-surface p-2 text-sm" />
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

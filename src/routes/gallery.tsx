@@ -207,22 +207,24 @@ function GalleryPage() {
                   {/* Card Footer Actions */}
                   <div className="p-5 sm:p-6 pt-0">
                     <div className="pt-3 border-t border-border/60 flex items-center justify-between gap-2">
-                      <a
-                        href={buildWhatsAppUrl(
-                          cleanPhone,
-                          `Hi Prynth! I saw the "${item.title}" in your gallery. Can you produce something similar for my project?`
-                        )}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
-                      >
-                        <MessageCircle className="size-3.5 fill-current" />
-                        <span>Inquire on WhatsApp</span>
-                      </a>
+                      {settings?.whatsapp_enabled === "true" && cleanPhone && (
+                        <a
+                          href={buildWhatsAppUrl(
+                            cleanPhone,
+                            `Hi Prynth! I saw the "${item.title}" in your gallery. Can you produce something similar for my project?`
+                          )}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
+                        >
+                          <MessageCircle className="size-3.5 fill-current" />
+                          <span>Inquire on WhatsApp</span>
+                        </a>
+                      )}
 
                       <Link
                         to="/custom"
-                        className="inline-flex items-center gap-1 text-xs font-medium text-muted hover:text-fg transition-colors"
+                        className="inline-flex items-center gap-1 text-xs font-medium text-muted hover:text-fg transition-colors ml-auto"
                       >
                         <span>Print Yours</span>
                         <ArrowRight className="size-3" />

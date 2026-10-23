@@ -13,7 +13,18 @@ let hasSeededProducts = false;
  */
 async function seedProductsIfEmpty() {
   if (hasSeededProducts) return;
+  hasSeededProducts = true;
   const sql = await getSql();
+
+  // Fast-path: If products table already has data, never run the multi-query seed loop
+  try {
+    const existing = await sql<{ count: string }>`SELECT count(*)::text as count FROM products`;
+    if (parseInt(existing?.[0]?.count || "0", 10) > 0) {
+      return;
+    }
+  } catch {
+    // If table doesn't exist yet, proceed with migration & seed
+  }
 
   // Ensure product_variants table exists in case the migration wasn't picked up by Vite glob caching
   await sql.query(`
@@ -68,19 +79,28 @@ async function seedProductsIfEmpty() {
       )
       ON CONFLICT (slug) DO NOTHING
     `;
-    
-    const sizes = product.sizes && product.sizes.length > 0 ? product.sizes : [null];
-    const colors = product.colors && product.colors.length > 0 ? product.colors : [null];
-    
-    for (const size of sizes) {
-      for (const color of colors) {
-        await sql`
-          INSERT INTO product_variants (product_slug, size, color, price, stock_count)
-          VALUES (${product.slug}, ${size}, ${color}, ${product.price}, ${product.stockCount ?? -1})
-          ON CONFLICT DO NOTHING
-        `;
+  }
+
+  // Batch-insert default variants if product_variants is empty
+  try {
+    const varCount = await sql<{ count: string }>`SELECT count(*)::text as count FROM product_variants`;
+    if (parseInt(varCount?.[0]?.count || "0", 10) === 0) {
+      for (const product of staticProducts) {
+        const sizes = product.sizes && product.sizes.length > 0 ? product.sizes : [null];
+        const colors = product.colors && product.colors.length > 0 ? product.colors : [null];
+        for (const size of sizes) {
+          for (const color of colors) {
+            await sql`
+              INSERT INTO product_variants (product_slug, size, color, price, stock_count)
+              VALUES (${product.slug}, ${size}, ${color}, ${product.price}, ${product.stockCount ?? -1})
+              ON CONFLICT DO NOTHING
+            `;
+          }
+        }
       }
     }
+  } catch {
+    // ignore
   }
 
   hasSeededProducts = true;
@@ -175,48 +195,77 @@ export const getAllProductsAdmin = createServerFn({ method: "GET" })
 
 export const getProductsPublic = createServerFn({ method: "GET" })
   .handler(async () => {
-    await seedProductsIfEmpty();
     const sql = await getSql();
-    const rows = await sql.query<any>(`${SELECT_PRODUCTS_WITH_VARIANTS} GROUP BY p.slug ORDER BY p.name ASC`);
-    return rows.map(mapDbProduct);
+    try {
+      const rows = await sql.query<any>(`${SELECT_PRODUCTS_WITH_VARIANTS} GROUP BY p.slug ORDER BY p.name ASC`);
+      if (rows && rows.length > 0) {
+        return rows.map(mapDbProduct);
+      }
+    } catch (err) {
+      console.warn("[products-fns] getProductsPublic query error:", err);
+    }
+
+    try {
+      await seedProductsIfEmpty();
+      const rows = await sql.query<any>(`${SELECT_PRODUCTS_WITH_VARIANTS} GROUP BY p.slug ORDER BY p.name ASC`);
+      if (rows && rows.length > 0) {
+        return rows.map(mapDbProduct);
+      }
+    } catch (seedErr) {
+      console.warn("[products-fns] Seed failed, falling back to static:", seedErr);
+    }
+    return staticProducts;
   });
 
 export const getFeaturedProducts = createServerFn({ method: "GET" })
   .handler(async () => {
-    await seedProductsIfEmpty();
     const sql = await getSql();
-    const rows = await sql.query<any>(`${SELECT_PRODUCTS_WITH_VARIANTS} WHERE p.featured = true GROUP BY p.slug ORDER BY p.name ASC`);
-    return rows.map(mapDbProduct);
+    try {
+      const rows = await sql.query<any>(`${SELECT_PRODUCTS_WITH_VARIANTS} WHERE p.featured = true GROUP BY p.slug ORDER BY p.name ASC`);
+      if (rows && rows.length > 0) {
+        return rows.map(mapDbProduct);
+      }
+    } catch (err) {
+      console.warn("[products-fns] getFeaturedProducts query error:", err);
+    }
+    const products = await getProductsPublic();
+    return products.filter((p) => p.featured);
   });
 
 export const getRelatedProducts = createServerFn({ method: "GET" })
   .validator((slug: string) => slug)
   .handler(async ({ data: slug }) => {
-    await seedProductsIfEmpty();
     const sql = await getSql();
-    const currentRows = await sql<any>`SELECT category FROM products WHERE slug = ${slug}`;
-    if (currentRows.length === 0) {
-      const rows = await sql.query<any>(`${SELECT_PRODUCTS_WITH_VARIANTS} GROUP BY p.slug ORDER BY p.name ASC LIMIT 4`);
-      return rows.map(mapDbProduct);
+    try {
+      const currentRows = await sql<any>`SELECT category FROM products WHERE slug = ${slug}`;
+      if (currentRows.length === 0) {
+        const rows = await sql.query<any>(`${SELECT_PRODUCTS_WITH_VARIANTS} GROUP BY p.slug ORDER BY p.name ASC LIMIT 4`);
+        return rows.map(mapDbProduct);
+      }
+      const current = currentRows[0];
+      const sameCategory = await sql.query<any>(`${SELECT_PRODUCTS_WITH_VARIANTS} WHERE p.slug != $1 AND p.category = $2 GROUP BY p.slug LIMIT 4`, [slug, current.category]);
+      const rest = await sql.query<any>(`${SELECT_PRODUCTS_WITH_VARIANTS} WHERE p.slug != $1 AND p.category != $2 GROUP BY p.slug LIMIT 4`, [slug, current.category]);
+      return [...sameCategory, ...rest].slice(0, 4).map(mapDbProduct);
+    } catch (err) {
+      console.warn("[products-fns] getRelatedProducts query error:", err);
+      return staticProducts.filter((p) => p.slug !== slug).slice(0, 4);
     }
-    const current = currentRows[0];
-    const sameCategory = await sql.query<any>(`${SELECT_PRODUCTS_WITH_VARIANTS} WHERE p.slug != $1 AND p.category = $2 GROUP BY p.slug LIMIT 4`, [slug, current.category]);
-    const rest = await sql.query<any>(`${SELECT_PRODUCTS_WITH_VARIANTS} WHERE p.slug != $1 AND p.category != $2 GROUP BY p.slug LIMIT 4`, [slug, current.category]);
-    return [...sameCategory, ...rest].slice(0, 4).map(mapDbProduct);
   });
 
 export const getProductBySlug = createServerFn({ method: "GET" })
   .validator((slug: string) => slug)
   .handler(async ({ data: slug }) => {
-    await seedProductsIfEmpty();
     const sql = await getSql();
-    const rows = await sql.query<any>(`${SELECT_PRODUCTS_WITH_VARIANTS} WHERE p.slug = $1 GROUP BY p.slug`, [slug]);
-    if (rows.length === 0) {
-      const staticMatch = staticProducts.find((p) => p.slug === slug);
-      if (staticMatch) return staticMatch;
-      return null;
+    try {
+      const rows = await sql.query<any>(`${SELECT_PRODUCTS_WITH_VARIANTS} WHERE p.slug = $1 GROUP BY p.slug`, [slug]);
+      if (rows.length > 0) {
+        return mapDbProduct(rows[0]);
+      }
+    } catch (err) {
+      console.warn("[products-fns] getProductBySlug query error:", err);
     }
-    return mapDbProduct(rows[0]);
+    const staticMatch = staticProducts.find((p) => p.slug === slug);
+    return staticMatch || null;
   });
 
 export const updateProduct = createServerFn({ method: "POST" })

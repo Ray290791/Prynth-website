@@ -29,8 +29,8 @@ import { TestimonialsSection } from "@/components/testimonials-carousel";
 
 export const Route = createFileRoute("/")({
   loader: async () => {
-    const featured = await getFeaturedProducts();
     const products = await getProductsPublic();
+    const featured = products.filter((p) => p.featured);
     return { featured, products };
   },
   head: () => ({

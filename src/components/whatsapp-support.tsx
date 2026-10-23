@@ -27,7 +27,11 @@ export function WhatsAppFloatingWidget() {
     queryFn: () => getSiteSettings(),
   });
 
-  const rawPhone = settings?.contact_whatsapp || settings?.contact_phone || "919999999999";
+  const isEnabled = settings?.whatsapp_enabled === "true";
+  if (!isEnabled) return null;
+
+  const rawPhone = settings?.contact_whatsapp || settings?.contact_phone || "";
+  if (!rawPhone.trim()) return null;
   const cleanPhone = getCleanWhatsAppNumber(rawPhone);
 
   // Generate context-aware prompt based on the current page
@@ -149,7 +153,11 @@ export function WhatsAppInlineButton({
     queryFn: () => getSiteSettings(),
   });
 
-  const rawPhone = settings?.contact_whatsapp || settings?.contact_phone || "919999999999";
+  const isEnabled = settings?.whatsapp_enabled === "true";
+  if (!isEnabled) return null;
+
+  const rawPhone = settings?.contact_whatsapp || settings?.contact_phone || "";
+  if (!rawPhone.trim()) return null;
   const cleanPhone = getCleanWhatsAppNumber(rawPhone);
   const prompt = message || "Hi Prynth! I have a question about 3D printing.";
 

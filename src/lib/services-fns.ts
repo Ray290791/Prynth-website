@@ -477,7 +477,16 @@ export const getServicesPublic = createServerFn({ method: "GET" }).handler(
     try {
       const sql = await getSql();
 
-      // Only auto-seed if the services table is completely empty (initial installation)
+      const rows = await sql`
+        SELECT * FROM services
+        WHERE is_active = true
+        ORDER BY sort_order ASC, title ASC
+      `;
+      if (rows && rows.length > 0) {
+        return rows.map(parseServiceRow);
+      }
+
+      // If no active rows returned, check if table is completely unseeded (e.g. fresh DB)
       const countRows = await sql<{ count: string }>`SELECT count(*)::text as count FROM services`;
       const totalCount = parseInt(countRows?.[0]?.count || "0", 10);
       if (totalCount === 0) {
@@ -500,17 +509,13 @@ export const getServicesPublic = createServerFn({ method: "GET" }).handler(
               ON CONFLICT (id) DO NOTHING
             `;
           }
+          return DEFAULT_SERVICES;
         } catch (seedErr) {
           console.warn("[services-fns] Could not auto-seed services table:", seedErr);
         }
       }
 
-      const rows = await sql`
-        SELECT * FROM services
-        WHERE is_active = true
-        ORDER BY sort_order ASC, title ASC
-      `;
-      return (rows || []).map(parseServiceRow);
+      return [];
     } catch (err) {
       console.warn("[services-fns] Failed to fetch services from DB, falling back to defaults:", err);
       return DEFAULT_SERVICES;

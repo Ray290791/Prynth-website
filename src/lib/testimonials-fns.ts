@@ -17,13 +17,18 @@ export interface Testimonial {
 }
 
 export const getTestimonials = createServerFn({ method: "GET" }).handler(async () => {
-  const sql = await getSql();
-  const res = await sql<Testimonial>`
-    SELECT * FROM testimonials 
-    WHERE is_featured = true 
-    ORDER BY sort_order ASC, id ASC
-  `;
-  return res;
+  try {
+    const sql = await getSql();
+    const res = await sql<Testimonial>`
+      SELECT * FROM testimonials 
+      WHERE is_featured = true 
+      ORDER BY sort_order ASC, id ASC
+    `;
+    return res || [];
+  } catch (err) {
+    console.warn("[testimonials-fns] Failed to fetch testimonials:", err);
+    return [];
+  }
 });
 
 export const getTestimonialsAdmin = createServerFn({ method: "GET" })
