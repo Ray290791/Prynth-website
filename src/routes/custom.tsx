@@ -56,7 +56,7 @@ export const Route = createFileRoute("/custom")({
       {
         name: "description",
         content:
-          "Upload 3D models (STL, 3MF, STEP) for instant online 3D printing quotes or submit custom CAD design ideas. High-precision rapid prototyping across India by Prynth.",
+          "Upload 3D models (STL, 3MF, OBJ) for instant online 3D printing quotes or submit custom CAD design ideas (STEP, F3D). High-precision rapid prototyping across India by Prynth.",
       },
       {
         name: "keywords",
@@ -67,7 +67,7 @@ export const Route = createFileRoute("/custom")({
       {
         property: "og:description",
         content:
-          "Bring your 3D models and ideas to reality. Instant slice & print estimation for STL/OBJ/STEP files, or submit concepts for custom modeling and fabrication.",
+          "Bring your 3D models and ideas to reality. Instant slice & print estimation for STL, 3MF, and OBJ files, or submit concepts for custom modeling and fabrication.",
       },
       { property: "og:url", content: "https://prynth.in/custom" },
     ],
@@ -708,6 +708,7 @@ function UploadForm({
         }
       } else {
         setAutoDetected(false);
+        toast.error("Could not calculate 3D geometry from this file. Please verify it is a valid, uncorrupted STL, 3MF, or OBJ mesh.");
         const preset =
           pricingConfig.sizePresets.find((s) => s.id === fallback) ??
           pricingConfig.sizePresets[1] ??
@@ -718,6 +719,7 @@ function UploadForm({
     } catch (err) {
       console.error("Model parse failed:", err);
       setAutoDetected(false);
+      toast.error("Error reading 3D file. Please ensure it is a valid STL, 3MF, or OBJ mesh.");
       const preset =
         pricingConfig.sizePresets.find((s) => s.id === fallback) ??
         pricingConfig.sizePresets[1] ??

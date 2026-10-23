@@ -1,13 +1,14 @@
 import { FileUp, X } from "lucide-react";
 import { useRef, useState } from "react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-const ACCEPT = ".stl,.3mf,.obj,.f3d";
+const ACCEPT = ".stl,.3mf,.obj";
 
 export function FileDropzone({
   file,
   onFile,
-  hint = "STL, 3MF, OBJ, or F3D. Max 50 MB.",
+  hint = "STL, 3MF, or OBJ mesh files. Max 25 MB.",
 }: {
   file: File | null;
   onFile: (file: File | null) => void;
@@ -20,8 +21,20 @@ export function FileDropzone({
     const next = list?.[0];
     if (!next) return;
     const ext = next.name.split(".").pop()?.toLowerCase();
-    if (!ext || !["stl", "3mf", "obj", "f3d"].includes(ext)) return;
-    if (next.size > 50 * 1024 * 1024) return;
+    if (ext === "f3d" || ext === "step" || ext === "stp") {
+      toast.info(
+        "CAD archives (.step, .f3d) cannot be sliced automatically in the browser. Please use the 'Describe your idea' tab to upload CAD models for a free engineering review and quote within 24 hours!"
+      );
+      return;
+    }
+    if (!ext || !["stl", "3mf", "obj"].includes(ext)) {
+      toast.error("Unsupported file format. Please upload an STL, 3MF, or OBJ mesh file for instant slicing.");
+      return;
+    }
+    if (next.size > 25 * 1024 * 1024) {
+      toast.error("File exceeds 25 MB limit. Please optimize the mesh or share a Google Drive / WeTransfer link in your notes.");
+      return;
+    }
     onFile(next);
   }
 

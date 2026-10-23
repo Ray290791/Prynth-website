@@ -642,10 +642,10 @@ export async function parseF3D(arrayBuffer: ArrayBuffer, fileName: string): Prom
     };
   }
 
-  // Pure CAD archive without raw tessellated mesh
+  // Pure CAD archive without raw tessellated mesh (cannot be sliced without meshing)
   return {
-    volumeCm3: 28, // Default desk preset volume fallback
-    sizeMm: { x: 120, y: 100, z: 45 },
+    volumeCm3: 0,
+    sizeMm: { x: 0, y: 0, z: 0 },
     triangles: 0,
     isCad: true,
     thumbnailUrl,

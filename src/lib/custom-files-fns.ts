@@ -23,8 +23,8 @@ const ALLOWED_EXTENSIONS = /\.(stl|obj|3mf|step|stp|f3d)$/i;
 // Keep uploads small enough to avoid filling the Neon free-tier DB.
 // 3D model files for custom quotes only need to be referenced — large files
 // should be shared via Google Drive / WeTransfer and linked in notes.
-const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB hard cap
-const MAX_PAYLOAD_CHARS = 8_000_000; // ~6 MB base64
+const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024; // 25 MB cap
+const MAX_PAYLOAD_CHARS = 36_000_000; // ~26 MB base64
 
 export const uploadCustomFile = createServerFn({ method: "POST" })
   .validator(
@@ -40,11 +40,11 @@ export const uploadCustomFile = createServerFn({ method: "POST" })
         .number()
         .positive()
         .max(MAX_FILE_SIZE_BYTES, {
-          message: "File too large. Please keep files under 5 MB, or share a Google Drive link in the notes field instead.",
+          message: "File too large. Please keep files under 25 MB, or share a Google Drive / WeTransfer link in the notes field instead.",
         }),
       mimeType: z.string().max(100).default("application/octet-stream"),
       fileData: z.string().min(1).max(MAX_PAYLOAD_CHARS, {
-        message: "File data exceeds allowed upload size. Please keep files under 5 MB.",
+        message: "File data exceeds allowed upload size. Please keep files under 25 MB.",
       }),
     })
   )
