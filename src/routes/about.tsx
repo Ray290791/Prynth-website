@@ -120,7 +120,7 @@ export function AboutPage() {
               </span>
             </div>
             <span className="text-[10px] font-mono text-accent font-bold uppercase tracking-wider">
-              0.08mm Layer
+              Fine Resolution
             </span>
           </div>
         </aside>

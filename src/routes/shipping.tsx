@@ -116,7 +116,7 @@ export function ShippingPage() {
             </li>
             <li>
               <strong>Custom 3D Models &amp; Lithophanes:</strong> Take 3–5 days
-              for high-resolution 0.08mm slicing and verification.
+              for high-resolution multi-pass slicing and dimensional verification.
             </li>
             <li>
               <strong>Cash on Delivery (COD):</strong> Available across serviceable

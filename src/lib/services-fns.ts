@@ -194,7 +194,7 @@ export const DEFAULT_SERVICES: ServiceRecord[] = [
       {
         title: "Desktop Audio DAC Aluminium-Look Case",
         description: "Sleek desktop enclosure with rear RCA/optical port plate and front volume encoder cutout.",
-        specs: "Matte Charcoal PLA · 0.08mm fine finish",
+        specs: "Matte Charcoal PLA · Fine matte finish",
         badge: "Hi-Fi Audio",
       },
     ],

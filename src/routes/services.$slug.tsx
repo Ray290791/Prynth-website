@@ -270,8 +270,8 @@ function ServiceDetailPage() {
                   <span className="text-fg font-medium">{service.turnaround}</span>
                 </div>
                 <div className="pt-2 flex justify-between items-center">
-                  <span className="text-muted">Layer Tolerance</span>
-                  <span className="text-fg font-mono font-medium">±0.08mm</span>
+                  <span className="text-muted">Layer Resolution</span>
+                  <span className="text-fg font-mono font-medium">0.08mm – 0.28mm</span>
                 </div>
                 <div className="pt-2 flex justify-between items-center">
                   <span className="text-muted">Production Fleet</span>

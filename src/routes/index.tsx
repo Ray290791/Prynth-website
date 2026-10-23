@@ -261,10 +261,10 @@ function Home() {
             <div className="absolute bottom-4 left-0 flex items-center gap-2.5 rounded-xl border border-border bg-surface/95 px-3.5 py-2 shadow-md backdrop-blur-md">
               <div className="flex items-center gap-1.5 text-accent font-semibold text-xs">
                 <ShieldCheck className="size-4" strokeWidth={2} />
-                <span>0.08mm Precision</span>
+                <span>Fine Layer Detail</span>
               </div>
               <span className="h-3.5 w-px bg-border" />
-              <span className="text-xs text-muted">Bambu Fleet Verified</span>
+              <span className="text-xs text-muted">Bambu CoreXY Fleet</span>
             </div>
 
             {/* Brand mark badge */}
@@ -366,10 +366,10 @@ function Home() {
                   Interlocking Grid
                 </span>
                 <span className="text-xs font-semibold px-3 py-1 rounded-lg bg-surface-2 border border-border text-fg">
-                  Zero-Damage Mount
+                  Damage-Free Adhesive
                 </span>
                 <span className="text-xs font-semibold px-3 py-1 rounded-lg bg-surface-2 border border-border text-fg">
-                  5kg Tested Load
+                  Reinforced Rigidity
                 </span>
               </div>
               <div className="pt-3 flex flex-wrap items-center gap-4">

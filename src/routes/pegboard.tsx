@@ -38,7 +38,7 @@ export const Route = createFileRoute("/pegboard")({
       {
         name: "description",
         content:
-          "Transform your desk with the Prynth modular pegboard organizer. Precision 3D-printed interlocking grid system with zero-damage mounting and snap-lock accessories. Made in India.",
+          "Transform your desk with the Prynth modular pegboard organizer. Precision 3D-printed interlocking grid system with damage-free adhesive mounting and snap-lock accessories. Made in India.",
       },
       {
         name: "keywords",
@@ -49,7 +49,7 @@ export const Route = createFileRoute("/pegboard")({
       {
         property: "og:description",
         content:
-          "Precision 3D-printed modular interlocking grid organizer with zero-damage mounting and snap-lock accessories.",
+          "Precision 3D-printed modular interlocking grid organizer with damage-free adhesive mounting and snap-lock accessories.",
       },
       { property: "og:url", content: "https://prynth.in/pegboard" },
     ],
@@ -194,13 +194,13 @@ export function PegboardPage() {
   const MOUNTING_OPTIONS = [
     {
       id: "strips",
-      name: "Zero-Damage Adhesive",
-      detail: "Heavy-duty 3M command strips included. Perfect for rental apartments.",
+      name: "Damage-Free Adhesive Strips",
+      detail: "Heavy-duty 3M command strips included. Suitable for smooth painted walls & tiles in rental spaces.",
     },
     {
       id: "screws",
       name: "Wall Anchor Kit",
-      detail: "Includes drywall plugs & black countersunk screws for up to 5kg capacity.",
+      detail: "Includes drywall plugs & black countersunk screws for heavy-duty secure mounting.",
     },
     {
       id: "clamp",
@@ -364,13 +364,13 @@ export function PegboardPage() {
             </div>
             <div className="p-3 rounded-xl border border-border/70 bg-surface/40 text-center space-y-1">
               <ShieldCheck className="size-4 text-accent mx-auto" />
-              <span className="text-xs font-semibold text-fg block">5kg Tested Load</span>
-              <span className="text-[10px] text-muted block">Honeycomb ribs</span>
+              <span className="text-xs font-semibold text-fg block">Rigid Honeycomb</span>
+              <span className="text-[10px] text-muted block">Reinforced core</span>
             </div>
             <div className="p-3 rounded-xl border border-border/70 bg-surface/40 text-center space-y-1">
               <RotateCcw className="size-4 text-accent mx-auto" />
-              <span className="text-xs font-semibold text-fg block">7-Day Reprint</span>
-              <span className="text-[10px] text-muted block">Risk-free quality</span>
+              <span className="text-xs font-semibold text-fg block">Defect Guarantee</span>
+              <span className="text-[10px] text-muted block">7-day replacement</span>
             </div>
           </div>
         </div>
@@ -656,7 +656,7 @@ export function PegboardPage() {
             </div>
             <h3 className="text-sm font-semibold text-fg">Whisper-Firm Lock</h3>
             <p className="text-xs text-muted leading-relaxed">
-              Patented wedge-profile accessory lugs insert smoothly and click firm. Never wobbles or drops gear when unhooking.
+              Precision-engineered wedge-profile accessory lugs insert smoothly and click firm. Never wobbles or drops gear when unhooking.
             </p>
           </div>
 
@@ -674,9 +674,9 @@ export function PegboardPage() {
             <div className="size-9 rounded-xl bg-accent/15 text-accent flex items-center justify-center font-bold">
               <ShieldCheck className="size-4.5" />
             </div>
-            <h3 className="text-sm font-semibold text-fg">5kg Tested Load</h3>
+            <h3 className="text-sm font-semibold text-fg">Reinforced Honeycomb Structure</h3>
             <p className="text-xs text-muted leading-relaxed">
-              Internal honeycomb triangulation distributes weight across the entire panel, handling studio headphones and heavy tech.
+              Internal honeycomb triangulation distributes weight across the entire panel, securely supporting headphones, controllers, and desk tech.
             </p>
           </div>
         </div>
@@ -712,8 +712,8 @@ export function PegboardPage() {
               <span className="font-medium text-fg">Matte Impact-Modified PETG / PLA Pro</span>
             </div>
             <div className="py-2.5 flex justify-between">
-              <span className="text-muted">Thermal Deflection</span>
-              <span className="font-medium text-fg">Resistant up to 60°C (140°F)</span>
+              <span className="text-muted">Heat Resistance</span>
+              <span className="font-medium text-fg">Indoor ambient up to 55°C (130°F)</span>
             </div>
             <div className="py-2.5 flex justify-between">
               <span className="text-muted">Country of Origin</span>

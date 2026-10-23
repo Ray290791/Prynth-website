@@ -69,7 +69,7 @@ export const products: Product[] = [
     categories: ["desk", "home"],
     blurb: "Signature modular interlocking grid system. Complete kit includes tile, mounting hardware, and hooks. Individual starter tiles from ₹200 on the configurator.",
     description:
-      "The Modular Pegboard System transforms cluttered workstations into calm, intentional creative spaces. Engineered with high-strength interlocking tiles, precision beveled holes, and whisper-firm snap-lock accessories. Mount using zero-damage adhesive strips, desk edge clamps, or screws.",
+      "The Modular Pegboard System transforms cluttered workstations into calm, intentional creative spaces. Engineered with high-strength interlocking tiles, precision beveled holes, and whisper-firm snap-lock accessories. Mount using damage-free adhesive strips, desk edge clamps, or screws.",
     colors: ["charcoal", "bone", "stone", "teal"],
     size: "30 × 30 cm",
     sizes: ["Compact (20×20 cm)", "Studio (30×30 cm)", "Executive (40×40 cm)", "Dual Tile Duo"],

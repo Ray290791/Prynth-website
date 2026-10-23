@@ -93,7 +93,7 @@ export function ServicesTab() {
       turnaround: "2–4 days",
       starting_price: 399,
       deliverables: ["Production-ready STEP file", "High-detail STL/3MF print file"],
-      features: ["Design for Additive Manufacturing (DFAM)", "0.08mm tolerance fit check"],
+      features: ["Design for Additive Manufacturing (DFAM)", "Functional assembly fit check"],
       process_steps: [
         { step: "01", title: "Project Brief", description: "Review customer specs & sketches" },
         { step: "02", title: "Parametric CAD", description: "3D CAD modeling with tolerances" },
@@ -349,7 +349,7 @@ export function ServicesTab() {
                       .filter(Boolean),
                   })
                 }
-                placeholder="Design for Additive Manufacturing (DFAM)&#10;M2/M3 brass heat-set inserts&#10;0.08mm layer precision"
+                placeholder="Design for Additive Manufacturing (DFAM)&#10;M2/M3 brass heat-set inserts&#10;Fine layer resolution"
                 className="mt-1 font-mono text-xs"
               />
             </div>
