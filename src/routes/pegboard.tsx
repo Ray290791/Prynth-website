@@ -782,6 +782,9 @@ export function PegboardPage() {
               >
                 <button
                   type="button"
+                  id={`pegboard-faq-q-${idx}`}
+                  aria-expanded={isOpen}
+                  aria-controls={`pegboard-faq-a-${idx}`}
                   onClick={() => setOpenFaq(isOpen ? null : idx)}
                   className="w-full flex items-center justify-between p-4 sm:p-5 text-left text-sm font-semibold text-fg cursor-pointer hover:bg-surface-2/50"
                 >
@@ -791,13 +794,21 @@ export function PegboardPage() {
                       "size-4 text-muted transition-transform duration-200 shrink-0 ml-3",
                       isOpen && "rotate-180 text-accent"
                     )}
+                    aria-hidden="true"
                   />
                 </button>
-                {isOpen && (
-                  <div className="px-4 pb-4 sm:px-5 sm:pb-5 text-xs sm:text-sm text-muted leading-relaxed border-t border-border/50 pt-3">
-                    {faq.a}
-                  </div>
-                )}
+                <div
+                  id={`pegboard-faq-a-${idx}`}
+                  role="region"
+                  aria-labelledby={`pegboard-faq-q-${idx}`}
+                  hidden={!isOpen}
+                  className={cn(
+                    "px-4 pb-4 sm:px-5 sm:pb-5 text-xs sm:text-sm text-muted leading-relaxed border-t border-border/50 pt-3",
+                    !isOpen && "hidden"
+                  )}
+                >
+                  {faq.a}
+                </div>
               </div>
             );
           })}

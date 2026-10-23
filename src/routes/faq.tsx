@@ -4,6 +4,7 @@ import { getFaqs, type Faq } from "@/lib/faq-fns";
 import { HelpCircle, Search, ChevronDown, MessageSquare, ArrowRight } from "lucide-react";
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const rootRoute = getRouteApi("__root__");
 
@@ -146,6 +147,9 @@ export function FaqPage() {
               >
                 <button
                   type="button"
+                  id={`faq-q-${faq.id}`}
+                  aria-expanded={isOpen}
+                  aria-controls={`faq-a-${faq.id}`}
                   onClick={() => toggleOpen(faq.id)}
                   className="w-full flex items-center justify-between p-5 text-left cursor-pointer hover:bg-surface-2/40 transition-colors"
                 >
@@ -157,14 +161,21 @@ export function FaqPage() {
                       isOpen ? "rotate-180 text-accent" : ""
                     }`}
                   >
-                    <ChevronDown className="size-4" />
+                    <ChevronDown className="size-4" aria-hidden="true" />
                   </div>
                 </button>
-                {isOpen && (
-                  <div className="px-5 pb-5 pt-1 text-sm text-muted leading-relaxed border-t border-border/40 animate-in fade-in-50 duration-150">
-                    <p className="whitespace-pre-wrap">{faq.answer}</p>
-                  </div>
-                )}
+                <div
+                  id={`faq-a-${faq.id}`}
+                  role="region"
+                  aria-labelledby={`faq-q-${faq.id}`}
+                  hidden={!isOpen}
+                  className={cn(
+                    "px-5 pb-5 pt-1 text-sm text-muted leading-relaxed border-t border-border/40 animate-in fade-in-50 duration-150",
+                    !isOpen && "hidden"
+                  )}
+                >
+                  <p className="whitespace-pre-wrap">{faq.answer}</p>
+                </div>
               </div>
             );
           })}

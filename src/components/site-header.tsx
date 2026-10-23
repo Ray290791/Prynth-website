@@ -102,9 +102,10 @@ export function SiteHeader() {
             aria-label={count ? `Cart, ${count} items` : "Cart"}
             className="relative inline-flex size-9 sm:size-10 md:size-11 items-center justify-center rounded-xl text-fg transition-colors duration-150 hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 shrink-0"
           >
-            <ShoppingBag className="size-4.5 sm:size-5" strokeWidth={1.75} />
+            <ShoppingBag className="size-4.5 sm:size-5" strokeWidth={1.75} aria-hidden="true" />
+            <span className="sr-only">{count ? `Cart, ${count} items` : "Cart"}</span>
             {count > 0 ? (
-              <span className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 flex h-3.5 min-w-3.5 sm:h-4 sm:min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] sm:text-[10px] font-semibold text-ink tabular-nums">
+              <span className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 flex h-3.5 min-w-3.5 sm:h-4 sm:min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] sm:text-[10px] font-semibold text-ink tabular-nums" aria-hidden="true">
                 {count > 99 ? "99+" : count}
               </span>
             ) : null}
