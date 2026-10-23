@@ -5,7 +5,7 @@ import { LogoLink } from "@/components/logo";
 import { AuthModal } from "@/components/auth-modal";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { InlineSearch } from "@/components/inline-search";
-import { ServicesDropdown, HEADER_SERVICES } from "@/components/services-dropdown";
+import { ServicesDropdown, usePublicServices } from "@/components/services-dropdown";
 import { SignedIn, SignedOut, UserButton } from "@/lib/auth/gates";
 import { cartCount, useCart } from "@/lib/cart-store";
 import { useHydrated } from "@/lib/use-hydrated";
@@ -31,6 +31,7 @@ export function SiteHeader() {
   const count = hydrated ? cartCount(items) : 0;
   const [open, setOpen] = useState(false);
   const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
+  const services = usePublicServices();
 
   useEffect(() => {
     setOpen(false);
@@ -179,7 +180,7 @@ export function SiteHeader() {
 
               {mobileServicesOpen && (
                 <div className="mt-2 flex flex-col gap-1 border-t border-border/50 pt-2 pb-1 pl-1">
-                  {HEADER_SERVICES.map((srv) => (
+                  {services.map((srv) => (
                     <Link
                       key={srv.slug}
                       to="/services/$slug"
@@ -188,7 +189,7 @@ export function SiteHeader() {
                     >
                       <span>{srv.title}</span>
                       <span className="text-[11px] text-accent font-mono font-semibold">
-                        ₹{srv.startingPrice}+
+                        ₹{srv.starting_price}+
                       </span>
                     </Link>
                   ))}

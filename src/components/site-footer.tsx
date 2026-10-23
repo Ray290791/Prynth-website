@@ -14,14 +14,7 @@ const SHOP = [
   { to: "/cart", label: "Cart" },
 ] as const;
 
-const SERVICES = [
-  { to: "/services" as const, label: "All Engineering Services" },
-  { to: "/services/$slug" as const, params: { slug: "3d-modelling" }, label: "3D CAD Modelling" },
-  { to: "/services/$slug" as const, params: { slug: "electronics-enclosures" }, label: "Enclosure Design" },
-  { to: "/services/$slug" as const, params: { slug: "reverse-engineering" }, label: "Broken Part Replication" },
-  { to: "/services/$slug" as const, params: { slug: "rapid-prototyping" }, label: "Rapid Prototyping" },
-  { to: "/services/$slug" as const, params: { slug: "batch-manufacturing" }, label: "Small-Batch Runs" },
-] as const;
+import { usePublicServices } from "@/components/services-dropdown";
 
 const HELP = [
   { to: "/faq", label: "FAQ" },
@@ -34,6 +27,7 @@ const HELP = [
 
 export function SiteFooter() {
   const { settings } = rootRoute.useLoaderData();
+  const services = usePublicServices();
 
   return (
     <footer className="mt-auto border-t border-border bg-surface">
@@ -115,17 +109,20 @@ export function SiteFooter() {
               Services
             </p>
             <ul className="mt-3 space-y-2">
-              {SERVICES.map((l) => (
-                <li key={l.label}>
-                  {"params" in l ? (
-                    <Link to={l.to} params={l.params} className="text-sm text-muted hover:text-fg">
-                      {l.label}
-                    </Link>
-                  ) : (
-                    <Link to={l.to} className="text-sm text-muted hover:text-fg">
-                      {l.label}
-                    </Link>
-                  )}
+              <li>
+                <Link to="/services" className="text-sm text-muted hover:text-fg font-medium">
+                  All Engineering Services
+                </Link>
+              </li>
+              {services.map((srv) => (
+                <li key={srv.slug}>
+                  <Link
+                    to="/services/$slug"
+                    params={{ slug: srv.slug }}
+                    className="text-sm text-muted hover:text-fg"
+                  >
+                    {srv.title}
+                  </Link>
                 </li>
               ))}
             </ul>

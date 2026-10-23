@@ -1,5 +1,6 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useRouterState, getRouteApi } from "@tanstack/react-router";
 import { useState, useRef, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   ChevronDown,
   DraftingCompass,
@@ -10,9 +11,17 @@ import {
   ArrowRight,
   PenTool,
   Sparkles,
+  Printer,
+  Box,
+  Package,
+  ShieldCheck,
+  Settings,
+  Scale,
+  Hammer,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatINR } from "@/lib/format";
+import { getServicesPublic, type ServiceRecord } from "@/lib/services-fns";
 
 export interface HeaderServiceItem {
   slug: string;
@@ -23,6 +32,9 @@ export interface HeaderServiceItem {
   startingPrice: number;
 }
 
+/**
+ * Fallback list if DB is initializing or offline
+ */
 export const HEADER_SERVICES: HeaderServiceItem[] = [
   {
     slug: "3d-modelling",
@@ -48,39 +60,54 @@ export const HEADER_SERVICES: HeaderServiceItem[] = [
     badge: "Cost Saver",
     startingPrice: 349,
   },
-  {
-    slug: "rapid-prototyping",
-    title: "Rapid Prototyping",
-    tagline: "24–48hr turnaround on functional engineering fit checks",
-    icon: "Zap",
-    badge: "Express",
-    startingPrice: 299,
-  },
-  {
-    slug: "batch-manufacturing",
-    title: "Small-Batch Production",
-    tagline: "10 to 500+ units on Bambu Lab fleet without tooling dies",
-    icon: "Layers",
-    badge: "Low MOQ",
-    startingPrice: 999,
-  },
 ];
 
 export function getServiceIcon(iconName: string) {
-  switch (iconName) {
-    case "DraftingCompass":
+  switch (iconName?.toLowerCase()) {
+    case "draftingcompass":
       return DraftingCompass;
-    case "Cpu":
+    case "cpu":
       return Cpu;
-    case "Wrench":
+    case "wrench":
       return Wrench;
-    case "Zap":
+    case "zap":
       return Zap;
-    case "Layers":
+    case "layers":
       return Layers;
+    case "printer":
+      return Printer;
+    case "box":
+      return Box;
+    case "package":
+      return Package;
+    case "shieldcheck":
+      return ShieldCheck;
+    case "settings":
+      return Settings;
+    case "scale":
+      return Scale;
+    case "hammer":
+      return Hammer;
     default:
-      return PenTool;
+      return DraftingCompass;
   }
+}
+
+/**
+ * Hook to retrieve active services synced with the database & site settings
+ */
+export function usePublicServices(): ServiceRecord[] {
+  const rootRoute = getRouteApi("__root__");
+  const rootData = (rootRoute as any).useLoaderData?.() as { services?: ServiceRecord[] } | undefined;
+
+  const { data: services = [] } = useQuery({
+    queryKey: ["publicServices"],
+    queryFn: () => getServicesPublic(),
+    initialData: rootData?.services,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  return services;
 }
 
 export function ServicesDropdown() {
@@ -89,6 +116,8 @@ export function ServicesDropdown() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isServicesActive = pathname.startsWith("/services");
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const services = usePublicServices();
 
   const handleMouseEnter = () => {
     if (closeTimeoutRef.current) {
@@ -128,6 +157,23 @@ export function ServicesDropdown() {
       if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
     };
   }, []);
+
+  // If there are no active services in database, render a plain link
+  if (services.length === 0) {
+    return (
+      <Link
+        to="/services"
+        className={cn(
+          "rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150",
+          isServicesActive
+            ? "text-fg font-semibold"
+            : "text-muted hover:bg-surface-2 hover:text-fg"
+        )}
+      >
+        Services
+      </Link>
+    );
+  }
 
   return (
     <div
@@ -177,7 +223,7 @@ export function ServicesDropdown() {
             </div>
 
             <div className="flex flex-col gap-1 py-1.5">
-              {HEADER_SERVICES.map((srv) => {
+              {services.map((srv) => {
                 const IconComponent = getServiceIcon(srv.icon);
                 const isActive = pathname === `/services/${srv.slug}`;
                 return (
@@ -207,11 +253,11 @@ export function ServicesDropdown() {
                         )}
                       </div>
                       <p className="text-xs text-muted leading-tight mt-0.5 line-clamp-1">
-                        {srv.tagline}
+                        {srv.tagline || srv.short_desc}
                       </p>
                     </div>
                     <span className="shrink-0 text-[11px] font-medium text-subtle pt-1 tabular-nums">
-                      from {formatINR(srv.startingPrice)}
+                      from {formatINR(srv.starting_price)}
                     </span>
                   </Link>
                 );

@@ -30,9 +30,10 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { getServiceIcon } from "@/components/services-dropdown";
-import { Link } from "@tanstack/react-router";
+import { Link, useRouter } from "@tanstack/react-router";
 
 export function ServicesTab() {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [editingService, setEditingService] = useState<Partial<ServiceRecord> | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -46,6 +47,8 @@ export function ServicesTab() {
     mutationFn: (data: Partial<ServiceRecord>) => createServiceAdmin({ data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["adminServices"] });
+      queryClient.invalidateQueries({ queryKey: ["publicServices"] });
+      router.invalidate();
       toast.success("Service created successfully!");
       setIsCreating(false);
       setEditingService(null);
@@ -60,6 +63,8 @@ export function ServicesTab() {
       updateServiceAdmin({ data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["adminServices"] });
+      queryClient.invalidateQueries({ queryKey: ["publicServices"] });
+      router.invalidate();
       toast.success("Service updated successfully!");
       setEditingService(null);
     },
@@ -72,6 +77,8 @@ export function ServicesTab() {
     mutationFn: (id: string) => deleteServiceAdmin({ data: { id } }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["adminServices"] });
+      queryClient.invalidateQueries({ queryKey: ["publicServices"] });
+      router.invalidate();
       toast.success("Service deleted.");
     },
     onError: (err: any) => {

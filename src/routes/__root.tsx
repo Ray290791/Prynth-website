@@ -10,6 +10,7 @@ import { SiteShell } from "@/components/site-shell";
 import { ThemeProvider } from "@/lib/theme";
 import { Toaster } from "sonner";
 import { getSiteSettings } from "@/lib/settings-fns";
+import { getServicesPublic } from "@/lib/services-fns";
 import { CartSync } from "@/components/cart-sync";
 import { CookieConsent } from "@/components/cookie-consent";
 import appCss from "../styles.css?url";
@@ -101,8 +102,11 @@ const DEVTOOLS_DETERRENT = `
 
 export const Route = createRootRoute({
   loader: async () => {
-    const settings = await getSiteSettings();
-    return { settings };
+    const [settings, services] = await Promise.all([
+      getSiteSettings(),
+      getServicesPublic().catch(() => []),
+    ]);
+    return { settings, services };
   },
   head: () => ({
     meta: [

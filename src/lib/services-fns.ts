@@ -476,12 +476,11 @@ export const getServicesPublic = createServerFn({ method: "GET" }).handler(
   async (): Promise<ServiceRecord[]> => {
     try {
       const sql = await getSql();
-      const rows = await sql`
-        SELECT * FROM services
-        WHERE is_active = true
-        ORDER BY sort_order ASC, title ASC
-      `;
-      if (!rows || rows.length === 0) {
+
+      // Only auto-seed if the services table is completely empty (initial installation)
+      const countRows = await sql<{ count: string }>`SELECT count(*)::text as count FROM services`;
+      const totalCount = parseInt(countRows?.[0]?.count || "0", 10);
+      if (totalCount === 0) {
         try {
           for (const s of DEFAULT_SERVICES) {
             await sql`
@@ -504,9 +503,14 @@ export const getServicesPublic = createServerFn({ method: "GET" }).handler(
         } catch (seedErr) {
           console.warn("[services-fns] Could not auto-seed services table:", seedErr);
         }
-        return DEFAULT_SERVICES;
       }
-      return rows.map(parseServiceRow);
+
+      const rows = await sql`
+        SELECT * FROM services
+        WHERE is_active = true
+        ORDER BY sort_order ASC, title ASC
+      `;
+      return (rows || []).map(parseServiceRow);
     } catch (err) {
       console.warn("[services-fns] Failed to fetch services from DB, falling back to defaults:", err);
       return DEFAULT_SERVICES;
