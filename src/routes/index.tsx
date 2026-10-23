@@ -380,7 +380,7 @@ function Home() {
                   </Link>
                 </Button>
                 <span className="text-xs text-muted">
-                  From <strong className="text-fg font-bold">₹{settings.pegboard_price_compact || 699}</strong>
+                  Starter tile from <strong className="text-fg font-bold">₹{settings.pegboard_price_compact || 200}</strong> · Complete kit ₹699
                 </span>
               </div>
             </div>

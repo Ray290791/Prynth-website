@@ -13,7 +13,7 @@ export const Route = createFileRoute("/shipping")({
       {
         name: "description",
         content:
-          "Fast, insured shipping across India. Standard 3–5 day delivery, Express courier options, and free shipping over ₹799.",
+          "Fast, insured shipping across India. Standard 3–5 day delivery, Express courier options, and free shipping over ₹349.",
       },
     ],
   }),
@@ -24,7 +24,7 @@ export function ShippingPage() {
 
   const standardFee = Number(settings.standard_shipping_fee || 49);
   const expressFee = Number(settings.express_shipping_fee || 129);
-  const freeThreshold = Number(settings.free_shipping_threshold || 799);
+  const freeThreshold = Number(settings.free_shipping_threshold || 349);
   const codFee = Number(settings.cod_fee || 40);
 
   const couriers = [

@@ -213,7 +213,7 @@ export function PegboardPage() {
   const [selectedSizeId, setSelectedSizeId] = useState<string | null>(null);
   const [selectedColorId, setSelectedColorId] = useState("charcoal");
   const [selectedMounting, setSelectedMounting] = useState("strips");
-  const [selectedAddons, setSelectedAddons] = useState<string[]>(["tech"]);
+  const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
 
   // Calculate pricing & active preset
   const currentSize = useMemo(() => {
@@ -360,7 +360,7 @@ export function PegboardPage() {
             <div className="p-3 rounded-xl border border-border/70 bg-surface/40 text-center space-y-1">
               <Truck className="size-4 text-accent mx-auto" />
               <span className="text-xs font-semibold text-fg block">Free Express</span>
-              <span className="text-[10px] text-muted block">On orders over ₹799</span>
+              <span className="text-[10px] text-muted block">On orders over ₹349</span>
             </div>
             <div className="p-3 rounded-xl border border-border/70 bg-surface/40 text-center space-y-1">
               <ShieldCheck className="size-4 text-accent mx-auto" />
@@ -392,11 +392,21 @@ export function PegboardPage() {
 
           {/* Live Price Presentation */}
           <div className="flex flex-wrap items-baseline justify-between gap-3 pb-3 border-b border-border/60">
-            <div className="flex items-baseline gap-2">
-              <span className="font-display text-3xl sm:text-4xl font-bold text-fg tracking-tight">
-                {formatINR(totalPrice)}
-              </span>
-              <span className="text-xs text-muted font-medium">tax incl.</span>
+            <div>
+              <div className="flex items-baseline gap-2">
+                <span className="font-display text-3xl sm:text-4xl font-bold text-fg tracking-tight">
+                  {formatINR(totalPrice)}
+                </span>
+                <span className="text-xs text-muted font-medium">tax incl.</span>
+              </div>
+              <div className="text-[11px] text-muted mt-0.5">
+                <span>Starter tile: {formatINR(currentSize.price)}</span>
+                {addonsTotal > 0 ? (
+                  <span className="text-accent font-medium"> + Add-ons: {formatINR(addonsTotal)}</span>
+                ) : (
+                  <span> · Standard tile only</span>
+                )}
+              </div>
             </div>
             <span className="text-xs text-muted flex items-center gap-1.5 font-medium bg-surface-2/60 px-3 py-1.5 rounded-lg border border-border/50">
               <Check className="size-3.5 text-accent shrink-0" />

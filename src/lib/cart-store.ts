@@ -129,7 +129,7 @@ export function cartSubtotal(items: CartItem[]) {
   return items.reduce((sum, i) => sum + i.unitPrice * i.qty, 0);
 }
 
-export const FREE_SHIPPING_AT = 799;
+export const FREE_SHIPPING_AT = 349;
 export const STANDARD_SHIPPING = 49;
 export const EXPRESS_SHIPPING = 129;
 export const COD_FEE = 40;

@@ -57,7 +57,7 @@ export type Product = {
 export const products: Product[] = [
   {
     slug: "modular-pegboard",
-    name: "Modular Desk Pegboard System",
+    name: "Modular Desk Pegboard System (Complete Kit)",
     price: 699,
     image: "/products/modular-pegboard.jpg",
     gallery: [
@@ -67,7 +67,7 @@ export const products: Product[] = [
     ],
     category: "desk",
     categories: ["desk", "home"],
-    blurb: "Our signature precision 3D-printed modular interlocking grid organizer for desks and walls.",
+    blurb: "Signature modular interlocking grid system. Complete kit includes tile, mounting hardware, and hooks. Individual starter tiles from ₹200 on the configurator.",
     description:
       "The Modular Pegboard System transforms cluttered workstations into calm, intentional creative spaces. Engineered with high-strength interlocking tiles, precision beveled holes, and whisper-firm snap-lock accessories. Mount using zero-damage adhesive strips, desk edge clamps, or screws.",
     colors: ["charcoal", "bone", "stone", "teal"],
