@@ -1,134 +1,142 @@
-# Strategic Competitive Analysis & Feature Recommendations — prynth!
+# Feature Recommendations & Product Roadmap — prynth!
 
-**Document Version:** 1.0  
-**Author:** Senior Full-Stack Engineer, Security Auditor & UX/SEO Specialist  
+**Document Version:** 2.0  
 **Target:** prynth! (`https://prynth.in`)  
-**Date:** October 2026  
+**Scope:** Actionable feature additions, conversion optimizations, and growth initiatives for the business owner.
 
 ---
 
-## 1. Executive Summary & Market Positioning
+## At a Glance: Feature Recommendations Matrix
 
-**prynth!** occupies a unique, high-potential niche in the Indian hardware and e-commerce ecosystem: **a boutique design studio combining premium consumer 3D printed lifestyle products with an instant-quote rapid prototyping and CAD engineering bureau**.
-
-Most competitors in India divide strictly into two opposing extremes:
-1. **Industrial B2B Bureaus** (*Imaginarium, Think3D, 3DPrintWorld*): Heavy enterprise focus, complex RFQ forms, minimum order values, and industrial SLA/SLS technologies, but intimidating and inaccessible to consumers, designers, and early-stage founders.
-2. **Electronics Component Retailers** (*Robu.in, Tanotis, Zbotic*): Focus on low-cost FDM prints as an add-on service for hobbyists and students, with utilitarian UI, manual email quotes, and basic aesthetic presentation.
-3. **Global Platforms** (*Craftcloud, Xometry, Shapeways*): Highly sophisticated instant slicers, but priced in USD/EUR with prohibitive international customs duties, high shipping fees, and multi-week delivery delays to Indian addresses.
-
-**The Opportunity for prynth!:**  
-By combining the aesthetic polish and D2C conversion velocity of high-end lifestyle brands (like *Grovemade*, *Ugmonk*, or *Keycult*) with the instant slicing and engineering transparency of Bambu Lab 3D printing fleets, prynth! can become the definitive modern 3D manufacturing brand in India.
-
----
-
-## 2. Comprehensive Competitive Matrix
-
-| Criterion | prynth! (Current) | Indian Competitors (Robu, Think3D, Imaginarium) | Global D2C / Slicers (Craftcloud, Xometry, Shapeways) | Best Practice Standard |
-| :--- | :--- | :--- | :--- | :--- |
-| **Information Architecture** | Clean, minimalist, modern dark/light mode with sticky navigation and custom studio. | Dense, utilitarian catalog layouts or corporate enterprise navigation. | Structured around instant quoting upload zones, material selectors, and B2B CAD portals. | Clear split between **Ready-to-Ship Products** and **Custom Manufacturing Services**. |
-| **Product Detail Pages** | High-aesthetic photography, color selectors, itemized price breakdown, ARIA-accessible accordions. | Basic spec tables, few lifestyle images, functional description only. | Interactive 3D WebGL viewers, real customer photos, dimensional blueprints, weight specs. | 3D WebGL model inspection, dimensional drawings, verified buyer photo reviews. |
-| **Search & Filtering** | Direct category links; basic catalog view without faceted search. | Search bar with category filters, spec checkboxes (material, dimensions, price). | High-powered faceted search by technology (FDM/SLA), material properties, and lead time. | Instant search with fuzzy matching, material tags, and price sorting. |
-| **Instant-Quote UX** | In-browser Three.js volume calculation for STL/3MF/OBJ; interactive Bambu build plate preview; orientation recommendations. | Most require manual RFQ email upload or basic file upload with delayed manual quote (24h). | Advanced automated mesh repair, cloud slicing, wall-thickness heatmaps, and quantity breaks. | In-browser instant mesh preview + instant volume estimation + one-click cart addition. |
-| **Trust Signals & Social Proof** | High-precision fleet claims, material guides, clear technical specs. (Reviews table present in DB). | Client logos (DRDO, ISRO, IITs), ISO certifications, physical facility photos. | Verified Trustpilot reviews, material test certificates, print quality guarantees. | Real customer unboxing photos, studio behind-the-scenes video, verified buyer reviews. |
-| **Payment Options** | Razorpay integration (UPI, Credit/Debit cards, Net Banking). | UPI, Net Banking, Razorpay/Cashfree, NEFT/RTGS for B2B invoices. | Credit Cards, PayPal, Stripe, Purchase Orders (Net 30 terms). | Seamless UPI Intent (GPay, PhonePe, Paytm), Cards, Net Banking, and B2B GST Invoicing. |
-| **Order Tracking & Accounts** | Session/email tracking, clean order status page, database-backed order history. | Account dashboards with past order downloads, invoice downloads, courier tracking links. | Full manufacturing lifecycle tracking (Queued -> Slicing -> Printing -> Post-Processing -> Shipped). | Visual step-by-step progress tracker with integrated courier API tracking (Delhivery/Shiprocket). |
-| **Shipping & Returns Clarity** | Unified ₹349 free-shipping threshold; clear policy on 3D printed custom tolerances and reprints. | Weight-based shipping rates; strict no-return policy on custom manufacturing. | Clear transit time estimates, express dispatch tiers, reprint guarantees on defects. | Live pin-code delivery date estimator, tracked courier dispatch, transparent damaged-in-transit policy. |
-| **GST Invoicing & B2B Compliance** | B2C receipts with order number and tax breakdown. | Dedicated GSTIN input, automated B2B tax invoices with HSN/SAC codes (9988 / 8477). | Automated VAT / Tax ID validation, corporate invoicing. | Auto-validated GSTIN field at checkout with automated PDF B2B tax invoices. |
-| **Content & SEO Hub** | Comprehensive Materials Guide (`/materials`), Services deep-dives (`/services/*`), rich JSON-LD. | Technical blogs, filament comparison tables, 3D printing tutorials for engineers. | Massive knowledge bases, material selection wizard, case studies, DFM guides. | Visual filament comparison matrix, design-for-3D-printing (DFM) engineering guides. |
-| **Analytics & Observability** | Server logging, error boundary reporting, rate limiters. | Google Analytics 4, Meta Pixel, heatmaps (Hotjar). | Full funnel product analytics (PostHog / Mixpanel), event tracking at every slicer step. | Privacy-first analytics (PostHog / Umami) tracking quote drop-off, material choices, and funnel steps. |
-| **WhatsApp Direct Support** | Click-to-chat WhatsApp link (wa.me). | WhatsApp business chat widgets, dedicated phone support, ticketing systems. | Live chat (Intercom/Zendesk), email ticketing, phone for enterprise. | WhatsApp Floating Widget with pre-filled cart/quote context and automated shipping updates. |
-| **Mobile Experience** | Fully responsive at 375px, dark/light theme, zero horizontal scroll, touch-friendly stepper. | Often desktop-first with cramped tables and non-responsive CAD viewers on mobile. | Responsive mobile quote forms, but 3D viewers can be heavy on low-spec phones. | Lightweight mobile 3D preview, bottom action sheet for cart, sticky "Add to Cart" bar. |
+| # | Recommended Feature | Target Location | Business Impact | Effort Level |
+| :---: | :--- | :--- | :--- | :---: |
+| **1** | **B2B GST Invoicing & Tax Input Credit** | Checkout Page (`/checkout`) | High (Unlocks ₹5,000–₹50,000 corporate orders) | 1–2 Days |
+| **2** | **Dynamic WhatsApp Support with Pre-Filled Chats** | Site-wide button & Product Pages | High (+25% inbound custom quote leads) | 1 Day |
+| **3** | **Pincode Delivery Date Estimator** | Product Detail Pages & Cart Drawer | Medium-High (+12% checkout conversion) | 2 Days |
+| **4** | **Sticky Mobile "Add to Cart" Bar** | Mobile PDP & Pegboard Configurator | Medium (+10% mobile checkout starts) | 1 Day |
+| **5** | **Customer Print & Quality Photo Gallery** | New `/gallery` route & Homepage | High (Overcomes "plastic looks cheap" doubt) | 2–3 Days |
+| **6** | **Tiered Volume Discounts (Batch Pricing)** | Product Pages & Custom Slicer | High (+30% Average Order Value) | 2 Days |
+| **7** | **Downloadable PDF Quotation / Proforma Invoice** | Custom Studio (`/custom`) | High (Enables corporate purchase orders) | 3 Days |
+| **8** | **Automated Courier API Tracking (Shiprocket/Delhivery)** | Order Tracking (`/order/$id`) & Admin | High (Eliminates manual shipping updates) | 1 Week |
+| **9** | **Automated WhatsApp Order Updates** | Backend Webhooks (Interakt / Wati) | High (Reduces "Where is my order?" support) | 3–4 Days |
+| **10** | **Multi-File Assembly Upload Workspace** | Custom Studio (`/custom`) | High (Attracts complex engineering projects) | 2 Weeks |
+| **11** | **Live Print Farm Status & Camera Feed** | About (`/about`) & Tracking Page | Very High (Viral brand moat on social media) | 2 Weeks |
 
 ---
 
-## 3. Prioritized Strategic Roadmap
+## Detailed Recommendations by Priority
 
-### Tier 1: Quick Wins (Days 1–5 · Low Effort · High Conversion & Trust Impact)
+### Tier 1: Quick Wins (Days 1–5 · Low Effort · Immediate Revenue & Trust Gains)
 
-#### 1.1 WhatsApp Quick-Action with Dynamic Quote Context
-- **Reasoning:** In India, WhatsApp is the primary communication channel for custom fabrication, order clarification, and B2B trust. A generic `wa.me` link forces the customer to manually re-type what they want.
-- **Implementation:** When clicked from `/custom`, pre-fill the WhatsApp message with: *"Hi Prynth! I'm looking at printing a [Material] model (~[Volume] cm³) on your Bambu fleet. Here are my specs..."* When clicked from a product page, pre-fill with the product name and chosen color.
-- **Expected Impact:** +20% to +30% increase in inbound custom design leads; reduces friction for non-standard requests.
+#### 1. B2B GST Invoicing at Checkout
+- **What it is:** Add an optional checkbox at checkout: *"Purchasing for a registered business? Add GSTIN for 18% tax credit"*. When checked, the customer enters their 15-character GST number and Legal Entity Name.
+- **Where it goes:** [`/checkout`](file:///c:/Users/raybe/Documents/Prynth!/Prynth!%20Website/src/routes/checkout.tsx) in the customer information step.
+- **Why it matters:** Indian startups, design studios, colleges, and engineering companies cannot expense business purchases without a valid GST tax invoice. Without this field, corporate buyers abandon their cart and order elsewhere.
+- **What changes:**
+  - Save `gstin` and `company_name` with the order record in PostgreSQL.
+  - Automatically display the GSTIN and 18% GST breakdown on order receipts and email invoices.
 
-#### 1.2 B2B GSTIN Field on Checkout with Automated Tax Invoicing
-- **Reasoning:** Indian engineering startups, design studios, college labs, and corporate buyers need input tax credit (18% GST). If a site cannot capture GSTIN, corporate cards will not be used.
-- **Implementation:** Add an optional checkbox: *"I am purchasing for a registered business (Claim GST Input Credit)"*. When checked, expose `GSTIN` and `Legal Business Name` fields. Validate the 15-character GST format (`^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$`). Include the GSTIN on order confirmations and invoice emails.
-- **Expected Impact:** Unlocks B2B order values (₹5,000 – ₹50,000+) from hardware startups, universities, and tech offices.
+---
 
-#### 1.3 Pincode Delivery Date Estimator (e.g. "Delivering to 400001 by Friday")
-- **Reasoning:** Indian e-commerce customers expect instant delivery date certainty before adding items to cart.
-- **Implementation:** Add a lightweight 6-digit pincode checker on product pages. Map the first 2 digits of the pincode to standard transit zones from Mumbai (e.g., Mumbai/Pune: 1–2 days; Metro cities: 2–3 days; Rest of India: 4–5 days).
-- **Expected Impact:** +10% to +15% conversion lift on ready-made products by removing shipping time ambiguity.
+#### 2. Dynamic WhatsApp Button with Context Pre-Filling
+- **What it is:** Upgrade the site-wide WhatsApp link so that clicking it automatically opens a chat with a pre-written message based on what page the user is currently viewing:
+  - On a product page: *"Hi Prynth! I'm interested in the [Catch Bowl in Matte Bone]. Do you have this ready to ship?"*
+  - On the Custom Studio: *"Hi Prynth! I'm looking at 3D printing a [PETG] part (~[45] cm³). Can I share the model for a quick feasibility check?"*
+  - On the Pegboard page: *"Hi Prynth! I need a custom pegboard setup for my desk (size: [30x30 cm]). How many tiles do you recommend?"*
+- **Where it goes:** Floating button on all pages, plus a *"Chat on WhatsApp"* button on product pages and `/custom`.
+- **Why it matters:** In India, WhatsApp is the preferred shopping and consultation channel. Pre-filling the message removes typing friction and turns hesitant visitors into warm sales conversations.
 
-#### 1.4 Floating Mobile Quick-Action / Sticky Bottom Add-to-Cart
-- **Reasoning:** On mobile screens, once a customer scrolls past product option selectors or reads the pegboard specs, the "Add to Cart" button scrolls out of view.
-- **Implementation:** Implement a sleek, backdrop-blur sticky bottom bar on mobile (`sm:hidden`) displaying the current price, selected variant, and an "Add to Cart" button that appears as soon as the main hero button scrolls off screen.
-- **Expected Impact:** Eliminates reverse-scrolling friction; boosts mobile checkout starts by 8–12%.
+---
+
+#### 3. Pincode Delivery Date Estimator
+- **What it is:** A simple input box on product pages: *"Enter PIN Code"* with a *"Check"* button. Once entered, it immediately displays the estimated delivery date:
+  - E.g., `400001` (Mumbai) -> *"Delivering by Tomorrow (1–2 days)"*
+  - E.g., `560001` (Bengaluru) / `110001` (Delhi) -> *"Delivering in 2–3 days"*
+  - E.g., Rest of India -> *"Delivering in 3–5 days via Express Air"*
+- **Where it goes:** Under the "Add to Cart" button on [`/shop/$slug`](file:///c:/Users/raybe/Documents/Prynth!/Prynth!%20Website/src/routes/shop.$slug.tsx) and [`/pegboard`](file:///c:/Users/raybe/Documents/Prynth!/Prynth!%20Website/src/routes/pegboard.tsx).
+- **Why it matters:** Delivery date uncertainty is one of the top reasons shoppers hesitate to buy. Displaying clear timelines from your Mumbai hub gives customers confidence.
+
+---
+
+#### 4. Sticky Mobile "Add to Cart" Bar
+- **What it is:** On mobile devices, when a customer scrolls down past the main product photos and option selectors, a compact sticky bar slides up from the bottom of the screen showing:
+  - Small product thumbnail + Title
+  - Selected variant / price (e.g. *"₹499"*)
+  - A bright *"Add to Cart"* button
+- **Where it goes:** Mobile viewports (`< 640px`) on product detail pages and the pegboard configurator.
+- **Why it matters:** On long mobile pages, customers have to scroll all the way back up to add the item to cart once they finish reading specs. A sticky bottom bar eliminates that friction and lifts mobile checkout rates by 8–12%.
 
 ---
 
 ### Tier 2: Medium Effort (Weeks 2–4 · Moderate Effort · Differentiating Advantages)
 
-#### 2.1 Interactive Customer Print Gallery & "Wall of Love"
-- **Reasoning:** 3D printing is fundamentally tactile. Customers fear receiving rough layer lines or flimsy plastic. Seeing high-resolution photos of real prints produced on Prynth's Bambu Lab fleet builds overwhelming trust.
-- **Implementation:** Build a dedicated `/gallery` page and a curated Instagram feed section showcasing functional prototypes, desk accessories, and custom lithophanes with material tags (e.g. *"Printed in Matte Charcoal PLA at 0.12mm layer height"*).
-- **Expected Impact:** Significant trust uplift; directly addresses the #1 hesitation of first-time 3D printing buyers.
+#### 5. Real Customer Print & Quality Photo Gallery
+- **What it is:** A dedicated visual gallery showing real, unedited photographs of 3D prints produced on Prynth's Bambu Lab printers:
+  - Macro shots of layer lines (showing fine surface quality).
+  - Customer desk setups featuring the Modular Pegboard, Catch Bowl, and Desk Tray.
+  - Functional engineering enclosures, mechanical prototypes, and lithophane lamps lit up in dark rooms.
+- **Where it goes:** A new `/gallery` route linked in the main header, plus a "Real Customer Prints" section on the homepage and product pages.
+- **Why it matters:** First-time 3D printing buyers are afraid of receiving flimsy, rough plastic. High-resolution photos of real prints prove production quality and destroy purchase skepticism.
 
-#### 2.2 Instant Multi-Quantity Tier Pricing (Volume Breaks)
-- **Reasoning:** Batch manufacturing customers (e.g. printing 10, 50, or 100 units of an enclosure or event giveaway) expect automated volume discounts without having to email back and forth.
-- **Implementation:** Expose an interactive tiered discount table on both product pages and the custom quote tool:
+---
+
+#### 6. Tiered Volume Discounts (Batch Pricing)
+- **What it is:** An automatic tiered discount table displayed on product cards and in the custom slicer:
   - 1–4 units: Base price
-  - 5–9 units: 10% discount
-  - 10–24 units: 18% discount
-  - 25+ units: 25% discount
-  Dynamically update the unit price and show total savings as the quantity stepper increases.
-- **Expected Impact:** Drives average order value (AOV) higher by incentivizing customers to order in batches.
-
-#### 2.3 Automated PDF Quote & Proforma Generator
-- **Reasoning:** Hardware engineers and corporate employees often need a formal PDF quotation to submit to finance or procurement managers before paying.
-- **Implementation:** Add a "Download Formal PDF Quote" button on `/custom` that renders a branded Prynth proforma invoice (with quote ID, part dimensions, material, quantity, lead time, and Mumbai GST details) valid for 14 days.
-- **Expected Impact:** Captures corporate and institutional accounts that cannot pay via immediate personal credit card or UPI.
-
-#### 2.4 Product Faceted Filtering & Search
-- **Reasoning:** As the product catalog grows beyond the initial items, customers need to filter by category (Desk Setup, Home & Living, Organization, Tech Accessories), material (PLA, PETG), and color palette.
-- **Implementation:** Add a clean, instant client-side search bar and tag filter pills on `/shop`.
+  - 5–9 units: **10% OFF**
+  - 10–24 units: **18% OFF**
+  - 25+ units: **25% OFF**
+  When the quantity counter increases, the unit price dynamically drops, and a green badge shows: *"You're saving ₹XXX!"*
+- **Where it goes:** Quantity selector on product pages, `/custom`, and the cart drawer.
+- **Why it matters:** Incentivizes corporate gifting orders, startup production batches, and multi-piece desk sets, substantially increasing Average Order Value (AOV).
 
 ---
 
-### Tier 3: Bigger Investments (Month 2+ · High Effort · Strategic Moats)
-
-#### 3.1 Multi-Part Assembly Project Slicer
-- **Reasoning:** Complex prototyping projects (e.g. electronics enclosures with lids, multi-part drones, robotics kits) consist of 5–15 individual STL/3MF files with different colors and materials.
-- **Implementation:** Expand the `/custom` upload flow into a full Project Workspace:
-  - Drag-and-drop 10+ files at once.
-  - Per-part material and color selector.
-  - Consolidated project pricing with combined build-plate packing efficiency discounts.
-- **Expected Impact:** Positions Prynth as a serious engineering manufacturing partner capable of handling complete assemblies.
-
-#### 3.2 Real-Time Automated Print Farm Status & Video Feed
-- **Reasoning:** The ultimate wow-factor and trust signal for a 3D printing studio is transparency. Bambu Lab printers have onboard HD cameras and MQTT/API telemetry.
-- **Implementation:** Build a "Farm Live Status" widget showing active printers, filament types loaded, and optional live snapshots or timelapse videos for customers who ordered custom prints.
-- **Expected Impact:** Unmatched brand differentiation; virality on social media (X, Instagram, LinkedIn); customers sharing timelapses of their parts being printed.
-
-#### 3.3 Automated Courier API Integration (Shiprocket / Delhivery)
-- **Reasoning:** Manual courier booking, label generation, and tracking number messaging becomes a bottleneck as daily order volumes scale past 10–20 orders.
-- **Implementation:** Integrate Shiprocket or Delhivery REST APIs to automatically generate shipping labels (AWB) upon order confirmation, schedule pickups from the Mumbai studio, and send automated tracking webhooks to customers via SMS and WhatsApp.
-- **Expected Impact:** Eliminates 90% of order fulfillment manual labor; provides enterprise-grade tracking visibility.
+#### 7. Downloadable PDF Quotation / Proforma Invoice
+- **What it is:** A *"Download Official PDF Quote"* button on the Custom Studio page. When clicked, it instantly generates a formal PDF document containing:
+  - Branded Prynth header & Mumbai studio address
+  - Unique Quote ID & 14-day price lock validity
+  - Model dimensions, estimated volume, material, color, and layer profile
+  - Complete price breakdown with 18% GST and bank payment details (NEFT/RTGS/UPI)
+- **Where it goes:** [`/custom`](file:///c:/Users/raybe/Documents/Prynth!/Prynth!%20Website/src/routes/custom.tsx) quote summary panel.
+- **Why it matters:** Engineers, university students, and corporate employees must submit a formal quotation to their accounts or procurement department before getting budget approval. This captures high-value B2B orders that cannot pay via immediate personal credit card.
 
 ---
 
-## 4. Summary Matrix of Recommended Actions
+### Tier 3: Strategic Investments (Month 2+ · High Effort · Industry Leadership Moats)
 
-| Priority | Feature / Addition | Target Flow | Est. Effort | Expected Impact |
-| :---: | :--- | :--- | :---: | :--- |
-| **P1** | **Dynamic WhatsApp Lead Action** | Custom Studio & Products | 1 day | High (+25% inbound leads) |
-| **P1** | **B2B GSTIN Collection & Invoicing** | Checkout Flow | 2 days | High (Unlocks corporate orders) |
-| **P1** | **Pincode Delivery Estimator** | Product Detail & Cart | 2 days | Medium-High (+12% conversion) |
-| **P1** | **Sticky Mobile Bottom Action Bar** | Mobile PDP & Configurator | 1 day | Medium (+10% mobile checkout) |
-| **P2** | **Customer Print & Quality Gallery** | `/gallery` & Product Pages | 3 days | High (Overcomes quality hesitation) |
-| **P2** | **Dynamic Volume Break Tables** | PDP & Custom Slicer | 3 days | High (+30% Average Order Value) |
-| **P2** | **Automated PDF Quote Generator** | Custom Slicer | 4 days | High (Captures B2B purchasing) |
-| **P2** | **Shop Search & Tag Filtering** | `/shop` Catalog | 2 days | Medium (Improves catalog navigation) |
-| **P3** | **Multi-Part Assembly Workspace** | Custom Studio | 2 weeks | High (Engineering market leadership) |
-| **P3** | **Live Print Farm Telemetry / Timelapses** | About & Order Tracking | 2 weeks | Very High (Brand viral moat) |
-| **P3** | **Automated Courier API Fulfillment** | Admin & Shipping Engine | 1 week | High (Operational scaling) |
+#### 8. Automated Courier Shipping API (Shiprocket / Delhivery)
+- **What it is:** Connect the backend directly to Shiprocket or Delhivery logistics APIs:
+  - When an order is marked "Ready to Ship" in the admin dashboard, the system automatically books the courier, generates the shipping label (AWB), and schedules pickup from the Mumbai studio.
+  - Automatically updates the order tracking page with live courier checkpoints (e.g. *"Picked up in Mumbai" -> "In transit to Pune" -> "Out for delivery"*).
+- **Where it goes:** Order management backend and customer tracking page [`/order/$id`](file:///c:/Users/raybe/Documents/Prynth!/Prynth!%20Website/src/routes/order.$id.tsx).
+- **Why it matters:** Saves hours of manual courier booking and copying tracking numbers into emails, enabling seamless scaling as daily order volume grows.
+
+---
+
+#### 9. Automated WhatsApp Order Notifications
+- **What it is:** Integrate a WhatsApp Business API (via Interakt, Wati, or Gupshup) to automatically send short transactional updates:
+  - *Order Confirmed:* "Hi [Name]! We received your order #PRY-1042. Printing starts shortly!"
+  - *Print Completed:* "Your custom 3D print has cleared inspection and is being packaged."
+  - *Shipped:* "Your package is on the way via Bluedart/Delhivery! Track here: [Link]"
+- **Where it goes:** Automated background webhook triggered on order status changes.
+- **Why it matters:** In India, WhatsApp messages have a 98% open rate compared to under 20% for email. Customers stay informed and support requests drop significantly.
+
+---
+
+#### 10. Multi-File Project Workspace for Custom 3D Printing
+- **What it is:** Expand the custom slicer to allow users to drag-and-drop 10+ STL/3MF files simultaneously (e.g. an electronics enclosure consisting of top shell, bottom base, battery door, and buttons):
+  - Shows an assembly tree with individual parts.
+  - Allows assigning different colors or materials to each part (e.g., ASA for the outer shell, PETG for the internal clips).
+  - Offers a project-level discount for multi-part printing on the same build plate.
+- **Where it goes:** [`/custom`](file:///c:/Users/raybe/Documents/Prynth!/Prynth!%20Website/src/routes/custom.tsx).
+- **Why it matters:** Hardware startups and makers rarely print one isolated file. A multi-part workspace makes Prynth the premier engineering partner in India.
+
+---
+
+#### 11. Live Print Farm Status & Camera Feed
+- **What it is:** A dynamic dashboard showing live studio activity:
+  - "Studio Farm Status: 6/8 CoreXY Printers Active · Current Materials: Matte Charcoal, Forest Green, Translucent Clear"
+  - Optional: A customer portal feature where users with active print orders can view a live camera snapshot or automated timelapse of their part being 3D printed.
+- **Where it goes:** [`/about`](file:///c:/Users/raybe/Documents/Prynth!/Prynth!%20Website/src/routes/about.tsx) and [`/order/$id`](file:///c:/Users/raybe/Documents/Prynth!/Prynth!%20Website/src/routes/order.$id.tsx).
+- **Why it matters:** Transparency is the ultimate trust builder and marketing tool. Customers regularly share timelapses of their parts on social media (X, Instagram, LinkedIn), driving organic viral reach.
