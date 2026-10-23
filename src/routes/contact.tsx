@@ -30,18 +30,18 @@ export const Route = createFileRoute("/contact")({
       { rel: "canonical", href: "https://prynth.in/contact" },
     ],
     meta: [
-      { title: "Contact Prynth — 3D Printing Studio Bengaluru, India | Prynth" },
+      { title: "Contact Prynth — 3D Printing Studio Mumbai, India | Prynth" },
       {
         name: "description",
         content:
-          "Have questions about custom 3D printing, CAD design, or order tracking? Contact the Prynth studio team in Bengaluru. Fast response by email, phone, or message.",
+          "Have questions about custom 3D printing, CAD design, or order tracking? Contact the Prynth studio team in Mumbai. Fast response by email, phone, or message.",
       },
       {
         name: "keywords",
         content:
-          "contact prynth, 3d printing bangalore contact, 3d print studio customer support india",
+          "contact prynth, 3d printing mumbai contact, 3d print studio customer support india",
       },
-      { property: "og:title", content: "Contact Prynth — 3D Printing Studio Bengaluru, India" },
+      { property: "og:title", content: "Contact Prynth — 3D Printing Studio Mumbai, India" },
       {
         property: "og:description",
         content:
@@ -62,7 +62,7 @@ export function ContactPage() {
   const contactEmail = settings.contact_email || settings.email || "hello@prynth.in";
   const contactPhone = settings.contact_phone || "+91 98765 43210";
   const contactWhatsApp = settings.contact_whatsapp || contactPhone;
-  const contactAddress = settings.contact_address || "Bengaluru, Karnataka, India";
+  const contactAddress = settings.contact_address || "Mumbai, Maharashtra 400001, India";
   const businessHours =
     settings.contact_hours || "Monday – Saturday: 10:00 AM – 7:00 PM IST";
 

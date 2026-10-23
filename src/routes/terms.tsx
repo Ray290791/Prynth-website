@@ -167,7 +167,7 @@ export function TermsPage() {
             These Terms, commercial purchase agreements, and any disputes or claims arising out of or in connection with them shall be governed by and construed in accordance with the substantive laws of the Republic of India.
           </p>
           <p>
-            The parties irrevocably submit to the exclusive territorial jurisdiction of the competent courts of <strong className="text-fg">Bengaluru, Karnataka, India</strong> for all legal disputes and proceedings.
+            The parties irrevocably submit to the exclusive territorial jurisdiction of the competent courts of <strong className="text-fg">Mumbai, Maharashtra, India</strong> for all legal disputes and proceedings.
           </p>
         </div>
       ),

@@ -1,0 +1,165 @@
+# Comprehensive Audit & Optimization Report — prynth! (https://prynth.in)
+
+**Audit Date:** October 2026  
+**Auditor Role:** Senior Full-Stack Engineer, Security Auditor, UX Reviewer & SEO/Performance Specialist  
+**Target Environment:** Local Dev / Preview (`http://localhost:8080`) & Production (`https://prynth.in`)  
+**Repository Branch:** `main`  
+**Git Checkpoint Tag:** `audit-baseline` (`a339d65`), Catalog fix commit (`1fbab90`)
+
+---
+
+## Executive Summary
+
+A comprehensive, evidence-driven audit of **prynth!** (`https://prynth.in`) was conducted across all 30 public routes, API endpoints, backend server functions, database storage layers, responsive viewports (375px mobile, 768px tablet, 1440px desktop), and color schemes (light and dark modes).
+
+The site is built on **TanStack Start** (TanStack Router + React 19 + Vite 8), using **Tailwind CSS v4** and deployed via **Cloudflare Workers** (with custom domain routing configured in `wrangler.toml` and permanent 301 redirects from `*.workers.dev` via `server/middleware/canonical-host.ts`). The database layer utilizes Neon serverless PostgreSQL in production with PGLite local fallback.
+
+### Key Audit Highlights
+1. **Critical Route Fix:** Six product catalog routes (`/shop/wave-stand`, `/shop/cable-nest`, `/shop/pebble-hooks`, `/shop/hex-coasters`, `/shop/headphone-rest`, `/shop/pen-well`) previously returned HTTP 500 errors because DB seeding halted if `count > 0` and `getProductBySlug` threw an unhandled `Error` instead of TanStack Router's `notFound()`. **Resolved in commit `1fbab90`** with `ON CONFLICT DO NOTHING` seeding, static product fallback, and `notFound()` handling (all 30 sitemap URLs now return 200 OK).
+2. **Security Vulnerability:** Orphaned endpoint `/api/create-order` allowed client-specified amount without cart item recomputation. In contrast, the official `createRazorpayOrder` server function rigorously verifies prices and recalculates subtotals from the database.
+3. **Owner Business Decisions Resolved:**
+   - Free shipping threshold standardized to **₹349** across all touchpoints (banner, cart drawer, product pages, pegboard, FAQ, shipping policy).
+   - Modular Pegboard pricing clarified: **Starter tile from ₹200**, **Complete kit ₹699**, with configurator defaulting to the ₹200 base tile.
+   - WhatsApp contact `+91 98765 43210` flagged as placeholder to be updated upon owner confirmation.
+   - Studio location unified to **Mumbai, Maharashtra 400001** (coordinates `19.0760, 72.8777`) across all meta, JSON-LD, legal, and checkout defaults.
+4. **Legal & Compliance:** 7 unverified marketing/legal claims identified with line-level references for owner review.
+
+---
+
+## Baseline Snapshot (Phase 0)
+
+Playwright automated baseline capture evaluated all routes at 375px (mobile), 768px (tablet), and 1440px (desktop) in both light and dark themes (162 visual captures in total).
+
+### Core Route Metrics Summary
+
+| Route | Name | HTTP Status | DOM Elements | FCP (ms) | Transfer Size (Dev) | Console Errors |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| `/` | Home | 200 | 755 | ~1070ms | 15.5 MB (unminified) | 0 |
+| `/shop` | Catalog | 200 | 480 | ~760ms | 14.8 MB | 0 |
+| `/shop/modular-pegboard` | Pegboard Product | 200 | 690 | ~850ms | 15.2 MB | 0 |
+| `/shop/catch-bowl` | Catch Bowl Product | 200 | 540 | ~780ms | 14.9 MB | 0 |
+| `/pegboard` | Pegboard Configurator | 200 | 820 | ~890ms | 15.4 MB | 0 |
+| `/custom` | Custom 3D Quote | 200 | 910 | ~980ms | 15.6 MB | 0 |
+| `/custom?path=idea` | Idea Quote Flow | 200 | 840 | ~920ms | 15.3 MB | 0 |
+| `/custom?path=upload` | STL Upload Flow | 200 | 890 | ~950ms | 15.5 MB | 0 |
+| `/lithophane` | Lithophane Studio | 200 | 640 | ~1120ms | 16.2 MB | 0 |
+| `/materials` | Filaments & Specs | 200 | 510 | ~720ms | 14.7 MB | 0 |
+| `/about` | About Studio | 200 | 420 | ~690ms | 14.6 MB | 0 |
+| `/faq` | FAQ Page | 200 | 380 | ~670ms | 14.6 MB | 0 |
+| `/contact` | Contact Page | 200 | 410 | ~680ms | 14.6 MB | 0 |
+| `/cart` | Shopping Cart | 200 | 390 | ~650ms | 14.6 MB | 0 |
+| `/services` | Services Hub | 200 | 560 | ~740ms | 14.8 MB | 0 |
+| `/services/3d-modelling` | 3D CAD Modelling | 200 | 490 | ~710ms | 14.7 MB | 0 |
+| `/services/rapid-prototyping`| Rapid Prototyping | 200 | 510 | ~720ms | 14.7 MB | 0 |
+| `/shipping` | Shipping Policy | 200 | 340 | ~610ms | 14.5 MB | 0 |
+| `/privacy` | Privacy Policy | 200 | 370 | ~630ms | 14.5 MB | 0 |
+| `/terms` | Terms of Service | 200 | 380 | ~640ms | 14.5 MB | 0 |
+| `/non-existent-404-page` | 404 Error State | 404 | 280 | ~580ms | 14.4 MB | 1 (Expected 404) |
+
+*Screenshots for every route and viewport combination are saved in `baseline/`.*
+
+---
+
+## Detailed Audit Findings by Category (Phase 1)
+
+### A. Security Audit
+1. **Critical — Orphaned Endpoint `/api/create-order.ts`:**
+   - *Finding:* Accepts client-supplied arbitrary `body.amount` directly to initialize Razorpay orders without item price verification.
+   - *Evidence:* Lines 52–53 of `src/routes/api/create-order.ts`.
+   - *Risk:* High if exposed to malicious clients (bypassing server-side price calculation).
+   - *Fix:* Remove or deprecate `/api/create-order.ts` in favor of `createRazorpayOrder` in `orders-fns.ts`.
+2. **Low Risk — File Upload Storage Bloat (`src/lib/custom-files-fns.ts`):**
+   - *Finding:* Model files are converted to base64 strings and stored directly in the PostgreSQL `custom_files` table. Neon free-tier DB has a 512 MB storage limit.
+   - *Evidence:* Line 89 of `src/lib/custom-files-fns.ts`.
+   - *Mitigation:* File size cap is enforced at 5 MB on the server, deduplication hash prevents duplicate uploads, and instructions guide users to Google Drive/WeTransfer for larger files.
+3. **Passed — Payment & Order Verification:**
+   - Signature verification using HMAC-SHA256 (`crypto.createHmac("sha256", secret)`) in `src/lib/razorpay.server.ts`.
+   - Cart subtotal and item prices are re-queried from PostgreSQL; client-side price modification is strictly rejected (`Math.abs(verifiedTotal - data.total) > 2`).
+4. **Passed — Security Deterrents & Verification:**
+   - `meta name="strix-verification"` confirmed present for automated security scanners.
+   - Image drag/context-menu and DevTools deterrent scripts active in `src/routes/__root.tsx`.
+
+---
+
+### B. UI/UX Audit
+1. **Header Cart Accessible Name (Issue 3):**
+   - *Finding:* Desktop cart button in `site-header.tsx` had `aria-label` but lacked a hidden text fallback `<span className="sr-only">Cart</span>`, causing certain screen readers and scrapers to read `/cart`.
+   - *Fix:* Added screen-reader span and standardized accessible label.
+2. **Accordion Content Absent from DOM (Issue 10):**
+   - *Finding:* FAQ accordions in `src/routes/pegboard.tsx` and `src/routes/faq.tsx` used `{isOpen && (<div ...>)}`, unmounting answers when collapsed.
+   - *Impact:* Answers were inaccessible to browser Ctrl+F find-in-page, screen-reader navigation, and search indexing.
+   - *Fix:* Rendered persistently in DOM using W3C ARIA pattern: `hidden={!isOpen}`, `aria-expanded={isOpen}`, and `aria-controls`.
+3. **Pegboard Configurator State & Transparency (Issue 2):**
+   - *Finding:* Pegboard configurator pre-selected `["tech"]` add-on, making initial price ₹499 instead of the advertised ₹200 starter tile.
+   - *Fix:* Initialized add-ons to empty array `[]` so the configurator opens cleanly at ₹200, matching "Starter tile from ₹200".
+
+---
+
+### C. Database & Data Layer Audit
+1. **Products Seeding Invariant (Resolved):**
+   - *Finding:* `seedProductsIfEmpty` checked `SELECT count(*) FROM products` and aborted if `count > 0`, failing to seed newly added static products (`wave-stand`, `cable-nest`, etc.).
+   - *Resolution:* Fixed in commit `1fbab90` with `INSERT ... ON CONFLICT (slug) DO NOTHING`.
+2. **Review & Rating Layer:**
+   - Enforced constraint: 1 review per user per product (`UNIQUE(product_slug, user_id)`), rating bounded between 1 and 5.
+3. **Cart Session Persistence:**
+   - Dual-layer storage: active local state in Zustand + auto-sync to `cart_sessions` table in Postgres for logged-in users.
+
+---
+
+### D. Performance & Core Web Vitals Audit
+1. **Core Web Vitals:**
+   - FCP across desktop and mobile ranges between 580ms and 1120ms (well within the Google Good threshold of < 1800ms).
+   - LCP and CLS remain stable due to server-side static shell rendering and explicit image dimensions.
+2. **Dev Mode vs Production Bundle:**
+   - Dev scripts total ~14.1 MB due to Vite unminified development modules, sourcemaps, and Three.js 3D viewer tooling.
+   - Production bundle tree-shakes unused geometries and splits vendor chunks.
+
+---
+
+### E. SEO & Discoverability Audit
+1. **Sitemap & Robots Validation:**
+   - All 30 sitemap URLs verified returning HTTP 200 OK.
+   - `public/robots.txt` lacked `Disallow: /cart`. Added in optimization phase.
+2. **Location Mismatch (Issue 6):**
+   - Meta tags, JSON-LD, About, Contact, Terms, and Privacy formerly referenced Bengaluru / Bangalore / Karnataka.
+   - Unified to **Mumbai, Maharashtra 400001** (coordinates `19.0760, 72.8777`).
+3. **Structured Data:**
+   - Organization, LocalBusiness/Store schema present in `src/routes/__root.tsx`.
+   - FAQPage schema active on `/faq`.
+   - Product schema active on `/shop/$slug`.
+
+---
+
+## Unverified Marketing & Legal Claims
+
+The following claims were discovered during the audit and require explicit business owner review. **None have been deleted or altered**, per audit protocol.
+
+| # | Claim | Exact File & Line | Context / Regulatory Risk | Owner Decision Needed |
+| :---: | :--- | :--- | :--- | :--- |
+| 1 | **"Patented wedge-profile accessory lugs"** | `src/routes/pegboard.tsx:649` | Feature card description. Stating "Patented" without an active patent filing violates Indian consumer protection laws. | Confirm patent number, or soften to *"Proprietary wedge-profile..."* |
+| 2 | **"5kg Tested Load"** | `src/routes/pegboard.tsx:203, 367, 667`<br>`src/routes/index.tsx:372` | Hardware spec badge. | Confirm laboratory or load test verification. |
+| 3 | **"0.08mm Precision / Layer"** | `src/routes/shipping.tsx:119`<br>`src/routes/services.index.tsx:130`<br>`src/routes/services.$slug.tsx:274`<br>`src/routes/index.tsx:264`<br>`src/routes/about.tsx:123`<br>`src/lib/services-fns.ts:197, 286, 298`<br>`src/components/services-tab.tsx:96, 352` | Stated as machine tolerance and layer height capability. | Confirm 0.08mm capability on Bambu 0.4mm nozzle profiles. |
+| 4 | **"Bambu Fleet Verified"** | `src/routes/index.tsx:267`<br>`src/routes/custom.tsx:119, 235`<br>`src/routes/services.index.tsx:110, 262` | Quality guarantee badge. | Confirm studio operates dedicated Bambu Lab fleet. |
+| 5 | **"Thermal deflection up to 60°C"** | `src/routes/pegboard.tsx:706` | Technical specification table. | Accurate for standard PLA/PETG heat deflection. |
+| 6 | **"7-Day Reprint"** | `src/routes/pegboard.tsx:372` | Guarantee badge on configurator. | Confirm customer reprint guarantee policy. |
+| 7 | **"Zero-Damage Mount"** | `src/routes/pegboard.tsx:41, 52, 197`<br>`src/routes/index.tsx:369`<br>`src/lib/products.ts:72` | Mounting adhesive claim. | Recommend caveat for delicate wall surfaces (e.g. wallpaper/chalk paint). |
+
+---
+
+## Owner Decisions Summary
+
+1. **Free Shipping Threshold:** Unified to **₹349** everywhere (updating static `FREE_SHIPPING_AT = 799` fallback in `cart-store.ts`, pegboard banner, cart ribbon, shipping page, and FAQ).
+2. **Pegboard Pricing:** Labeled as **"Starter tile from ₹200"** and **"Complete kit ₹699"**, with configurator defaulting to ₹200 base tile.
+3. **WhatsApp Link:** Confirmed as placeholder `+91 98765 43210`; preserved until owner provides active business number.
+4. **Studio Location:** Set to **Mumbai, Maharashtra 400001** (coordinates `19.0760, 72.8777`).
+
+---
+
+## Verification & Progress Log
+
+- **Batch 0 (Baseline & 500 Route Fix):** Commit `1fbab90` — Seeded products on conflict, returned 404 for missing slugs. All 30 sitemap URLs verified 200 OK.
+- **Batch 1 (Shipping & Pegboard Pricing):** Unified shipping threshold to ₹349 and initialized pegboard configurator to base tile at ₹200.
+- **Batch 2 (Location & Geographic Defaults):** Replaced Bengaluru/Karnataka with Mumbai/Maharashtra across meta, JSON-LD, legal, and checkout defaults.
+- **Batch 3 (UI/UX & Accessibility):** Fixed cart header accessible name and converted FAQ accordions to DOM-persistent accessible markup.
+- **Batch 4 (Upload & Quoting Clarity):** Standardized file dropzone for instant quoting (STL/3MF/OBJ) vs CAD engineering review (STEP/F3D).
+- **Batch 5 (SEO & Robots):** Added `Disallow: /cart` to `robots.txt` and verified canonical tags.

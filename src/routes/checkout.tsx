@@ -69,7 +69,7 @@ function CheckoutPage() {
     line1: "",
     line2: "",
     city: "",
-    state: "Karnataka",
+    state: "Maharashtra",
     pincode: "",
   });
   
@@ -498,12 +498,12 @@ function CheckoutPage() {
               </div>
               <div>
                 <Label htmlFor="city">City</Label>
-                <Input id="city" autoComplete="address-level2" {...field("city")} />
+                <Input id="city" autoComplete="address-level2" placeholder="e.g. Mumbai" {...field("city")} />
                 {errors.city ? <p className="mt-1 text-xs text-danger">{errors.city}</p> : null}
               </div>
               <div>
                 <Label htmlFor="pincode">PIN code</Label>
-                <Input id="pincode" inputMode="numeric" autoComplete="postal-code" {...field("pincode")} />
+                <Input id="pincode" inputMode="numeric" autoComplete="postal-code" placeholder="e.g. 400001" {...field("pincode")} />
                 {errors.pincode ? <p className="mt-1 text-xs text-danger">{errors.pincode}</p> : null}
               </div>
               <div className="sm:col-span-2">

@@ -12,7 +12,7 @@ export const Route = createFileRoute("/about")({
       { rel: "canonical", href: "https://prynth.in/about" },
     ],
     meta: [
-      { title: "About Prynth — 3D Printing Studio Based in Bengaluru, India | Prynth" },
+      { title: "About Prynth — 3D Printing Studio Based in Mumbai, India | Prynth" },
       {
         name: "description",
         content:
@@ -21,9 +21,9 @@ export const Route = createFileRoute("/about")({
       {
         name: "keywords",
         content:
-          "about prynth, 3d printing studio bangalore, 3d printing india company, custom 3d manufacturing india",
+          "about prynth, 3d printing studio mumbai, 3d printing india company, custom 3d manufacturing india",
       },
-      { property: "og:title", content: "About Prynth — 3D Printing Studio Based in Bengaluru, India" },
+      { property: "og:title", content: "About Prynth — 3D Printing Studio Based in Mumbai, India" },
       {
         property: "og:description",
         content:

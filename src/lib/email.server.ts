@@ -375,7 +375,7 @@ export async function sendCustomRequestCustomerAckEmail(params: {
               Have extra measurements, a ruler photo, or more details to add? <strong>Simply reply directly to this email</strong> to continue the conversation.
             </p>
             <div style="margin-top: 32px; padding-top: 20px; border-top: 1px solid #e4e4e7; font-size: 13px; color: #94a3b8; text-align: center;">
-              <p style="margin: 0;">Prynth · Precision 3D Printing & Custom Prototyping · Bengaluru, India</p>
+              <p style="margin: 0;">Prynth · Precision 3D Printing & Custom Prototyping · Mumbai, India</p>
             </div>
           </div>
         </div>

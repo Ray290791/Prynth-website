@@ -490,7 +490,7 @@ function ProductPage() {
             </div>
             <div>
               <dt className="text-subtle">Manufacturer &amp; Packer</dt>
-              <dd className="mt-1 text-fg">Prynth, Bengaluru, India</dd>
+              <dd className="mt-1 text-fg">Prynth, Mumbai, India</dd>
             </div>
           </dl>
           <p className="mt-4 text-sm text-muted">{product.care}</p>

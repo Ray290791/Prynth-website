@@ -112,12 +112,12 @@ export const Route = createRootRoute({
       {
         name: "description",
         content:
-          "Prynth is an on-demand 3D printing studio based in Bengaluru, India. Custom rapid prototyping, CAD design, online 3D printing quotes, and modern functional desk accessories shipped across India.",
+          "Prynth is an on-demand 3D printing studio based in Mumbai, India. Custom rapid prototyping, CAD design, online 3D printing quotes, and modern functional desk accessories shipped across India.",
       },
       {
         name: "keywords",
         content:
-          "3d printing services, 3d printed products, 3d printing india, custom 3d printing, rapid prototyping, bangalore 3d printing, stl 3d print, desk accessories, prynth, additive manufacturing",
+          "3d printing services, 3d printed products, 3d printing india, custom 3d printing, rapid prototyping, mumbai 3d printing, stl 3d print, desk accessories, prynth, additive manufacturing",
       },
       { name: "author", content: "Prynth" },
       { name: "robots", content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" },
@@ -225,17 +225,18 @@ const SITE_JSON_LD = {
       "url": "https://prynth.in/",
       "logo": "https://prynth.in/brand/mark.png",
       "image": "https://prynth.in/og.jpg",
-      "description": "Prynth is an on-demand 3D printing studio based in Bengaluru, India. We provide instant custom 3D printing from STL/3MF files, CAD modeling, rapid prototyping, and high-quality ready-made functional desk and home products with nationwide delivery.",
+      "description": "Prynth is an on-demand 3D printing studio based in Mumbai, India. We provide instant custom 3D printing from STL/3MF files, CAD modeling, rapid prototyping, and high-quality ready-made functional desk and home products with nationwide delivery.",
       "address": {
         "@type": "PostalAddress",
-        "addressLocality": "Bengaluru",
-        "addressRegion": "Karnataka",
+        "addressLocality": "Mumbai",
+        "addressRegion": "Maharashtra",
+        "postalCode": "400001",
         "addressCountry": "IN",
       },
       "geo": {
         "@type": "GeoCoordinates",
-        "latitude": 12.9716,
-        "longitude": 77.5946,
+        "latitude": 19.0760,
+        "longitude": 72.8777,
       },
       "areaServed": {
         "@type": "Country",

@@ -35,7 +35,7 @@ export function PrivacyPage() {
   const { settings } = rootRoute.useLoaderData();
   const contactEmail = settings.contact_email || settings.email || "hello@prynth.in";
   const contactPhone = settings.contact_phone || "+91 98765 43210";
-  const contactAddress = settings.contact_address || "Prynth 3D Printing Studio, Bengaluru, Karnataka, India";
+  const contactAddress = settings.contact_address || "Prynth 3D Printing Studio, Mumbai, Maharashtra 400001, India";
 
   const sections = [
     {
