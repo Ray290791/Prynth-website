@@ -1,26 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getSql } from "./db";
 import { z } from "zod";
-
-async function ensureCustomFilesTable(sql: any) {
-  try {
-    await sql`
-      CREATE TABLE IF NOT EXISTS custom_files (
-        id TEXT PRIMARY KEY,
-        file_name TEXT NOT NULL,
-        file_size BIGINT NOT NULL,
-        mime_type TEXT NOT NULL,
-        file_data TEXT NOT NULL,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-      )
-    `;
-  } catch (err) {
-    console.error("[ensureCustomFilesTable error]:", err);
-  }
-}
+import { authMiddleware } from "./auth/middleware";
+import { verifyAdminRole } from "./admin-fns";
 
 const ALLOWED_EXTENSIONS = /\.(stl|obj|3mf|step|stp|f3d)$/i;
-// Keep uploads small enough to avoid filling the Neon free-tier DB.
+// Keep uploads small enough to avoid filling worker memory or storage.
 // 3D model files for custom quotes only need to be referenced — large files
 // should be shared via Google Drive / WeTransfer and linked in notes.
 const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024; // 25 MB cap
@@ -46,12 +31,31 @@ export const uploadCustomFile = createServerFn({ method: "POST" })
       fileData: z.string().min(1).max(MAX_PAYLOAD_CHARS, {
         message: "File data exceeds allowed upload size. Please keep files under 25 MB.",
       }),
+      turnstileToken: z.string().optional(),
     })
   )
   .handler(async ({ data }) => {
     try {
       const sql = await getSql();
-      await ensureCustomFilesTable(sql);
+
+      // 1. Per-IP Rate Limiting across Worker isolates
+      const { getRequest } = await import("@tanstack/react-start/server");
+      const { RateLimiter, getClientIp } = await import("./rate-limiter");
+      const req = getRequest();
+      const ip = req ? getClientIp(req) : "127.0.0.1";
+
+      const uploadLimiter = new RateLimiter({ maxAttempts: 10, windowMs: 10 * 60 * 1000 });
+      const limitCheck = await uploadLimiter.checkLimit(`upload-model:${ip}`);
+      if (limitCheck.limited) {
+        throw new Error("Upload rate limit exceeded. Please wait a few minutes before uploading more 3D models.");
+      }
+
+      // 2. Cloudflare Turnstile Verification
+      const { verifyTurnstileToken } = await import("./turnstile.server");
+      const turnstileCheck = await verifyTurnstileToken(data.turnstileToken, ip);
+      if (!turnstileCheck.success) {
+        throw new Error(turnstileCheck.error || "Security verification failed. Please complete the security check.");
+      }
 
       // Sanitize fileName to prevent directory traversal or injection
       const sanitizedFileName = data.fileName
@@ -65,13 +69,18 @@ export const uploadCustomFile = createServerFn({ method: "POST" })
         cleanData = cleanData.split(";base64,")[1];
       }
 
-      // ── Deduplication: if the same file (name + size) already exists, reuse it ──
-      // This prevents the same 3D model being stored repeatedly when a customer
-      // re-uploads or reloads the page, which was rapidly filling the Neon DB WAL.
+      // Compute SHA-256 hash of the decoded file bytes for strict content deduplication
+      const cryptoMod = await import("crypto");
+      const fileBytes = Buffer.from(cleanData, "base64");
+      const contentHash = cryptoMod
+        .createHash("sha256")
+        .update(fileBytes)
+        .digest("hex");
+
+      // ── Deduplication: if the exact same file bytes already exist in DB, reuse the record ──
       const existing = await sql`
         SELECT id, file_name, file_size FROM custom_files
-        WHERE file_name = ${sanitizedFileName} AND file_size = ${data.fileSize}
-        ORDER BY created_at DESC
+        WHERE content_hash = ${contentHash}
         LIMIT 1
       `;
       if (existing.length > 0) {
@@ -83,12 +92,39 @@ export const uploadCustomFile = createServerFn({ method: "POST" })
         };
       }
 
-      const fileId = `file-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+      // Cryptographically secure, unguessable file identifier
+      const fileId = `file-${crypto.randomUUID()}`;
 
-      await sql`
-        INSERT INTO custom_files (id, file_name, file_size, mime_type, file_data, created_at)
-        VALUES (${fileId}, ${sanitizedFileName}, ${data.fileSize}, ${data.mimeType}, ${cleanData}, now())
-      `;
+      // 3. Store in Cloudflare R2 if configured, leaving file_data null in Postgres
+      const { uploadModelToR2, isR2Configured } = await import("./r2.server");
+      let r2Key: string | null = null;
+      if (isR2Configured()) {
+        r2Key = `models/${contentHash}-${fileId}.stl`;
+        await uploadModelToR2(r2Key, fileBytes, data.mimeType, sanitizedFileName);
+      }
+
+      try {
+        await sql`
+          INSERT INTO custom_files (id, file_name, file_size, mime_type, file_data, r2_key, content_hash, created_at)
+          VALUES (${fileId}, ${sanitizedFileName}, ${data.fileSize}, ${data.mimeType}, ${r2Key ? null : cleanData}, ${r2Key}, ${contentHash}, now())
+        `;
+      } catch (insertErr: any) {
+        // Handle race condition on content_hash unique constraint
+        const raced = await sql`
+          SELECT id, file_name, file_size FROM custom_files
+          WHERE content_hash = ${contentHash}
+          LIMIT 1
+        `;
+        if (raced.length > 0) {
+          return {
+            success: true,
+            fileId: raced[0].id as string,
+            fileName: raced[0].file_name as string,
+            fileSize: raced[0].file_size as number,
+          };
+        }
+        throw insertErr;
+      }
 
       return {
         success: true,
@@ -106,19 +142,35 @@ export const getCustomFileRecord = createServerFn({ method: "GET" })
   .validator(z.object({ id: z.string().min(1) }))
   .handler(async ({ data }) => {
     const sql = await getSql();
-    await ensureCustomFilesTable(sql);
     const rows = await sql<{
       id: string;
       file_name: string;
       file_size: number;
       mime_type: string;
-      file_data: string;
+      file_data: string | null;
+      r2_key?: string | null;
+      content_hash?: string;
       created_at: string;
     }>`
-      SELECT id, file_name, file_size, mime_type, file_data, created_at
+      SELECT id, file_name, file_size, mime_type, file_data, r2_key, content_hash, created_at
       FROM custom_files
       WHERE id = ${data.id}
     `;
     if (!rows || rows.length === 0) return null;
     return rows[0];
   });
+
+export const getAdminModelDownloadUrl = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator(z.object({ fileId: z.string().min(1) }))
+  .handler(async ({ data, context }) => {
+    const sql = await getSql();
+    const admin = await verifyAdminRole(context.userId, sql);
+    if (!admin) {
+      throw new Error("Unauthorized: Admin role required to access customer 3D models");
+    }
+    const { generateModelAccessToken } = await import("./custom-model-auth.server");
+    const token = generateModelAccessToken(data.fileId, context.userId);
+    return { token };
+  });
+

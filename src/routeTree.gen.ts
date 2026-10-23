@@ -29,6 +29,7 @@ import { Route as ShippingRouteImport } from './routes/shipping'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as WishlistRouteImport } from './routes/wishlist'
 import { Route as ApiCreateOrderRouteImport } from './routes/api/create-order'
+import { Route as ApiRazorpayWebhookRouteImport } from './routes/api/razorpay-webhook'
 import { Route as ApiVerifyPaymentRouteImport } from './routes/api/verify-payment'
 import { Route as OrderIdRouteImport } from './routes/order.$id'
 import { Route as ServicesIndexRouteImport } from './routes/services.index'
@@ -138,6 +139,11 @@ const ApiCreateOrderRoute = ApiCreateOrderRouteImport.update({
   path: '/api/create-order',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRazorpayWebhookRoute = ApiRazorpayWebhookRouteImport.update({
+  id: '/api/razorpay-webhook',
+  path: '/api/razorpay-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiVerifyPaymentRoute = ApiVerifyPaymentRouteImport.update({
   id: '/api/verify-payment',
   path: '/api/verify-payment',
@@ -200,6 +206,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/wishlist': typeof WishlistRoute
   '/api/create-order': typeof ApiCreateOrderRoute
+  '/api/razorpay-webhook': typeof ApiRazorpayWebhookRoute
   '/api/verify-payment': typeof ApiVerifyPaymentRoute
   '/order/$id': typeof OrderIdRoute
   '/services/$slug': typeof ServicesSlugRoute
@@ -230,6 +237,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/wishlist': typeof WishlistRoute
   '/api/create-order': typeof ApiCreateOrderRoute
+  '/api/razorpay-webhook': typeof ApiRazorpayWebhookRoute
   '/api/verify-payment': typeof ApiVerifyPaymentRoute
   '/order/$id': typeof OrderIdRoute
   '/services/$slug': typeof ServicesSlugRoute
@@ -261,6 +269,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/wishlist': typeof WishlistRoute
   '/api/create-order': typeof ApiCreateOrderRoute
+  '/api/razorpay-webhook': typeof ApiRazorpayWebhookRoute
   '/api/verify-payment': typeof ApiVerifyPaymentRoute
   '/order/$id': typeof OrderIdRoute
   '/services/$slug': typeof ServicesSlugRoute
@@ -293,6 +302,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/wishlist'
     | '/api/create-order'
+    | '/api/razorpay-webhook'
     | '/api/verify-payment'
     | '/order/$id'
     | '/services/$slug'
@@ -323,6 +333,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/wishlist'
     | '/api/create-order'
+    | '/api/razorpay-webhook'
     | '/api/verify-payment'
     | '/order/$id'
     | '/services/$slug'
@@ -353,6 +364,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/wishlist'
     | '/api/create-order'
+    | '/api/razorpay-webhook'
     | '/api/verify-payment'
     | '/order/$id'
     | '/services/$slug'
@@ -384,6 +396,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   WishlistRoute: typeof WishlistRoute
   ApiCreateOrderRoute: typeof ApiCreateOrderRoute
+  ApiRazorpayWebhookRoute: typeof ApiRazorpayWebhookRoute
   ApiVerifyPaymentRoute: typeof ApiVerifyPaymentRoute
   OrderIdRoute: typeof OrderIdRoute
   ServicesSlugRoute: typeof ServicesSlugRoute
@@ -536,6 +549,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCreateOrderRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/razorpay-webhook': {
+      id: '/api/razorpay-webhook'
+      path: '/api/razorpay-webhook'
+      fullPath: '/api/razorpay-webhook'
+      preLoaderRoute: typeof ApiRazorpayWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/verify-payment': {
       id: '/api/verify-payment'
       path: '/api/verify-payment'
@@ -616,6 +636,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   WishlistRoute: WishlistRoute,
   ApiCreateOrderRoute: ApiCreateOrderRoute,
+  ApiRazorpayWebhookRoute: ApiRazorpayWebhookRoute,
   ApiVerifyPaymentRoute: ApiVerifyPaymentRoute,
   OrderIdRoute: OrderIdRoute,
   ServicesSlugRoute: ServicesSlugRoute,

@@ -55,8 +55,6 @@ export default defineEventHandler((event) => {
   // Cross-Origin Opener Policy: allow OAuth/Razorpay popup windows while isolating opener
   setResponseHeader(event, "Cross-Origin-Opener-Policy", "same-origin-allow-popups");
 
-  // Legacy XSS filter for older browsers
-  setResponseHeader(event, "X-XSS-Protection", "1; mode=block");
 
   // Restrict which browser APIs are allowed by this page
   setResponseHeader(

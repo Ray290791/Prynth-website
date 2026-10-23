@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { verifyRazorpaySignature } from "@/lib/razorpay.server";
+import { verifyRazorpaySignature, verifyRazorpayWebhookSignature } from "@/lib/razorpay.server";
+import { confirmOrderPaymentIdempotent } from "@/lib/order-confirmation.server";
 import { RateLimiter, getClientIp, isBotUserAgent } from "@/lib/rate-limiter";
 
 // Rate limit: max 20 verification requests per minute per IP
@@ -18,24 +19,15 @@ export const Route = createFileRoute("/api/verify-payment")({
             });
           }
 
-          const ip = getClientIp(request);
-          if (verifyRateLimiter.isLimited(ip)) {
-            const retryAfter = verifyRateLimiter.getRemainingSeconds(ip);
-            return new Response(
-              JSON.stringify({ success: false, error: "Too many verification requests. Please wait a moment." }),
-              {
-                status: 429,
-                headers: {
-                  "Content-Type": "application/json",
-                  "Retry-After": String(retryAfter || 60),
-                },
-              }
-            );
-          }
+          // Check if this is an incoming Razorpay webhook sent to /api/verify-payment
+          const webhookSig =
+            request.headers.get("x-razorpay-signature") ||
+            request.headers.get("X-Razorpay-Signature");
 
+          const rawBody = await request.text();
           let body: any = {};
           try {
-            body = await request.json();
+            body = JSON.parse(rawBody);
           } catch {
             return new Response(
               JSON.stringify({
@@ -45,6 +37,58 @@ export const Route = createFileRoute("/api/verify-payment")({
               {
                 status: 400,
                 headers: { "Content-Type": "application/json" },
+              }
+            );
+          }
+
+          if (webhookSig && body?.event) {
+            const isWebhookValid = await verifyRazorpayWebhookSignature(rawBody, webhookSig);
+            if (!isWebhookValid) {
+              return new Response(
+                JSON.stringify({ error: "Invalid webhook signature" }),
+                { status: 400, headers: { "Content-Type": "application/json" } }
+              );
+            }
+
+            if (body.event === "order.paid" || body.event === "payment.captured") {
+              const payment = body.payload?.payment?.entity;
+              const rzpOrder = body.payload?.order?.entity;
+              const rzpOrderId = rzpOrder?.id || payment?.order_id || null;
+              const rzpPaymentId = payment?.id || null;
+              const internalOrderNumber =
+                rzpOrder?.notes?.internal_order_number ||
+                payment?.notes?.internal_order_number ||
+                undefined;
+
+              const res = await confirmOrderPaymentIdempotent({
+                razorpayOrderId: rzpOrderId || undefined,
+                razorpayPaymentId: rzpPaymentId || "webhook_captured",
+                orderNumber: internalOrderNumber,
+              });
+
+              return new Response(
+                JSON.stringify({ processed: true, ...res }),
+                { status: 200, headers: { "Content-Type": "application/json" } }
+              );
+            }
+
+            return new Response(
+              JSON.stringify({ success: true, received: true }),
+              { status: 200, headers: { "Content-Type": "application/json" } }
+            );
+          }
+
+          const ip = getClientIp(request);
+          const limitCheck = await verifyRateLimiter.checkLimit(`verify-payment:${ip}`);
+          if (limitCheck.limited) {
+            return new Response(
+              JSON.stringify({ success: false, error: "Too many verification requests. Please wait a moment." }),
+              {
+                status: 429,
+                headers: {
+                  "Content-Type": "application/json",
+                  "Retry-After": String(limitCheck.remainingSeconds || 60),
+                },
               }
             );
           }
@@ -93,6 +137,16 @@ export const Route = createFileRoute("/api/verify-payment")({
                 headers: { "Content-Type": "application/json" },
               }
             );
+          }
+
+          // Idempotently confirm order payment in database
+          try {
+            await confirmOrderPaymentIdempotent({
+              razorpayOrderId: orderIdStr,
+              razorpayPaymentId: paymentIdStr,
+            });
+          } catch (confirmErr) {
+            console.warn("[POST /api/verify-payment] Order confirmation error:", confirmErr);
           }
 
           // Signature verified successfully

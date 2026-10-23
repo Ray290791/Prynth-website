@@ -40,15 +40,15 @@ export const Route = createFileRoute("/api/auth/$")({
 
         const ip = getClientIp(request);
 
-        if (authRateLimiter.isLimited(ip)) {
-          const retryAfter = authRateLimiter.getRemainingSeconds(ip);
+        const limitCheck = await authRateLimiter.checkLimit(`auth:${ip}`);
+        if (limitCheck.limited) {
           return new Response(
             JSON.stringify({ error: "Too many authentication attempts. Please wait a minute before retrying." }),
             {
               status: 429,
               headers: {
                 "Content-Type": "application/json",
-                "Retry-After": String(retryAfter || 60),
+                "Retry-After": String(limitCheck.remainingSeconds || 60),
               },
             }
           );

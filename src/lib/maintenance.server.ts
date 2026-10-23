@@ -75,34 +75,12 @@ export async function runDatabaseMaintenance(
       // Table may not exist yet
     }
 
-    // 4. Clean up unattached temporary 3D model files older than 14 days
-    // Only delete files that are NOT referenced in orders or tickets
+    // 4. Clean up unattached temporary 3D model files older than 3 days
+    // Deletes files from both Neon Postgres and Cloudflare R2
     try {
-      const res = await sql`
-        DELETE FROM custom_files
-        WHERE created_at < NOW() - INTERVAL '14 days'
-          AND id NOT IN (
-            SELECT DISTINCT (jsonb_array_elements(items)->'custom'->>'fileId')
-            FROM orders
-            WHERE items IS NOT NULL AND jsonb_typeof(items) = 'array'
-          )
-          AND id NOT IN (
-            SELECT DISTINCT (description::jsonb->'specsSummary')
-            FROM tickets
-            WHERE description LIKE '%file-%'
-          )
-      `;
-      report.customFilesDeleted = (res as any)?.count || 0;
+      report.customFilesDeleted = await cleanupUnattachedCustomFiles(sql, 3);
     } catch (err) {
-      // Fallback simple safe cleanup if JSON query fails
-      try {
-        await sql`
-          DELETE FROM custom_files
-          WHERE created_at < NOW() - INTERVAL '30 days'
-        `;
-      } catch (_e) {
-        // Ignore
-      }
+      console.warn("[runDatabaseMaintenance] Custom files cleanup warning:", err);
     }
 
     console.log("[runDatabaseMaintenance] Completed successfully:", report);
@@ -111,4 +89,58 @@ export async function runDatabaseMaintenance(
   }
 
   return report;
+}
+
+/**
+ * Deletes uploaded custom 3D model files older than the specified retention window
+ * that were never attached to an order or inquiry ticket.
+ * Also removes corresponding objects from Cloudflare R2 storage.
+ */
+export async function cleanupUnattachedCustomFiles(
+  sql: Sql,
+  olderThanDays = 3
+): Promise<number> {
+  const { deleteModelFromR2 } = await import("./r2.server");
+
+  try {
+    // Select candidates to be deleted along with their R2 keys
+    const candidates = await sql<{ id: string; r2_key: string | null }>`
+      SELECT id, r2_key FROM custom_files
+      WHERE created_at < NOW() - (${olderThanDays} || ' days')::interval
+        AND id NOT IN (
+          SELECT DISTINCT (jsonb_array_elements(items)->'custom'->>'fileId')
+          FROM orders
+          WHERE items IS NOT NULL AND jsonb_typeof(items) = 'array'
+        )
+        AND id NOT IN (
+          SELECT DISTINCT (description::jsonb->'specsSummary')
+          FROM tickets
+          WHERE description LIKE '%file-%'
+        )
+      LIMIT 100
+    `;
+
+    if (!candidates || candidates.length === 0) {
+      return 0;
+    }
+
+    // Delete corresponding objects from Cloudflare R2
+    for (const file of candidates) {
+      if (file.r2_key) {
+        await deleteModelFromR2(file.r2_key).catch(() => {});
+      }
+    }
+
+    // Delete records from Postgres
+    const ids = candidates.map((c) => c.id);
+    const deleteResult = await sql`
+      DELETE FROM custom_files
+      WHERE id = ANY(${ids})
+    `;
+
+    return (deleteResult as any)?.count || candidates.length;
+  } catch (err) {
+    console.warn("[cleanupUnattachedCustomFiles] Error pruning stale custom files:", err);
+    return 0;
+  }
 }

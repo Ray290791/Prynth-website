@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import type { CartItem } from "@/lib/cart-store";
 import type { Address } from "@/lib/orders-store";
+import { getAdminModelDownloadUrl } from "@/lib/custom-files-fns";
 import {
   generateLithophaneMeshData,
   buildLithophaneBambu3mf,
@@ -153,23 +154,39 @@ export function OrderDetailsDialog({
     return `${window.location.origin}/api/custom-model/${fileId}`;
   }
 
-  function handleOpenInBambu(fileId?: string, fileName?: string) {
+  async function handleOpenInBambu(fileId?: string, fileName?: string) {
     if (!fileId) {
       toast.error("No uploaded 3D model file ID attached to this custom order.");
       return;
     }
-    const fullUrl = getModelDownloadUrl(fileId);
+    let fullUrl = getModelDownloadUrl(fileId);
+    try {
+      const res = await getAdminModelDownloadUrl({ data: { fileId } });
+      if (res?.token) {
+        fullUrl += `?token=${encodeURIComponent(res.token)}`;
+      }
+    } catch (e) {
+      console.warn("Could not generate slicer token:", e);
+    }
     const bambuUri = `bambustudio://open?file=${encodeURIComponent(fullUrl)}`;
     window.location.href = bambuUri;
     toast.success(`Launching Bambu Studio for ${fileName || "model"}…`);
   }
 
-  function handleOpenInOrca(fileId?: string) {
+  async function handleOpenInOrca(fileId?: string) {
     if (!fileId) {
       toast.error("No uploaded 3D model file ID attached.");
       return;
     }
-    const fullUrl = getModelDownloadUrl(fileId);
+    let fullUrl = getModelDownloadUrl(fileId);
+    try {
+      const res = await getAdminModelDownloadUrl({ data: { fileId } });
+      if (res?.token) {
+        fullUrl += `?token=${encodeURIComponent(res.token)}`;
+      }
+    } catch (e) {
+      console.warn("Could not generate slicer token:", e);
+    }
     window.location.href = `orcaslicer://open?file=${encodeURIComponent(fullUrl)}`;
     toast.success("Launching Orca Slicer…");
   }

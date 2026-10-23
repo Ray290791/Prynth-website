@@ -1,29 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getSql } from "./db";
 
-// In-memory rate limiting map: email -> timestamps[]
-const submissionTimestamps = new Map<string, number[]>();
-
-function checkRateLimit(key: string, limit = 5, windowMs = 10 * 60 * 1000): boolean {
-  const now = Date.now();
-  if (submissionTimestamps.size > 2000) {
-    for (const [k, times] of submissionTimestamps.entries()) {
-      const active = times.filter((t) => now - t < windowMs);
-      if (active.length === 0) {
-        submissionTimestamps.delete(k);
-      } else {
-        submissionTimestamps.set(k, active);
-      }
-    }
-  }
-  const times = (submissionTimestamps.get(key) || []).filter((t) => now - t < windowMs);
-  if (times.length >= limit) {
-    return false;
-  }
-  times.push(now);
-  submissionTimestamps.set(key, times);
-  return true;
-}
+import { checkRateLimit } from "./rate-limiter";
 
 export const submitContactMessage = createServerFn({ method: "POST" })
   .validator((data: { name: string; email: string; message: string }) => {
@@ -45,7 +23,7 @@ export const submitContactMessage = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     // Rate limit per email: max 5 messages per 10 minutes
-    if (!checkRateLimit(data.email)) {
+    if (!(await checkRateLimit(data.email))) {
       throw new Error("Too many messages submitted. Please wait a few minutes before trying again.");
     }
 
