@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, notFound } from "@tanstack/react-router";
 import { ShoppingBag, Heart, Minus, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/shop/$slug")({
   loader: async ({ params }) => {
     const product = await getProductBySlug({ data: params.slug });
-    if (!product) throw new Error("Product not found");
+    if (!product) throw notFound();
     const [related, reviews] = await Promise.all([
       getRelatedProducts({ data: params.slug }),
       getProductReviews({ data: params.slug }),

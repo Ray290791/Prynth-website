@@ -15,16 +15,6 @@ async function seedProductsIfEmpty() {
   if (hasSeededProducts) return;
   const sql = await getSql();
 
-  try {
-    const [{ count }] = await sql<{ count: number }>`SELECT count(*) FROM products`;
-    if (Number(count) > 0) {
-      hasSeededProducts = true;
-      return;
-    }
-  } catch (_e) {
-    // If the products table does not exist yet, proceed to create tables and seed
-  }
-
   // Ensure product_variants table exists in case the migration wasn't picked up by Vite glob caching
   await sql.query(`
     CREATE TABLE IF NOT EXISTS product_variants (
@@ -61,38 +51,34 @@ async function seedProductsIfEmpty() {
     )
   `);
 
-  const [{ count }] = await sql<{ count: number }>`SELECT count(*) FROM products`;
-  
-  if (Number(count) === 0) {
-    console.log("Products table is empty, seeding from static products...");
-    for (const product of staticProducts) {
-      await sql`
-        INSERT INTO products (
-          slug, name, price, image, category, blurb, description, 
-          colors, size, material, print_time, featured, badge, includes, care,
-          in_stock, stock_count, sizes, gallery
-        ) VALUES (
-          ${product.slug}, ${product.name}, ${product.price}, ${product.image}, 
-          ${product.category}, ${product.blurb}, ${product.description}, 
-          ${JSON.stringify(product.colors)}, ${product.size}, ${product.material}, 
-          ${product.printTime}, ${product.featured ?? false}, ${product.badge ?? null}, 
-          ${product.includes}, ${product.care},
-          ${product.inStock ?? true}, ${product.stockCount ?? -1}, ${JSON.stringify(product.sizes ?? [])},
-          ${JSON.stringify(product.gallery ?? [])}
-        )
-      `;
-      
-      const sizes = product.sizes && product.sizes.length > 0 ? product.sizes : [null];
-      const colors = product.colors && product.colors.length > 0 ? product.colors : [null];
-      
-      for (const size of sizes) {
-        for (const color of colors) {
-          await sql`
-            INSERT INTO product_variants (product_slug, size, color, price, stock_count)
-            VALUES (${product.slug}, ${size}, ${color}, ${product.price}, ${product.stockCount ?? -1})
-            ON CONFLICT DO NOTHING
-          `;
-        }
+  for (const product of staticProducts) {
+    await sql`
+      INSERT INTO products (
+        slug, name, price, image, category, blurb, description, 
+        colors, size, material, print_time, featured, badge, includes, care,
+        in_stock, stock_count, sizes, gallery
+      ) VALUES (
+        ${product.slug}, ${product.name}, ${product.price}, ${product.image}, 
+        ${product.category}, ${product.blurb}, ${product.description}, 
+        ${JSON.stringify(product.colors)}, ${product.size}, ${product.material}, 
+        ${product.printTime}, ${product.featured ?? false}, ${product.badge ?? null}, 
+        ${product.includes}, ${product.care},
+        ${product.inStock ?? true}, ${product.stockCount ?? -1}, ${JSON.stringify(product.sizes ?? [])},
+        ${JSON.stringify(product.gallery ?? [])}
+      )
+      ON CONFLICT (slug) DO NOTHING
+    `;
+    
+    const sizes = product.sizes && product.sizes.length > 0 ? product.sizes : [null];
+    const colors = product.colors && product.colors.length > 0 ? product.colors : [null];
+    
+    for (const size of sizes) {
+      for (const color of colors) {
+        await sql`
+          INSERT INTO product_variants (product_slug, size, color, price, stock_count)
+          VALUES (${product.slug}, ${size}, ${color}, ${product.price}, ${product.stockCount ?? -1})
+          ON CONFLICT DO NOTHING
+        `;
       }
     }
   }
@@ -225,7 +211,11 @@ export const getProductBySlug = createServerFn({ method: "GET" })
     await seedProductsIfEmpty();
     const sql = await getSql();
     const rows = await sql.query<any>(`${SELECT_PRODUCTS_WITH_VARIANTS} WHERE p.slug = $1 GROUP BY p.slug`, [slug]);
-    if (rows.length === 0) return null;
+    if (rows.length === 0) {
+      const staticMatch = staticProducts.find((p) => p.slug === slug);
+      if (staticMatch) return staticMatch;
+      return null;
+    }
     return mapDbProduct(rows[0]);
   });
 
