@@ -18,8 +18,8 @@ export default defineEventHandler((event) => {
   // Tailwind @layer injected CSS. Without it, the app cannot boot.
   const csp = [
     "default-src 'self'",
-    // Own scripts + Grok platform extension + Razorpay checkout SDK + Google Tag Manager
-    "script-src 'self' 'unsafe-inline' https://grok.com https://checkout.razorpay.com https://*.razorpay.com https://www.googletagmanager.com",
+    // Own scripts + Razorpay checkout SDK + Google Tag Manager
+    "script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://*.razorpay.com https://www.googletagmanager.com",
     // Own styles + Google Fonts + Tailwind inline
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     // Font files
