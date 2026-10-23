@@ -21,10 +21,12 @@ RESEND_FROM_EMAIL = "Prynth <orders@prynth.in>"
 VITE_GA_MEASUREMENT_ID = "G-R1LGD7FBVN"
 
 # ── Cloudflare R2 Object Storage for Custom 3D Models ───────────────────────
-# Create via: npx wrangler r2 bucket create prynth-custom-models
-[[r2_buckets]]
-binding = "CUSTOM_MODELS_BUCKET"
-bucket_name = "prynth-custom-models"
+# To enable R2 storage:
+# 1. Run: npx wrangler r2 bucket create prynth-custom-models (or create via Cloudflare Dashboard > R2)
+# 2. Uncomment the binding below:
+# [[r2_buckets]]
+# binding = "CUSTOM_MODELS_BUCKET"
+# bucket_name = "prynth-custom-models"
 
 # ── Secrets (set via CLI — never put credentials in [vars]) ──────────────────
 # npx wrangler secret put SHIPROCKET_EMAIL
