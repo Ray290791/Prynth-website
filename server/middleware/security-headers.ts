@@ -18,16 +18,16 @@ export default defineEventHandler((event) => {
   // Tailwind @layer injected CSS. Without it, the app cannot boot.
   const csp = [
     "default-src 'self'",
-    // Own scripts + Grok platform extension + Razorpay checkout SDK
-    "script-src 'self' 'unsafe-inline' https://grok.com https://checkout.razorpay.com https://*.razorpay.com",
+    // Own scripts + Grok platform extension + Razorpay checkout SDK + Google Tag Manager
+    "script-src 'self' 'unsafe-inline' https://grok.com https://checkout.razorpay.com https://*.razorpay.com https://www.googletagmanager.com",
     // Own styles + Google Fonts + Tailwind inline
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     // Font files
     "font-src 'self' https://fonts.gstatic.com",
-    // Images: own origin, base64 data URIs (thumbnails), blob (canvas) + Razorpay
-    "img-src 'self' data: blob: https://*.razorpay.com",
-    // API / WebSocket calls: own origin + Razorpay (payments) + Neon (DB)
-    "connect-src 'self' https://*.razorpay.com https://*.neon.tech wss://*.neon.tech",
+    // Images: own origin, base64 data URIs (thumbnails), blob (canvas) + Razorpay + Google Analytics
+    "img-src 'self' data: blob: https://*.razorpay.com https://www.google-analytics.com https://*.google-analytics.com",
+    // API / WebSocket calls: own origin + Razorpay (payments) + Neon (DB) + Google Analytics
+    "connect-src 'self' https://*.razorpay.com https://*.neon.tech wss://*.neon.tech https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com",
     // Razorpay checkout modal runs inside an iframe
     "frame-src 'self' https://api.razorpay.com https://*.razorpay.com",
     "object-src 'none'",

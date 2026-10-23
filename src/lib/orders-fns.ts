@@ -62,6 +62,9 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const sql = await getSql();
 
+    // Opportunistic database maintenance: auto-prunes stale temporary files & guest carts (throttled to once per 4h)
+    import("./maintenance.server").then(({ runDatabaseMaintenance }) => runDatabaseMaintenance(sql)).catch(() => {});
+
     // 0. Payload & Input Integrity Validation
     if (!data.items || !Array.isArray(data.items) || data.items.length === 0) {
       throw new Error("Order must contain at least one item.");
