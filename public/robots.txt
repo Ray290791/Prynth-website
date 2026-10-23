@@ -3,6 +3,7 @@ User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /api/
+Disallow: /cart
 Disallow: /checkout
 Disallow: /profile
 Disallow: /order/
