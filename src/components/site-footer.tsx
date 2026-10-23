@@ -7,6 +7,7 @@ const rootRoute = getRouteApi("__root__");
 const SHOP = [
   { to: "/shop", label: "Ready-made prints" },
   { to: "/custom", label: "Custom orders" },
+  { to: "/gallery", label: "Print Quality Gallery" },
   { to: "/pegboard", label: "Modular Pegboards" },
   { to: "/lithophane", label: "3D Lithophanes" },
   { to: "/materials", label: "Filaments & Materials" },

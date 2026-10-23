@@ -95,6 +95,11 @@ export type SiteSettings = {
   pegboard_addon_botanical_price?: string;
   pegboard_story?: string;
   pegboard_images?: string;
+  // Logistics & Courier settings
+  shiprocket_email?: string;
+  shiprocket_password?: string;
+  shiprocket_pickup_location?: string;
+  shiprocket_pickup_pincode?: string;
 };
 
 function parseSiteSettings(rows: { key: string; value: string }[]): SiteSettings {
@@ -214,6 +219,10 @@ function parseSiteSettings(rows: { key: string; value: string }[]): SiteSettings
       "/products/pegboard-white.jpg",
       "/products/pegboard-detail.jpg"
     ]),
+    shiprocket_email: "",
+    shiprocket_password: "",
+    shiprocket_pickup_location: "Primary",
+    shiprocket_pickup_pincode: "400001",
   };
 
   for (const row of rows) {
@@ -356,6 +365,10 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
     pegboard_addon_botanical_price: z.string().optional(),
     pegboard_story: z.string().optional(),
     pegboard_images: z.string().optional(),
+    shiprocket_email: z.string().optional(),
+    shiprocket_password: z.string().optional(),
+    shiprocket_pickup_location: z.string().optional(),
+    shiprocket_pickup_pincode: z.string().optional(),
   }).partial())
   .handler(async ({ data, context }) => {
     if (!context.userId) throw new Error("Unauthorized");

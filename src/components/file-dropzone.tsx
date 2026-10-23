@@ -7,35 +7,54 @@ const ACCEPT = ".stl,.3mf,.obj";
 
 export function FileDropzone({
   file,
+  files,
   onFile,
-  hint = "STL, 3MF, or OBJ mesh files. Max 25 MB.",
+  onFiles,
+  multiple = false,
+  hint = "STL, 3MF, or OBJ mesh files. Max 25 MB per file.",
 }: {
-  file: File | null;
-  onFile: (file: File | null) => void;
+  file?: File | null;
+  files?: File[];
+  onFile?: (file: File | null) => void;
+  onFiles?: (files: File[]) => void;
+  multiple?: boolean;
   hint?: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
 
   function pick(list: FileList | null) {
-    const next = list?.[0];
-    if (!next) return;
-    const ext = next.name.split(".").pop()?.toLowerCase();
-    if (ext === "f3d" || ext === "step" || ext === "stp") {
-      toast.info(
-        "CAD archives (.step, .f3d) cannot be sliced automatically in the browser. Please use the 'Describe your idea' tab to upload CAD models for a free engineering review and quote within 24 hours!"
-      );
-      return;
+    if (!list || list.length === 0) return;
+
+    const validFiles: File[] = [];
+    for (let i = 0; i < list.length; i++) {
+      const f = list[i];
+      const ext = f.name.split(".").pop()?.toLowerCase();
+      if (ext === "f3d" || ext === "step" || ext === "stp") {
+        toast.info(
+          `"${f.name}" is a CAD archive (.step, .f3d). Please use the 'Describe your idea' tab for CAD models.`
+        );
+        continue;
+      }
+      if (!ext || !["stl", "3mf", "obj"].includes(ext)) {
+        toast.error(`"${f.name}" is unsupported. Please upload STL, 3MF, or OBJ mesh.`);
+        continue;
+      }
+      if (f.size > 25 * 1024 * 1024) {
+        toast.error(`"${f.name}" exceeds 25 MB. Please optimize mesh.`);
+        continue;
+      }
+      validFiles.push(f);
     }
-    if (!ext || !["stl", "3mf", "obj"].includes(ext)) {
-      toast.error("Unsupported file format. Please upload an STL, 3MF, or OBJ mesh file for instant slicing.");
-      return;
+
+    if (validFiles.length === 0) return;
+
+    if (multiple && onFiles) {
+      onFiles(validFiles);
+      toast.success(`${validFiles.length} file(s) added to project workspace`);
+    } else if (onFile) {
+      onFile(validFiles[0]);
     }
-    if (next.size > 25 * 1024 * 1024) {
-      toast.error("File exceeds 25 MB limit. Please optimize the mesh or share a Google Drive / WeTransfer link in your notes.");
-      return;
-    }
-    onFile(next);
   }
 
   return (
@@ -43,6 +62,7 @@ export function FileDropzone({
       <input
         ref={inputRef}
         type="file"
+        multiple={multiple}
         accept={ACCEPT}
         className="sr-only"
         onChange={(e) => pick(e.target.files)}
@@ -60,7 +80,7 @@ export function FileDropzone({
             className="inline-flex size-11 items-center justify-center rounded-xl hover:bg-surface-2"
             aria-label="Remove file"
             onClick={() => {
-              onFile(null);
+              onFile?.(null);
               if (inputRef.current) inputRef.current.value = "";
             }}
           >

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { shipWithShiprocket } from "@/lib/orders-fns";
+import { shipWithShiprocket, updateOrderTrackingAdmin } from "@/lib/orders-fns";
 import {
   ExternalLink,
   Download,
@@ -57,7 +57,12 @@ export function OrderDetailsDialog({
   const [copiedSettings, setCopiedSettings] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
-  // ── Shiprocket shipping form state ──────────────────────────────────────
+  // ── Shipping states (Manual courier + Shiprocket API) ──────────────────────
+  const [showManualForm, setShowManualForm] = useState(false);
+  const [manualTrackingNo, setManualTrackingNo] = useState(order.tracking_number || "");
+  const [manualCourier, setManualCourier] = useState(order.courier_name || "Delhivery");
+  const [manualMarkShipped, setManualMarkShipped] = useState(true);
+
   const [showShiprocketForm, setShowShiprocketForm] = useState(false);
   const [srPickup, setSrPickup] = useState("Primary");
   const [srLength, setSrLength] = useState("15");
@@ -69,6 +74,35 @@ export function OrderDetailsDialog({
       ? { awb_code: order.tracking_number, courier_name: order.courier_name || "", tracking_url: order.tracking_url || "" }
       : null
   );
+
+  const manualTrackingMutation = useMutation({
+    mutationFn: () =>
+      updateOrderTrackingAdmin({
+        data: {
+          order_number: order.order_number,
+          tracking_number: manualTrackingNo.trim(),
+          courier_name: manualCourier.trim(),
+          mark_as_shipped: manualMarkShipped,
+        },
+      }),
+    onSuccess: (res) => {
+      setSrResult({
+        awb_code: res.tracking_number,
+        courier_name: res.courier_name || "",
+        tracking_url: res.tracking_url || "",
+      });
+      setShowManualForm(false);
+      toast.success("Tracking number updated successfully!");
+      queryClient.invalidateQueries({ queryKey: ["adminOrders"] });
+      order.tracking_number = res.tracking_number;
+      order.courier_name = res.courier_name || "";
+      order.tracking_url = res.tracking_url || "";
+      if (manualMarkShipped) order.status = "shipped";
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || "Failed to save tracking number");
+    },
+  });
 
   const shiprocketMutation = useMutation({
     mutationFn: () =>
@@ -85,7 +119,7 @@ export function OrderDetailsDialog({
     onSuccess: (res) => {
       setSrResult({ awb_code: res.awb_code, courier_name: res.courier_name, tracking_url: res.tracking_url });
       setShowShiprocketForm(false);
-      toast.success(`Shipment created! AWB: ${res.awb_code || "assigned"}`);
+      toast.success(`Shiprocket AWB: ${res.awb_code || "assigned"}`);
       queryClient.invalidateQueries({ queryKey: ["adminOrders"] });
       order.status = "shipped";
       order.tracking_number = res.awb_code;
@@ -93,7 +127,11 @@ export function OrderDetailsDialog({
       order.courier_name = res.courier_name;
     },
     onError: (err: any) => {
-      toast.error(err?.message || "Failed to create Shiprocket shipment.");
+      toast.error(
+        err?.message?.includes("credentials")
+          ? "Shiprocket credentials not configured yet. Use Manual Tracking below or add credentials in Site Settings."
+          : err?.message || "Failed to create Shiprocket shipment."
+      );
     },
   });
 
@@ -674,23 +712,54 @@ export function OrderDetailsDialog({
             <div className="flex items-center justify-between bg-surface-2/60 px-4 py-3">
               <div className="flex items-center gap-2">
                 <Truck className="size-4 text-accent" />
-                <span className="text-sm font-semibold text-fg">Shiprocket Shipping</span>
+                <span className="text-sm font-semibold text-fg">Logistics & Tracking</span>
               </div>
-              {srResult ? (
-                <Badge className="bg-primary/10 text-primary border-primary/30 text-xs">
-                  AWB Assigned
-                </Badge>
-              ) : (
-                !showShiprocketForm && (
+              {srResult?.awb_code ? (
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-xs">
+                    Dispatched / AWB
+                  </Badge>
                   <Button
                     size="sm"
-                    variant="outline"
-                    className="text-xs h-7 px-3"
-                    onClick={() => setShowShiprocketForm(true)}
+                    variant="ghost"
+                    className="text-xs h-7 px-2"
+                    onClick={() => {
+                      setShowManualForm(true);
+                      setShowShiprocketForm(false);
+                    }}
                   >
-                    + Create Shipment
+                    Edit
                   </Button>
-                )
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  {!showManualForm && !showShiprocketForm && (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs h-7 px-2.5 cursor-pointer"
+                        onClick={() => {
+                          setShowManualForm(true);
+                          setShowShiprocketForm(false);
+                        }}
+                      >
+                        + Manual Tracking
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-xs h-7 px-2 text-muted hover:text-fg cursor-pointer"
+                        onClick={() => {
+                          setShowShiprocketForm(true);
+                          setShowManualForm(false);
+                        }}
+                      >
+                        Shiprocket API
+                      </Button>
+                    </>
+                  )}
+                </div>
               )}
             </div>
 
@@ -718,10 +787,66 @@ export function OrderDetailsDialog({
                     </a>
                   )}
                 </div>
+              ) : showManualForm ? (
+                <div className="space-y-3 text-xs">
+                  <p className="text-muted text-[11px]">
+                    Manually enter the tracking or consignment number from your courier receipt (Bluedart, Delhivery, DTDC, India Post).
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label htmlFor="m-courier" className="text-xs">Courier Service</Label>
+                      <Input
+                        id="m-courier"
+                        value={manualCourier}
+                        onChange={(e) => setManualCourier(e.target.value)}
+                        placeholder="e.g. Delhivery, Bluedart"
+                        className="h-8 text-xs mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="m-awb" className="text-xs">Tracking / AWB Number *</Label>
+                      <Input
+                        id="m-awb"
+                        value={manualTrackingNo}
+                        onChange={(e) => setManualTrackingNo(e.target.value)}
+                        placeholder="e.g. 1294819284"
+                        className="h-8 text-xs mt-1 font-mono"
+                      />
+                    </div>
+                  </div>
+                  <label className="flex items-center gap-2 text-xs cursor-pointer pt-1">
+                    <input
+                      type="checkbox"
+                      checked={manualMarkShipped}
+                      onChange={(e) => setManualMarkShipped(e.target.checked)}
+                      className="size-3.5 rounded border-border text-accent focus:ring-accent"
+                    />
+                    <span>Mark order as Shipped & email customer</span>
+                  </label>
+                  <div className="flex gap-2 pt-1">
+                    <Button
+                      size="sm"
+                      className="text-xs h-8 flex-1 bg-accent text-ink hover:opacity-90 font-semibold"
+                      onClick={() => manualTrackingMutation.mutate()}
+                      disabled={manualTrackingMutation.isPending || !manualTrackingNo.trim()}
+                    >
+                      {manualTrackingMutation.isPending ? "Saving…" : "Save Tracking Info"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs h-8"
+                      onClick={() => setShowManualForm(false)}
+                      disabled={manualTrackingMutation.isPending}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
               ) : showShiprocketForm ? (
                 <div className="space-y-3 text-xs">
                   <p className="text-muted text-[11px]">
-                    Enter the package dimensions and the pickup location name exactly as configured in your Shiprocket account.
+                    Enter parcel dimensions to automatically book courier and generate AWB via Shiprocket API.
                   </p>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="col-span-2">
@@ -801,9 +926,14 @@ export function OrderDetailsDialog({
                   </div>
                 </div>
               ) : (
-                <p className="text-xs text-muted py-1">
-                  No shipment created yet. Click "+ Create Shipment" to book a courier via Shiprocket.
-                </p>
+                <div className="space-y-1.5 py-1">
+                  <p className="text-xs text-muted">
+                    No courier tracking assigned yet.
+                  </p>
+                  <p className="text-[11px] text-muted/80">
+                    Click <strong className="text-fg font-medium">+ Manual Tracking</strong> to enter any courier's AWB number, or use Shiprocket API when configured.
+                  </p>
+                </div>
               )}
             </div>
           </div>

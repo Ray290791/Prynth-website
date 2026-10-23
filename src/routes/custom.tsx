@@ -32,10 +32,13 @@ import type { CartItem, CustomSpec } from "@/lib/cart-store";
 import { PrintabilityChecker } from "@/components/printability-checker";
 import type { PrintabilityReport } from "@/lib/mesh-analysis";
 import { parseModelFile, estimateFdmMaterialVolumeCm3 } from "@/lib/model-parser";
+import { ChevronDown, Sliders, Sparkles, Printer as PrinterIcon, Loader2, Check, CheckCircle2, RefreshCcw, Save, ArrowLeft, Camera, X, Clock, Send, Phone, FileText, Download, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ChevronDown, Sliders, Sparkles, Printer as PrinterIcon, Loader2, Check, CheckCircle2, RefreshCcw, Save, ArrowLeft, Camera, X, Clock, Send, Phone } from "lucide-react";
 import { submitCustomDesignRequest } from "@/lib/contact-fns";
 import { useCurrentUser } from "@/lib/auth/use-current-user";
+import { CommercialQuoteModal } from "@/components/commercial-quote-modal";
+import { VolumeDiscountBanner } from "@/components/volume-discount-banner";
+import { WhatsAppInlineButton } from "@/components/whatsapp-support";
 
 const rootRoute = getRouteApi("__root__");
 
@@ -340,6 +343,10 @@ function QuotePanel({
   weightGrams,
   ready,
   specs,
+  fileName,
+  material,
+  color,
+  qty = 1,
 }: {
   total: number;
   print: number;
@@ -360,22 +367,31 @@ function QuotePanel({
     dimensions?: string;
     photosCount?: string;
   };
+  fileName?: string;
+  material?: string;
+  color?: string;
+  qty?: number;
 }) {
+  const [showQuoteModal, setShowQuoteModal] = useState(false);
+
   return (
-    <aside className="h-fit rounded-2xl border border-border bg-surface p-6 shadow-xs md:sticky md:top-24">
-      <p className="text-[11px] font-medium tracking-[0.18em] text-subtle uppercase">
-        Estimate
-      </p>
-      <p className="mt-3 font-display text-4xl font-semibold tabular-nums">
-        {ready ? formatINR(total) : "—"}
-      </p>
-      <p className="mt-1 text-sm text-muted">
-        {ready
-          ? "Honest quote calculated for your specifications on our Bambu Lab fleet."
-          : "Add a file or choose a size to preview your price."}
-      </p>
+    <aside className="h-fit rounded-2xl border border-border bg-surface p-6 shadow-xs md:sticky md:top-24 space-y-4">
+      <div>
+        <p className="text-[11px] font-medium tracking-[0.18em] text-subtle uppercase">
+          Estimate
+        </p>
+        <p className="mt-3 font-display text-4xl font-semibold tabular-nums">
+          {ready ? formatINR(total) : "—"}
+        </p>
+        <p className="mt-1 text-sm text-muted">
+          {ready
+            ? "Honest quote calculated for your specifications on our Bambu Lab fleet."
+            : "Add a file or choose a size to preview your price."}
+        </p>
+      </div>
+
       {ready ? (
-        <dl className="mt-6 space-y-2 border-t border-border pt-4 text-sm">
+        <dl className="space-y-2 border-t border-border pt-4 text-sm">
           <div className="flex justify-between">
             <dt className="text-muted">Print</dt>
             <dd className="tabular-nums">{formatINR(print)}</dd>
@@ -468,7 +484,51 @@ function QuotePanel({
           ) : null}
         </dl>
       ) : null}
-      <p className="mt-5 text-xs text-subtle">
+
+      {ready && (
+        <div className="space-y-3 pt-3 border-t border-border">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setShowQuoteModal(true)}
+            className="w-full gap-2 border-accent/40 bg-accent/5 hover:bg-accent/15 text-fg text-xs font-semibold py-2.5 rounded-xl cursor-pointer"
+          >
+            <FileText className="size-4 text-accent" />
+            <span>Download Official Quote (PDF)</span>
+          </Button>
+
+          <VolumeDiscountBanner
+            basePrice={total}
+            currentQty={qty}
+          />
+
+          <WhatsAppInlineButton
+            text="Feasibility Check on WhatsApp"
+            message={`Hi Prynth! I'm planning to 3D print a custom part (~${volumeCm3.toFixed(1)} cm³ in ${material || "PETG"}). Can you review my model specs?`}
+            className="w-full"
+          />
+
+          <CommercialQuoteModal
+            isOpen={showQuoteModal}
+            onClose={() => setShowQuoteModal(false)}
+            quote={{
+              fileName,
+              total,
+              qty: qty || 1,
+              material,
+              color,
+              dimensions: specs?.dimensions,
+              volumeCm3,
+              weightGrams,
+              layerHeight: specs?.qualityName,
+              infill: specs?.infillLabel,
+              turnaroundDays: days,
+            }}
+          />
+        </div>
+      )}
+
+      <p className="text-xs text-subtle">
         Setup is included. No extra fees for standard colour choices. Shipping added at checkout.
       </p>
     </aside>
@@ -513,6 +573,7 @@ function UploadForm({
     }
     return null;
   });
+  const [projectFiles, setProjectFiles] = useState<File[]>([]);
   const [fileId, setFileId] = useState<string | null>(() => editItem?.custom?.fileId || null);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [volume, setVolume] = useState(() => editItem?.custom?.volumeCm3 || 0);
@@ -882,7 +943,47 @@ function UploadForm({
           addEstimate();
         }}
       >
-        <FileDropzone file={file} onFile={handleFile} />
+        <FileDropzone
+          file={file}
+          onFile={handleFile}
+          multiple={true}
+          onFiles={(files) => {
+            setProjectFiles(files);
+            handleFile(files[0]);
+          }}
+        />
+
+        {projectFiles.length > 1 && (
+          <div className="rounded-2xl border border-accent/30 bg-surface/70 p-4 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-accent flex items-center gap-1.5">
+                <Layers className="size-3.5" />
+                Project Assembly Workspace ({projectFiles.length} Parts)
+              </span>
+              <span className="text-[11px] text-muted font-medium">Click part to configure</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {projectFiles.map((f, i) => {
+                const isActive = file?.name === f.name;
+                return (
+                  <button
+                    key={f.name + i}
+                    type="button"
+                    onClick={() => handleFile(f)}
+                    className={`flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-medium border transition-all cursor-pointer ${
+                      isActive
+                        ? "border-accent bg-accent text-ink font-semibold shadow-xs"
+                        : "border-border bg-surface-2 text-muted hover:border-fg/30 hover:text-fg"
+                    }`}
+                  >
+                    <span>Part #{i + 1}: {f.name}</span>
+                    <span className="text-[10px] opacity-75">({(f.size / (1024 * 1024)).toFixed(1)}MB)</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
         {uploadingFile && (
           <p className="flex items-center gap-1.5 text-xs text-accent">
             <Loader2 className="size-3.5 animate-spin" />
@@ -1407,6 +1508,10 @@ function UploadForm({
               ? `${parsedDimensions.x.toFixed(1)} × ${parsedDimensions.y.toFixed(1)} × ${parsedDimensions.z.toFixed(1)} mm`
               : undefined,
           }}
+          fileName={file ? file.name : (editItem?.custom?.fileName || "Model")}
+          material={materialMeta?.name || material}
+          color={selectedColorName}
+          qty={qty}
         />
       </div>
     </div>

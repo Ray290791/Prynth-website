@@ -2,6 +2,7 @@ import { useState, useEffect, type ReactNode } from "react";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { CartSideRibbon } from "@/components/cart-side-ribbon";
+import { WhatsAppFloatingWidget } from "@/components/whatsapp-support";
 import { Download } from "lucide-react";
 
 export function SiteShell({ children }: { children: ReactNode }) {
@@ -50,6 +51,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
         {children}
       </main>
       <CartSideRibbon />
+      <WhatsAppFloatingWidget />
       <SiteFooter />
       {showPrompt && (
         <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-80 bg-surface border border-border shadow-lg rounded-xl p-4 z-50 animate-in slide-in-from-bottom-5">

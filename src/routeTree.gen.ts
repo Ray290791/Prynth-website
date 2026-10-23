@@ -17,6 +17,7 @@ import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CustomRouteImport } from './routes/custom'
 import { Route as FaqRouteImport } from './routes/faq'
+import { Route as GalleryRouteImport } from './routes/gallery'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as LithophaneRouteImport } from './routes/lithophane'
 import { Route as MaterialsRouteImport } from './routes/materials'
@@ -75,6 +76,11 @@ const CustomRoute = CustomRouteImport.update({
 const FaqRoute = FaqRouteImport.update({
   id: '/faq',
   path: '/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GalleryRoute = GalleryRouteImport.update({
+  id: '/gallery',
+  path: '/gallery',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HistoryRoute = HistoryRouteImport.update({
@@ -182,6 +188,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/custom': typeof CustomRoute
   '/faq': typeof FaqRoute
+  '/gallery': typeof GalleryRoute
   '/history': typeof HistoryRoute
   '/lithophane': typeof LithophaneRoute
   '/materials': typeof MaterialsRoute
@@ -211,6 +218,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/custom': typeof CustomRoute
   '/faq': typeof FaqRoute
+  '/gallery': typeof GalleryRoute
   '/history': typeof HistoryRoute
   '/lithophane': typeof LithophaneRoute
   '/materials': typeof MaterialsRoute
@@ -241,6 +249,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/custom': typeof CustomRoute
   '/faq': typeof FaqRoute
+  '/gallery': typeof GalleryRoute
   '/history': typeof HistoryRoute
   '/lithophane': typeof LithophaneRoute
   '/materials': typeof MaterialsRoute
@@ -272,6 +281,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/custom'
     | '/faq'
+    | '/gallery'
     | '/history'
     | '/lithophane'
     | '/materials'
@@ -301,6 +311,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/custom'
     | '/faq'
+    | '/gallery'
     | '/history'
     | '/lithophane'
     | '/materials'
@@ -330,6 +341,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/custom'
     | '/faq'
+    | '/gallery'
     | '/history'
     | '/lithophane'
     | '/materials'
@@ -360,6 +372,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   CustomRoute: typeof CustomRoute
   FaqRoute: typeof FaqRoute
+  GalleryRoute: typeof GalleryRoute
   HistoryRoute: typeof HistoryRoute
   LithophaneRoute: typeof LithophaneRoute
   MaterialsRoute: typeof MaterialsRoute
@@ -437,6 +450,13 @@ declare module '@tanstack/react-router' {
       path: '/faq'
       fullPath: '/faq'
       preLoaderRoute: typeof FaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gallery': {
+      id: '/gallery'
+      path: '/gallery'
+      fullPath: '/gallery'
+      preLoaderRoute: typeof GalleryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/history': {
@@ -584,6 +604,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   CustomRoute: CustomRoute,
   FaqRoute: FaqRoute,
+  GalleryRoute: GalleryRoute,
   HistoryRoute: HistoryRoute,
   LithophaneRoute: LithophaneRoute,
   MaterialsRoute: MaterialsRoute,

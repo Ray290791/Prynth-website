@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Wordmark } from "@/components/logo";
 import { getProductsPublic, getFeaturedProducts } from "@/lib/products-fns";
 import { cn } from "@/lib/utils";
+import { TestimonialsSection } from "@/components/testimonials-carousel";
 
 
 export const Route = createFileRoute("/")({
@@ -524,6 +525,9 @@ function Home() {
           </div>
         </div>
       </section>
+
+      {/* Customer Testimonials & Social Proof */}
+      <TestimonialsSection className="py-16 md:py-24 border-t border-border/60 bg-surface/30" />
 
       {/* Pick up where you left off */}
       <LastVisitedSection products={products} />

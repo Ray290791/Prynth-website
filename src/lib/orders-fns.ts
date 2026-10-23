@@ -735,3 +735,78 @@ export const shipWithShiprocket = createServerFn({ method: "POST" })
     };
   });
 
+export const updateOrderTrackingAdmin = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator(
+    (data: {
+      order_number: string;
+      tracking_number: string;
+      courier_name?: string;
+      tracking_url?: string;
+      mark_as_shipped?: boolean;
+    }) => data
+  )
+  .handler(async ({ data, context }) => {
+    const sql = await getSql();
+    const admin = await verifyAdminRole(context.userId, sql);
+    if (!admin) throw new Error("Unauthorized");
+
+    const trackUrl =
+      data.tracking_url?.trim() ||
+      (data.courier_name?.toLowerCase().includes("delhivery")
+        ? `https://www.delhivery.com/track/package/${data.tracking_number.trim()}`
+        : data.courier_name?.toLowerCase().includes("bluedart")
+        ? `https://www.bluedart.com/tracking?trackNumber=${data.tracking_number.trim()}`
+        : data.courier_name?.toLowerCase().includes("indiapost") || data.courier_name?.toLowerCase().includes("speed post")
+        ? `https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx`
+        : null);
+
+    if (data.mark_as_shipped) {
+      await sql`
+        UPDATE orders
+        SET
+          tracking_number = ${data.tracking_number.trim()},
+          courier_name    = ${data.courier_name?.trim() || null},
+          tracking_url    = ${trackUrl},
+          status          = 'shipped'
+        WHERE order_number = ${data.order_number}
+      `;
+    } else {
+      await sql`
+        UPDATE orders
+        SET
+          tracking_number = ${data.tracking_number.trim()},
+          courier_name    = ${data.courier_name?.trim() || null},
+          tracking_url    = ${trackUrl}
+        WHERE order_number = ${data.order_number}
+      `;
+    }
+
+    if (data.mark_as_shipped) {
+      try {
+        const orderRows = await sql<{ guest_email?: string; shipping_address?: any }>`
+          SELECT guest_email, shipping_address FROM orders WHERE order_number = ${data.order_number}
+        `;
+        const order = orderRows[0];
+        const customerEmail =
+          order?.guest_email ||
+          (typeof order?.shipping_address === "string"
+            ? JSON.parse(order.shipping_address)?.email
+            : order?.shipping_address?.email);
+        if (customerEmail) {
+          await sendOrderStatusUpdateEmail(data.order_number, customerEmail, "shipped");
+        }
+      } catch (err) {
+        console.warn("Manual tracking email notification skipped:", err);
+      }
+    }
+
+    return {
+      success: true,
+      tracking_number: data.tracking_number.trim(),
+      courier_name: data.courier_name?.trim() || null,
+      tracking_url: trackUrl,
+    };
+  });
+
+

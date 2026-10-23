@@ -6,13 +6,15 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useState, useEffect, useId } from "react";
 import { cn } from "@/lib/utils";
-import { Package, Box, X, Settings, Image as ImageIcon, BarChart3, Tag, ClipboardList, Shield, UserCog, HelpCircle, Users, Search, Trash2, Layers, Edit2, Plus, Eye, EyeOff, Printer as PrinterIcon, Disc, CreditCard, Mail, Bell, DraftingCompass } from "lucide-react";
+import { Package, Box, X, Settings, Image as ImageIcon, BarChart3, Tag, ClipboardList, Shield, UserCog, HelpCircle, Users, Search, Trash2, Layers, Edit2, Plus, Eye, EyeOff, Printer as PrinterIcon, Disc, CreditCard, Mail, Bell, DraftingCompass, MessageSquareQuote, Truck } from "lucide-react";
 import { InquiriesTab } from "@/components/inquiries-tab";
 import { PrintersTab } from "@/components/printers-tab";
 import { FilamentsTab } from "@/components/filaments-tab";
 import { PaymentOptionsTab } from "@/components/payment-options-tab";
 import { NotificationsTab } from "@/components/notifications-tab";
 import { ServicesTab } from "@/components/services-tab";
+import { TestimonialsTab } from "@/components/testimonials-tab";
+import { GalleryTab } from "@/components/gallery-tab";
 import { OrderDetailsDialog } from "@/components/order-details-dialog";
 import { getMaterialsAdmin, createMaterial, updateMaterial, deleteMaterial, type Material, type MaterialInput } from "@/lib/materials-fns";
 import { getAllProductsAdmin, deleteProduct, updateProduct, createProduct, updateProductInventory } from "@/lib/products-fns";
@@ -111,6 +113,8 @@ function AdminPage() {
     { id: "filaments", label: "Filaments", icon: Disc },
     { id: "products", label: "Products", icon: Box },
     { id: "inventory", label: "Inventory", icon: ClipboardList },
+    { id: "gallery", label: "Showcase & Gallery", icon: ImageIcon },
+    { id: "testimonials", label: "Testimonials", icon: MessageSquareQuote },
     { id: "materials", label: "Materials", icon: Layers },
     { id: "coupons", label: "Coupons", icon: Tag },
     { id: "faqs", label: "FAQs", icon: HelpCircle },
@@ -306,6 +310,8 @@ function AdminPage() {
           isLoading={deleteMutation.isPending}
         />
 
+        {activeTab === "gallery" && <GalleryTab />}
+        {activeTab === "testimonials" && <TestimonialsTab />}
         {activeTab === "payments" && <PaymentOptionsTab />}
         {activeTab === "settings" && <SettingsTab />}
         {activeTab === "notifications" && <NotificationsTab />}
@@ -1006,10 +1012,12 @@ function SettingsTab() {
       shipping_policy: (fd.get("shipping_policy") as string)?.trim(),
       returns_policy: (fd.get("returns_policy") as string)?.trim(),
       product_categories: ((fd.get("product_categories") as string) || settings?.product_categories || "Desk, Home, Bath").trim(),
-      free_shipping_threshold: ((fd.get("free_shipping_threshold") as string) || settings?.free_shipping_threshold || "799").trim(),
+      free_shipping_threshold: ((fd.get("free_shipping_threshold") as string) || settings?.free_shipping_threshold || "349").trim(),
       standard_shipping_fee: ((fd.get("standard_shipping_fee") as string) || settings?.standard_shipping_fee || "49").trim(),
       express_shipping_fee: ((fd.get("express_shipping_fee") as string) || settings?.express_shipping_fee || "129").trim(),
       cod_fee: ((fd.get("cod_fee") as string) || settings?.cod_fee || "40").trim(),
+      shiprocket_pickup_location: ((fd.get("shiprocket_pickup_location") as string) || settings?.shiprocket_pickup_location || "Primary").trim(),
+      shiprocket_pickup_pincode: ((fd.get("shiprocket_pickup_pincode") as string) || settings?.shiprocket_pickup_pincode || "400001").trim(),
       promo_banner: ((fd.get("promo_banner") as string) || settings?.promo_banner || "").trim(),
       hero_featured_slots: JSON.stringify(heroSlots),
       custom_pricing_upload_formula: ((fd.get("custom_pricing_upload_formula") as string) || settings?.custom_pricing_upload_formula || "").trim(),
@@ -1244,10 +1252,10 @@ function SettingsTab() {
                 min="0"
                 step="1"
                 name="free_shipping_threshold"
-                defaultValue={settings.free_shipping_threshold || "799"}
+                defaultValue={settings.free_shipping_threshold || "349"}
                 required
                 className="w-full rounded border border-border bg-surface p-2 text-sm"
-                placeholder="799"
+                placeholder="349"
               />
               <p className="text-xs text-muted mt-1">Orders at or above this cart amount unlock free standard delivery.</p>
             </div>
@@ -1295,6 +1303,57 @@ function SettingsTab() {
                 placeholder="40"
               />
               <p className="text-xs text-muted mt-1">Collection fee added when customer selects Cash on Delivery.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* LOGISTICS & SHIPROCKET INTEGRATION SECTION */}
+        <section className="space-y-4 rounded-2xl border border-border bg-surface p-5 shadow-xs">
+          <div className="flex items-center justify-between border-b border-border pb-3">
+            <div>
+              <h3 className="text-base font-semibold text-fg flex items-center gap-2">
+                <Truck className="size-4 text-accent" />
+                <span>Logistics & Courier Integration (Shiprocket / Manual)</span>
+              </h3>
+              <p className="text-xs text-muted mt-0.5">
+                Dispatch orders manually or connect your Shiprocket account for automated AWB and courier booking.
+              </p>
+            </div>
+            <span className="rounded-full bg-accent/10 border border-accent/20 px-2.5 py-0.5 text-[10px] font-semibold text-accent">
+              Easy Courier Setup
+            </span>
+          </div>
+
+          <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-3.5 text-xs text-blue-900 dark:text-blue-300 leading-relaxed">
+            <p className="font-semibold flex items-center gap-1.5">
+              <span>💡 Don't have a Shiprocket account yet?</span>
+            </p>
+            <p className="mt-1">
+              No problem! You can ship orders today using <strong>Manual Tracking</strong> in the Order Details modal. When you're ready to automate label creation, simply enter your Shiprocket email & password below or add them to your Cloudflare Worker secrets via <code className="font-mono bg-surface-2 px-1 py-0.5 rounded">npx wrangler secret put SHIPROCKET_EMAIL</code>.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Shiprocket Pickup Location Name</label>
+              <input
+                name="shiprocket_pickup_location"
+                defaultValue={settings.shiprocket_pickup_location || "Primary"}
+                className="w-full rounded border border-border bg-surface p-2 text-sm"
+                placeholder="e.g. Primary or Mumbai Studio"
+              />
+              <p className="text-xs text-muted mt-1">Must match the pickup warehouse name saved in your Shiprocket account.</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Default Pickup PIN Code</label>
+              <input
+                name="shiprocket_pickup_pincode"
+                defaultValue={settings.shiprocket_pickup_pincode || "400001"}
+                className="w-full rounded border border-border bg-surface p-2 text-sm font-mono"
+                placeholder="400001"
+              />
+              <p className="text-xs text-muted mt-1">Studio origin pincode used for transit calculation.</p>
             </div>
           </div>
         </section>

@@ -24,6 +24,8 @@ import { formatINR } from "@/lib/format";
 import { useCart } from "@/lib/cart-store";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { PincodeEstimator } from "@/components/pincode-estimator";
+import { WhatsAppInlineButton } from "@/components/whatsapp-support";
 
 const rootRoute = getRouteApi("__root__");
 
@@ -619,6 +621,15 @@ export function PegboardPage() {
             <p className="text-[11px] text-muted text-center">
               Printed to order with premium matte filament · Ships across India
             </p>
+
+            <div className="pt-2 space-y-3">
+              <PincodeEstimator itemPrice={totalPrice} />
+              <WhatsAppInlineButton
+                text="Ask about pegboard sizing on WhatsApp"
+                message={`Hi Prynth! I'm configuring a Modular Pegboard (${currentSize.name} in ${currentColor.name}). Can you help me check if it fits my desk?`}
+                className="w-full"
+              />
+            </div>
           </div>
         </div>
       </section>

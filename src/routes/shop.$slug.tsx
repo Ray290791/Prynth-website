@@ -17,6 +17,10 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useCurrentUser } from "@/lib/auth/use-current-user";
 import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PincodeEstimator } from "@/components/pincode-estimator";
+import { VolumeDiscountBanner } from "@/components/volume-discount-banner";
+import { WhatsAppInlineButton } from "@/components/whatsapp-support";
+import { calculateDiscountedUnitPrice } from "@/lib/volume-discounts";
 
 export const Route = createFileRoute("/shop/$slug")({
   loader: async ({ params }) => {
@@ -183,6 +187,7 @@ function ProductPage() {
 
   function addToCart() {
     if (!product) return;
+    const effectiveUnitPrice = calculateDiscountedUnitPrice(displayPrice, qty);
     add({
       kind: "product",
       productSlug: product.slug,
@@ -191,7 +196,7 @@ function ProductPage() {
       color,
       size: size || undefined,
       material: material || undefined,
-      unitPrice: displayPrice,
+      unitPrice: effectiveUnitPrice,
       qty,
     });
     toast.success(`${product.name} added to cart`, {
@@ -201,6 +206,7 @@ function ProductPage() {
 
   function handleQtyChange(newQty: number) {
     if (!product) return;
+    const effectiveUnitPrice = calculateDiscountedUnitPrice(displayPrice, newQty);
     if (newQty > totalQty) {
       add({
         kind: "product",
@@ -209,7 +215,7 @@ function ProductPage() {
         image: product.image,
         color,
         size: size || undefined,
-        unitPrice: displayPrice,
+        unitPrice: effectiveUnitPrice,
         qty: 1,
       });
     } else if (newQty < totalQty) {
@@ -447,6 +453,28 @@ function ProductPage() {
                     Buy now
                   </Button>
                 )}
+              </div>
+
+              {/* Volume Discount Tier Banner */}
+              <div className="mt-5">
+                <VolumeDiscountBanner
+                  basePrice={displayPrice}
+                  currentQty={totalQty > 0 ? totalQty : qty}
+                  onSelectQty={(newQty) => {
+                    if (totalQty > 0) handleQtyChange(newQty);
+                    else setQty(newQty);
+                  }}
+                />
+              </div>
+
+              {/* Pincode Estimator & WhatsApp Studio Support */}
+              <div className="mt-5 space-y-3">
+                <PincodeEstimator itemPrice={displayPrice} />
+                <WhatsAppInlineButton
+                  text="Ask about this print on WhatsApp"
+                  message={`Hi Prynth! I'm interested in the "${product.name}"${color ? ` in ${color}` : ""}. Do you have this ready to ship from Mumbai?`}
+                  className="w-full"
+                />
               </div>
             </>
           ) : (

@@ -74,9 +74,9 @@ function CheckoutPage() {
   });
   
   const [saveAddressToProfile, setSaveAddressToProfile] = useState(true);
-  const [isB2B, setIsB2B] = useState(false);
-  const [companyName, setCompanyName] = useState("");
-  const [gstin, setGstin] = useState("");
+  const [needsCommercialReceipt, setNeedsCommercialReceipt] = useState(false);
+  const [organizationName, setOrganizationName] = useState("");
+  const [poReference, setPoReference] = useState("");
   const [whatsappOptIn, setWhatsappOptIn] = useState(true);
   
   const [ship, setShip] = useState<Ship>("standard");
@@ -208,12 +208,9 @@ function CheckoutPage() {
     if (address.city.trim().length < 2) next.city = "City is required.";
     if (!/^\d{6}$/.test(address.pincode)) next.pincode = "PIN code must be 6 digits.";
 
-    if (isB2B) {
-      if (companyName.trim().length < 2) {
-        next.companyName = "Company / organization name is required for B2B invoice.";
-      }
-      if (!/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/i.test(gstin.trim())) {
-        next.gstin = "Please enter a valid 15-character GSTIN (e.g. 29AAAAA0000A1Z5).";
+    if (needsCommercialReceipt) {
+      if (organizationName.trim().length < 2) {
+        next.organizationName = "Please enter company, college, or lab name.";
       }
     }
 
@@ -375,7 +372,7 @@ function CheckoutPage() {
 
       const formattedNotes = [
         notes.trim(),
-        isB2B && gstin.trim() ? `B2B Tax Invoice | Company: ${companyName.trim()} | GSTIN: ${gstin.trim().toUpperCase()}` : "",
+        needsCommercialReceipt && organizationName.trim() ? `Commercial Receipt | Organization: ${organizationName.trim()}${poReference.trim() ? ` | Ref: ${poReference.trim()}` : ""}` : "",
         whatsappOptIn ? "WhatsApp Updates: Opted In" : "WhatsApp Updates: Opted Out",
         bulk.percent > 0 ? `Volume Tier: ${bulk.tier} (${bulk.percent}% off)` : "",
         pay === "upi" && upiRef ? `UTR: ${upiRef.trim()}` : "",
@@ -640,47 +637,45 @@ function CheckoutPage() {
           <section className="rounded-2xl border border-border bg-surface p-4 sm:p-5 shadow-xs space-y-4">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="font-display text-base font-semibold">Business Tax Invoicing (B2B / GST)</h2>
-                <p className="text-xs text-muted mt-0.5">Need a formal GST tax invoice with Input Tax Credit (ITC) for your company?</p>
+                <h2 className="font-display text-base font-semibold">Commercial Expense Receipt (Reimbursement)</h2>
+                <p className="text-xs text-muted mt-0.5">Purchasing for a company, college lab, or freelance project? Add your organization name to print on your invoice.</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer shrink-0">
                 <input
                   type="checkbox"
-                  checked={isB2B}
-                  onChange={(e) => setIsB2B(e.target.checked)}
+                  checked={needsCommercialReceipt}
+                  onChange={(e) => setNeedsCommercialReceipt(e.target.checked)}
                   className="sr-only peer"
                 />
                 <div className="w-11 h-6 bg-surface-2 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
               </label>
             </div>
 
-            {isB2B && (
+            {needsCommercialReceipt && (
               <div className="grid gap-3 sm:grid-cols-2 pt-3 border-t border-border animate-in fade-in duration-200">
                 <div>
-                  <Label htmlFor="companyName">Registered Company Name</Label>
+                  <Label htmlFor="orgName">Company / College / Lab Name</Label>
                   <Input
-                    id="companyName"
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    placeholder="e.g. Acme Technologies Pvt Ltd"
+                    id="orgName"
+                    value={organizationName}
+                    onChange={(e) => setOrganizationName(e.target.value)}
+                    placeholder="e.g. Acme Tech Pvt Ltd / IIT Bombay Robotics Lab"
                     className="mt-1"
                   />
-                  {errors.companyName ? <p className="mt-1 text-xs text-danger">{errors.companyName}</p> : null}
+                  {errors.organizationName ? <p className="mt-1 text-xs text-danger">{errors.organizationName}</p> : null}
                 </div>
                 <div>
-                  <Label htmlFor="gstin">GST Identification Number (GSTIN)</Label>
+                  <Label htmlFor="poRef">PO / Project / Dept Ref (Optional)</Label>
                   <Input
-                    id="gstin"
-                    value={gstin}
-                    onChange={(e) => setGstin(e.target.value.toUpperCase())}
-                    maxLength={15}
-                    placeholder="29AAAAA0000A1Z5"
-                    className="mt-1 uppercase font-mono"
+                    id="poRef"
+                    value={poReference}
+                    onChange={(e) => setPoReference(e.target.value)}
+                    placeholder="e.g. PO-8842 / Capstone Drone Project"
+                    className="mt-1"
                   />
-                  {errors.gstin ? <p className="mt-1 text-xs text-danger">{errors.gstin}</p> : null}
                 </div>
                 <p className="sm:col-span-2 text-[11px] text-muted">
-                  Your official 18% GST tax invoice with HSN code 8477 will be attached to your order and available for instant download.
+                  Your formal commercial receipt will be generated with your organization details, studio PAN reference, and order item breakdown — ready for accounting expense vouchers and budget reimbursement.
                 </p>
               </div>
             )}

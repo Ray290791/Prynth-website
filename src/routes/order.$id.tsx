@@ -330,7 +330,7 @@ function OrderPage() {
 
       {order.notes && (
         <section className="mt-6 rounded-3xl bg-surface p-6 shadow-[var(--shadow-border)]">
-          <h2 className="text-sm font-semibold text-fg">Order Details & B2B Tax Info</h2>
+          <h2 className="text-sm font-semibold text-fg">Order Specifications & Commercial Details</h2>
           <div className="mt-3 flex flex-wrap gap-2 text-xs">
             {order.notes.split(" | ").map((note: string, idx: number) => (
               <span key={idx} className="rounded-xl border border-border bg-surface-2 px-3 py-1.5 font-medium text-fg">
