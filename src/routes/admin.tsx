@@ -1629,7 +1629,7 @@ function SettingsTab() {
               </div>
             </div>
             <p className="text-xs text-muted">
-              Once your Razorpay KYC verification is approved, toggle to <strong>Live Mode</strong> in your Razorpay dashboard, generate Live API keys, and paste them here or in your Vercel environment variables.
+              Once your Razorpay KYC verification is approved, toggle to <strong>Live Mode</strong> in your Razorpay dashboard, generate Live API keys, and paste them here or in your Cloudflare Workers environment variables.
             </p>
           </div>
 

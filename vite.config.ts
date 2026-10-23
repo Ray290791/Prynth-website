@@ -72,10 +72,7 @@ export default defineConfig(({ command, isPreview }) => ({
     ...(command === "build" || isPreview
       ? [
           nitro({
-            preset:
-              process.env.VERCEL
-                ? "vercel"
-                : "cloudflare-module",
+            preset: "cloudflare-module",
             serverDir: "./server",
           }),
         ]
