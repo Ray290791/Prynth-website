@@ -10,13 +10,28 @@ const rootRoute = getRouteApi("__root__");
 export const Route = createFileRoute("/faq")({
   component: FaqPage,
   head: () => ({
+    links: [
+      { rel: "canonical", href: "https://prynth.in/faq" },
+    ],
     meta: [
-      { title: "Frequently Asked Questions | prynth!" },
+      { title: "Frequently Asked Questions — 3D Printing & Ordering | Prynth" },
       {
         name: "description",
         content:
+          "Answers to common questions about 3D printing turnaround times, filaments (PLA/PETG/ABS), lithophanes, custom STL quotes, and delivery across India by Prynth.",
+      },
+      {
+        name: "keywords",
+        content:
+          "3d printing faq, 3d print turnaround time, custom 3d printing questions, prynth shipping india",
+      },
+      { property: "og:title", content: "Frequently Asked Questions — 3D Printing & Ordering | Prynth" },
+      {
+        property: "og:description",
+        content:
           "Answers to common questions about our 3D print turnaround, materials, lithophanes, custom files, and shipping across India.",
       },
+      { property: "og:url", content: "https://prynth.in/faq" },
     ],
   }),
 });
@@ -30,6 +45,19 @@ export function FaqPage() {
     queryKey: ["faqs"],
     queryFn: () => getFaqs(),
   });
+
+  const faqJsonLd = faqs.length > 0 ? {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqs.map((f: Faq) => ({
+      "@type": "Question",
+      "name": f.question,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": f.answer,
+      },
+    })),
+  } : null;
 
   const filteredFaqs = useMemo(() => {
     if (!search.trim()) return faqs;
@@ -49,6 +77,12 @@ export function FaqPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 md:px-6 md:py-20 animate-in fade-in duration-300 space-y-10">
+      {faqJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        />
+      )}
       {/* Header */}
       <div>
         <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3.5 py-1 text-xs font-semibold text-accent">

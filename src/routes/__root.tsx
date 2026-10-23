@@ -108,16 +108,23 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: APP_NAME },
+      { title: "Prynth — 3D Printing Services & Custom 3D Printed Products in India" },
       {
         name: "description",
         content:
-          "prynth! — quality 3D prints at honest prices. Ready-made pieces and custom print or design, ships across India.",
+          "Prynth is an on-demand 3D printing studio based in Bengaluru, India. Custom rapid prototyping, CAD design, online 3D printing quotes, and modern functional desk accessories shipped across India.",
       },
+      {
+        name: "keywords",
+        content:
+          "3d printing services, 3d printed products, 3d printing india, custom 3d printing, rapid prototyping, bangalore 3d printing, stl 3d print, desk accessories, prynth, additive manufacturing",
+      },
+      { name: "author", content: "Prynth" },
+      { name: "robots", content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" },
       { name: "theme-color", content: "#F6F5F2" },
       {
         property: "og:site_name",
-        content: "prynth!",
+        content: "Prynth",
       },
       {
         property: "og:type",
@@ -125,12 +132,12 @@ export const Route = createRootRoute({
       },
       {
         property: "og:title",
-        content: "prynth! — Quality 3D Printing & Modern Functional Prints",
+        content: "Prynth — 3D Printing Services & Custom 3D Printed Products in India",
       },
       {
         property: "og:description",
         content:
-          "Quality 3D prints at honest prices. Ready-made pieces and custom print or design, ships across India.",
+          "Quality 3D printing services and modern functional prints at honest prices. Ready-made pieces and custom print or design, ships across India.",
       },
       {
         property: "og:image",
@@ -142,12 +149,12 @@ export const Route = createRootRoute({
       },
       {
         name: "twitter:title",
-        content: "prynth! — Quality 3D Printing & Modern Functional Prints",
+        content: "Prynth — 3D Printing Services & Custom 3D Printed Products in India",
       },
       {
         name: "twitter:description",
         content:
-          "Quality 3D prints at honest prices. Ready-made pieces and custom print or design, ships across India.",
+          "Quality 3D printing services and modern functional prints at honest prices. Ready-made pieces and custom print or design, ships across India.",
       },
       {
         name: "twitter:image",
@@ -196,20 +203,85 @@ const queryClient = new QueryClient({
   },
 });
 
+const SITE_JSON_LD = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://prynth.in/#website",
+      "url": "https://prynth.in/",
+      "name": "Prynth",
+      "alternateName": ["prynth!", "Prynth 3D", "Prynth India", "Prynth Studio"],
+      "description": "On-demand 3D printing services, CAD design, and modern 3D printed desk accessories in India.",
+      "publisher": { "@id": "https://prynth.in/#organization" },
+      "inLanguage": "en-IN",
+    },
+    {
+      "@type": ["Store", "LocalBusiness"],
+      "@id": "https://prynth.in/#organization",
+      "name": "Prynth",
+      "legalName": "Prynth 3D Printing Studio",
+      "alternateName": ["prynth!", "Prynth 3D", "Prynth India"],
+      "url": "https://prynth.in/",
+      "logo": "https://prynth.in/brand/mark.png",
+      "image": "https://prynth.in/og.jpg",
+      "description": "Prynth is an on-demand 3D printing studio based in Bengaluru, India. We provide instant custom 3D printing from STL/3MF files, CAD modeling, rapid prototyping, and high-quality ready-made functional desk and home products with nationwide delivery.",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Bengaluru",
+        "addressRegion": "Karnataka",
+        "addressCountry": "IN",
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 12.9716,
+        "longitude": 77.5946,
+      },
+      "areaServed": {
+        "@type": "Country",
+        "name": "India",
+      },
+      "priceRange": "₹₹",
+      "currenciesAccepted": "INR",
+      "paymentAccepted": "Cash on Delivery, UPI, Credit Card, Debit Card, Net Banking",
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+          "opens": "09:00",
+          "closes": "20:00",
+        },
+      ],
+      "sameAs": [
+        "https://www.instagram.com/prynth.in",
+        "https://twitter.com/prynth_in",
+      ],
+    },
+  ],
+};
+
 function Root() {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
-        {/* Google tag (gtag.js) */}
-        <script async id="ga-script" src="https://www.googletagmanager.com/gtag/js?id=G-R1LGD7FBVN" />
+        {/* Structured Data: WebSite and LocalBusiness/Store Entity schema */}
         <script
-          id="ga-script-init"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(SITE_JSON_LD) }}
+        />
+        {/* Google Consent Mode v2 default — privacy-first: all tracking denied until explicit consent */}
+        <script
+          id="consent-mode-init"
           dangerouslySetInnerHTML={{
             __html: `window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', 'G-R1LGD7FBVN');`,
+gtag('consent', 'default', {
+  'analytics_storage': 'denied',
+  'ad_storage': 'denied',
+  'ad_user_data': 'denied',
+  'ad_personalization': 'denied'
+});`,
           }}
         />
         <meta name="strix-verification" content="strix-verify-e881dc2df817534b0d76e030da14de8e" />

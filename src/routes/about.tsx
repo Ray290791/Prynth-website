@@ -8,13 +8,28 @@ const rootRoute = getRouteApi("__root__");
 export const Route = createFileRoute("/about")({
   component: AboutPage,
   head: () => ({
+    links: [
+      { rel: "canonical", href: "https://prynth.in/about" },
+    ],
     meta: [
-      { title: "Our Story | prynth!" },
+      { title: "About Prynth — 3D Printing Studio Based in Bengaluru, India | Prynth" },
       {
         name: "description",
         content:
-          "We started prynth! because finding reliable, honest 3D printing shouldn't be a hassle. Learn about our mission and craft.",
+          "We started Prynth (prynth!) to make reliable, high-quality 3D printing and functional design accessible at honest prices. Learn about our studio, craft, and mission.",
       },
+      {
+        name: "keywords",
+        content:
+          "about prynth, 3d printing studio bangalore, 3d printing india company, custom 3d manufacturing india",
+      },
+      { property: "og:title", content: "About Prynth — 3D Printing Studio Based in Bengaluru, India" },
+      {
+        property: "og:description",
+        content:
+          "We started Prynth to make reliable, high-quality 3D printing accessible at honest prices.",
+      },
+      { property: "og:url", content: "https://prynth.in/about" },
     ],
   }),
 });

@@ -32,18 +32,26 @@ export const Route = createFileRoute("/shop/$slug")({
     if (!loaderData?.product) return {};
     const p = loaderData.product;
     return {
+      links: [
+        { rel: "canonical", href: `https://prynth.in/shop/${p.slug}` },
+      ],
       meta: [
-        { title: `${p.name} | prynth!` },
-        { name: "description", content: p.description.substring(0, 160) },
-        { property: "og:title", content: `${p.name} | prynth!` },
+        { title: `${p.name} — 3D Printed Product India | Prynth` },
+        { name: "description", content: `${p.name} by Prynth. ${p.description.substring(0, 130)} Precision 3D printed with delivery across India.` },
+        {
+          name: "keywords",
+          content: `${p.name}, 3d printed products, 3d printed desk accessories, buy ${p.name} online, prynth`,
+        },
+        { property: "og:title", content: `${p.name} | Prynth 3D Products` },
         { property: "og:description", content: p.description.substring(0, 160) },
         { property: "og:image", content: p.image },
         { property: "og:type", content: "product" },
+        { property: "og:url", content: `https://prynth.in/shop/${p.slug}` },
         { name: "twitter:card", content: "summary_large_image" },
-        { name: "twitter:title", content: `${p.name} | prynth!` },
+        { name: "twitter:title", content: `${p.name} | Prynth` },
         { name: "twitter:description", content: p.description.substring(0, 160) },
         { name: "twitter:image", content: p.image },
-      ]
+      ],
     };
   },
   component: ProductPage,
@@ -212,8 +220,49 @@ function ProductPage() {
     }
   }
 
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": product.name,
+    "description": product.description,
+    "image": product.image.startsWith("http") ? product.image : `https://prynth.in${product.image}`,
+    "sku": product.slug,
+    "countryOfOrigin": {
+      "@type": "Country",
+      "name": "India",
+    },
+    "brand": {
+      "@type": "Brand",
+      "name": "Prynth",
+    },
+    "manufacturer": {
+      "@type": "Organization",
+      "name": "Prynth 3D Studio",
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "IN",
+      },
+    },
+    "offers": {
+      "@type": "Offer",
+      "url": `https://prynth.in/shop/${product.slug}`,
+      "priceCurrency": "INR",
+      "price": displayPrice,
+      "availability": isOutOfStock ? "https://schema.org/OutOfStock" : "https://schema.org/InStock",
+      "itemCondition": "https://schema.org/NewCondition",
+      "seller": {
+        "@type": "Organization",
+        "name": "Prynth",
+      },
+    },
+  };
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 pb-32 md:px-6 md:py-16 md:pb-16 relative">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
       <p className="text-sm text-subtle">
         <Link to="/shop" className="hover:text-fg">
           Shop
@@ -435,8 +484,24 @@ function ProductPage() {
               <dt className="text-subtle">Includes</dt>
               <dd className="mt-1 text-fg">{product.includes}</dd>
             </div>
+            <div>
+              <dt className="text-subtle">Country of Origin</dt>
+              <dd className="mt-1 text-fg font-medium">India</dd>
+            </div>
+            <div>
+              <dt className="text-subtle">Manufacturer &amp; Packer</dt>
+              <dd className="mt-1 text-fg">Prynth, Bengaluru, India</dd>
+            </div>
           </dl>
           <p className="mt-4 text-sm text-muted">{product.care}</p>
+
+          <div className="mt-5 rounded-2xl border border-border/80 bg-surface-2/40 p-4 text-xs text-muted space-y-1">
+            <span className="font-semibold text-fg block">Product Notice &amp; Safety:</span>
+            <p>
+              Functional lifestyle accessory manufactured via precision FDM additive manufacturing. 
+              Not certified for direct food contact. Not intended as a toy for children under 3 years of age (small parts / choking hazard).
+            </p>
+          </div>
         </div>
       </div>
 

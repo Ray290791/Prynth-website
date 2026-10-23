@@ -33,14 +33,22 @@ export const Route = createFileRoute("/")({
     return { featured, products };
   },
   head: () => ({
+    links: [
+      { rel: "canonical", href: "https://prynth.in/" },
+    ],
     meta: [
-      { title: "prynth! — Custom 3D Printing & Modern Ready-Made Prints" },
+      { title: "Prynth — 3D Printing Services & Custom 3D Printed Products India" },
       {
         name: "description",
         content:
-          "High quality 3D prints at honest prices. Desk accessories, functional organization, and on-demand custom 3D printing & design. Ships across India.",
+          "Prynth is an on-demand 3D printing studio based in Bengaluru, India. Get instant 3D printing quotes for STL files, custom CAD design, and shop precision 3D printed desk accessories with delivery across India.",
       },
-      { property: "og:title", content: "prynth! — Custom 3D Printing & Modern Ready-Made Prints" },
+      {
+        name: "keywords",
+        content:
+          "3d printing services, 3d printed products, custom 3d printing, 3d printing india, bangalore 3d printing, desk accessories, rapid prototyping, prynth, online 3d printing",
+      },
+      { property: "og:title", content: "Prynth — 3D Printing Services & Custom 3D Printed Products India" },
       {
         property: "og:description",
         content:

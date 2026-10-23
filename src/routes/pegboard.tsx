@@ -30,13 +30,28 @@ const rootRoute = getRouteApi("__root__");
 export const Route = createFileRoute("/pegboard")({
   component: PegboardPage,
   head: () => ({
+    links: [
+      { rel: "canonical", href: "https://prynth.in/pegboard" },
+    ],
     meta: [
-      { title: "The Modular Pegboard System | 3D Printed Desk & Wall Organizer | prynth!" },
+      { title: "Modular Pegboard System — 3D Printed Desk & Wall Organizer | Prynth" },
       {
         name: "description",
         content:
-          "Transform your desk into an intentional craft sanctum. Precision 3D-printed modular interlocking grid organizer with zero-damage mounting and snap-lock accessories.",
+          "Transform your desk with the Prynth modular pegboard organizer. Precision 3D-printed interlocking grid system with zero-damage mounting and snap-lock accessories. Made in India.",
       },
+      {
+        name: "keywords",
+        content:
+          "3d printed pegboard, modular desk organizer, desk pegboard india, 3d printed desk accessories, wall organizer grid, prynth pegboard",
+      },
+      { property: "og:title", content: "Modular Pegboard System — 3D Printed Desk Organizer | Prynth" },
+      {
+        property: "og:description",
+        content:
+          "Precision 3D-printed modular interlocking grid organizer with zero-damage mounting and snap-lock accessories.",
+      },
+      { property: "og:url", content: "https://prynth.in/pegboard" },
     ],
   }),
 });
@@ -689,6 +704,10 @@ export function PegboardPage() {
             <div className="py-2.5 flex justify-between">
               <span className="text-muted">Thermal Deflection</span>
               <span className="font-medium text-fg">Resistant up to 60°C (140°F)</span>
+            </div>
+            <div className="py-2.5 flex justify-between">
+              <span className="text-muted">Country of Origin</span>
+              <span className="font-medium text-fg">India (Manufactured by Prynth)</span>
             </div>
           </div>
         </div>

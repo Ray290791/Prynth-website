@@ -40,13 +40,28 @@ const rootRoute = getRouteApi("__root__");
 export const Route = createFileRoute("/lithophane")({
   component: LithophaneStudioPage,
   head: () => ({
+    links: [
+      { rel: "canonical", href: "https://prynth.in/lithophane" },
+    ],
     meta: [
-      { title: "Custom 3D Printed Lithophanes & Light Boxes | prynth!" },
+      { title: "Custom 3D Printed Lithophanes & Light Boxes | Prynth" },
       {
         name: "description",
         content:
-          "Transform your favorite memories into glowing 3D lithophanes. Available as sunlit window keepsakes or with warm LED light boxes. Includes display setup and free delivery across India.",
+          "Transform your favorite memories into glowing 3D lithophanes by Prynth. Available as sunlit window keepsakes or with warm LED light boxes. Handcrafted and shipped across India.",
       },
+      {
+        name: "keywords",
+        content:
+          "3d printed lithophane, custom photo light box, 3d printed gifts india, personalized lithophane lamp, prynth lithophane",
+      },
+      { property: "og:title", content: "Custom 3D Printed Lithophanes & Light Boxes | Prynth" },
+      {
+        property: "og:description",
+        content:
+          "Transform your favorite memories into glowing 3D lithophanes. Available with warm LED light boxes and free delivery across India.",
+      },
+      { property: "og:url", content: "https://prynth.in/lithophane" },
     ],
   }),
 });

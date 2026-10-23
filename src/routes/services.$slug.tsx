@@ -39,17 +39,21 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/services/$slug")({
   loader: async ({ params }) => {
     const service = await getServiceBySlug({ data: params.slug });
+    if (!service) throw new Error("Service not found");
     const allServices = await getServicesPublic();
     return { service, allServices };
   },
   head: ({ loaderData }) => {
-    if (!loaderData?.service) return { meta: [{ title: "Service Not Found | prynth!" }] };
+    if (!loaderData?.service) return { meta: [{ title: "Service Not Found | Prynth" }] };
     const s = loaderData.service;
     return {
+      links: [
+        { rel: "canonical", href: `https://prynth.in/services/${s.slug}` },
+      ],
       meta: [
-        { title: `${s.title} | prynth! Engineering Services` },
-        { name: "description", content: s.short_desc },
-        { property: "og:title", content: `${s.title} | prynth!` },
+        { title: `${s.title} — 3D Printing & Design Services India | Prynth` },
+        { name: "description", content: `${s.short_desc} Custom on-demand additive manufacturing and CAD services across India by Prynth.` },
+        { property: "og:title", content: `${s.title} | Prynth 3D Services India` },
         { property: "og:description", content: s.short_desc },
         { property: "og:url", content: `https://prynth.in/services/${s.slug}` },
       ],
@@ -63,6 +67,26 @@ function ServiceDetailPage() {
   const user = useCurrentUser();
   const formRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  const serviceJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "name": service.title,
+    "description": service.full_desc || service.short_desc,
+    "provider": {
+      "@type": "LocalBusiness",
+      "name": "Prynth",
+      "url": "https://prynth.in",
+    },
+    "serviceType": "3D Printing & Additive Manufacturing",
+    "areaServed": "India",
+    "offers": {
+      "@type": "Offer",
+      "priceCurrency": "INR",
+      "price": service.starting_price,
+      "url": `https://prynth.in/services/${service.slug}`,
+    },
+  };
 
   // Quote / Request Form State
   const [name, setName] = useState(user?.displayName || "");
@@ -171,6 +195,10 @@ function ServiceDetailPage() {
 
   return (
     <div className="pb-24">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd) }}
+      />
       {/* ── Breadcrumb & Back Link ─────────────────────────── */}
       <div className="border-b border-border/50 bg-surface/30">
         <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-3 text-xs text-subtle md:px-6">

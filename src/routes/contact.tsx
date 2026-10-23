@@ -10,6 +10,7 @@ import {
   Copy,
   Sparkles,
   Send,
+  Scale,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -25,13 +26,28 @@ const rootRoute = getRouteApi("__root__");
 export const Route = createFileRoute("/contact")({
   component: ContactPage,
   head: () => ({
+    links: [
+      { rel: "canonical", href: "https://prynth.in/contact" },
+    ],
     meta: [
-      { title: "Contact Us | prynth!" },
+      { title: "Contact Prynth — 3D Printing Studio Bengaluru, India | Prynth" },
       {
         name: "description",
         content:
-          "Have a question about a print, custom 3D model, or order in progress? Get in touch with our studio team.",
+          "Have questions about custom 3D printing, CAD design, or order tracking? Contact the Prynth studio team in Bengaluru. Fast response by email, phone, or message.",
       },
+      {
+        name: "keywords",
+        content:
+          "contact prynth, 3d printing bangalore contact, 3d print studio customer support india",
+      },
+      { property: "og:title", content: "Contact Prynth — 3D Printing Studio Bengaluru, India" },
+      {
+        property: "og:description",
+        content:
+          "Have questions about custom 3D printing or orders? Contact our studio team.",
+      },
+      { property: "og:url", content: "https://prynth.in/contact" },
     ],
   }),
 });
@@ -248,6 +264,39 @@ export function ContactPage() {
               💡 For questions regarding an existing order, please mention your{" "}
               <strong className="text-fg">PRY-…</strong> order number for
               faster dispatch status.
+            </div>
+          </div>
+
+          {/* Statutory Grievance Redressal Card (Consumer Protection E-Commerce Rules, 2020) */}
+          <div className="rounded-3xl border border-border bg-surface p-6 shadow-xs space-y-3.5">
+            <div className="flex items-center gap-2">
+              <Scale className="size-4 text-accent" />
+              <h2 className="text-xs font-bold uppercase tracking-wider text-muted">
+                Statutory Grievance Redressal (India)
+              </h2>
+            </div>
+            <p className="text-xs text-muted leading-relaxed">
+              Designated pursuant to Rule 5(9) of the Consumer Protection (E-Commerce) Rules, 2020 and IT Rules 2021:
+            </p>
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between border-b border-border/50 pb-1.5">
+                <span className="text-muted">Designated Officer:</span>
+                <span className="font-medium text-fg">Grievance Redressal Officer</span>
+              </div>
+              <div className="flex justify-between border-b border-border/50 pb-1.5">
+                <span className="text-muted">Grievance Email:</span>
+                <a href="mailto:grievance@prynth.in" className="font-medium text-accent underline">
+                  grievance@prynth.in
+                </a>
+              </div>
+              <div className="flex justify-between border-b border-border/50 pb-1.5">
+                <span className="text-muted">Studio Address:</span>
+                <span className="font-medium text-fg text-right max-w-[200px] truncate">{contactAddress}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted">Statutory SLA:</span>
+                <span className="font-medium text-fg">48h Ack · 30d Resolution</span>
+              </div>
             </div>
           </div>
         </div>

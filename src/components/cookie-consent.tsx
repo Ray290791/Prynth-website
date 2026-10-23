@@ -4,6 +4,21 @@ import { Button } from "@/components/ui/button";
 
 const GA_ID = "G-R1LGD7FBVN";
 
+function updateConsent(granted: boolean) {
+  if (typeof window === "undefined") return;
+  const status = granted ? "granted" : "denied";
+  (window as any).dataLayer = (window as any).dataLayer || [];
+  function gtag(...args: any[]) {
+    (window as any).dataLayer.push(args);
+  }
+  gtag("consent", "update", {
+    analytics_storage: status,
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied",
+  });
+}
+
 export function CookieConsent() {
   const [showBanner, setShowBanner] = useState(false);
 
@@ -12,11 +27,14 @@ export function CookieConsent() {
     const consent = localStorage.getItem("prynth-cookie-consent");
     if (!consent) {
       setShowBanner(true);
+      updateConsent(false);
     } else if (consent === "denied") {
       if (typeof window !== "undefined") {
         (window as any)[`ga-disable-${GA_ID}`] = true;
       }
+      updateConsent(false);
     } else if (consent === "granted") {
+      updateConsent(true);
       loadGoogleAnalytics();
     }
   }, []);
@@ -27,6 +45,7 @@ export function CookieConsent() {
     if (typeof window !== "undefined") {
       (window as any)[`ga-disable-${GA_ID}`] = false;
     }
+    updateConsent(true);
     loadGoogleAnalytics();
   };
 
@@ -36,6 +55,7 @@ export function CookieConsent() {
     if (typeof window !== "undefined") {
       (window as any)[`ga-disable-${GA_ID}`] = true;
     }
+    updateConsent(false);
   };
 
   if (!showBanner) return null;
@@ -44,10 +64,11 @@ export function CookieConsent() {
     <div className="fixed bottom-0 left-0 right-0 p-4 z-[9999] pointer-events-none flex justify-center sm:p-6">
       <div className="bg-surface/98 dark:bg-surface/98 backdrop-blur-3xl border border-border rounded-2xl shadow-2xl shadow-black/20 max-w-4xl w-full p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pointer-events-auto">
         <div className="text-sm text-fg/80 flex-1">
-          <p className="font-medium text-fg mb-1">We use cookies</p>
-          We use cookies and similar technologies to measure site traffic and improve your experience. 
-          By clicking &quot;Accept&quot;, you consent to our use of these technologies. 
-          Read our <Link to="/privacy" className="underline hover:text-fg">Privacy Policy</Link> for more information.
+          <p className="font-medium text-fg mb-1">Cookie &amp; Privacy Preferences</p>
+          We use strictly necessary cookies to keep your cart and theme preferences synchronized. 
+          With your permission, we also use optional privacy-preserving analytics to understand traffic. 
+          You can choose to accept or decline analytics. 
+          Read our <Link to="/privacy" className="underline hover:text-fg font-medium">Privacy Policy</Link> for full details.
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto shrink-0">
           <Button
@@ -55,7 +76,7 @@ export function CookieConsent() {
             variant="outline"
             size="sm"
             onClick={handleDecline}
-            className="flex-1 sm:flex-none"
+            className="flex-1 sm:flex-none cursor-pointer"
           >
             Decline
           </Button>
@@ -64,7 +85,7 @@ export function CookieConsent() {
             variant="primary"
             size="sm"
             onClick={handleAccept}
-            className="flex-1 sm:flex-none shadow-sm"
+            className="flex-1 sm:flex-none shadow-sm cursor-pointer"
           >
             Accept
           </Button>
@@ -98,7 +119,12 @@ function loadGoogleAnalytics() {
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    gtag('config', '${gaId}');
+    gtag('consent', 'update', {
+      'analytics_storage': 'granted'
+    });
+    gtag('config', '${gaId}', {
+      'anonymize_ip': true
+    });
   `;
   document.head.appendChild(script2);
 }

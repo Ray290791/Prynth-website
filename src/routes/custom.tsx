@@ -48,14 +48,22 @@ export const Route = createFileRoute("/custom")({
     idea: typeof s.idea === "string" ? s.idea : undefined,
   }),
   head: () => ({
+    links: [
+      { rel: "canonical", href: "https://prynth.in/custom" },
+    ],
     meta: [
-      { title: "Custom 3D Printing & Design Studio | prynth!" },
+      { title: "Custom 3D Printing Service India — Instant STL Quote & CAD Design | Prynth" },
       {
         name: "description",
         content:
-          "Bring your 3D models and ideas to reality. Instant slice & print estimation for STL/OBJ/STEP files, or submit concepts for custom modeling and fabrication. Ships across India.",
+          "Upload 3D models (STL, 3MF, STEP) for instant online 3D printing quotes or submit custom CAD design ideas. High-precision rapid prototyping across India by Prynth.",
       },
-      { property: "og:title", content: "Custom 3D Printing & Design Studio | prynth!" },
+      {
+        name: "keywords",
+        content:
+          "custom 3d printing service, online 3d printing quote, stl 3d print india, rapid prototyping service, 3d print on demand, cad design service, prynth",
+      },
+      { property: "og:title", content: "Custom 3D Printing Service India — Instant STL Quote & CAD | Prynth" },
       {
         property: "og:description",
         content:

@@ -25,23 +25,31 @@ export const Route = createFileRoute("/services/")({
     return { services };
   },
   head: () => ({
+    links: [
+      { rel: "canonical", href: "https://prynth.in/services" },
+    ],
     meta: [
       {
-        title: "On-Demand 3D Design & Engineering Services | prynth!",
+        title: "On-Demand 3D Printing & CAD Design Services India | Prynth",
       },
       {
         name: "description",
         content:
-          "Professional 3D CAD modeling, electronics enclosure design, broken part reverse engineering, rapid prototyping, and low-volume production across India.",
+          "Professional 3D printing services, CAD design, custom electronics enclosures, rapid prototyping, and reverse engineering across India with honest pricing.",
+      },
+      {
+        name: "keywords",
+        content:
+          "3d printing services, 3d cad modeling, rapid prototyping india, reverse engineering 3d print, custom electronics enclosure, batch 3d printing, prynth",
       },
       {
         property: "og:title",
-        content: "On-Demand 3D Design & Engineering Services | prynth!",
+        content: "On-Demand 3D Printing & CAD Design Services India | Prynth",
       },
       {
         property: "og:description",
         content:
-          "Professional 3D CAD modeling, custom IoT enclosures, reverse engineering, and low-volume batch 3D printing.",
+          "Professional 3D printing services, CAD design, custom IoT enclosures, reverse engineering, and low-volume batch 3D printing.",
       },
       { property: "og:url", content: "https://prynth.in/services" },
     ],
@@ -52,8 +60,40 @@ export const Route = createFileRoute("/services/")({
 function ServicesIndexPage() {
   const { services } = Route.useLoaderData();
 
+  const servicesJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "name": "3D Printing & CAD Design Services India",
+    "provider": {
+      "@type": "LocalBusiness",
+      "name": "Prynth",
+      "url": "https://prynth.in",
+    },
+    "serviceType": "3D Printing & Additive Manufacturing",
+    "areaServed": "India",
+    "description":
+      "Professional 3D CAD modeling, electronics enclosure design, broken part reverse engineering, rapid prototyping, and low-volume production across India.",
+    "hasOfferCatalog": {
+      "@type": "OfferCatalog",
+      "name": "3D Printing Services",
+      "itemListElement": services.map((s) => ({
+        "@type": "Offer",
+        "itemOffered": {
+          "@type": "Service",
+          "name": s.title,
+          "description": s.short_desc,
+          "url": `https://prynth.in/services/${s.slug}`,
+        },
+      })),
+    },
+  };
+
   return (
     <div className="pb-24">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(servicesJsonLd) }}
+      />
       {/* ── Hero ───────────────────────────────────────────── */}
       <section className="relative overflow-hidden border-b border-border/60 bg-surface/30 py-16 md:py-24">
         <div className="mx-auto max-w-6xl px-4 md:px-6">

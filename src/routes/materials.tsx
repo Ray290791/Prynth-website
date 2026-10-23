@@ -9,11 +9,30 @@ import { useState } from "react";
 export const Route = createFileRoute("/materials")({
   component: MaterialsPage,
   head: () => ({
+    links: [
+      { rel: "canonical", href: "https://prynth.in/materials" },
+    ],
     meta: [
-      { title: "Filaments & Materials Guide | prynth!" },
-      { name: "description", content: "Explore our range of 3D printing filaments: PLA, PETG, ABS, and ASA. Compare thermal resistance, durability, flexibility, and best use cases." }
-    ]
-  })
+      { title: "3D Printing Materials Guide — PLA, PETG, ABS, ASA | Prynth" },
+      {
+        name: "description",
+        content:
+          "Complete technical guide to 3D printing filaments at Prynth. Compare mechanical strength, heat resistance, UV durability, and engineering use cases for functional 3D prints.",
+      },
+      {
+        name: "keywords",
+        content:
+          "3d printing materials, pla vs petg vs abs, 3d printing filaments india, functional 3d prints, engineering filaments, prynth",
+      },
+      { property: "og:title", content: "3D Printing Materials Guide — PLA, PETG, ABS, ASA | Prynth" },
+      {
+        property: "og:description",
+        content:
+          "Complete technical guide to 3D printing filaments at Prynth. Compare mechanical strength, heat resistance, and UV durability.",
+      },
+      { property: "og:url", content: "https://prynth.in/materials" },
+    ],
+  }),
 });
 
 export default function MaterialsPage() {
