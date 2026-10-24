@@ -99,19 +99,20 @@ function ShopPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(shopJsonLd) }}
       />
-      <p className="text-[11px] font-medium tracking-[0.18em] text-subtle uppercase">
-        Ready-made
-      </p>
-      <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight md:text-5xl">
-        Shop
-      </h1>
-      <p className="mt-3 max-w-xl text-muted">
-        Printed when you order, in the colour you pick. The price on the card is
-        the price you pay.
-      </p>
+      <div className="max-w-2xl">
+        <p className="text-[11px] font-semibold tracking-[0.2em] text-accent uppercase">
+          Shop Collection
+        </p>
+        <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight md:text-5xl text-fg">
+          Ready-Made 3D Prints
+        </h1>
+        <p className="mt-2 text-sm sm:text-base text-muted">
+          Functional desk and home accessories, precision-printed to order in Mumbai. Honest pricing with zero hidden fees.
+        </p>
+      </div>
 
-      <div className="mt-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-wrap gap-2" role="tablist" aria-label="Category">
+      <div className="mt-8 flex flex-col gap-3 md:flex-row md:items-center md:justify-between border-b border-border/60 pb-6">
+        <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Category">
           {categories.map((c) => (
             <button
               key={c.id}
@@ -120,10 +121,10 @@ function ShopPage() {
               aria-selected={category === c.id}
               onClick={() => setCategory(c.id)}
               className={cn(
-                "inline-flex h-11 items-center justify-center rounded-full px-4 text-sm font-medium transition-colors duration-150 leading-none",
+                "inline-flex h-9 items-center justify-center rounded-xl px-3.5 text-xs sm:text-sm font-medium transition-colors cursor-pointer",
                 category === c.id
-                  ? "bg-accent text-ink font-semibold"
-                  : "bg-surface text-muted shadow-[var(--shadow-border)] hover:text-fg",
+                  ? "bg-accent text-ink font-semibold shadow-xs"
+                  : "bg-surface-2/50 text-muted hover:bg-surface-2 hover:text-fg border border-border/60"
               )}
             >
               {c.label}
@@ -134,7 +135,7 @@ function ShopPage() {
           <select 
             value={sort} 
             onChange={(e) => setSort(e.target.value)}
-            className="h-11 w-full sm:w-auto rounded-xl border border-border bg-surface px-3.5 text-base sm:text-sm text-fg shadow-[var(--shadow-border)] focus:border-accent focus:ring-2 focus:ring-ring/30 focus:outline-none cursor-pointer"
+            className="h-9 w-full sm:w-auto rounded-xl border border-border bg-surface px-3 text-xs sm:text-sm text-fg shadow-2xs focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none cursor-pointer"
             aria-label="Sort by"
           >
             <option value="featured">Featured</option>
@@ -147,7 +148,7 @@ function ShopPage() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search prints..."
             aria-label="Search prints"
-            className="w-full md:max-w-xs h-11"
+            className="w-full md:max-w-xs h-9 text-xs sm:text-sm rounded-xl"
           />
         </div>
       </div>

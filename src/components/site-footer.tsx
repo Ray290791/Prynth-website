@@ -1,28 +1,27 @@
 import { Link, getRouteApi } from "@tanstack/react-router";
-import { Instagram, Mail } from "lucide-react";
+import { Instagram, Mail, MessageCircle } from "lucide-react";
 import { Wordmark } from "@/components/logo";
+import { usePublicServices } from "@/components/services-dropdown";
 
 const rootRoute = getRouteApi("__root__");
 
-const SHOP = [
-  { to: "/shop", label: "Ready-made prints" },
-  { to: "/custom", label: "Custom orders" },
-  { to: "/gallery", label: "Print Quality Gallery" },
+const SHOP_LINKS = [
+  { to: "/shop", label: "Ready-Made Collection" },
   { to: "/pegboard", label: "Modular Pegboards" },
+  { to: "/custom", label: "Custom 3D Printing" },
   { to: "/lithophane", label: "3D Lithophanes" },
   { to: "/materials", label: "Filaments & Materials" },
-  { to: "/cart", label: "Cart" },
+  { to: "/gallery", label: "Print Quality Gallery" },
 ] as const;
 
-import { usePublicServices } from "@/components/services-dropdown";
-
-const HELP = [
-  { to: "/faq", label: "FAQ" },
-  { to: "/shipping", label: "Shipping" },
-  { to: "/returns", label: "Returns & Refunds" },
+const HELP_LINKS = [
+  { to: "/faq", label: "FAQ & Turnarounds" },
+  { to: "/shipping", label: "Shipping Policy" },
+  { to: "/returns", label: "Returns & Replacements" },
+  { to: "/contact", label: "Contact Us" },
+  { to: "/about", label: "About Prynth" },
   { to: "/privacy", label: "Privacy Policy" },
-  { to: "/terms", label: "Terms & Conditions" },
-  { to: "/contact", label: "Contact" },
+  { to: "/terms", label: "Terms of Service" },
 ] as const;
 
 export function SiteFooter() {
@@ -31,87 +30,115 @@ export function SiteFooter() {
 
   return (
     <footer className="mt-auto border-t border-border bg-surface">
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 md:grid-cols-12 md:px-6 lg:gap-12">
-        <div className="md:col-span-4 lg:col-span-4">
-          <Wordmark className="text-2xl" />
-          <p className="mt-3 max-w-sm text-sm text-muted">
-            {settings.tagline}
+      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 md:grid-cols-12 md:px-6 md:py-16">
+        {/* Brand & Mission column */}
+        <div className="md:col-span-4 lg:col-span-5 space-y-4">
+          <Wordmark className="text-2xl tracking-tight" />
+          <p className="max-w-sm text-sm text-muted leading-relaxed">
+            {settings.tagline ||
+              "On-demand 3D printing and CAD engineering studio based in Mumbai. Crafted with micron precision on Bambu CoreXY, shipped across India."}
           </p>
-          <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+
+          {/* Social & Contact Icon Badges */}
+          <div className="flex flex-wrap items-center gap-2 pt-2">
             <a
-              href={`mailto:${settings.email}`}
-              className="inline-flex items-center gap-1.5 text-muted hover:text-accent transition-colors"
+              href={`mailto:${settings.email || "support@prynth.in"}`}
+              title="Email support"
+              className="inline-flex size-9 items-center justify-center rounded-xl border border-border bg-surface-2/60 text-muted transition-colors hover:border-accent hover:text-accent hover:bg-surface"
             >
-              <Mail className="size-4" strokeWidth={1.75} />
-              <span>{settings.email}</span>
+              <Mail className="size-4" strokeWidth={1.8} />
+              <span className="sr-only">Email</span>
             </a>
+
             {settings.contact_whatsapp && (
               <a
                 href={`https://wa.me/${settings.contact_whatsapp.replace(/[^\d]/g, "")}`}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1.5 text-muted hover:text-emerald-400 transition-colors"
+                title="WhatsApp support"
+                className="inline-flex size-9 items-center justify-center rounded-xl border border-border bg-surface-2/60 text-muted transition-colors hover:border-emerald-500 hover:text-emerald-500 hover:bg-surface"
               >
-                <span>💬 WhatsApp</span>
+                <MessageCircle className="size-4" strokeWidth={1.8} />
+                <span className="sr-only">WhatsApp</span>
               </a>
             )}
+
             {settings.instagram && (
               <a
-                href={`https://instagram.com/${settings.instagram.replace('@', '')}`}
+                href={`https://instagram.com/${settings.instagram.replace("@", "")}`}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1.5 text-muted hover:text-accent transition-colors"
+                title="Instagram"
+                className="inline-flex size-9 items-center justify-center rounded-xl border border-border bg-surface-2/60 text-muted transition-colors hover:border-pink-500 hover:text-pink-500 hover:bg-surface"
               >
-                <Instagram className="size-4" strokeWidth={1.75} />
-                <span>{settings.instagram}</span>
+                <Instagram className="size-4" strokeWidth={1.8} />
+                <span className="sr-only">Instagram</span>
               </a>
             )}
+
             {settings.social_twitter && (
               <a
-                href={`https://x.com/${settings.social_twitter.replace('@', '')}`}
+                href={`https://x.com/${settings.social_twitter.replace("@", "")}`}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1.5 text-muted hover:text-accent transition-colors"
+                title="X / Twitter"
+                className="inline-flex size-9 items-center justify-center rounded-xl border border-border bg-surface-2/60 text-muted transition-colors hover:border-fg hover:text-fg hover:bg-surface text-xs font-semibold"
               >
-                <span>𝕏 {settings.social_twitter}</span>
+                <span>𝕏</span>
+                <span className="sr-only">X (Twitter)</span>
               </a>
             )}
+
             {settings.social_youtube && (
               <a
-                href={settings.social_youtube.startsWith("http") ? settings.social_youtube : `https://youtube.com/${settings.social_youtube}`}
+                href={
+                  settings.social_youtube.startsWith("http")
+                    ? settings.social_youtube
+                    : `https://youtube.com/${settings.social_youtube}`
+                }
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1.5 text-muted hover:text-red-400 transition-colors"
+                title="YouTube"
+                className="inline-flex size-9 items-center justify-center rounded-xl border border-border bg-surface-2/60 text-muted transition-colors hover:border-red-500 hover:text-red-500 hover:bg-surface text-xs font-semibold"
               >
-                <span>▶ YouTube</span>
+                <span>▶</span>
+                <span className="sr-only">YouTube</span>
               </a>
             )}
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 md:col-span-8 lg:col-span-8">
+        {/* Navigation link columns */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 md:col-span-8 lg:col-span-7">
           <div>
-            <p className="text-xs font-medium tracking-[0.14em] text-subtle uppercase">
-              Shop
+            <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
+              Shop &amp; Studio
             </p>
-            <ul className="mt-3 space-y-2">
-              {SHOP.map((l) => (
+            <ul className="mt-3.5 space-y-2.5">
+              {SHOP_LINKS.map((l) => (
                 <li key={l.to}>
-                  <Link to={l.to} className="text-sm text-muted hover:text-fg">
+                  <Link
+                    to={l.to}
+                    className="text-xs sm:text-sm text-muted hover:text-fg transition-colors"
+                  >
                     {l.label}
                   </Link>
                 </li>
               ))}
             </ul>
           </div>
+
           <div>
-            <p className="text-xs font-medium tracking-[0.14em] text-subtle uppercase">
+            <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
               Services
             </p>
-            <ul className="mt-3 space-y-2">
+            <ul className="mt-3.5 space-y-2.5">
               <li>
-                <Link to="/services" className="text-sm text-muted hover:text-fg font-medium">
-                  All Engineering Services
+                <Link
+                  to="/services"
+                  className="text-xs sm:text-sm text-fg font-medium hover:text-accent transition-colors"
+                >
+                  All Capabilities
                 </Link>
               </li>
               {services.map((srv) => (
@@ -119,7 +146,7 @@ export function SiteFooter() {
                   <Link
                     to="/services/$slug"
                     params={{ slug: srv.slug }}
-                    className="text-sm text-muted hover:text-fg"
+                    className="text-xs sm:text-sm text-muted hover:text-fg transition-colors"
                   >
                     {srv.title}
                   </Link>
@@ -127,31 +154,32 @@ export function SiteFooter() {
               ))}
             </ul>
           </div>
+
           <div>
-            <p className="text-xs font-medium tracking-[0.14em] text-subtle uppercase">
-              Help
+            <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">
+              Help &amp; Info
             </p>
-            <ul className="mt-3 space-y-2">
-              {HELP.map((l) => (
+            <ul className="mt-3.5 space-y-2.5">
+              {HELP_LINKS.map((l) => (
                 <li key={l.to}>
-                  <Link to={l.to} className="text-sm text-muted hover:text-fg">
+                  <Link
+                    to={l.to}
+                    className="text-xs sm:text-sm text-muted hover:text-fg transition-colors"
+                  >
                     {l.label}
                   </Link>
                 </li>
               ))}
-              <li>
-                <Link to="/about" className="text-sm text-muted hover:text-fg">
-                  Our story
-                </Link>
-              </li>
             </ul>
           </div>
         </div>
       </div>
+
+      {/* Sub-footer copyright */}
       <div className="border-t border-border">
-        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-5 text-xs text-subtle sm:flex-row sm:items-center sm:justify-between md:px-6">
-          <p>© {new Date().getFullYear()} prynth! · {settings.copyright}</p>
-          <p>{settings.bottom_text}</p>
+        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-4 text-xs text-subtle sm:flex-row sm:items-center sm:justify-between md:px-6">
+          <p>© {new Date().getFullYear()} Prynth · All rights reserved.</p>
+          <p className="text-[11px]">Designed &amp; 3D printed with intention in Mumbai, India</p>
         </div>
       </div>
     </footer>
