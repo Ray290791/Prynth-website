@@ -20,7 +20,6 @@ import { type Product } from "@/lib/products";
 import { getLastVisited } from "@/lib/product-history";
 import { cn } from "@/lib/utils";
 import { TestimonialsSection } from "@/components/testimonials-carousel";
-import { SilkWaveBackground } from "@/components/silk-wave-background";
 
 
 export const Route = createFileRoute("/")({
@@ -146,9 +145,6 @@ function Home() {
 
   return (
     <div className="relative space-y-16 sm:space-y-24 pb-16 overflow-hidden">
-      {/* ── Concept 03: Full-Screen Interactive Parametric Silk Wave WebGL Background ── */}
-      <SilkWaveBackground />
-
       {/* ── Hero ───────────────────────────────────────────── */}
       <section className="relative z-10 overflow-hidden pt-2 sm:pt-4">
         {/* Floating promo announcement pill */}

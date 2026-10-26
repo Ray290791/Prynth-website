@@ -1,7 +1,14 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
+import { cn } from "@/lib/utils";
 
-export function SilkWaveBackground({ className = "" }: { className?: string }) {
+export function SilkWaveBackground({
+  className = "",
+  subtle = false,
+}: {
+  className?: string;
+  subtle?: boolean;
+}) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -111,10 +118,23 @@ export function SilkWaveBackground({ className = "" }: { className?: string }) {
 
   return (
     <div className={`fixed inset-0 pointer-events-none z-0 overflow-hidden ${className}`}>
-      {/* Three.js Silk Wave Canvas */}
-      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-75" />
+      {/* Three.js Silk Wave Canvas - dimmed when subtle on inner pages */}
+      <canvas
+        ref={canvasRef}
+        className={cn(
+          "absolute inset-0 w-full h-full transition-opacity duration-700 ease-out",
+          subtle ? "opacity-30" : "opacity-75"
+        )}
+      />
       {/* Soft Vignette Overlay */}
-      <div className="absolute inset-0 bg-radial from-transparent via-[#0c0e12]/25 to-[#0c0e12]" />
+      <div
+        className={cn(
+          "absolute inset-0 bg-radial transition-opacity duration-700 ease-out",
+          subtle
+            ? "from-transparent via-[#0c0e12]/45 to-[#0c0e12]/95"
+            : "from-transparent via-[#0c0e12]/25 to-[#0c0e12]"
+        )}
+      />
     </div>
   );
 }
