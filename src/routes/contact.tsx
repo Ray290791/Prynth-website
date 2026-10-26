@@ -2,7 +2,6 @@ import { createFileRoute, getRouteApi } from "@tanstack/react-router";
 import {
   Instagram,
   Mail,
-  Phone,
   MapPin,
   Clock,
   MessageSquare,
@@ -34,7 +33,7 @@ export const Route = createFileRoute("/contact")({
       {
         name: "description",
         content:
-          "Have questions about custom 3D printing, CAD design, or order tracking? Contact the Prynth studio team in Mumbai. Fast response by email, phone, or message.",
+          "Have questions about custom 3D printing, CAD design, or order tracking? Contact the Prynth studio team in Mumbai. Fast response by email or online message.",
       },
       {
         name: "keywords",
@@ -60,8 +59,7 @@ export function ContactPage() {
   const [fieldErrors, setFieldErrors] = useState<{ name?: string; email?: string; message?: string }>({});
 
   const contactEmail = settings.contact_email || settings.email || "hello@prynth.in";
-  const contactPhone = settings.contact_phone || "";
-  const contactWhatsApp = settings.whatsapp_enabled === "true" ? (settings.contact_whatsapp || contactPhone) : "";
+  const contactWhatsApp = settings.whatsapp_enabled === "true" ? (settings.contact_whatsapp || "") : "";
   const contactAddress = settings.contact_address || "Mumbai, Maharashtra 400001, India";
   const businessHours =
     settings.contact_hours || "Monday – Saturday: 10:00 AM – 7:00 PM IST";
@@ -170,43 +168,35 @@ export function ContactPage() {
               </button>
             </div>
 
-            {/* WhatsApp / Phone Card (only shown if configured/enabled) */}
-            {(contactWhatsApp || contactPhone) && (
-              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-surface-2/60 border border-border/60 hover:border-accent/40 transition-colors">
+            {/* WhatsApp Support (only shown if WhatsApp is explicitly enabled, no phone number displayed) */}
+            {settings.whatsapp_enabled === "true" && cleanWhatsAppNumber && (
+              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-surface-2/60 border border-border/60 hover:border-emerald-500/40 transition-colors">
                 <a
-                  href={
-                    contactWhatsApp && cleanWhatsAppNumber
-                      ? `https://wa.me/${cleanWhatsAppNumber}`
-                      : `tel:${contactPhone.replace(/\s+/g, "")}`
-                  }
+                  href={`https://wa.me/${cleanWhatsAppNumber}?text=${encodeURIComponent("Hi Prynth! I have an inquiry about 3D printing.")}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center gap-3 min-w-0"
+                  className="flex items-center gap-3 min-w-0 flex-1"
                 >
                   <div className="size-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
-                    <Phone className="size-4.5" />
+                    <MessageSquare className="size-4.5" />
                   </div>
                   <div className="truncate">
                     <span className="block text-[11px] font-semibold text-muted uppercase tracking-wider">
-                      {contactWhatsApp ? "WhatsApp & Phone" : "Phone Call"}
+                      WhatsApp Support
                     </span>
-                    <span className="text-sm font-medium text-fg truncate">
-                      {contactWhatsApp || contactPhone}
+                    <span className="text-sm font-medium text-fg truncate hover:text-emerald-400 transition-colors">
+                      Chat with Studio Team
                     </span>
                   </div>
                 </a>
-                <button
-                  type="button"
-                  onClick={() => copyToClipboard(contactWhatsApp || contactPhone, "phone")}
-                  className="size-8 rounded-lg flex items-center justify-center text-muted hover:text-fg hover:bg-surface transition-colors cursor-pointer shrink-0 ml-2"
-                  title="Copy phone"
+                <a
+                  href={`https://wa.me/${cleanWhatsAppNumber}?text=${encodeURIComponent("Hi Prynth! I have an inquiry about 3D printing.")}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs font-semibold text-emerald-400 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors shrink-0 ml-2"
                 >
-                  {copiedKey === "phone" ? (
-                    <Check className="size-4 text-emerald-400" />
-                  ) : (
-                    <Copy className="size-4" />
-                  )}
-                </button>
+                  Chat →
+                </a>
               </div>
             )}
 
