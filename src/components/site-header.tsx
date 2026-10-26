@@ -26,6 +26,7 @@ import { useHydrated } from "@/lib/use-hydrated";
 import { cn } from "@/lib/utils";
 
 const PRIMARY_NAV = [
+  { to: "/", label: "Home" },
   { to: "/shop", label: "Shop", matchPrefix: true },
   { to: "/custom", label: "Custom Print" },
   { to: "/pegboard", label: "Pegboards" },
