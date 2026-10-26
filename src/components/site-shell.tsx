@@ -54,9 +54,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
       >
         Skip to content
       </a>
-      <div className="relative z-20">
-        <SiteHeader />
-      </div>
+      <SiteHeader />
       <main id="main" className="page-enter relative z-10 flex-1">
         {children}
       </main>

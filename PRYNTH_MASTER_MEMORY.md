@@ -72,6 +72,11 @@ Mounted globally in `src/components/silk-wave-background.tsx` behind all route c
   - **Inner Routes (`/shop`, `/custom`, `/pegboard`, `/lithophane`, etc.):** **30% Opacity (`opacity-30`)** — subtle, deep ambient motion that never distracts from reading text or viewing products.
   - Transition handled smoothly via CSS `transition-opacity duration-700`.
 
+### 2.4 Navigation & Header Architecture
+- **Sticky Header Positioning:** The site header (`src/components/site-header.tsx`) is **permanently sticky** at `top-0` with `z-40`, `bg-glass`, `backdrop-blur-2xl backdrop-saturate-150`, and a subtle bottom border (`border-glass-border`).
+- **Sticky Containment Rule:** `<SiteHeader />` must be mounted as a direct child of the root flex container in `src/components/site-shell.tsx` (never inside a non-sticky `relative` wrapper `div` which breaks CSS sticky behavior).
+- **Navigation Order:** "Home" is strictly the first link in the primary navbar, followed by Shop, Custom Print, Pegboards, Materials, Services dropdown, and Explore dropdown.
+
 ---
 
 ## 3. Product Catalog & Studio Offerings
