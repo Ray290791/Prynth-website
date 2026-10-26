@@ -16,7 +16,7 @@ import { CookieConsent } from "@/components/cookie-consent";
 import appCss from "../styles.css?url";
 
 const APP_NAME = "prynth!";
-const THEME_BOOT = `try{if(localStorage.getItem("prynth-theme")==="dark")document.documentElement.classList.add("dark")}catch(e){}`;
+const THEME_BOOT = `try{var t=localStorage.getItem("prynth-theme");if(t!=="light")document.documentElement.classList.add("dark")}catch(e){}`;
 
 // ── Security deterrent scripts ────────────────────────────────────────────────
 // Runs before React hydration so protections are in place immediately.
@@ -125,7 +125,7 @@ export const Route = createRootRoute({
       },
       { name: "author", content: "Prynth" },
       { name: "robots", content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" },
-      { name: "theme-color", content: "#F6F5F2" },
+      { name: "theme-color", content: "#0c0e12" },
       {
         property: "og:site_name",
         content: "Prynth",
@@ -186,11 +186,11 @@ export const Route = createRootRoute({
       {
         rel: "preload",
         as: "style",
-        href: "https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap",
       },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap",
       },
     ],
   }),

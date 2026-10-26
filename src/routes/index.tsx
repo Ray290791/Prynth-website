@@ -20,6 +20,7 @@ import { type Product } from "@/lib/products";
 import { getLastVisited } from "@/lib/product-history";
 import { cn } from "@/lib/utils";
 import { TestimonialsSection } from "@/components/testimonials-carousel";
+import { SilkWaveBackground } from "@/components/silk-wave-background";
 
 
 export const Route = createFileRoute("/")({
@@ -144,15 +145,18 @@ function Home() {
   ];
 
   return (
-    <div className="space-y-16 sm:space-y-24 pb-16">
+    <div className="relative space-y-16 sm:space-y-24 pb-16 overflow-hidden">
+      {/* ── Concept 03: Full-Screen Interactive Parametric Silk Wave WebGL Background ── */}
+      <SilkWaveBackground />
+
       {/* ── Hero ───────────────────────────────────────────── */}
-      <section className="relative overflow-hidden pt-2 sm:pt-4">
+      <section className="relative z-10 overflow-hidden pt-2 sm:pt-4">
         {/* Floating promo announcement pill */}
         {settings.announcement_enabled !== "false" && (
           <div className="mx-auto max-w-6xl px-4 md:px-6">
             <Link
               to="/shop"
-              className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-surface/80 px-3.5 py-1 text-xs font-medium text-muted transition-colors hover:border-accent hover:text-fg shadow-2xs"
+              className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-surface/80 px-3.5 py-1 text-xs font-medium text-muted transition-colors hover:border-accent hover:text-fg shadow-2xs backdrop-blur-md"
             >
               <Zap className="size-3 text-accent shrink-0" strokeWidth={2} />
               <span>{settings.promo_banner || `Free delivery across India on orders over ₹${settings.free_shipping_threshold || 799}`}</span>
@@ -163,20 +167,33 @@ function Home() {
 
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-8 md:grid-cols-12 md:px-6 md:py-14 lg:gap-14 lg:py-16">
           {/* Left: headline + concise value prop + clean CTAs */}
-          <div className="relative z-10 md:col-span-6 lg:col-span-6">
-            <p className="text-[11px] font-semibold tracking-[0.2em] text-accent uppercase">
-              Precision 3D Studio · Mumbai, India
-            </p>
-            <h1 className="mt-3">
-              <Wordmark className="block text-4xl sm:text-6xl lg:text-[4.5rem] tracking-tight" />
+          <div className="relative z-10 md:col-span-6 lg:col-span-6 space-y-5">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface/70 border border-border/70 text-xs font-mono text-muted backdrop-blur-md">
+              <span className="size-2 rounded-full bg-accent animate-pulse" />
+              <span>PRECISION 3D STUDIO · MUMBAI, INDIA</span>
+            </div>
+
+            <h1 className="font-instrument text-5xl sm:text-6xl lg:text-7xl font-normal tracking-tight text-fg leading-[1.06]">
+              Engineered form in{" "}
+              <span className="italic text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-200 via-50% to-[#00b8a9] drop-shadow-sm">
+                monolithic balance.
+              </span>
             </h1>
-            <p className="mt-4 max-w-lg text-base sm:text-lg text-muted leading-relaxed">
+
+            <div className="flex items-center gap-3 pt-0.5">
+              <Wordmark className="text-xl sm:text-2xl tracking-tight opacity-95" />
+              <span className="text-xs font-mono text-muted uppercase tracking-widest border-l border-border/60 pl-3">
+                Bambu CoreXY Fleet
+              </span>
+            </div>
+
+            <p className="text-base sm:text-lg text-muted font-jakarta leading-relaxed max-w-lg font-light">
               {settings.hero_tagline ||
                 "Functional desk accessories, modular organization, and on-demand CAD engineering. Printed with micron precision on Bambu CoreXY."}
             </p>
 
             {/* Focused action buttons */}
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="flex flex-wrap items-center gap-3 pt-2">
               <Button asChild size="lg" className="h-11 px-6 shadow-sm cursor-pointer">
                 <Link to="/shop">
                   <span>Explore Shop</span>
@@ -189,10 +206,14 @@ function Home() {
                   <span>Custom Print / CAD</span>
                 </Link>
               </Button>
+              <div className="text-xs font-mono text-muted flex items-center gap-2 pl-1">
+                <span className="size-1.5 rounded-full bg-accent" />
+                <span>DYNAMIC FLUID WAVE ACTIVE</span>
+              </div>
             </div>
 
             {/* Sleek inline trust points */}
-            <div className="mt-8 flex flex-wrap items-center gap-y-2 gap-x-4 text-xs text-muted border-t border-border/60 pt-5">
+            <div className="flex flex-wrap items-center gap-y-2 gap-x-4 text-xs text-muted border-t border-border/60 pt-4">
               <span className="inline-flex items-center gap-1.5 font-medium text-fg">
                 <CheckCircle2 className="size-3.5 text-accent shrink-0" />
                 <span>0.12mm Layer Precision</span>
@@ -208,7 +229,7 @@ function Home() {
             </div>
           </div>
 
-          {/* Right: Balanced 2x2 product mosaic */}
+          {/* Right: Balanced 2x2 product mosaic with glassmorphic depth */}
           <div className="relative md:col-span-6 lg:col-span-6">
             <div className="grid grid-cols-2 gap-3 sm:gap-4 items-center">
               {mosaic.map((p, i) => (
@@ -217,7 +238,7 @@ function Home() {
                   to="/shop/$slug"
                   params={{ slug: p.slug }}
                   className={cn(
-                    "group relative overflow-hidden rounded-2xl border border-border bg-surface transition-all duration-300 hover:border-accent/60 shadow-xs",
+                    "group relative overflow-hidden rounded-2xl border border-border/80 bg-surface/80 backdrop-blur-md transition-all duration-300 hover:border-accent/60 shadow-xs",
                     i % 2 === 1 ? "sm:translate-y-4" : ""
                   )}
                 >
@@ -226,7 +247,7 @@ function Home() {
                     alt={p.name}
                     className="product-photo aspect-square w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
                     <span className="text-xs font-medium text-white truncate">{p.name}</span>
                   </div>
                 </Link>
@@ -234,7 +255,7 @@ function Home() {
             </div>
 
             {/* Floating fleet badge */}
-            <div className="absolute -bottom-3 left-3 flex items-center gap-2 rounded-xl border border-glass-border bg-surface/90 px-3 py-1.5 shadow-md backdrop-blur-md">
+            <div className="absolute -bottom-3 left-3 flex items-center gap-2 rounded-xl border border-border/80 bg-surface/90 px-3 py-1.5 shadow-md backdrop-blur-md">
               <span className="size-2 rounded-full bg-accent animate-pulse" />
               <span className="text-xs font-medium text-fg">Bambu CoreXY Fleet</span>
             </div>
@@ -242,8 +263,8 @@ function Home() {
         </div>
       </section>
 
-      {/* ── Trust Pillars (Sleek minimalist divider) ───────── */}
-      <section className="border-y border-border/60 bg-surface/40">
+      {/* ── Trust Pillars (Sleek glassmorphic divider) ───────── */}
+      <section className="relative z-10 border-y border-border/60 bg-surface/50 backdrop-blur-md">
         <div className="mx-auto grid max-w-6xl divide-y divide-border/60 md:divide-y-0 md:divide-x md:grid-cols-3 px-4 py-4 md:px-6 md:py-6">
           {trustItems.map((item) => (
             <div key={item.title} className="flex items-start gap-3.5 p-4 transition-colors">
@@ -251,8 +272,8 @@ function Home() {
                 <item.icon className="size-4.5" strokeWidth={1.8} />
               </div>
               <div>
-                <h2 className="font-display text-sm font-semibold text-fg">{item.title}</h2>
-                <p className="mt-0.5 text-xs text-muted leading-relaxed">{item.text}</p>
+                <h2 className="font-instrument text-lg font-normal text-fg">{item.title}</h2>
+                <p className="mt-0.5 text-xs text-muted leading-relaxed font-jakarta">{item.text}</p>
               </div>
             </div>
           ))}
@@ -260,18 +281,18 @@ function Home() {
       </section>
 
       {/* ── Featured Products ──────────────────────────────── */}
-      <section className="mx-auto max-w-6xl px-4 md:px-6">
+      <section className="relative z-10 mx-auto max-w-6xl px-4 md:px-6">
         <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end mb-8">
           <div>
-            <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">Shop Collection</p>
-            <h2 className="mt-1 font-display text-2xl sm:text-3xl font-semibold tracking-tight text-fg">
+            <p className="text-[11px] font-mono tracking-[0.2em] text-accent uppercase">Shop Collection</p>
+            <h2 className="mt-1 font-instrument text-3xl sm:text-4xl font-normal italic tracking-tight text-fg">
               Desk &amp; Everyday Favourites
             </h2>
-            <p className="mt-1 text-xs sm:text-sm text-muted">
+            <p className="mt-1 text-xs sm:text-sm text-muted font-jakarta">
               Functional pieces printed to order in Mumbai. Honest pricing with zero hidden fees.
             </p>
           </div>
-          <Button asChild variant="outline" size="sm" className="h-9">
+          <Button asChild variant="outline" size="sm" className="h-9 backdrop-blur-md bg-surface/60">
             <Link to="/shop">
               <span>View all {products.length > 0 ? `(${products.length})` : ""}</span>
               <ArrowRight className="size-3.5 ml-1" />
@@ -286,18 +307,18 @@ function Home() {
       </section>
 
       {/* ── Star Product Spotlight: Modular Pegboards ──────── */}
-      <section className="mx-auto max-w-6xl px-4 md:px-6">
-        <div className="relative overflow-hidden rounded-3xl border border-border bg-surface p-6 sm:p-10 lg:p-12 shadow-sm">
+      <section className="relative z-10 mx-auto max-w-6xl px-4 md:px-6">
+        <div className="relative overflow-hidden rounded-3xl border border-border/80 bg-surface/70 p-6 sm:p-10 lg:p-12 shadow-sm backdrop-blur-md hover:border-accent/40 transition-colors">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-7 space-y-4">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-accent/15 text-accent border border-accent/20">
                 <Sparkles className="size-3.5" />
                 <span>{settings.pegboard_badge || "Signature Star Product"}</span>
               </div>
-              <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-fg">
+              <h2 className="font-instrument text-3xl sm:text-4xl md:text-5xl font-normal tracking-tight text-fg">
                 {settings.pegboard_hero_title || "The Modular Pegboard System"}
               </h2>
-              <p className="text-sm sm:text-base text-muted max-w-xl leading-relaxed">
+              <p className="text-sm sm:text-base text-muted max-w-xl leading-relaxed font-jakarta">
                 {settings.pegboard_hero_subtitle ||
                   "Precision 3D printed modular wall and desk organization. Engineered for creators, tech setups, and intentional workspaces."}
               </p>
@@ -339,41 +360,41 @@ function Home() {
       </section>
 
       {/* ── Custom 3D Printing & CAD Studio (Simplified & Aesthetic) ── */}
-      <section className="mx-auto max-w-6xl px-4 md:px-6">
-        <div className="rounded-3xl border border-border bg-surface p-6 sm:p-10 shadow-sm">
+      <section className="relative z-10 mx-auto max-w-6xl px-4 md:px-6">
+        <div className="rounded-3xl border border-border/80 bg-surface/70 p-6 sm:p-10 shadow-sm backdrop-blur-md">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-2 px-3 py-1 text-xs font-semibold text-accent">
               <Layers className="size-3.5" />
               <span>On-Demand Custom Fabrication</span>
             </div>
-            <h2 className="mt-3 font-display text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight text-fg">
+            <h2 className="mt-3 font-instrument text-3xl sm:text-4xl md:text-5xl font-normal tracking-tight text-fg">
               Got a 3D model, sketch, or broken part?
             </h2>
-            <p className="mt-2 text-sm sm:text-base text-muted leading-relaxed">
+            <p className="mt-2 text-sm sm:text-base text-muted leading-relaxed font-jakarta">
               No 3D modeling expertise needed. Upload an existing file for instant slicing, or describe what you need with photos and our CAD team will design, test, and print it.
             </p>
           </div>
 
           {/* 3 Step Workflow */}
           <div className="mt-8 grid gap-4 md:grid-cols-3">
-            <div className="rounded-2xl border border-border/80 bg-surface-2/40 p-5 space-y-2">
+            <div className="rounded-2xl border border-border/80 bg-surface-2/40 p-5 space-y-2 backdrop-blur-sm">
               <span className="font-mono text-[11px] font-bold text-accent uppercase tracking-wider">01. Submit</span>
-              <h3 className="font-display text-base font-semibold text-fg">File or Photo Idea</h3>
-              <p className="text-xs text-muted leading-relaxed">
+              <h3 className="font-instrument text-xl font-normal text-fg">File or Photo Idea</h3>
+              <p className="text-xs text-muted leading-relaxed font-jakarta">
                 Upload your STL/3MF for an instant quote, or send phone photos of a broken part or paper sketch.
               </p>
             </div>
-            <div className="rounded-2xl border border-border/80 bg-surface-2/40 p-5 space-y-2">
+            <div className="rounded-2xl border border-border/80 bg-surface-2/40 p-5 space-y-2 backdrop-blur-sm">
               <span className="font-mono text-[11px] font-bold text-accent uppercase tracking-wider">02. Engineer</span>
-              <h3 className="font-display text-base font-semibold text-fg">CAD &amp; Tolerance Check</h3>
-              <p className="text-xs text-muted leading-relaxed">
+              <h3 className="font-instrument text-xl font-normal text-fg">CAD &amp; Tolerance Check</h3>
+              <p className="text-xs text-muted leading-relaxed font-jakarta">
                 We verify slice geometries, optimize infill density, and ensure structural rigidity for functional use.
               </p>
             </div>
-            <div className="rounded-2xl border border-border/80 bg-surface-2/40 p-5 space-y-2">
+            <div className="rounded-2xl border border-border/80 bg-surface-2/40 p-5 space-y-2 backdrop-blur-sm">
               <span className="font-mono text-[11px] font-bold text-accent uppercase tracking-wider">03. Deliver</span>
-              <h3 className="font-display text-base font-semibold text-fg">Printed &amp; Shipped</h3>
-              <p className="text-xs text-muted leading-relaxed">
+              <h3 className="font-instrument text-xl font-normal text-fg">Printed &amp; Shipped</h3>
+              <p className="text-xs text-muted leading-relaxed font-jakarta">
                 Manufactured on our Bambu Lab fleet, quality checked, and delivered to your doorstep anywhere in India.
               </p>
             </div>
@@ -388,7 +409,7 @@ function Home() {
                   <span>Upload 3D Model (STL / 3MF)</span>
                 </Link>
               </Button>
-              <Button asChild variant="outline" className="h-11 px-5 cursor-pointer">
+              <Button asChild variant="outline" className="h-11 px-5 cursor-pointer backdrop-blur-sm">
                 <Link to="/custom" search={{ path: "idea" }}>
                   <PenTool className="size-4 mr-2" />
                   <span>Describe Idea or Broken Part</span>
@@ -403,12 +424,12 @@ function Home() {
       </section>
 
       {/* ── Materials & Polymers Selector ──────────────────── */}
-      <section className="mx-auto max-w-6xl px-4 md:px-6">
-        <div className="rounded-3xl border border-border bg-surface p-6 sm:p-8 shadow-sm">
+      <section className="relative z-10 mx-auto max-w-6xl px-4 md:px-6">
+        <div className="rounded-3xl border border-border/80 bg-surface/70 p-6 sm:p-8 shadow-sm backdrop-blur-md">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
             <div>
-              <p className="text-[11px] font-semibold tracking-[0.18em] text-accent uppercase">Filament Guide</p>
-              <h2 className="font-display text-xl sm:text-2xl font-semibold tracking-tight text-fg mt-1">
+              <p className="text-[11px] font-mono tracking-[0.2em] text-accent uppercase">Filament Guide</p>
+              <h2 className="font-instrument text-2xl sm:text-3xl lg:text-4xl font-normal tracking-tight text-fg mt-1">
                 Choose the right polymer for your application
               </h2>
             </div>
@@ -430,9 +451,9 @@ function Home() {
                   type="button"
                   onClick={() => setActivePolymer(p.id)}
                   className={cn(
-                    "flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs sm:text-sm font-medium transition-colors cursor-pointer",
+                    "flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs sm:text-sm font-medium transition-colors cursor-pointer backdrop-blur-sm",
                     activePolymer === p.id
-                      ? "border-accent bg-accent/10 text-fg font-semibold"
+                      ? "border-accent bg-accent/15 text-fg font-semibold shadow-xs"
                       : "border-border bg-surface-2/40 text-muted hover:border-border hover:text-fg"
                   )}
                 >
@@ -444,12 +465,12 @@ function Home() {
             </div>
 
             {/* Verdict panel */}
-            <div className="flex-1 rounded-2xl border border-border bg-surface-2/30 px-4 py-3 min-h-[60px] flex flex-col justify-center">
+            <div className="flex-1 rounded-2xl border border-border/80 bg-surface-2/40 backdrop-blur-sm px-4 py-3 min-h-[60px] flex flex-col justify-center">
               <p className="text-xs sm:text-sm font-medium text-fg">{poly.verdict}</p>
               <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                <span className="text-[11px] text-muted">Ideal for:</span>
+                <span className="text-[11px] text-muted font-mono">Ideal for:</span>
                 {poly.uses.map((u) => (
-                  <span key={u} className="rounded-md border border-border bg-surface px-2 py-0.5 text-[11px] text-muted font-medium">
+                  <span key={u} className="rounded-md border border-border bg-surface/80 px-2 py-0.5 text-[11px] text-muted font-medium">
                     {u}
                   </span>
                 ))}
@@ -460,10 +481,14 @@ function Home() {
       </section>
 
       {/* Customer Testimonials & Social Proof */}
-      <TestimonialsSection className="py-12 md:py-16 border-t border-border/60 bg-surface/20" />
+      <div className="relative z-10">
+        <TestimonialsSection className="py-12 md:py-16 border-t border-border/60 bg-surface/30 backdrop-blur-md" />
+      </div>
 
       {/* Pick up where you left off */}
-      <LastVisitedSection products={products} />
+      <div className="relative z-10">
+        <LastVisitedSection products={products} />
+      </div>
     </div>
   );
 }
