@@ -80,4 +80,14 @@ describe("Theme Colors & WCAG AA Contrast Compliance", () => {
     expect(getContrastRatio(darkMuted, darkBg)).toBeGreaterThanOrEqual(4.5);
     expect(getContrastRatio(darkAccent, darkBg)).toBeGreaterThanOrEqual(4.5);
   });
+
+  it("ensures hero italic gradient text (monolithic balance) passes WCAG AA in light mode", () => {
+    const lightGradientStart = "#18181b"; // zinc-900
+    const lightGradientMid = "#27272a"; // zinc-800
+    const lightGradientEnd = "#007369"; // high-contrast teal
+
+    expect(getContrastRatio(lightGradientStart, lightBg)).toBeGreaterThanOrEqual(7.0);
+    expect(getContrastRatio(lightGradientMid, lightBg)).toBeGreaterThanOrEqual(7.0);
+    expect(getContrastRatio(lightGradientEnd, lightBg)).toBeGreaterThanOrEqual(4.5);
+  });
 });

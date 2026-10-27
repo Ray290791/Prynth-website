@@ -155,7 +155,7 @@ function Home() {
               className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-surface/80 px-3.5 py-1 text-xs font-medium text-muted transition-colors hover:border-accent hover:text-fg shadow-2xs backdrop-blur-md"
             >
               <Zap className="size-3 text-accent shrink-0" strokeWidth={2} />
-              <span>{settings.promo_banner || `Free standard delivery across India on orders over ₹${settings.free_shipping_threshold || 349}`}</span>
+              <span>{settings.promo_banner || `Free standard delivery across India on orders over ₹${settings.free_shipping_threshold || 399}`}</span>
               <ArrowRight className="size-3 text-subtle shrink-0" strokeWidth={2} />
             </Link>
           </div>
@@ -171,7 +171,7 @@ function Home() {
 
             <h1 className="font-instrument text-5xl sm:text-6xl lg:text-7xl font-normal tracking-tight text-fg leading-[1.06]">
               Engineered form in{" "}
-              <span className="italic text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-200 via-50% to-[#00b8a9] drop-shadow-sm">
+              <span className="italic text-transparent bg-clip-text bg-gradient-to-r from-zinc-900 via-zinc-800 to-[#007369] dark:from-white dark:via-zinc-200 dark:to-[#00b8a9] dark:drop-shadow-sm">
                 monolithic balance.
               </span>
             </h1>
