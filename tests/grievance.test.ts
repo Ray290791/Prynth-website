@@ -52,4 +52,30 @@ describe("Consumer Grievance Workflow (Consumer Protection E-Commerce Rules, 202
     expect(rows[0].email).toBe("test.consumer@example.com");
     expect(rows[0].category).toBe("product_defect");
   });
+
+  it("submits a DPDP Act 2023 data deletion request and stores it for the admin queue", async () => {
+    const res = await processGrievanceSubmission({
+      name: "Privacy User",
+      email: "privacy.user@example.com",
+      category: "data_deletion",
+      subject: "Request for personal data erasure under DPDP Act 2023",
+      description: "Please delete my uploaded CAD models, contact address, and order history as permitted under DPDP 2023.",
+    });
+
+    expect(res.success).toBe(true);
+    expect(res.ticketNumber).toMatch(/^PRY-GRV-\d{4}-[A-Z0-9]+$/);
+
+    const sql = await getSql();
+    const rows = await sql<{
+      ticket_number: string;
+      category: string;
+    }>`
+      SELECT ticket_number, category
+      FROM grievance_complaints
+      WHERE ticket_number = ${res.ticketNumber}
+    `;
+
+    expect(rows.length).toBe(1);
+    expect(rows[0].category).toBe("data_deletion");
+  });
 });

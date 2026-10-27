@@ -180,7 +180,21 @@ export function SiteFooter() {
       <div className="border-t border-border">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-4 text-xs text-subtle sm:flex-row sm:items-center sm:justify-between md:px-6">
           <p>© {new Date().getFullYear()} Prynth · All rights reserved.</p>
-          <p className="text-[11px]">Designed &amp; 3D printed with intention in Mumbai, India</p>
+          <div className="flex flex-wrap items-center gap-3 text-[11px]">
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(new CustomEvent("prynth:open-cookie-preferences"));
+                }
+              }}
+              className="text-subtle hover:text-fg underline cursor-pointer transition-colors"
+            >
+              Cookie Preferences
+            </button>
+            <span>·</span>
+            <span>Designed &amp; 3D printed with intention in Mumbai, India</span>
+          </div>
         </div>
       </div>
     </footer>

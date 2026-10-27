@@ -52,11 +52,22 @@ This register records the Indian regulatory requirements applicable to Prynth, t
 | **Uploaded 3D Models (STL/3MF)** | Print slicing, material estimation, manufacturing | Neon / Cloudflare R2 | Secured under admin-only access; deduplicated via SHA-256 |
 | **Lithophane Reference Photos** | Lithophane 3D conversion & verification | Neon / Cloudflare R2 | Retained with order record |
 
-### Data Breach Response Protocol:
-1. **Incident Point of Contact:** Grievance Officer (`grievance@prynth.in`).
-2. **Containment:** Revoke affected API tokens / rotate secrets via Cloudflare and database credentials.
-3. **Statutory Reporting:** Notify CERT-In (Indian Computer Emergency Response Team) within 6 hours of identification of cybersecurity incident in accordance with CERT-In directions under Section 70B of the IT Act.
-4. **Customer Communication:** Disclose breach facts and remediations to affected individuals.
+### Data Breach Response Protocol (DPDP Act 2023 & CERT-In):
+1. **Incident Response Team & Contacts:**
+   - **Internal Lead:** Lead Engineer / Studio Founder
+   - **Statutory Officer:** Grievance Redressal Officer (`grievance@prynth.in`)
+2. **Mandatory Breach Incident Register (What to Record):**
+   - Exact timestamp of discovery and occurrence.
+   - Nature of cybersecurity incident (e.g., unauthorized database access, credential stuffing, injection attempt).
+   - Scope and volume: categories of personal data exposed and number of affected Data Principals.
+   - Technical root cause analysis and compromised systems.
+   - Immediate containment actions taken (API key revocation, IP blocking, secret rotation).
+   - Long-term remedial controls deployed.
+3. **Statutory Regulatory Notification:**
+   - **CERT-In (Indian Computer Emergency Response Team):** Mandatory report within 6 hours of noticing cybersecurity incident under Section 70B of the IT Act (Directions dated 28 April 2022).
+   - **Data Protection Board of India (DPBI):** Intimation under Section 8(6) of the Digital Personal Data Protection Act, 2023, without unreasonable delay.
+4. **Data Principal Notification:**
+   - Plain-language electronic notification (email) to all affected individuals describing the breach incident, potential security implications, measures taken by Prynth, and safety steps advised to the user.
 
 ---
 

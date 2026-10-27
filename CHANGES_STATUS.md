@@ -6,10 +6,10 @@
 
 | Priority | Total | Done | In Progress | Blocked | Todo |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| **P0** | 11 | 7 | 1 | 3 | 0 |
-| **P1** | 18 | 0 | 0 | 4 | 14 |
+| **P0** | 11 | 8 | 0 | 3 | 0 |
+| **P1** | 18 | 1 | 0 | 4 | 13 |
 | **P2** | 13 | 0 | 0 | 4 | 9 |
-| **Total** | **42** | **7** | **1** | **11** | **23** |
+| **Total** | **42** | **9** | **0** | **11** | **22** |
 
 ---
 
@@ -27,7 +27,7 @@
 | **R2** | Business identity and grievance officer | **BLOCKED** | Blocked on owner decisions: legal entity type, grievance officer appointment, public phone decision. |
 | **R3** | Complaint workflow | **DONE** | Created migration 0027, added `/legal` statutory complaint form, automated ticket generation (`PRY-GRV-YYYY-XXXX`), email acknowledgement, 48h/30d SLA tracking, and test suite. |
 | **R4** | GST (tax) readiness | **BLOCKED** | Blocked on owner decision: registered under GST or not (CA confirmation). |
-| **R5** | Privacy policy, notices and consent | **IN PROGRESS** | Auditing data inventory, collection notices, and DPDP 2023 compliance. |
+| **R5** | Privacy policy, notices and consent | **DONE** | Complete DPDP Act 2023 compliance: code-level data inventory table, itemized notices across collection points (checkout, contact, 3D upload, idea form, lithophane, signup), checkboxes unticked by default, separate marketing consent, cookie preference trigger in footer and policy, DPDP rights forms at `/legal`, dedicated admin queue in Admin Console, and breach protocol in `COMPLIANCE.md`. |
 | **R14** | Legal review gate | **BLOCKED** | Blocked on owner review with CA and lawyer. |
 
 ---
@@ -42,7 +42,7 @@
 | **C6** | Real rate limiting | **TODO** | KV / Durable Object / Cloudflare rate-limiting. |
 | **C7** | Move uploads to R2 and remove runtime DDL | **TODO** | R2 storage binding, remove `CREATE TABLE IF NOT EXISTS`. |
 | **C8** | Timing-safe signature check | **TODO** | `timingSafeEqual` for Razorpay signatures. |
-| **C9** | Remove placeholder phone fallback | **TODO** | Remove "+91 98765 43210" fallback in privacy.tsx. |
+| **C9** | Remove placeholder phone fallback | **DONE** | Removed "+91 98765 43210" fallback in `privacy.tsx`; only dynamic configured phone is displayed. |
 | **G1** | Structured data (JSON-LD) | **TODO** | Organization, Product with Offer, Breadcrumbs, FAQPage. |
 | **G2** | LocalBusiness telephone warning | **BLOCKED** | Blocked on owner decision: phone number inclusion in markup vs accept warning. |
 | **G3** | Meta descriptions and titles | **TODO** | 120-160 char descriptions, ~60 char titles across all routes. |

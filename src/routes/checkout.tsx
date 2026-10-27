@@ -74,11 +74,12 @@ function CheckoutPage() {
     pincode: "",
   });
   
-  const [saveAddressToProfile, setSaveAddressToProfile] = useState(true);
+  const [saveAddressToProfile, setSaveAddressToProfile] = useState(false);
   const [needsCommercialReceipt, setNeedsCommercialReceipt] = useState(false);
   const [organizationName, setOrganizationName] = useState("");
   const [poReference, setPoReference] = useState("");
-  const [whatsappOptIn, setWhatsappOptIn] = useState(true);
+  const [whatsappOptIn, setWhatsappOptIn] = useState(false);
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
   
   const [ship, setShip] = useState<Ship>("standard");
   const [pay, setPay] = useState<Pay>("online");
@@ -792,11 +793,41 @@ function CheckoutPage() {
               <dd className="tabular-nums text-lg text-accent">{formatINR(total)}</dd>
             </div>
           </dl>
-          <Button type="submit" size="lg" className="mt-6 w-full" disabled={busy}>
+
+          {/* Statutory DPDP & Terms Notice */}
+          <div className="mt-5 rounded-2xl border border-border/80 bg-surface-2/40 p-3.5 space-y-2 text-xs text-muted">
+            <p>
+              By placing your order, you agree to our{" "}
+              <Link to="/terms" className="font-semibold text-accent underline">
+                Terms of Service
+              </Link>{" "}
+              and acknowledge our{" "}
+              <Link to="/privacy" className="font-semibold text-accent underline">
+                Privacy Policy
+              </Link>.
+            </p>
+            <p className="text-[11px] text-muted/80 leading-relaxed">
+              Your contact and shipping address are processed strictly to fulfill and courier your order.
+            </p>
+            <div className="pt-1 flex items-start gap-2">
+              <input
+                type="checkbox"
+                id="marketing_opt"
+                checked={marketingOptIn}
+                onChange={(e) => setMarketingOptIn(e.target.checked)}
+                className="mt-0.5 size-3.5 rounded border-border accent-accent cursor-pointer"
+              />
+              <Label htmlFor="marketing_opt" className="text-[11px] text-muted cursor-pointer select-none">
+                Send me occasional studio prototyping updates and new material releases (optional).
+              </Label>
+            </div>
+          </div>
+
+          <Button type="submit" size="lg" className="mt-4 w-full" disabled={busy}>
             {busy ? "Placing order…" : `Pay ${formatINR(total)}`}
           </Button>
           {pay === "online" && (
-            <p className="mt-3 text-xs text-subtle">
+            <p className="mt-3 text-xs text-subtle text-center">
               You will be redirected to Razorpay securely.
             </p>
           )}

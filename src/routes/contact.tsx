@@ -1,4 +1,4 @@
-import { createFileRoute, getRouteApi } from "@tanstack/react-router";
+import { createFileRoute, Link, getRouteApi } from "@tanstack/react-router";
 import {
   Instagram,
   Mail,
@@ -393,7 +393,14 @@ export function ContactPage() {
                 )}
               </div>
 
-              <div className="flex items-center justify-between pt-2">
+              <div className="rounded-xl border border-border/80 bg-surface-2/40 p-3 text-[11px] text-muted leading-relaxed">
+                By submitting this note, you consent to Prynth processing your name and email solely to reply to your inquiry in accordance with our{" "}
+                <Link to="/privacy" className="text-accent underline font-medium">
+                  Privacy Policy
+                </Link>.
+              </div>
+
+              <div className="flex items-center justify-between pt-1">
                 <p className="text-[11px] text-muted">
                   We typically reply within 2–4 business hours.
                 </p>

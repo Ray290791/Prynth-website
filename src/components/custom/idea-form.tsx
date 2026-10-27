@@ -883,6 +883,13 @@ export function IdeaForm({
           <QuantityStepper value={qty} onChange={setQty} />
         </div>
 
+        <div className="rounded-xl border border-border/80 bg-surface-2/40 p-3 text-[11px] text-muted leading-relaxed">
+          Reference sketches, descriptions, and dimensional specs are processed solely to evaluate engineering feasibility and calculate your CAD/print quote. Read our{" "}
+          <Link to="/privacy" className="text-accent underline font-medium">
+            Privacy Policy
+          </Link>.
+        </div>
+
         <div className="space-y-2 pt-2">
           <Button
             type="submit"

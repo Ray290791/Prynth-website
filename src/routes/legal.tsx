@@ -19,6 +19,9 @@ import { submitGrievanceComplaint } from "@/lib/grievance-fns";
 const rootRoute = getRouteApi("__root__");
 
 export const Route = createFileRoute("/legal")({
+  validateSearch: (s: Record<string, unknown>): { category?: string } => ({
+    category: typeof s.category === "string" ? s.category : undefined,
+  }),
   component: LegalPage,
   head: () => ({
     links: [{ rel: "canonical", href: "https://prynth.in/legal" }],
@@ -35,14 +38,43 @@ export const Route = createFileRoute("/legal")({
 
 function LegalPage() {
   const { settings } = rootRoute.useLoaderData();
+  const search = Route.useSearch();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [orderNumber, setOrderNumber] = useState("");
   const [category, setCategory] = useState<
-    "product_defect" | "delayed_delivery" | "wrong_item" | "damaged_in_transit" | "refund_issue" | "privacy_data" | "customer_service" | "other"
-  >("product_defect");
+    | "product_defect"
+    | "delayed_delivery"
+    | "wrong_item"
+    | "damaged_in_transit"
+    | "refund_issue"
+    | "privacy_data"
+    | "data_deletion"
+    | "data_access"
+    | "consent_withdrawal"
+    | "customer_service"
+    | "other"
+  >(() => {
+    const valid = [
+      "product_defect",
+      "delayed_delivery",
+      "wrong_item",
+      "damaged_in_transit",
+      "refund_issue",
+      "privacy_data",
+      "data_deletion",
+      "data_access",
+      "consent_withdrawal",
+      "customer_service",
+      "other",
+    ];
+    if (search.category && valid.includes(search.category)) {
+      return search.category as any;
+    }
+    return "product_defect";
+  });
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -341,7 +373,7 @@ function LegalPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="category">Complaint Category *</Label>
+                  <Label htmlFor="category">Request / Grievance Category *</Label>
                   <select
                     id="category"
                     value={category}
@@ -353,7 +385,10 @@ function LegalPage() {
                     <option value="wrong_item">Incorrect Item or Missing Parts</option>
                     <option value="delayed_delivery">Excessive Delivery Delay</option>
                     <option value="refund_issue">Refund / Payment Gateway Dispute</option>
-                    <option value="privacy_data">Data Privacy or Personal Information Request</option>
+                    <option value="data_deletion">Data Erasure / Deletion Request (DPDP Act 2023)</option>
+                    <option value="data_access">Data Access / Personal Data Copy (DPDP Act 2023)</option>
+                    <option value="consent_withdrawal">Withdrawal of Processing Consent</option>
+                    <option value="privacy_data">Other Privacy / Data Protection Issue</option>
                     <option value="customer_service">Customer Service Issue</option>
                     <option value="other">Other Grievance</option>
                   </select>

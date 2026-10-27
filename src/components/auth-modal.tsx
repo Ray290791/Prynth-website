@@ -1,4 +1,5 @@
 import * as Dialog from "@radix-ui/react-dialog";
+import { Link } from "@tanstack/react-router";
 import { X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
@@ -104,6 +105,26 @@ export function AuthModal({
                     ? "Sign In"
                     : "Sign Up"}
               </Button>
+              {mode === "signup" && (
+                <p className="text-[11px] text-muted text-center pt-1.5 leading-relaxed">
+                  By creating an account, you agree to our{" "}
+                  <Link
+                    to="/terms"
+                    onClick={() => onOpenChange?.(false)}
+                    className="text-accent underline font-medium"
+                  >
+                    Terms of Service
+                  </Link>{" "}
+                  and acknowledge our{" "}
+                  <Link
+                    to="/privacy"
+                    onClick={() => onOpenChange?.(false)}
+                    className="text-accent underline font-medium"
+                  >
+                    Privacy Policy
+                  </Link>.
+                </p>
+              )}
             </form>
 
             <div className="relative my-3">

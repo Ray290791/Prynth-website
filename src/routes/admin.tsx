@@ -28,8 +28,10 @@ import {
   Bell,
   DraftingCompass,
   MessageSquareQuote,
+  Scale,
 } from "lucide-react";
 import { InquiriesTab } from "@/components/inquiries-tab";
+import { GrievancesTab } from "@/components/admin/grievances-tab";
 import { PrintersTab } from "@/components/printers-tab";
 import { FilamentsTab } from "@/components/filaments-tab";
 import { PaymentOptionsTab } from "@/components/payment-options-tab";
@@ -130,6 +132,7 @@ function AdminPage() {
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     { id: "orders", label: "Orders", icon: Package },
     { id: "inquiries", label: "Inquiries", icon: Mail },
+    { id: "grievances", label: "Grievances & DPDP", icon: Scale },
     { id: "services", label: "Services", icon: DraftingCompass },
     { id: "printers", label: "Printers", icon: PrinterIcon },
     { id: "filaments", label: "Filaments", icon: Disc },
@@ -382,6 +385,10 @@ function AdminPage() {
 
         {activeTab === "materials" && (
           <MaterialsTab />
+        )}
+
+        {activeTab === "grievances" && (
+          <GrievancesTab />
         )}
       </main>
 

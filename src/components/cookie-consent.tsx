@@ -19,6 +19,12 @@ function updateConsent(granted: boolean) {
   });
 }
 
+export function openCookiePreferences() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("prynth:open-cookie-preferences"));
+  }
+}
+
 export function CookieConsent() {
   const [showBanner, setShowBanner] = useState(false);
 
@@ -37,6 +43,10 @@ export function CookieConsent() {
       updateConsent(true);
       loadGoogleAnalytics();
     }
+
+    const handleOpen = () => setShowBanner(true);
+    window.addEventListener("prynth:open-cookie-preferences", handleOpen);
+    return () => window.removeEventListener("prynth:open-cookie-preferences", handleOpen);
   }, []);
 
   const handleAccept = () => {

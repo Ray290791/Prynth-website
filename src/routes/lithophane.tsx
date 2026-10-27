@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { createFileRoute, useNavigate, getRouteApi } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link, getRouteApi } from "@tanstack/react-router";
 import {
   Upload,
   RotateCw,
@@ -961,6 +961,13 @@ function LithophaneStudioPage() {
                       <Truck className="size-3" /> Free insured delivery
                     </span>
                   </span>
+                </div>
+
+                <div className="rounded-xl border border-border/80 bg-surface-2/40 p-3 text-[11px] text-muted leading-relaxed">
+                  Your photo is processed locally in your browser to generate the 3D relief mesh and used exclusively to 3D print your keepsake. We never use personal photographs for advertising or AI training. Read our{" "}
+                  <Link to="/privacy" className="text-accent underline font-medium">
+                    Privacy Policy
+                  </Link>.
                 </div>
 
                 <Button

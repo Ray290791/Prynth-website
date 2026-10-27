@@ -985,6 +985,13 @@ export function UploadForm({
           />
         </div>
 
+        <div className="rounded-xl border border-border/80 bg-surface-2/40 p-3 text-[11px] text-muted leading-relaxed">
+          Your 3D CAD models and fabrication specifications are processed strictly for geometric slicing, volume estimation, and manufacturing. Uploaded designs are encrypted with private admin-only access and never published or shared. Read our{" "}
+          <Link to="/privacy" className="text-accent underline font-medium">
+            Privacy Policy
+          </Link>.
+        </div>
+
         <Button
           type="submit"
           size="lg"
