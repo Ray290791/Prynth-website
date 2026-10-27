@@ -43,6 +43,7 @@ describe("G1: Structured Data (JSON-LD) Generators", () => {
     expect(org.legalName).toBe("Prynth 3D LLP");
     expect(org.contactPoint[0].email).toBe("support@prynth.in");
     expect(org.address.streetAddress).toBe("Bandra West, Mumbai 400050");
+    expect(org.sameAs).toContain("https://www.instagram.com/prynth07");
   });
 
   it("generates complete Product schema with Offer, Shipping, and Return Policy", () => {

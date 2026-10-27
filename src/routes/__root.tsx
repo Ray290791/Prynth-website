@@ -266,8 +266,7 @@ const SITE_JSON_LD = {
         },
       ],
       "sameAs": [
-        "https://www.instagram.com/prynth.in",
-        "https://twitter.com/prynth_in",
+        "https://www.instagram.com/prynth07",
       ],
     },
   ],

@@ -27,7 +27,9 @@ export function generateOrganizationJsonLd(settings?: {
   legal_registered_address?: string;
   support_email?: string;
   phone_number?: string;
+  instagram?: string;
 }) {
+  const instagramHandle = (settings?.instagram || "@prynth07").replace("@", "").trim();
   return {
     "@context": "https://schema.org",
     "@type": ["Organization", "Store", "LocalBusiness"],
@@ -69,8 +71,7 @@ export function generateOrganizationJsonLd(settings?: {
     "currenciesAccepted": "INR",
     "paymentAccepted": "Cash on Delivery, UPI, Credit Card, Debit Card, Net Banking",
     "sameAs": [
-      "https://www.instagram.com/prynth.in",
-      "https://twitter.com/prynth_in",
+      `https://www.instagram.com/${instagramHandle}`,
     ],
   };
 }
