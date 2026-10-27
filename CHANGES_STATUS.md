@@ -6,10 +6,10 @@
 
 | Priority | Total | Done | In Progress | Blocked | Todo |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| **P0** | 11 | 2 | 1 | 3 | 5 |
+| **P0** | 11 | 3 | 1 | 3 | 4 |
 | **P1** | 18 | 0 | 0 | 4 | 14 |
 | **P2** | 13 | 0 | 0 | 4 | 9 |
-| **Total** | **42** | **2** | **1** | **11** | **28** |
+| **Total** | **42** | **3** | **1** | **11** | **27** |
 
 ---
 
@@ -19,8 +19,8 @@
 | :--- | :--- | :---: | :--- |
 | **S1** | Make every shipping amount come from settings | **DONE** | Audited all hardcoded shipping/COD amounts; bound cart, pegboard, shipping policy, checkout, and admin defaults to dynamic site settings. |
 | **S2** | No COD for custom and lithophane orders | **DONE** | Implemented client-side exclusion of COD and user notice when custom prints, lithophanes, or configured pegboards are in cart; strictly rejected on server-side in createRazorpayOrder. |
-| **C1** | Secrets hygiene | **IN PROGRESS** | Auditing .gitignore, git history, wrangler.toml, and public/ directory for secrets. |
-| **C2** | Lock down customer file downloads | **TODO** | Switch to `crypto.randomUUID()`, require admin session, `private, no-store`. |
+| **C1** | Secrets hygiene | **DONE** | Verified .env/.env.* in .gitignore; 0 commits in git history contain .env; verified no secrets in source, wrangler.toml, or public/; owner reminded to rotate credentials if external zip was shared. |
+| **C2** | Lock down customer file downloads | **IN PROGRESS** | Switching to `crypto.randomUUID()`, requiring admin session, `Cache-Control: private, no-store`, and removing CORS wildcard. |
 | **C3** | Deduplicate uploads by content hash | **TODO** | New migration for `content_hash` column, SHA-256 calculation & unique constraint. |
 | **C4** | Razorpay webhook | **TODO** | New `/api/razorpay-webhook` route, signature check, idempotent fulfillment. |
 | **R1** | One source for legal and business details | **TODO** | Admin settings group for legal details, checklist & centralized consumption. |
