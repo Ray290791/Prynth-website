@@ -7,9 +7,9 @@
 | Priority | Total | Done | In Progress | Blocked | Todo |
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | **P0** | 11 | 8 | 0 | 3 | 0 |
-| **P1** | 18 | 4 | 0 | 4 | 10 |
+| **P1** | 18 | 5 | 0 | 4 | 9 |
 | **P2** | 13 | 0 | 0 | 4 | 9 |
-| **Total** | **42** | **12** | **0** | **11** | **19** |
+| **Total** | **42** | **13** | **0** | **11** | **18** |
 
 ---
 
@@ -39,7 +39,7 @@
 | **S3** | COD fee | **BLOCKED** | Blocked on owner decision: recommended ₹39–49. |
 | **S4** | Express is never free | **DONE** | Removed promises of free express in lithophane and index routes; clarified express air courier is always charged separately on all orders; added unit tests verifying express fee is never zeroed by cart total. |
 | **C5** | Upload abuse protection | **DONE** | Integrated Cloudflare Turnstile verification on upload form (`upload-form.tsx`) and server endpoint (`custom-files-fns.ts`); added per-IP sliding rate limiting (max 10 uploads/10 min); implemented automated cleanup of unlinked custom models older than 3 days (`cleanupUnattachedCustomFiles` in `maintenance.server.ts`); verified via unit tests. |
-| **C6** | Real rate limiting | **TODO** | KV / Durable Object / Cloudflare rate-limiting. |
+| **C6** | Real rate limiting | **DONE** | Distributed rate limiting (`RateLimiter`) with Cloudflare Workers KV support, Postgres atomic upserts with TTL across isolates, and in-memory fallback; integrated across `/api/auth/*`, `/api/verify-payment`, `uploadCustomFile`, and contact inquiry endpoints. |
 | **C7** | Move uploads to R2 and remove runtime DDL | **TODO** | R2 storage binding, remove `CREATE TABLE IF NOT EXISTS`. |
 | **C8** | Timing-safe signature check | **DONE** | Replaced string equality with `crypto.timingSafeEqual` on Node runtime and constant-time XOR comparison (`timingSafeEqualString`) on Web Crypto/edge runtime across both payment and webhook signature verification; verified via test suite `tests/signature.test.ts`. |
 | **C9** | Remove placeholder phone fallback | **DONE** | Removed "+91 98765 43210" fallback in `privacy.tsx`; only dynamic configured phone is displayed. |
