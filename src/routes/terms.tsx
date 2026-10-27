@@ -169,14 +169,24 @@ export function TermsPage() {
     },
     {
       icon: ShieldCheck,
-      title: "7. Order Cancellations & 7-Day Returns Policy",
+      title: "7. Order Cancellations, Custom Fabrication & Returns Policy",
       body: (
-        <div className="space-y-2 text-sm text-muted leading-relaxed">
+        <div className="space-y-3 text-sm text-muted leading-relaxed">
           <p>
-            <strong className="text-fg">Ready-Made Catalog Items:</strong> Subject to our standard 7-day guarantee. If an item arrives damaged, defective, or incorrect, we will issue a free reprint or full refund within 5–7 business days upon receipt of photographic proof.
+            <strong className="text-fg">Ready-Made Catalog Items:</strong> Subject to our standard 7-day guarantee. If an item arrives damaged, defective, or incorrect, we will issue a free reprint or full refund within 5–7 business days upon receipt of photographic proof. Unused catalog pieces in original packaging may be returned for change of mind within 7 days (customer covers return transit; product price refunded).
           </p>
           <p>
-            <strong className="text-fg">Bespoke Custom Prints:</strong> Made-to-order custom manufacturing begins immediately upon file slicing and bed allocation. Custom prints cannot be cancelled or returned once printing commences, except where the finished piece fails to meet agreed CAD dimensions within our standard engineering tolerances.
+            <strong className="text-fg">Bespoke Custom Prints &amp; Lithophanes (Made-to-Order):</strong> Custom items are fabricated specifically to your digital CAD file or photograph. Because these pieces cannot be restocked or repurposed, change-of-mind cancellations or returns are not permitted once manufacturing (slicing and bed allocation) has commenced.
+          </p>
+          <p>
+            <strong className="text-fg">Zero-Flaw Guarantee for Custom Work:</strong> If a custom piece arrives physically broken during courier transit, exhibits manufacturing flaws (warping &gt;0.5mm, layer separation, under-extrusion), deviates from approved CAD dimensions (&gt;0.5% tolerance), or is supplied in the incorrect polymer or color, {brandName} will promptly:
+          </p>
+          <ul className="list-disc pl-5 space-y-1 text-xs">
+            <li>Produce a 100% free priority reprint dispatched via expedited courier at our expense; OR</li>
+            <li>Issue an immediate 100% full refund credited to your original payment method (settled in 5–7 business days).</li>
+          </ul>
+          <p className="text-xs text-subtle">
+            Claims must be submitted within 48 hours (up to 7 days) of courier delivery to <a href={`mailto:${contactEmail}`} className="text-accent underline">{contactEmail}</a> with photographic or video proof. Where an issue originates from non-manifold geometry or sub-0.8mm walls inherent in the customer's uploaded file, {brandName} provides engineering mesh repair guidance and a 50% courtesy reprint discount.
           </p>
         </div>
       ),

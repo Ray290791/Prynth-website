@@ -276,6 +276,55 @@ export function PrivacyPage() {
         </div>
       ),
     },
+    {
+      icon: Clock,
+      title: "8. Data Retention Periods & Automated Purging",
+      body: (
+        <div className="space-y-3 text-sm text-muted leading-relaxed">
+          <p>
+            In accordance with the Purpose Limitation &amp; Storage Limitation principles of the DPDP Act, 2023, personal data and files are retained strictly for the duration necessary to fulfill fabrication, courier transit, warranty support, and statutory tax obligations:
+          </p>
+          <div className="overflow-x-auto rounded-2xl border border-border/80 bg-surface-2/40 p-3 sm:p-4 my-3">
+            <table className="w-full text-left text-xs text-muted">
+              <thead>
+                <tr className="border-b border-border/60 text-fg">
+                  <th className="pb-2 font-semibold">Data Category</th>
+                  <th className="pb-2 font-semibold">Retention Duration</th>
+                  <th className="pb-2 font-semibold">Statutory / Operational Purpose</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/40">
+                <tr>
+                  <td className="py-2.5 font-medium text-fg">Customer 3D CAD Files &amp; Lithophane Photos</td>
+                  <td className="py-2.5 text-accent font-mono font-semibold">30 Days Post-Fulfillment</td>
+                  <td className="py-2.5">Retained solely to support defect inspection, warranty reprints, and material matching; permanently deleted from R2 storage and database after 30 days unless saved in your user account.</td>
+                </tr>
+                <tr>
+                  <td className="py-2.5 font-medium text-fg">Uncompleted / Abandoned File Uploads</td>
+                  <td className="py-2.5 text-accent font-mono font-semibold">72 Hours (3 Days)</td>
+                  <td className="py-2.5">Files uploaded to the instant quoting engine that do not proceed to checkout are automatically purged after 3 days.</td>
+                </tr>
+                <tr>
+                  <td className="py-2.5 font-medium text-fg">Tax Invoices &amp; Transaction Ledgers</td>
+                  <td className="py-2.5 text-accent font-mono font-semibold">8 Years</td>
+                  <td className="py-2.5">Mandatory statutory retention under Section 44AA of the Indian Income Tax Act, 1961 and Rule 6F of Income Tax Rules.</td>
+                </tr>
+                <tr>
+                  <td className="py-2.5 font-medium text-fg">Grievance &amp; Consumer Dispute Files</td>
+                  <td className="py-2.5 text-accent font-mono font-semibold">3 Years</td>
+                  <td className="py-2.5">Audit trail maintenance under the Consumer Protection (E-Commerce) Rules, 2020.</td>
+                </tr>
+                <tr>
+                  <td className="py-2.5 font-medium text-fg">Customer Account Profile Data</td>
+                  <td className="py-2.5 text-accent font-mono font-semibold">Until Deletion Request</td>
+                  <td className="py-2.5">Retained while account is active; erased within 30 days of written deletion request under DPDP Act rights.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ),
+    },
   ];
 
   const breadcrumbJsonLd = generateBreadcrumbJsonLd([

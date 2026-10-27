@@ -1,6 +1,6 @@
 import { createFileRoute, Link, getRouteApi } from "@tanstack/react-router";
 import { generateBreadcrumbJsonLd } from "@/lib/jsonld";
-import { RotateCcw, ShieldCheck, CheckCircle2, AlertCircle, ArrowRight, HelpCircle } from "lucide-react";
+import { RotateCcw, ShieldCheck, CheckCircle2, AlertCircle, ArrowRight, HelpCircle, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const rootRoute = getRouteApi("__root__");
@@ -107,6 +107,35 @@ export function ReturnsPage() {
                 {paragraph}
               </p>
             ))}
+          </div>
+        </div>
+
+        {/* Custom vs Ready-Made Policy Grid */}
+        <div className="grid gap-4 sm:grid-cols-2 pt-4">
+          <div className="rounded-2xl border border-border/80 bg-surface-2/40 p-5 space-y-3">
+            <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-accent font-semibold">
+              <CheckCircle2 className="size-4" />
+              <span>Ready-Made Items</span>
+            </div>
+            <h3 className="font-display text-base font-semibold text-fg">Catalog Desk &amp; Home Pieces</h3>
+            <ul className="text-xs text-muted space-y-2 list-disc pl-4 leading-relaxed">
+              <li><strong>7-day replacement guarantee</strong> for pieces damaged in courier transit or defective on arrival.</li>
+              <li>Change-of-mind returns accepted for unused, unaltered pieces in original packaging.</li>
+              <li>Outbound product amount refunded upon safe return inspection.</li>
+            </ul>
+          </div>
+
+          <div className="rounded-2xl border border-accent/30 bg-accent/5 p-5 space-y-3">
+            <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-accent font-semibold">
+              <Layers className="size-4" />
+              <span>Custom Made-to-Order</span>
+            </div>
+            <h3 className="font-display text-base font-semibold text-fg">Client 3D Models &amp; Lithophanes</h3>
+            <ul className="text-xs text-muted space-y-2 list-disc pl-4 leading-relaxed">
+              <li><strong>Zero-Flaw Guarantee:</strong> 100% free priority reprint OR full refund if the piece arrives damaged, warped, or out of spec (&gt;0.5% tolerance).</li>
+              <li>Non-returnable for change of mind once material slicing and printing commences on the machine bed.</li>
+              <li>Report within 48h to 7 days of delivery with photos to <strong className="text-fg">{supportEmail}</strong>.</li>
+            </ul>
           </div>
         </div>
 

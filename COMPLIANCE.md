@@ -69,12 +69,45 @@ This register records the Indian regulatory requirements applicable to Prynth, t
 4. **Data Principal Notification:**
    - Plain-language electronic notification (email) to all affected individuals describing the breach incident, potential security implications, measures taken by Prynth, and safety steps advised to the user.
 
+## 4. Statutory Data Retention Schedules & Custom Refund Framework (R6 & R7)
+
+### Data Retention Schedules (DPDP Act 2023 & Indian Income Tax Act):
+1. **Customer 3D CAD Files & Lithophane Photos:**
+   - **Retention Period:** 30 days post-order fulfillment.
+   - **Purpose & Disposal:** Retained strictly for warranty reprints, defect verification, and color/material matching. Automatically purged from Cloudflare R2 and database after 30 days unless customer explicitly saves it in their user profile account.
+2. **Abandoned / Uncompleted Quotes:**
+   - **Retention Period:** 72 hours (3 days).
+   - **Disposal:** Automatically purged if the cart session is abandoned without payment.
+3. **Invoices & Commercial Order Accounting:**
+   - **Retention Period:** 8 years.
+   - **Legal Mandate:** Mandatory statutory retention under Section 44AA of the Indian Income Tax Act, 1961 and Rule 6F of Income Tax Rules.
+4. **Consumer Grievance & Dispute Records:**
+   - **Retention Period:** 3 years.
+   - **Legal Mandate:** Statutory audit trail maintenance under the Consumer Protection (E-Commerce) Rules, 2020.
+5. **Customer Account Profiles:**
+   - **Retention Period:** Until written deletion request under DPDP Act; erased within 30 days.
+
+### Custom Made-to-Order Refund & Reprint Framework (R7):
+- **Made-to-Order Nature:** Custom 3D prints and lithophanes are bespoke manufacturing outputs. Change-of-mind cancellations or returns are not permitted once production (slicing and machine bed heating) commences.
+- **Prynth Zero-Flaw Guarantee:**
+  - 100% Free Priority Reprint OR Full Refund issued if piece arrives:
+    a) Damaged or broken in courier transit;
+    b) Defective due to manufacturing failure (delamination, warping >0.5mm, layer shift);
+    c) Out-of-tolerance from approved 3D CAD file (>0.5% deviation); or
+    d) Fabricated in incorrect material polymer or color.
+  - Defect report timeline: Within 48 hours to 7 days of delivery with photos to `hello@prynth.in`.
+  - Refund processing timeline: Credited back to original payment method (via Razorpay / UPI) within 5–7 business days.
+  - Customer file defects (e.g. sub-0.8mm walls or non-manifold meshes): Free engineering mesh advice and a 50% discount on corrected reprint.
+
 ---
 
-## 4. Pending Owner Decisions (Blocked Items)
+## 5. Active Business & Regulatory State (R2, R4, R13)
 
-1. **R2 (Business Identity):** Confirmation of legal entity type (Sole Proprietorship, LLP, or Pvt Ltd) and appointment record for Grievance Redressal Officer.
-2. **R4 (GST Readiness):** Formal written confirmation from Chartered Accountant regarding GST registration status for online interstate physical goods.
-3. **R6 (Data Retention):** Policy on automatic purging of unlinked custom files after order delivery.
-4. **R7 (Refund Policy):** Formalization of refund vs reprint policy for custom made-to-order items.
-5. **R14 (Legal Review):** Review of compiled policies by legal counsel and CA before launch.
+- **Entity Type (R2):** Unregistered Firm operated by Co-Founders Ray Kapadia & Supas Kumar.
+- **Grievance Redressal Officer (R2):** Ray Kapadia (Co-Founder & Grievance Redressal Officer), `grievance@prynth.in`.
+- **Tax & GST Identity (R4):** Unregistered under GST; issuing simplified commercial receipts without GSTIN or tax breakup until statutory thresholds/registration are formalized.
+- **Pending Owner Registrations (R13):**
+  1. Udyam Registration (Ministry of MSME) — free, online at `udyamregistration.gov.in`.
+  2. Maharashtra Shops and Establishments Act, 2017 (Gumasta Intimation) — via `lms.mahaonline.gov.in`.
+  3. Trademark Registration for "Prynth" (Classes 40 and 20/21) — via `ipindiaonline.gov.in`.
+- **Legal & CA Review Gate (R14):** Policies compiled; ready for CA review before high-volume commercial scaling.
