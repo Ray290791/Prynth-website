@@ -45,24 +45,25 @@
   --surface: #fffefb;
   --surface-2: #eceae5;
   --fg: #1e2124;
-  --muted: #5e646b;
-  --subtle: #8b9198;
+  --muted: #4e555e;
+  --subtle: #6c737c;
   --accent: #00b8a9;
   --accent-hover: #00a396;
+  --accent-text: #007369;
   --accent-soft: color-mix(in oklab, #00b8a9 14%, #fffefb);
   --ink: #1e2124;
-  --border: color-mix(in oklab, #1e2124 10%, transparent);
-  --ring: #00b8a9;
+  --border: color-mix(in oklab, #1e2124 12%, transparent);
+  --ring: #007369;
   --danger: #c45c4a;
   --shadow-border:
-    0 0 0 1px rgba(30, 33, 36, 0.06), 0 1px 2px -1px rgba(30, 33, 36, 0.06),
+    0 0 0 1px rgba(30, 33, 36, 0.08), 0 1px 2px -1px rgba(30, 33, 36, 0.06),
     0 2px 4px 0 rgba(30, 33, 36, 0.04);
   --shadow-border-hover:
-    0 0 0 1px rgba(30, 33, 36, 0.1), 0 1px 2px -1px rgba(30, 33, 36, 0.08),
+    0 0 0 1px rgba(30, 33, 36, 0.14), 0 1px 2px -1px rgba(30, 33, 36, 0.08),
     0 8px 20px -8px rgba(30, 33, 36, 0.12);
-  --shadow-lift: 0 16px 40px -20px rgba(30, 33, 36, 0.22);
-  --glass-bg: rgba(255, 254, 251, 0.92);
-  --glass-border: rgba(30, 33, 36, 0.08);
+  --shadow-lift: 0 16px 40px -20px rgba(30, 33, 36, 0.18);
+  --glass-bg: rgba(255, 254, 251, 0.94);
+  --glass-border: rgba(30, 33, 36, 0.1);
 }
 
 .dark {
@@ -75,6 +76,7 @@
   --subtle: #656c76;
   --accent: #00b8a9;
   --accent-hover: #1ec9ba;
+  --accent-text: #00b8a9;
   --accent-soft: rgba(0, 184, 169, 0.14);
   --ink: #0c0e12;
   --border: rgba(255, 255, 255, 0.08);
@@ -85,6 +87,16 @@
   --shadow-lift: 0 20px 48px -18px rgba(0, 0, 0, 0.85);
   --glass-bg: rgba(20, 23, 29, 0.92);
   --glass-border: rgba(255, 255, 255, 0.08);
+}
+
+/* Light mode contrast enhancement: WCAG AA compliant text-accent */
+:root:not(.dark) .text-accent,
+:root:not(.dark) a.text-accent,
+:root:not(.dark) span.text-accent,
+:root:not(.dark) p.text-accent,
+:root:not(.dark) div.text-accent,
+:root:not(.dark) svg.text-accent {
+  color: var(--accent-text, #007369);
 }
 
 html {

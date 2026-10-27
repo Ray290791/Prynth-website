@@ -15,8 +15,7 @@ import { CartSync } from "@/components/cart-sync";
 import { CookieConsent } from "@/components/cookie-consent";
 import appCss from "../styles.css?url";
 
-const APP_NAME = "prynth!";
-const THEME_BOOT = `try{var t=localStorage.getItem("prynth-theme");if(t!=="light")document.documentElement.classList.add("dark")}catch(e){}`;
+const THEME_BOOT = `try{var t=localStorage.getItem("prynth-theme");var isDark=t?t==="dark":(window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches);if(isDark){document.documentElement.classList.add("dark");}else{document.documentElement.classList.remove("dark");}var tc=document.querySelector('meta[name="theme-color"]');if(tc){tc.setAttribute("content",isDark?"#0c0e12":"#f6f5f2");}}catch(e){}`;
 
 // ── Security deterrent scripts ────────────────────────────────────────────────
 // Runs before React hydration so protections are in place immediately.

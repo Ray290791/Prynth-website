@@ -22,6 +22,10 @@ const STORAGE_KEY = "prynth-theme";
 
 function apply(theme: Theme) {
   document.documentElement.classList.toggle("dark", theme === "dark");
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) {
+    meta.setAttribute("content", theme === "dark" ? "#0c0e12" : "#f6f5f2");
+  }
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
@@ -29,8 +33,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      const next: Theme = stored === "light" ? "light" : "dark";
+      const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
+      let next: Theme;
+      if (stored === "light" || stored === "dark") {
+        next = stored;
+      } else {
+        const prefersDark =
+          window.matchMedia &&
+          window.matchMedia("(prefers-color-scheme: dark)").matches;
+        next = prefersDark ? "dark" : "light";
+      }
       setThemeState(next);
       apply(next);
     } catch {

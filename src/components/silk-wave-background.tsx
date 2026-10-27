@@ -34,12 +34,21 @@ export function SilkWaveBackground({
 
       // Plane geometry spanning full screen
       geom = new THREE.PlaneGeometry(24, 15, 76, 56);
+      const isDarkTheme = () => document.documentElement.classList.contains("dark");
       mat = new THREE.MeshBasicMaterial({
-        color: 0x00d4c3,
+        color: isDarkTheme() ? 0x00d4c3 : 0x008075,
         wireframe: true,
         transparent: true,
-        opacity: 0.45,
+        opacity: isDarkTheme() ? 0.45 : 0.22,
       });
+
+      const themeObserver = new MutationObserver(() => {
+        if (!mat) return;
+        const dark = isDarkTheme();
+        mat.color.set(dark ? 0x00d4c3 : 0x008075);
+        mat.opacity = dark ? 0.45 : 0.22;
+      });
+      themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
 
       ribbonMesh = new THREE.Mesh(geom, mat);
       ribbonMesh.rotation.x = -Math.PI / 3.8;
@@ -102,6 +111,7 @@ export function SilkWaveBackground({
 
       return () => {
         if (animId !== null) cancelAnimationFrame(animId);
+        themeObserver.disconnect();
         window.removeEventListener("mousemove", onMouseMove);
         window.removeEventListener("resize", onResize);
         if (geom) geom.dispose();
@@ -118,21 +128,21 @@ export function SilkWaveBackground({
 
   return (
     <div className={`fixed inset-0 pointer-events-none z-0 overflow-hidden ${className}`}>
-      {/* Three.js Silk Wave Canvas - dimmed when subtle on inner pages */}
+      {/* Three.js Silk Wave Canvas - dimmed when subtle on inner pages, subtle contrast in light mode */}
       <canvas
         ref={canvasRef}
         className={cn(
           "absolute inset-0 w-full h-full transition-opacity duration-700 ease-out",
-          subtle ? "opacity-30" : "opacity-75"
+          subtle ? "opacity-15 dark:opacity-30" : "opacity-35 dark:opacity-75"
         )}
       />
-      {/* Soft Vignette Overlay */}
+      {/* Soft Vignette Overlay matching theme background */}
       <div
         className={cn(
           "absolute inset-0 bg-radial transition-opacity duration-700 ease-out",
           subtle
-            ? "from-transparent via-[#0c0e12]/45 to-[#0c0e12]/95"
-            : "from-transparent via-[#0c0e12]/25 to-[#0c0e12]"
+            ? "from-transparent via-[var(--bg)]/40 to-[var(--bg)]/95"
+            : "from-transparent via-[var(--bg)]/25 to-[var(--bg)]"
         )}
       />
     </div>
