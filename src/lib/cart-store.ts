@@ -129,16 +129,27 @@ export function cartSubtotal(items: CartItem[]) {
   return items.reduce((sum, i) => sum + i.unitPrice * i.qty, 0);
 }
 
-export const FREE_SHIPPING_AT = 349;
+export const FREE_SHIPPING_AT = 399;
 export const STANDARD_SHIPPING = 79;
+export const MAHARASHTRA_STANDARD_SHIPPING = 49;
 export const EXPRESS_SHIPPING = 189;
-export const COD_FEE = 30;
+export const COD_FEE = 39;
+
+export function isMaharashtraPincode(pincode?: string): boolean {
+  if (!pincode) return false;
+  const clean = pincode.replace(/\D/g, "");
+  if (clean.length < 2) return false;
+  const prefix = clean.slice(0, 2);
+  return ["40", "41", "42", "43", "44"].includes(prefix);
+}
 
 export interface ShippingRates {
   freeThreshold?: number;
   standardFee?: number;
+  maharashtraStandardFee?: number;
   expressFee?: number;
   codFee?: number;
+  pincode?: string;
 }
 
 export function shippingFee(
@@ -148,10 +159,16 @@ export function shippingFee(
 ) {
   const express = rates?.expressFee ?? EXPRESS_SHIPPING;
   const standard = rates?.standardFee ?? STANDARD_SHIPPING;
+  const mhStandard = rates?.maharashtraStandardFee ?? MAHARASHTRA_STANDARD_SHIPPING;
   const freeAt = rates?.freeThreshold ?? FREE_SHIPPING_AT;
 
   if (method === "express") return express;
   if (subtotal >= freeAt) return 0;
+
+  // S5: Zone-based standard shipping (Maharashtra ₹49 vs Rest of India ₹79)
+  if (rates?.pincode && isMaharashtraPincode(rates.pincode)) {
+    return mhStandard;
+  }
   return standard;
 }
 

@@ -143,11 +143,17 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
     const discount = bulkDiscount + couponDiscount;
 
     const settings = await getSiteSettings();
-    const freeThreshold = Number(settings.free_shipping_threshold || 349);
+    const freeThreshold = Number(settings.free_shipping_threshold || 399);
     const standardFee = Number(settings.standard_shipping_fee || 79);
     const expressFee = Number(settings.express_shipping_fee || 189);
-    const codFee = Number(settings.cod_fee || 30);
-    const shippingRates = { freeThreshold, standardFee, expressFee, codFee };
+    const codFee = Number(settings.cod_fee || 39);
+    const shippingRates = {
+      freeThreshold,
+      standardFee,
+      expressFee,
+      codFee,
+      pincode: (data.address as any)?.pincode || (data.address as any)?.pin,
+    };
 
     const shipping = shippingFee(serverSubtotal - discount, data.shippingMethod as "standard" | "express", shippingRates);
     const extra = data.paymentMethod === "cod" ? codFee : 0;

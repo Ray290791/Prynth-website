@@ -55,8 +55,6 @@ function CheckoutPage() {
   const standardFee = Number(settings?.standard_shipping_fee) || STANDARD_SHIPPING;
   const expressFee = Number(settings?.express_shipping_fee) || EXPRESS_SHIPPING;
   const codFee = Number(settings?.cod_fee) || COD_FEE;
-  const shippingRates = { freeThreshold, standardFee, expressFee, codFee };
-
   const hydrated = useHydrated();
   const items = useCart((s) => s.items);
   const clear = useCart((s) => s.clear);
@@ -73,6 +71,17 @@ function CheckoutPage() {
     state: "Maharashtra",
     pincode: "",
   });
+
+  const shippingRates = useMemo(
+    () => ({
+      freeThreshold,
+      standardFee,
+      expressFee,
+      codFee,
+      pincode: address.pincode,
+    }),
+    [freeThreshold, standardFee, expressFee, codFee, address.pincode],
+  );
   
   const [saveAddressToProfile, setSaveAddressToProfile] = useState(false);
   const [needsCommercialReceipt, setNeedsCommercialReceipt] = useState(false);

@@ -3,7 +3,10 @@ import {
   shippingFee,
   FREE_SHIPPING_AT,
   STANDARD_SHIPPING,
+  MAHARASHTRA_STANDARD_SHIPPING,
   EXPRESS_SHIPPING,
+  COD_FEE,
+  isMaharashtraPincode,
   isNonCodItem,
   hasNonCodItems,
   type CartItem,
@@ -41,8 +44,46 @@ describe("Shipping & Delivery Rules (S1, S2, S4)", () => {
 
   it("falls back cleanly to default rates when custom rates are omitted", () => {
     expect(shippingFee(100, "standard")).toBe(STANDARD_SHIPPING);
+    expect(shippingFee(398, "standard")).toBe(STANDARD_SHIPPING);
+    expect(shippingFee(399, "standard")).toBe(0);
     expect(shippingFee(500, "standard")).toBe(0);
     expect(shippingFee(500, "express")).toBe(EXPRESS_SHIPPING);
+  });
+
+  it("S3 & S6: default constants match owner approval (₹399 free threshold, ₹39 COD fee)", () => {
+    expect(FREE_SHIPPING_AT).toBe(399);
+    expect(COD_FEE).toBe(39);
+    expect(MAHARASHTRA_STANDARD_SHIPPING).toBe(49);
+    expect(STANDARD_SHIPPING).toBe(79);
+  });
+
+  it("S5: correctly classifies Maharashtra pincodes (40-44 prefix)", () => {
+    expect(isMaharashtraPincode("400001")).toBe(true); // Mumbai
+    expect(isMaharashtraPincode("411001")).toBe(true); // Pune
+    expect(isMaharashtraPincode("422001")).toBe(true); // Nashik
+    expect(isMaharashtraPincode("431001")).toBe(true); // Aurangabad / Chhatrapati Sambhajinagar
+    expect(isMaharashtraPincode("440001")).toBe(true); // Nagpur
+    expect(isMaharashtraPincode("400 050")).toBe(true); // Space formatted
+
+    expect(isMaharashtraPincode("560001")).toBe(false); // Bengaluru
+    expect(isMaharashtraPincode("110001")).toBe(false); // New Delhi
+    expect(isMaharashtraPincode("600001")).toBe(false); // Chennai
+    expect(isMaharashtraPincode("700001")).toBe(false); // Kolkata
+    expect(isMaharashtraPincode("")).toBe(false);
+    expect(isMaharashtraPincode(undefined)).toBe(false);
+  });
+
+  it("S5: charges ₹49 standard shipping for Maharashtra and ₹79 for Rest of India below ₹399", () => {
+    const mhRates = { pincode: "400001" };
+    const restRates = { pincode: "560001" };
+
+    // Below 399
+    expect(shippingFee(250, "standard", mhRates)).toBe(49);
+    expect(shippingFee(250, "standard", restRates)).toBe(79);
+
+    // At or above 399: both free
+    expect(shippingFee(399, "standard", mhRates)).toBe(0);
+    expect(shippingFee(399, "standard", restRates)).toBe(0);
   });
 
   it("S2: correctly identifies made-to-order items that restrict Cash on Delivery", () => {

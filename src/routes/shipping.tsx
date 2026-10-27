@@ -35,8 +35,8 @@ export function ShippingPage() {
 
   const standardFee = Number(settings.standard_shipping_fee || 79);
   const expressFee = Number(settings.express_shipping_fee || 189);
-  const freeThreshold = Number(settings.free_shipping_threshold || 349);
-  const codFee = Number(settings.cod_fee || 30);
+  const freeThreshold = Number(settings.free_shipping_threshold || 399);
+  const codFee = Number(settings.cod_fee || 39);
 
   const couriers = [
     { name: "Blue Dart", badge: "Express Priority" },
@@ -83,11 +83,17 @@ export function ShippingPage() {
               Free over {formatINR(freeThreshold)}
             </span>
           </div>
-          <div className="flex items-baseline gap-2">
-            <span className="font-display text-3xl font-semibold text-fg">
-              {formatINR(standardFee)}
-            </span>
-            <span className="text-xs text-muted">flat rate across India</span>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-baseline gap-2">
+              <span className="font-display text-3xl font-semibold text-fg">
+                {formatINR(49)}
+              </span>
+              <span className="text-xs text-muted">Maharashtra (PINs 40–44)</span>
+            </div>
+            <div className="flex items-baseline gap-2 text-xs text-muted">
+              <span>{formatINR(standardFee)}</span>
+              <span>rest of India</span>
+            </div>
           </div>
           <p className="text-sm text-muted leading-relaxed">
             Delivered in <strong>3–5 business days</strong> after printing. Ideal
