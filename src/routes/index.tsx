@@ -323,7 +323,7 @@ function Home() {
                   Interlocking Grid
                 </span>
                 <span className="font-medium px-2.5 py-1 rounded-lg bg-surface-2 border border-border text-fg">
-                  Damage-Free Adhesive
+                  Removable Wall Adhesive
                 </span>
                 <span className="font-medium px-2.5 py-1 rounded-lg bg-surface-2 border border-border text-fg">
                   Tool-Free Snap Accessories

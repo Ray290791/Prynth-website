@@ -46,7 +46,7 @@ export function PegboardSettings({ settings, onQuickSave, isSaving }: PegboardSe
     pegboard_addon_botanical_price: settings.pegboard_addon_botanical_price || "279",
     pegboard_story:
       settings.pegboard_story ||
-      "Every square millimetre of the Modular Pegboard was engineered with intention. 3D-printed from high-impact matte filament, it pairs an architectural silhouette with an ultra-versatile 25mm beveled grid. Whether you choose damage-free adhesive strips, desk edge clamps, or wall anchors, it transforms chaotic tool piles into a calm, focused craft sanctum.",
+      "Every square millimetre of the Modular Pegboard was engineered with intention. 3D-printed from high-impact matte filament, it pairs an architectural silhouette with an ultra-versatile 25mm beveled grid. Whether you choose removable adhesive strips, desk edge clamps, or wall anchors, it transforms chaotic tool piles into a calm, focused craft sanctum.",
   });
 
   const defaultPresets: PegboardSizePreset[] = [

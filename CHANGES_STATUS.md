@@ -7,9 +7,9 @@
 | Priority | Total | Done | In Progress | Blocked | Todo |
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | **P0** | 11 | 8 | 0 | 3 | 0 |
-| **P1** | 18 | 10 | 0 | 4 | 4 |
+| **P1** | 18 | 12 | 0 | 4 | 2 |
 | **P2** | 13 | 0 | 0 | 4 | 9 |
-| **Total** | **42** | **18** | **0** | **11** | **13** |
+| **Total** | **42** | **20** | **0** | **11** | **11** |
 
 ---
 
@@ -57,8 +57,8 @@
 | **R7** | Terms, shipping, returns, refund and cancellation pages | **BLOCKED** | Blocked on owner decision: refund vs reprint for custom items. |
 | **R8** | Product page disclosures | **DONE** | Added statutory disclosures on product pages (tax inclusive, net quantity, dimensions, materials, country of origin, legal manufacturer/packer address from settings, customer care) and itemized fee/tax breakups in cart and checkout. |
 | **R9** | Prohibited items, IP and upload confirmation | **DONE** | Added mandatory IP and non-weapon compliance warranty checkboxes on `/custom` and `/lithophane` upload flows, expanded Terms with strict weapon/counterfeit prohibitions and takedown procedure, and added dedicated refused order status reasons in Admin Console. |
-| **R10** | Advertising claims and dark patterns | **TODO** | Audit claims, badges, real stock numbers only. |
-| **R11** | Marketing messages | **TODO** | Explicit opt-in, unsubscribe mechanism, order updates separation. |
+| **R10** | Advertising claims and dark patterns | **DONE** | Audited all routes, copy, and badges. Purged unverified "damage-free" and "4.5kg" claims in pegboard and homepage, verified no fake urgency counters or timers, no pre-ticked add-ons, only real customer reviews, and full guest checkout without forced account creation. |
+| **R11** | Marketing messages | **DONE** | Marketing opt-in is strictly separated from order processing and unticked by default at checkout, transactional emails are segregated from promotional mail, cookie consent blocks analytics until accepted, and DPDP consent withdrawal/data rights forms are provided at `/legal`. |
 
 ---
 

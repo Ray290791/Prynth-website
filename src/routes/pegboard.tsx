@@ -197,8 +197,8 @@ export function PegboardPage() {
   const MOUNTING_OPTIONS = [
     {
       id: "strips",
-      name: "Damage-Free Adhesive Strips",
-      detail: "Heavy-duty 3M command strips included. Suitable for smooth painted walls & tiles in rental spaces.",
+      name: "Removable Adhesive Strips",
+      detail: "Heavy-duty command strips included. Suitable for smooth painted walls & tiles in rental spaces.",
     },
     {
       id: "screws",
@@ -665,7 +665,7 @@ export function PegboardPage() {
           </h2>
           <p className="text-sm sm:text-base text-muted leading-relaxed">
             {settings.pegboard_story ||
-              "Every square millimetre of the Modular Pegboard was engineered with intention. 3D-printed from high-impact matte filament, it pairs an architectural silhouette with an ultra-versatile 25mm beveled grid. Whether you choose damage-free adhesive strips, desk edge clamps, or wall anchors, it transforms chaotic tool piles into a calm, focused craft sanctum."}
+              "Every square millimetre of the Modular Pegboard was engineered with intention. 3D-printed from high-impact matte filament, it pairs an architectural silhouette with an ultra-versatile 25mm beveled grid. Whether you choose removable adhesive strips, desk edge clamps, or wall anchors, it transforms chaotic tool piles into a calm, focused craft sanctum."}
           </p>
         </div>
 
