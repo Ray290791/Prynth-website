@@ -95,6 +95,9 @@ export function ShippingPage() {
             Delivered in <strong>1–2 business days</strong> via express air courier
             once manufactured. Best for time-sensitive gifts and urgent prototypes.
           </p>
+          <p className="text-[11px] text-muted/80 pt-1 border-t border-accent/20">
+            Note: Free shipping thresholds apply strictly to Standard Delivery. Express priority air courier is charged on all orders.
+          </p>
         </div>
       </div>
 

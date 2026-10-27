@@ -7,9 +7,9 @@
 | Priority | Total | Done | In Progress | Blocked | Todo |
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | **P0** | 11 | 8 | 0 | 3 | 0 |
-| **P1** | 18 | 1 | 0 | 4 | 13 |
+| **P1** | 18 | 2 | 0 | 4 | 12 |
 | **P2** | 13 | 0 | 0 | 4 | 9 |
-| **Total** | **42** | **9** | **0** | **11** | **22** |
+| **Total** | **42** | **10** | **0** | **11** | **21** |
 
 ---
 
@@ -37,7 +37,7 @@
 | ID | Title | Status | Notes |
 | :--- | :--- | :---: | :--- |
 | **S3** | COD fee | **BLOCKED** | Blocked on owner decision: recommended ₹39–49. |
-| **S4** | Express is never free | **TODO** | Ensure express shipping is never zeroed out by free shipping threshold. |
+| **S4** | Express is never free | **DONE** | Removed promises of free express in lithophane and index routes; clarified express air courier is always charged separately on all orders; added unit tests verifying express fee is never zeroed by cart total. |
 | **C5** | Upload abuse protection | **TODO** | Cloudflare Turnstile, IP limits, unlinked files cleanup. |
 | **C6** | Real rate limiting | **TODO** | KV / Durable Object / Cloudflare rate-limiting. |
 | **C7** | Move uploads to R2 and remove runtime DDL | **TODO** | R2 storage binding, remove `CREATE TABLE IF NOT EXISTS`. |

@@ -193,7 +193,7 @@ export function CartSideRibbon() {
               <Truck className="size-3 text-accent" />
               <span>
                 {amountToFreeShipping > 0
-                  ? `Add ${formatINR(amountToFreeShipping)} for Free Shipping`
+                  ? `Add ${formatINR(amountToFreeShipping)} for Free Standard Shipping`
                   : "🎉 Free Standard Shipping Unlocked!"}
               </span>
             </span>

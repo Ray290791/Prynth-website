@@ -139,7 +139,7 @@ function Home() {
     {
       icon: Truck,
       title: "Ships across India",
-      text: `Standard shipping ₹${settings.standard_shipping_fee || 49}, free over ₹${settings.free_shipping_threshold || 799}. Express if you need it sooner.`,
+      text: `Standard shipping ₹${settings.standard_shipping_fee || 79}, free over ₹${settings.free_shipping_threshold || 349}. Express priority delivery is always charged separately.`,
     },
   ];
 
@@ -155,7 +155,7 @@ function Home() {
               className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-surface/80 px-3.5 py-1 text-xs font-medium text-muted transition-colors hover:border-accent hover:text-fg shadow-2xs backdrop-blur-md"
             >
               <Zap className="size-3 text-accent shrink-0" strokeWidth={2} />
-              <span>{settings.promo_banner || `Free delivery across India on orders over ₹${settings.free_shipping_threshold || 799}`}</span>
+              <span>{settings.promo_banner || `Free standard delivery across India on orders over ₹${settings.free_shipping_threshold || 349}`}</span>
               <ArrowRight className="size-3 text-subtle shrink-0" strokeWidth={2} />
             </Link>
           </div>

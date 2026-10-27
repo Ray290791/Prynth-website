@@ -824,8 +824,8 @@ function LithophaneStudioPage() {
                   <Check className="size-3.5 text-emerald-400 shrink-0 stroke-[2.5]" />
                   <span>
                     {displayStyle === "lightbox"
-                      ? "USB cable & LED light box included · Free express shipping"
-                      : "Matching display stand included · Free express shipping"}
+                      ? "USB cable & LED light box included · Free insured delivery"
+                      : "Matching display stand included · Free insured delivery"}
                   </span>
                 </div>
               </div>
