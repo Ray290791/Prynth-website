@@ -202,6 +202,7 @@ function LithophaneStudioPage() {
   const [recipientName, setRecipientName] = useState<string>("");
   const [qty, setQty] = useState<number>(1);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [photoConsentAccepted, setPhotoConsentAccepted] = useState<boolean>(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -271,6 +272,11 @@ function LithophaneStudioPage() {
   const handleAddToCart = async () => {
     if (!photoUrl) {
       toast.error("Please upload or select a photo first.");
+      return;
+    }
+
+    if (!isSample && !photoConsentAccepted) {
+      toast.error("Please confirm photo ownership and consent.");
       return;
     }
 
@@ -982,11 +988,28 @@ function LithophaneStudioPage() {
                   </Link>.
                 </div>
 
+                {/* R9: Photo Ownership & Consent Warranty */}
+                {!isSample && (
+                  <div className="rounded-xl border border-border/80 bg-surface-2/40 p-3.5 space-y-2">
+                    <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={photoConsentAccepted}
+                        onChange={(e) => setPhotoConsentAccepted(e.target.checked)}
+                        className="mt-0.5 size-4 rounded border-border accent-accent cursor-pointer shrink-0"
+                      />
+                      <span className="text-[11px] text-fg leading-relaxed">
+                        I confirm that I own or hold legal permission to reproduce this photograph, that all persons depicted (and guardians for minors) have consented, and that the image contains no unlawful or infringing content.
+                      </span>
+                    </label>
+                  </div>
+                )}
+
                 <Button
                   type="button"
                   size="lg"
                   onClick={handleAddToCart}
-                  disabled={!photoUrl || isProcessing}
+                  disabled={!photoUrl || isProcessing || (!isSample && !photoConsentAccepted)}
                   className="w-full h-12 rounded-2xl gap-2 font-bold text-base shadow-lg hover:shadow-accent/20 cursor-pointer transition-all active:scale-[0.98]"
                 >
                   <ShoppingBag className="size-4" />
@@ -997,7 +1020,7 @@ function LithophaneStudioPage() {
                 <div className="grid grid-cols-2 gap-2 pt-1 text-[11px] text-muted">
                   <div className="flex items-center gap-1.5">
                     <ShieldCheck className="size-3.5 text-accent shrink-0" />
-                    <span>Damage-Free Guarantee</span>
+                    <span>Transit Protection Guarantee</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <Truck className="size-3.5 text-accent shrink-0" />

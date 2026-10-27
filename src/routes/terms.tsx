@@ -113,17 +113,43 @@ export function TermsPage() {
     },
     {
       icon: AlertTriangle,
-      title: "5. Custom Fabrication & Intellectual Property Warranties",
+      title: "5. Custom Fabrication, Prohibited Items & Intellectual Property Warranties",
       body: (
-        <div className="space-y-2 text-sm text-muted leading-relaxed">
+        <div className="space-y-3 text-sm text-muted leading-relaxed">
           <p>
-            When uploading 3D CAD files (.stl, .obj, .3mf, .step) or commissioning design models:
+            When uploading 3D CAD files (.stl, .obj, .3mf, .step) or personal photographs for lithophane fabrication:
           </p>
-          <ul className="list-disc pl-5 space-y-1">
-            <li>You warrant that you own or possess all requisite copyrights, patent licenses, trademarks, or open-source commercial permissions to reproduce the design.</li>
-            <li>You agree to indemnify and hold harmless {brandName} and its operators against any third-party claims, liabilities, or expenses arising from intellectual property infringement claims regarding files you provided.</li>
-            <li>{brandName} reserves the unconditional right to decline fabrication of any file that infringes third-party rights, is hazardous, or depicts weapons/prohibited components under Indian law.</li>
+          <ul className="list-disc pl-5 space-y-1.5">
+            <li>
+              <strong className="text-fg">Intellectual Property Ownership:</strong> You represent and warrant that you are the original creator and copyright owner, or hold valid commercial licenses, patent rights, or written authorization from the rights holder to reproduce and fabricate the design.
+            </li>
+            <li>
+              <strong className="text-fg">Strict Weapons &amp; Firearm Prohibition:</strong> {brandName} enforces an absolute zero-tolerance prohibition on the manufacture of firearms, firearm components, firearm frames, lower receivers, slides, barrels, silencers/suppressors, magazines, auto-sears, rapid-fire triggers, knives/blades, knuckle dusters, ammunition components, or any items classified as weapons under the Indian Arms Act, 1959 or Bharatiya Nyaya Sanhita, 2023.
+            </li>
+            <li>
+              <strong className="text-fg">Unlawful &amp; Counterfeit Goods:</strong> You warrant that uploaded designs are not counterfeit branded merchandise, lock-picking tools, illicit paraphernalia, defamatory, obscene, or infringing on third-party trademarks or proprietary character rights.
+            </li>
+            <li>
+              <strong className="text-fg">Personal Photographs &amp; Minor Consent:</strong> For custom lithophane keepsakes, you warrant that all identifiable persons depicted (or legal guardians in the case of minors) have explicitly consented to the upload and reproduction of their likeness.
+            </li>
+            <li>
+              <strong className="text-fg">Right to Refuse &amp; Immediate Refund:</strong> {brandName} inspects and slices all customer files prior to production. We reserve the absolute right to reject and cancel any order that violates our safety, weapons, or IP standards, with a full refund issued to the original payment method.
+            </li>
+            <li>
+              <strong className="text-fg">Indemnification:</strong> You agree to defend, indemnify, and hold harmless {brandName}, its founders, and operators against any claims, damages, liabilities, or legal expenses arising from your submission of infringing or prohibited files.
+            </li>
           </ul>
+
+          <div className="mt-2 rounded-xl border border-border/80 bg-surface-2/40 p-3.5 text-xs">
+            <span className="font-semibold text-fg block mb-1">Notice &amp; Takedown Procedure for IP Rights Holders:</span>
+            <p>
+              If you are a copyright or trademark owner and believe an item fabricated or displayed on {brandName} infringes your rights, please submit a formal takedown notice to{" "}
+              <a href={`mailto:${contactEmail}`} className="text-accent underline font-medium">
+                {contactEmail}
+              </a>{" "}
+              including: (1) identification of the copyrighted work or trademark, (2) the specific model URL or order reference, (3) proof of ownership or authorization, and (4) your contact details with a good-faith statement. We act promptly to investigate and remove infringing content.
+            </p>
+          </div>
         </div>
       ),
     },

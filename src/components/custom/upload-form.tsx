@@ -147,6 +147,7 @@ export function UploadForm({
     () => editItem?.custom?.modelRotation || [0, 0, 0],
   );
   const [printabilityReport, setPrintabilityReport] = useState<PrintabilityReport | null>(null);
+  const [ipWarrantyAccepted, setIpWarrantyAccepted] = useState(false);
 
 
   // Restore file from server if editing and not in client memory cache
@@ -375,6 +376,10 @@ export function UploadForm({
   function addEstimate() {
     if ((!file && !editItem?.custom?.fileName) || quote.total <= 0) {
       toast.error("Upload a model first.");
+      return;
+    }
+    if (!ipWarrantyAccepted) {
+      toast.error("Please confirm intellectual property and safety compliance.");
       return;
     }
     const fileName = file ? file.name : (editItem?.custom?.fileName || "Model");
@@ -992,10 +997,26 @@ export function UploadForm({
           </Link>.
         </div>
 
+        {/* R9: Statutory IP and Non-Weapon Warranty */}
+        <div className="rounded-xl border border-border/80 bg-surface-2/40 p-3.5">
+          <label className="flex items-start gap-2.5 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              id="ip_warranty"
+              checked={ipWarrantyAccepted}
+              onChange={(e) => setIpWarrantyAccepted(e.target.checked)}
+              className="mt-0.5 size-4 rounded border-border accent-accent cursor-pointer shrink-0"
+            />
+            <span className="text-[11px] text-fg leading-relaxed">
+              I certify that I hold legal rights or license to fabricate this design, and warrant that it is <strong>not a weapon, firearm receiver/component, controlled weapon, dangerous item, or counterfeit</strong>. I accept that Prynth refuses and refunds non-compliant orders.
+            </span>
+          </label>
+        </div>
+
         <Button
           type="submit"
           size="lg"
-          disabled={!file && !editItem?.custom?.fileName}
+          disabled={(!file && !editItem?.custom?.fileName) || !ipWarrantyAccepted}
           className="gap-2"
         >
           {editItem ? (

@@ -7,9 +7,9 @@
 | Priority | Total | Done | In Progress | Blocked | Todo |
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | **P0** | 11 | 8 | 0 | 3 | 0 |
-| **P1** | 18 | 9 | 0 | 4 | 5 |
+| **P1** | 18 | 10 | 0 | 4 | 4 |
 | **P2** | 13 | 0 | 0 | 4 | 9 |
-| **Total** | **42** | **17** | **0** | **11** | **14** |
+| **Total** | **42** | **18** | **0** | **11** | **13** |
 
 ---
 
@@ -56,7 +56,7 @@
 | **R6** | Retention and deletion | **BLOCKED** | Blocked on owner decision: retention periods for files & orders. |
 | **R7** | Terms, shipping, returns, refund and cancellation pages | **BLOCKED** | Blocked on owner decision: refund vs reprint for custom items. |
 | **R8** | Product page disclosures | **DONE** | Added statutory disclosures on product pages (tax inclusive, net quantity, dimensions, materials, country of origin, legal manufacturer/packer address from settings, customer care) and itemized fee/tax breakups in cart and checkout. |
-| **R9** | Prohibited items, IP and upload confirmation | **TODO** | Terms checkbox, IP complaint email, weapon/infringement refusal. |
+| **R9** | Prohibited items, IP and upload confirmation | **DONE** | Added mandatory IP and non-weapon compliance warranty checkboxes on `/custom` and `/lithophane` upload flows, expanded Terms with strict weapon/counterfeit prohibitions and takedown procedure, and added dedicated refused order status reasons in Admin Console. |
 | **R10** | Advertising claims and dark patterns | **TODO** | Audit claims, badges, real stock numbers only. |
 | **R11** | Marketing messages | **TODO** | Explicit opt-in, unsubscribe mechanism, order updates separation. |
 

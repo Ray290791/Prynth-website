@@ -378,10 +378,12 @@ export function OrderDetailsDialog({
                       ? "bg-primary text-primary-foreground"
                       : order.status === "printing"
                         ? "bg-accent text-accent-foreground"
-                        : "bg-surface-2 border text-fg"
+                        : order.status.startsWith("refused")
+                          ? "bg-destructive text-destructive-foreground font-semibold"
+                          : "bg-surface-2 border text-fg"
                 }
               >
-                {order.status}
+                {order.status.replace(/^refused_/, "Refused: ").replace(/_/g, " ")}
               </Badge>
             </div>
             <p className="text-xs text-muted mt-1">
@@ -414,6 +416,8 @@ export function OrderDetailsDialog({
                 <option value="shipped">Shipped</option>
                 <option value="delivered">Delivered</option>
                 <option value="cancelled">Cancelled</option>
+                <option value="refused_prohibited_item">Refused: Prohibited Item / Weapons</option>
+                <option value="refused_ip_infringement">Refused: IP / Copyright Violation</option>
               </select>
             </div>
 

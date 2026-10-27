@@ -300,6 +300,8 @@ function AdminPage() {
                               <option value="shipped">Shipped</option>
                               <option value="delivered">Delivered</option>
                               <option value="cancelled">Cancelled</option>
+                              <option value="refused_prohibited_item">Refused (Weapons/Hazard)</option>
+                              <option value="refused_ip_infringement">Refused (IP Violation)</option>
                             </select>
                             <button
                               type="button"
