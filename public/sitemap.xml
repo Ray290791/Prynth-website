@@ -87,6 +87,41 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://prynth.in/guides</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://prynth.in/guides/how-much-does-3d-printing-cost-in-india</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://prynth.in/guides/pla-vs-petg-vs-abs-vs-asa</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://prynth.in/guides/how-to-prepare-an-stl-for-printing</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://prynth.in/guides/custom-3d-printing-in-mumbai</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://prynth.in/gallery</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://prynth.in/legal</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://prynth.in/terms</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
