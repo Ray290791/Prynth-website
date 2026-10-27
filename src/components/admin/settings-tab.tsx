@@ -233,9 +233,9 @@ export function SettingsTab() {
             <label className="block text-sm font-medium mb-1">Floating Promo Pill / Free Delivery Banner</label>
             <input
               name="promo_banner"
-              defaultValue={settings.promo_banner || `Free delivery across India on orders over ₹${settings.free_shipping_threshold || "799"}`}
+              defaultValue={settings.promo_banner || `Free delivery across India on orders over ₹${settings.free_shipping_threshold || "349"}`}
               className="w-full rounded border border-border bg-surface p-2 text-sm"
-              placeholder="Free delivery across India on orders over ₹799"
+              placeholder="Free delivery across India on orders over ₹349"
             />
             <p className="text-xs text-muted mt-1">Badge shown above hero on the homepage. (Leave empty to auto-update based on the free delivery threshold below).</p>
           </div>

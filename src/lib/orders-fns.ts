@@ -6,7 +6,8 @@ import { createRazorpayOrder as rzpCreateOrder, verifyRazorpaySignature, getRazo
 import { sendOrderConfirmationEmail, sendOrderStatusUpdateEmail } from "./email.server";
 import { notifyNewOrder } from "./notifications.server";
 import { DEFAULT_MIN_PRINT } from "./quote";
-import { getBulkDiscount, type CartItem } from "./cart-store";
+import { getBulkDiscount, shippingFee, type CartItem } from "./cart-store";
+import { getSiteSettings } from "./settings-fns";
 import type { Address } from "./orders-store";
 import {
   createShiprocketOrder,
@@ -138,8 +139,15 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
 
     const discount = bulkDiscount + couponDiscount;
 
-    const shipping = Math.max(0, Number(data.shipping) || 0);
-    const extra = Math.max(0, Number(data.extra) || 0);
+    const settings = await getSiteSettings();
+    const freeThreshold = Number(settings.free_shipping_threshold || 349);
+    const standardFee = Number(settings.standard_shipping_fee || 79);
+    const expressFee = Number(settings.express_shipping_fee || 189);
+    const codFee = Number(settings.cod_fee || 30);
+    const shippingRates = { freeThreshold, standardFee, expressFee, codFee };
+
+    const shipping = shippingFee(serverSubtotal - discount, data.shippingMethod as "standard" | "express", shippingRates);
+    const extra = data.paymentMethod === "cod" ? codFee : 0;
     const verifiedTotal = Math.max(0, serverSubtotal - discount + shipping + extra);
 
     if (verifiedTotal > 500000) {

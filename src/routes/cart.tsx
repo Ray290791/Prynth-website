@@ -24,7 +24,7 @@ export const Route = createFileRoute("/cart")({
       {
         name: "description",
         content:
-          "Review your selected 3D printed objects and custom fabrication orders. Free delivery across India on orders over ₹349.",
+          "Review your selected 3D printed objects and custom fabrication orders. Standard delivery and free shipping across India on qualifying orders.",
       },
       { property: "og:title", content: "Your Cart | prynth!" },
       {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useRouterState, getRouteApi } from "@tanstack/react-router";
 import {
   ShoppingBag,
   ChevronRight,
@@ -18,7 +18,11 @@ import { formatINR } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+const rootRoute = getRouteApi("__root__");
+
 export function CartSideRibbon() {
+  const rootData = rootRoute.useLoaderData();
+  const freeThreshold = Number(rootData?.settings?.free_shipping_threshold) || FREE_SHIPPING_AT;
   const router = useRouterState();
   const pathname = router.location.pathname;
 
@@ -97,8 +101,8 @@ export function CartSideRibbon() {
     return null;
   }
 
-  const freeShippingProgress = Math.min(100, Math.round((subtotal / FREE_SHIPPING_AT) * 100));
-  const amountToFreeShipping = Math.max(0, FREE_SHIPPING_AT - subtotal);
+  const freeShippingProgress = Math.min(100, Math.round((subtotal / freeThreshold) * 100));
+  const amountToFreeShipping = Math.max(0, freeThreshold - subtotal);
 
   return (
     <aside
@@ -190,7 +194,7 @@ export function CartSideRibbon() {
               <span>
                 {amountToFreeShipping > 0
                   ? `Add ${formatINR(amountToFreeShipping)} for Free Shipping`
-                  : "🎉 Free Express Shipping Unlocked!"}
+                  : "🎉 Free Standard Shipping Unlocked!"}
               </span>
             </span>
             <span className="text-[10px] font-semibold text-accent">{freeShippingProgress}%</span>

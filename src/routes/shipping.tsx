@@ -13,7 +13,7 @@ export const Route = createFileRoute("/shipping")({
       {
         name: "description",
         content:
-          "Fast, insured shipping across India. Standard 3–5 day delivery, Express courier options, and free shipping over ₹349.",
+          "Fast, insured shipping across India. Standard 3–5 day delivery, Express courier options, and free shipping on qualifying orders.",
       },
     ],
   }),
@@ -22,10 +22,10 @@ export const Route = createFileRoute("/shipping")({
 export function ShippingPage() {
   const { settings } = rootRoute.useLoaderData();
 
-  const standardFee = Number(settings.standard_shipping_fee || 49);
-  const expressFee = Number(settings.express_shipping_fee || 129);
+  const standardFee = Number(settings.standard_shipping_fee || 79);
+  const expressFee = Number(settings.express_shipping_fee || 189);
   const freeThreshold = Number(settings.free_shipping_threshold || 349);
-  const codFee = Number(settings.cod_fee || 40);
+  const codFee = Number(settings.cod_fee || 30);
 
   const couriers = [
     { name: "Blue Dart", badge: "Express Priority" },

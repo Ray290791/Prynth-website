@@ -130,9 +130,9 @@ export function cartSubtotal(items: CartItem[]) {
 }
 
 export const FREE_SHIPPING_AT = 349;
-export const STANDARD_SHIPPING = 49;
-export const EXPRESS_SHIPPING = 129;
-export const COD_FEE = 40;
+export const STANDARD_SHIPPING = 79;
+export const EXPRESS_SHIPPING = 189;
+export const COD_FEE = 30;
 
 export interface ShippingRates {
   freeThreshold?: number;

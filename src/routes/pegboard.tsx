@@ -361,8 +361,8 @@ export function PegboardPage() {
           <div className="grid grid-cols-3 gap-3 pt-3">
             <div className="p-3 rounded-xl border border-border/70 bg-surface/40 text-center space-y-1">
               <Truck className="size-4 text-accent mx-auto" />
-              <span className="text-xs font-semibold text-fg block">Free Express</span>
-              <span className="text-[10px] text-muted block">On orders over ₹349</span>
+              <span className="text-xs font-semibold text-fg block">Free Standard Delivery</span>
+              <span className="text-[10px] text-muted block">On orders over {formatINR(Number(settings?.free_shipping_threshold) || 349)}</span>
             </div>
             <div className="p-3 rounded-xl border border-border/70 bg-surface/40 text-center space-y-1">
               <ShieldCheck className="size-4 text-accent mx-auto" />

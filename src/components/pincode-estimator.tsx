@@ -1,5 +1,9 @@
 import { useState, useEffect } from "react";
+import { getRouteApi } from "@tanstack/react-router";
 import { Truck, CheckCircle2, MapPin, Sparkles, AlertCircle } from "lucide-react";
+import { formatINR } from "@/lib/format";
+
+const rootRoute = getRouteApi("__root__");
 
 interface PincodeEstimate {
   zone: string;
@@ -69,6 +73,10 @@ export function PincodeEstimator({
   compact?: boolean;
   className?: string;
 }) {
+  const rootData = rootRoute.useLoaderData();
+  const freeThreshold = Number(rootData?.settings?.free_shipping_threshold) || 349;
+  const standardFee = Number(rootData?.settings?.standard_shipping_fee) || 79;
+
   const [pincode, setPincode] = useState("");
   const [estimate, setEstimate] = useState<PincodeEstimate | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -106,7 +114,7 @@ export function PincodeEstimator({
     } catch {}
   };
 
-  const isFreeDelivery = itemPrice >= 349;
+  const isFreeDelivery = itemPrice >= freeThreshold;
 
   return (
     <div
@@ -171,10 +179,10 @@ export function PincodeEstimator({
               <Sparkles className="size-3 text-accent" />
               {isFreeDelivery ? (
                 <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                  Free Delivery applied (orders over ₹349)
+                  Free Delivery applied (orders over {formatINR(freeThreshold)})
                 </span>
               ) : (
-                <span>Standard flat shipping ₹49 (Free over ₹349)</span>
+                <span>Standard flat shipping {formatINR(standardFee)} (Free over {formatINR(freeThreshold)})</span>
               )}
             </span>
             <span className="text-[10px] uppercase font-mono text-muted/70">From Mumbai 400001</span>
