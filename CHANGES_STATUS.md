@@ -7,9 +7,9 @@
 | Priority | Total | Done | In Progress | Blocked | Todo |
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | **P0** | 11 | 8 | 0 | 3 | 0 |
-| **P1** | 18 | 2 | 0 | 4 | 12 |
+| **P1** | 18 | 3 | 0 | 4 | 11 |
 | **P2** | 13 | 0 | 0 | 4 | 9 |
-| **Total** | **42** | **10** | **0** | **11** | **21** |
+| **Total** | **42** | **11** | **0** | **11** | **20** |
 
 ---
 
@@ -41,7 +41,7 @@
 | **C5** | Upload abuse protection | **TODO** | Cloudflare Turnstile, IP limits, unlinked files cleanup. |
 | **C6** | Real rate limiting | **TODO** | KV / Durable Object / Cloudflare rate-limiting. |
 | **C7** | Move uploads to R2 and remove runtime DDL | **TODO** | R2 storage binding, remove `CREATE TABLE IF NOT EXISTS`. |
-| **C8** | Timing-safe signature check | **TODO** | `timingSafeEqual` for Razorpay signatures. |
+| **C8** | Timing-safe signature check | **DONE** | Replaced string equality with `crypto.timingSafeEqual` on Node runtime and constant-time XOR comparison (`timingSafeEqualString`) on Web Crypto/edge runtime across both payment and webhook signature verification; verified via test suite `tests/signature.test.ts`. |
 | **C9** | Remove placeholder phone fallback | **DONE** | Removed "+91 98765 43210" fallback in `privacy.tsx`; only dynamic configured phone is displayed. |
 | **G1** | Structured data (JSON-LD) | **TODO** | Organization, Product with Offer, Breadcrumbs, FAQPage. |
 | **G2** | LocalBusiness telephone warning | **BLOCKED** | Blocked on owner decision: phone number inclusion in markup vs accept warning. |
