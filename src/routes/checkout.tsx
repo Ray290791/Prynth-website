@@ -13,6 +13,7 @@ import {
   EXPRESS_SHIPPING,
   shippingFee,
   getBulkDiscount,
+  hasNonCodItems,
   useCart,
 } from "@/lib/cart-store";
 import { formatINR } from "@/lib/format";
@@ -89,19 +90,21 @@ function CheckoutPage() {
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<{code: string, discount_percent: number} | null>(null);
 
+  const isCodRestricted = useMemo(() => hasNonCodItems(items), [items]);
+
   const availablePaymentOptions = useMemo(() => {
     const options: { id: Pay; label: string }[] = [];
     if (settings?.payment_online_enabled !== "false") {
       options.push({ id: "online", label: "Online" });
     }
-    if (settings?.payment_cod_enabled !== "false") {
+    if (settings?.payment_cod_enabled !== "false" && !isCodRestricted) {
       options.push({ id: "cod", label: "Cash on delivery" });
     }
     if (settings?.payment_upi_enabled !== "false") {
       options.push({ id: "upi", label: "UPI / QR Code" });
     }
     return options.length > 0 ? options : [{ id: "online" as const, label: "Online" }];
-  }, [settings?.payment_online_enabled, settings?.payment_cod_enabled, settings?.payment_upi_enabled]);
+  }, [settings?.payment_online_enabled, settings?.payment_cod_enabled, settings?.payment_upi_enabled, isCodRestricted]);
 
   useEffect(() => {
     if (availablePaymentOptions.length > 0 && !availablePaymentOptions.some((o: { id: Pay; label: string }) => o.id === pay)) {
@@ -378,6 +381,12 @@ function CheckoutPage() {
         pay === "upi" && upiRef ? `UTR: ${upiRef.trim()}` : "",
       ].filter(Boolean).join(" | ") || undefined;
 
+      if (pay === "cod" && isCodRestricted) {
+        toast.error("Cash on Delivery is unavailable for made-to-order custom prints, lithophanes, or configured pegboards.");
+        setPay("online");
+        return;
+      }
+
       if (pay === "online") {
         const orderPayload = {
           items,
@@ -612,6 +621,11 @@ function CheckoutPage() {
                 </button>
               ))}
             </div>
+            {isCodRestricted && (
+              <p className="mt-3 text-xs text-muted">
+                Cash on Delivery is unavailable for made-to-order custom prints, lithophanes, or configured pegboards.
+              </p>
+            )}
             {pay === "cod" && (
               <p className="mt-4 text-sm text-muted">
                 Pay the courier in cash. A {formatINR(codFee)} collection fee is added.

@@ -6,7 +6,7 @@ import { createRazorpayOrder as rzpCreateOrder, verifyRazorpaySignature, getRazo
 import { sendOrderConfirmationEmail, sendOrderStatusUpdateEmail } from "./email.server";
 import { notifyNewOrder } from "./notifications.server";
 import { DEFAULT_MIN_PRINT } from "./quote";
-import { getBulkDiscount, shippingFee, type CartItem } from "./cart-store";
+import { getBulkDiscount, shippingFee, hasNonCodItems, type CartItem } from "./cart-store";
 import { getSiteSettings } from "./settings-fns";
 import type { Address } from "./orders-store";
 import {
@@ -75,6 +75,9 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
     }
     if (!data.address || !data.address.name || !data.address.phone || !data.address.line1) {
       throw new Error("Shipping address is incomplete. Please fill out all required fields.");
+    }
+    if (data.paymentMethod === "cod" && hasNonCodItems(data.items)) {
+      throw new Error("Cash on Delivery is unavailable for made-to-order custom prints, lithophanes, or configured pegboards.");
     }
 
     // 1. Inventory & Price Validation from Database
@@ -307,7 +310,7 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
     let orderNumber = data.internalOrderNumber;
 
     // Check if order exists in DB
-    let orderRes = await sql`
+    const orderRes = await sql`
       SELECT * FROM orders 
       WHERE (razorpay_order_id = ${data.razorpay_order_id} AND razorpay_order_id IS NOT NULL)
          OR (order_number = ${orderNumber} AND order_number IS NOT NULL)
@@ -402,7 +405,7 @@ export const getOrderById = createServerFn({ method: "GET" })
       try {
         const addr = typeof order.shipping_address === "string" ? JSON.parse(order.shipping_address) : order.shipping_address;
         addressEmail = (addr?.email || "").trim().toLowerCase();
-      } catch (_e) {
+      } catch {
         // Ignore json parse error and proceed with available fields
       }
       if (inputEmail === guestEmail || inputEmail === addressEmail) {
@@ -492,7 +495,9 @@ export const updateOrderStatus = createServerFn({ method: "POST" })
         const addr = typeof row.shipping_address === "string" ? JSON.parse(row.shipping_address) : row.shipping_address;
         addressEmail = addr?.email || "";
         addressName = addr?.name || "";
-      } catch (_e) {}
+      } catch {
+        // Ignore parse error
+      }
 
       const recipientEmail = String(row.user_email || row.guest_email || addressEmail || "").trim();
       const recipientName = String(row.user_name || addressName || "Customer").trim();

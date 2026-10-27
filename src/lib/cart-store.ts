@@ -168,3 +168,20 @@ export function getBulkDiscount(items: CartItem[]) {
   }
   return { percent: 0, tier: "", discount: 0, count: totalCount, nextTierAt: 5, remainingForNext: 5 - totalCount };
 }
+
+export function isNonCodItem(item: Partial<CartItem>): boolean {
+  if (!item) return false;
+  if (item.kind === "custom") return true;
+  if (item.productSlug === "modular-pegboard") return true;
+  const name = item.name?.toLowerCase() || "";
+  if (name.includes("pegboard") || name.includes("lithophane") || name.includes("custom")) return true;
+  if (item.custom && Object.keys(item.custom).length > 0) return true;
+  return false;
+}
+
+export function hasNonCodItems(items?: CartItem[] | null): boolean {
+  if (!items || !Array.isArray(items)) return false;
+  return items.some(isNonCodItem);
+}
+
+

@@ -6,10 +6,10 @@
 
 | Priority | Total | Done | In Progress | Blocked | Todo |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| **P0** | 11 | 1 | 1 | 3 | 6 |
+| **P0** | 11 | 2 | 1 | 3 | 5 |
 | **P1** | 18 | 0 | 0 | 4 | 14 |
 | **P2** | 13 | 0 | 0 | 4 | 9 |
-| **Total** | **42** | **1** | **1** | **11** | **29** |
+| **Total** | **42** | **2** | **1** | **11** | **28** |
 
 ---
 
@@ -18,8 +18,8 @@
 | ID | Title | Status | Notes |
 | :--- | :--- | :---: | :--- |
 | **S1** | Make every shipping amount come from settings | **DONE** | Audited all hardcoded shipping/COD amounts; bound cart, pegboard, shipping policy, checkout, and admin defaults to dynamic site settings. |
-| **S2** | No COD for custom and lithophane orders | **IN PROGRESS** | Restricting COD for custom 3D files, ideas, lithophanes, and configured pegboards client and server-side. |
-| **C1** | Secrets hygiene | **TODO** | Verify `.env` gitignore, git history, wrangler.toml, public directory. |
+| **S2** | No COD for custom and lithophane orders | **DONE** | Implemented client-side exclusion of COD and user notice when custom prints, lithophanes, or configured pegboards are in cart; strictly rejected on server-side in createRazorpayOrder. |
+| **C1** | Secrets hygiene | **IN PROGRESS** | Auditing .gitignore, git history, wrangler.toml, and public/ directory for secrets. |
 | **C2** | Lock down customer file downloads | **TODO** | Switch to `crypto.randomUUID()`, require admin session, `private, no-store`. |
 | **C3** | Deduplicate uploads by content hash | **TODO** | New migration for `content_hash` column, SHA-256 calculation & unique constraint. |
 | **C4** | Razorpay webhook | **TODO** | New `/api/razorpay-webhook` route, signature check, idempotent fulfillment. |
