@@ -315,3 +315,39 @@ export async function verifyRazorpayWebhookSignature(
   }
 }
 
+/**
+ * Issues an automated refund back to the customer's original payment method
+ * via Razorpay's PCI-DSS compliant refunds API.
+ */
+export async function refundRazorpayPayment(opts: {
+  paymentId: string;
+  amountPaise?: number;
+  notes?: Record<string, string>;
+}): Promise<{ id: string; amount: number; status: string; currency: string }> {
+  const auth = await getAuth();
+  const body: Record<string, any> = {};
+  if (opts.amountPaise) body.amount = opts.amountPaise;
+  if (opts.notes) body.notes = opts.notes;
+
+  const res = await fetch(
+    `https://api.razorpay.com/v1/payments/${encodeURIComponent(opts.paymentId)}/refund`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: auth,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    },
+  );
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(
+      `Razorpay refund failed (${res.status}): ${JSON.stringify(err)}`,
+    );
+  }
+
+  return res.json();
+}
+
