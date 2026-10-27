@@ -330,7 +330,13 @@ function ProductPage() {
           <p className="mt-3 text-xl sm:text-2xl font-medium tabular-nums">
             {formatINR(displayPrice)}
           </p>
-          <p className="mt-1 text-sm text-subtle">Includes packaging. Made to order.</p>
+          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-subtle">
+            <span className="font-semibold text-accent">Inclusive of all taxes</span>
+            <span>·</span>
+            <span>Made to order in Mumbai</span>
+            <span>·</span>
+            <span>Pack of {product.includes || "1 Unit"}</span>
+          </div>
           <p className="mt-5 text-muted">{product.description}</p>
 
           <div className="mt-8">
@@ -496,32 +502,56 @@ function ProductPage() {
             </div>
           )}
 
-          <dl className="mt-10 grid grid-cols-1 gap-4 border-t border-border pt-6 text-sm sm:grid-cols-2">
-            <div>
-              <dt className="text-subtle">Base Size</dt>
-              <dd className="mt-1 text-fg">{size || product.size}</dd>
-            </div>
-            <div>
-              <dt className="text-subtle">Material</dt>
-              <dd className="mt-1 text-fg">{material || product.material}</dd>
-            </div>
-            <div>
-              <dt className="text-subtle">Turnaround</dt>
-              <dd className="mt-1 text-fg">{product.printTime}</dd>
-            </div>
-            <div>
-              <dt className="text-subtle">Includes</dt>
-              <dd className="mt-1 text-fg">{product.includes}</dd>
-            </div>
-            <div>
-              <dt className="text-subtle">Country of Origin</dt>
-              <dd className="mt-1 text-fg font-medium">India</dd>
-            </div>
-            <div>
-              <dt className="text-subtle">Manufacturer &amp; Packer</dt>
-              <dd className="mt-1 text-fg">Prynth, Mumbai, India</dd>
-            </div>
-          </dl>
+          {/* Statutory Product Disclosures (Legal Metrology & Consumer Protection) */}
+          <div className="mt-10 border-t border-border pt-6">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted">
+              Product Specifications &amp; Statutory Disclosures
+            </h3>
+            <dl className="mt-4 grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
+              <div>
+                <dt className="text-subtle">Base Size / Dimensions</dt>
+                <dd className="mt-1 text-fg">{size || product.size}</dd>
+              </div>
+              <div>
+                <dt className="text-subtle">Material</dt>
+                <dd className="mt-1 text-fg">{material || product.material}</dd>
+              </div>
+              <div>
+                <dt className="text-subtle">Turnaround &amp; Dispatch</dt>
+                <dd className="mt-1 text-fg">{product.printTime}</dd>
+              </div>
+              <div>
+                <dt className="text-subtle">Package Contents (Net Quantity)</dt>
+                <dd className="mt-1 text-fg">{product.includes || "1 Unit"}</dd>
+              </div>
+              <div>
+                <dt className="text-subtle">Country of Origin</dt>
+                <dd className="mt-1 font-medium text-fg">{settings?.legal_country_of_origin || "India"}</dd>
+              </div>
+              <div>
+                <dt className="text-subtle">Manufacturer &amp; Packer</dt>
+                <dd className="mt-1 text-fg">
+                  {settings?.legal_name || "Prynth"}
+                  {settings?.legal_registered_address ? `, ${settings.legal_registered_address}` : ", Mumbai, Maharashtra, India"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-subtle">Pricing &amp; Taxes</dt>
+                <dd className="mt-1 text-fg">
+                  Maximum Retail Price inclusive of all taxes. Shipping calculated at checkout.
+                </dd>
+              </div>
+              <div>
+                <dt className="text-subtle">Customer Care</dt>
+                <dd className="mt-1 text-fg">
+                  <a href={`mailto:${settings?.legal_customer_email || settings?.contact_email || "support@prynth.in"}`} className="text-accent hover:underline">
+                    {settings?.legal_customer_email || settings?.contact_email || "support@prynth.in"}
+                  </a>
+                  {settings?.legal_customer_hours || settings?.contact_hours ? ` (${settings?.legal_customer_hours || settings?.contact_hours})` : ""}
+                </dd>
+              </div>
+            </dl>
+          </div>
           <p className="mt-4 text-sm text-muted">{product.care}</p>
 
           <div className="mt-5 rounded-2xl border border-border/80 bg-surface-2/40 p-4 text-xs text-muted space-y-1">

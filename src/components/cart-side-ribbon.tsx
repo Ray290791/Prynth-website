@@ -324,7 +324,7 @@ export function CartSideRibbon() {
             <div className="flex items-baseline justify-between">
               <div>
                 <span className="text-xs text-muted block">Subtotal</span>
-                <span className="text-[10px] text-subtle block">Taxes included</span>
+                <span className="text-[10px] text-subtle block">Inclusive of all taxes · Shipping at checkout</span>
               </div>
               <span className="text-base font-bold text-fg tabular-nums">
                 {formatINR(subtotal)}

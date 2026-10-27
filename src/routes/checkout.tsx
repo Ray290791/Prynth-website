@@ -788,8 +788,15 @@ function CheckoutPage() {
                 <dd className="tabular-nums">{formatINR(extra)}</dd>
               </div>
             ) : null}
+            <div className="flex justify-between text-xs text-subtle">
+              <dt>Taxes</dt>
+              <dd className="font-medium text-fg">Inclusive of all taxes</dd>
+            </div>
             <div className="flex justify-between pt-2 text-base font-semibold border-t border-border">
-              <dt>Total</dt>
+              <div>
+                <dt>Total</dt>
+                <span className="block text-[11px] font-normal text-subtle">Inclusive of all taxes</span>
+              </div>
               <dd className="tabular-nums text-lg text-accent">{formatINR(total)}</dd>
             </div>
           </dl>

@@ -9,6 +9,7 @@ import {
   STANDARD_SHIPPING,
   EXPRESS_SHIPPING,
   shippingFee,
+  hasNonCodItems,
   useCart,
 } from "@/lib/cart-store";
 import { formatINR } from "@/lib/format";
@@ -41,12 +42,15 @@ function CartPage() {
   const freeThreshold = Number(settings?.free_shipping_threshold) || FREE_SHIPPING_AT;
   const standardFee = Number(settings?.standard_shipping_fee) || STANDARD_SHIPPING;
   const expressFee = Number(settings?.express_shipping_fee) || EXPRESS_SHIPPING;
+  const codFee = Number(settings?.cod_fee) || 49;
 
   const hydrated = useHydrated();
   const items = useCart((s) => s.items);
   const setQty = useCart((s) => s.setQty);
   const remove = useCart((s) => s.remove);
   
+  const isCodRestricted = hasNonCodItems(items);
+
   const subtotal = cartSubtotal(items);
   const bulk = getBulkDiscount(items);
   const bulkDiscountAmount = Math.round(subtotal * bulk.discount);
@@ -213,7 +217,7 @@ function CartPage() {
 
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <dt className="text-muted">Subtotal</dt>
+              <dt className="text-muted">Item Subtotal</dt>
               <dd className="tabular-nums font-medium">{formatINR(subtotal)}</dd>
             </div>
             {bulkDiscountAmount > 0 && (
@@ -226,6 +230,20 @@ function CartPage() {
               <dt className="text-muted">Standard shipping</dt>
               <dd className="tabular-nums">{ship === 0 ? "Free" : formatINR(ship)}</dd>
             </div>
+            <div className="flex justify-between text-xs text-subtle">
+              <dt>Taxes</dt>
+              <dd className="font-medium text-fg">Inclusive of all taxes</dd>
+            </div>
+            <div className="flex justify-between text-xs text-subtle">
+              <dt>Cash on Delivery</dt>
+              <dd className="text-right">
+                {isCodRestricted ? (
+                  <span className="text-muted">Unavailable for custom items</span>
+                ) : (
+                  <span>+{formatINR(codFee)} (selectable at checkout)</span>
+                )}
+              </dd>
+            </div>
           </dl>
           {remaining > 0 ? (
             <p className="text-xs text-muted">
@@ -235,7 +253,10 @@ function CartPage() {
             <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Free standard shipping unlocked.</p>
           )}
           <div className="flex justify-between border-t border-border pt-4 text-base font-semibold text-fg">
-            <span>Total</span>
+            <div>
+              <span>Total</span>
+              <span className="block text-[11px] font-normal text-subtle">Inclusive of all taxes</span>
+            </div>
             <span className="tabular-nums">{formatINR(discountedSubtotal + ship)}</span>
           </div>
           <Button asChild size="lg" className="w-full cursor-pointer shadow-xs">
