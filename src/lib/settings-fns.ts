@@ -101,6 +101,22 @@ export type SiteSettings = {
   shiprocket_password?: string;
   shiprocket_pickup_location?: string;
   shiprocket_pickup_pincode?: string;
+  // Legal & Business Identity (R1)
+  legal_entity_type?: string;
+  legal_name?: string;
+  legal_director_name?: string;
+  legal_registered_address?: string;
+  legal_customer_email?: string;
+  legal_customer_phone?: string;
+  legal_customer_hours?: string;
+  grievance_officer_name?: string;
+  grievance_officer_designation?: string;
+  grievance_officer_email?: string;
+  grievance_officer_phone?: string;
+  grievance_officer_address?: string;
+  legal_gstin?: string;
+  legal_country_of_origin?: string;
+  legal_jurisdiction_city?: string;
 };
 
 function parseSiteSettings(rows: { key: string; value: string }[]): SiteSettings {
@@ -225,6 +241,22 @@ function parseSiteSettings(rows: { key: string; value: string }[]): SiteSettings
     shiprocket_password: "",
     shiprocket_pickup_location: "Primary",
     shiprocket_pickup_pincode: "400001",
+    // Legal & Business Identity (R1)
+    legal_entity_type: "",
+    legal_name: "Prynth",
+    legal_director_name: "",
+    legal_registered_address: "",
+    legal_customer_email: "hello@prynth.in",
+    legal_customer_phone: "",
+    legal_customer_hours: "Monday–Friday, 10:00 AM – 6:00 PM IST",
+    grievance_officer_name: "",
+    grievance_officer_designation: "Grievance Redressal Officer",
+    grievance_officer_email: "grievance@prynth.in",
+    grievance_officer_phone: "",
+    grievance_officer_address: "",
+    legal_gstin: "",
+    legal_country_of_origin: "Made in India",
+    legal_jurisdiction_city: "Mumbai, Maharashtra, India",
   };
 
   for (const row of rows) {
@@ -260,11 +292,15 @@ function parseSiteSettings(rows: { key: string; value: string }[]): SiteSettings
   return settings;
 }
 
+export async function fetchSiteSettings(sqlInstance?: any): Promise<SiteSettings> {
+  const sql = sqlInstance || (await getSql());
+  const rows = await sql<{ key: string; value: string }>`SELECT key, value FROM site_settings`;
+  return parseSiteSettings(rows);
+}
+
 export const getSiteSettings = createServerFn({ method: "GET" }).handler(
   async (): Promise<SiteSettings> => {
-    const sql = await getSql();
-    const rows = await sql<{ key: string; value: string }>`SELECT key, value FROM site_settings`;
-    return parseSiteSettings(rows);
+    return fetchSiteSettings();
   }
 );
 
@@ -372,6 +408,22 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
     shiprocket_password: z.string().optional(),
     shiprocket_pickup_location: z.string().optional(),
     shiprocket_pickup_pincode: z.string().optional(),
+    // Legal & Business Identity (R1)
+    legal_entity_type: z.string().optional(),
+    legal_name: z.string().optional(),
+    legal_director_name: z.string().optional(),
+    legal_registered_address: z.string().optional(),
+    legal_customer_email: z.string().optional(),
+    legal_customer_phone: z.string().optional(),
+    legal_customer_hours: z.string().optional(),
+    grievance_officer_name: z.string().optional(),
+    grievance_officer_designation: z.string().optional(),
+    grievance_officer_email: z.string().optional(),
+    grievance_officer_phone: z.string().optional(),
+    grievance_officer_address: z.string().optional(),
+    legal_gstin: z.string().optional(),
+    legal_country_of_origin: z.string().optional(),
+    legal_jurisdiction_city: z.string().optional(),
   }).partial())
   .handler(async ({ data, context }) => {
     if (!context.userId) throw new Error("Unauthorized");

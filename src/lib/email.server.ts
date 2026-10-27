@@ -385,3 +385,88 @@ export async function sendCustomRequestCustomerAckEmail(params: {
     console.error("Failed to send customer ack email:", err);
   }
 }
+
+export async function sendGrievanceAcknowledgementEmail(params: {
+  ticketNumber: string;
+  email: string;
+  name: string;
+  subject: string;
+  category: string;
+  orderNumber?: string;
+  grievanceOfficerName?: string;
+  grievanceOfficerEmail?: string;
+}) {
+  const resend = getResend();
+  if (!resend) {
+    console.log("No RESEND_API_KEY set, skipping grievance acknowledgement email to", params.email);
+    return;
+  }
+
+  const sender = await getSenderEmail();
+  const safeName = escapeHtml(params.name);
+  const safeTicket = escapeHtml(params.ticketNumber);
+  const safeSubject = escapeHtml(params.subject);
+  const safeOfficer = escapeHtml(params.grievanceOfficerName || "Grievance Redressal Officer");
+  const officerEmail = params.grievanceOfficerEmail || "grievance@prynth.in";
+
+  try {
+    await resend.emails.send({
+      from: sender,
+      to: params.email,
+      replyTo: officerEmail,
+      subject: `Complaint Acknowledged [Ticket #${safeTicket}] — Prynth Grievance Redressal`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #111; line-height: 1.6;">
+          <div style="background-color: #0f172a; padding: 24px; border-radius: 8px 8px 0 0; color: #fff; text-align: center;">
+            <h1 style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em;">Prynth</h1>
+            <p style="margin: 6px 0 0; opacity: 0.8; font-size: 13px;">Statutory Grievance Redressal Mechanism</p>
+          </div>
+          <div style="padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px; background-color: #fff;">
+            <p style="font-size: 15px;">Dear ${safeName},</p>
+            <p style="font-size: 14px; color: #334155;">
+              We have received your grievance regarding <strong>&ldquo;${safeSubject}&rdquo;</strong>. A formal ticket has been logged into our statutory grievance register under the Consumer Protection (E-Commerce) Rules, 2020.
+            </p>
+
+            <div style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin: 20px 0;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                <tr>
+                  <td style="padding: 4px 0; color: #64748b; width: 40%;">Ticket Number:</td>
+                  <td style="padding: 4px 0; font-weight: 700; color: #0f172a; font-family: monospace;">${safeTicket}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 0; color: #64748b;">Category:</td>
+                  <td style="padding: 4px 0; color: #0f172a; text-transform: capitalize;">${escapeHtml(params.category.replace(/_/g, " "))}</td>
+                </tr>
+                ${params.orderNumber ? `
+                <tr>
+                  <td style="padding: 4px 0; color: #64748b;">Related Order:</td>
+                  <td style="padding: 4px 0; color: #0f172a; font-family: monospace;">${escapeHtml(params.orderNumber)}</td>
+                </tr>` : ""}
+                <tr>
+                  <td style="padding: 4px 0; color: #64748b;">Acknowledgement SLA:</td>
+                  <td style="padding: 4px 0; font-weight: 600; color: #059669;">Immediate (Within 48 hours)</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 0; color: #64748b;">Resolution SLA:</td>
+                  <td style="padding: 4px 0; font-weight: 600; color: #0f172a;">Within 30 days (1 month)</td>
+                </tr>
+              </table>
+            </div>
+
+            <p style="font-size: 13px; color: #475569;">
+              Our designated Grievance Officer, <strong>${safeOfficer}</strong>, has been assigned to investigate your issue and will communicate progress directly with you. You may reply to this email at any time to submit supplementary photos or information.
+            </p>
+
+            <div style="margin-top: 28px; padding-top: 18px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center;">
+              <p style="margin: 0;">Prynth · Grievance Redressal · Mumbai, Maharashtra, India</p>
+              <p style="margin: 4px 0 0;"><a href="mailto:${officerEmail}" style="color: #00b8a9; text-decoration: none;">${officerEmail}</a></p>
+            </div>
+          </div>
+        </div>
+      `,
+    });
+  } catch (err) {
+    console.error("Failed to send grievance ack email:", err);
+  }
+}
+

@@ -9,7 +9,7 @@ import { getAdminSiteSettings, updateSiteSettings } from "@/lib/settings-fns";
 import { getAllProductsAdmin } from "@/lib/products-fns";
 import { triggerDatabaseMaintenance } from "@/lib/orders-fns";
 import { cn } from "@/lib/utils";
-import { Settings, Image as ImageIcon, Shield, Search, Plus, Trash2, Edit2, CreditCard, Mail, Truck } from "lucide-react";
+import { Truck } from "lucide-react";
 
 export function SettingsTab() {
   const queryClient = useQueryClient();
@@ -33,7 +33,7 @@ export function SettingsTab() {
         const parsed = JSON.parse(settings.hero_featured_slots);
         if (Array.isArray(parsed) && parsed.length === 4) return parsed;
       }
-    } catch (_e) {
+    } catch {
       // Fallback to default slots on parse error
     }
     return [
@@ -54,7 +54,7 @@ export function SettingsTab() {
         if (Array.isArray(parsed) && parsed.length === 4) {
           setHeroSlots(parsed);
         }
-      } catch (_e) {
+      } catch {
         // Ignore JSON parse error on setting update
       }
     }
@@ -822,6 +822,223 @@ export function SettingsTab() {
               <div className="flex items-center gap-2 text-emerald-500">
                 <span>✓</span> <span>Shipping Policy (Estimated 3–5 days across India)</span>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* LEGAL & BUSINESS DETAILS (STATUTORY COMPLIANCE R1) */}
+        <section className="space-y-5 rounded-2xl border border-accent/20 bg-surface-2/40 p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-3">
+            <div>
+              <h3 className="text-lg font-semibold text-fg flex items-center gap-2">
+                <span>⚖️</span> Legal &amp; Business Details (Statutory Compliance)
+              </h3>
+              <p className="text-xs text-muted mt-0.5">
+                Centralized source of truth for business identity, Consumer Protection E-Commerce Rules (2020), invoices, and grievance redressal.
+              </p>
+            </div>
+            <a
+              href="/legal"
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-accent underline hover:opacity-80"
+            >
+              View Public /legal Page ↗
+            </a>
+          </div>
+
+          {/* Legal Readiness Checklist */}
+          <div className="rounded-xl border border-border bg-surface p-4 space-y-3">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center justify-between">
+              <span>Legal Readiness Checklist</span>
+              <span className="text-[11px] font-normal normal-case text-muted">
+                Public pages hide unconfigured fields automatically
+              </span>
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs">
+              <div className="flex items-center gap-2">
+                <span className={settings.legal_name ? "text-emerald-500 font-bold" : "text-amber-500 font-bold"}>
+                  {settings.legal_name ? "✓" : "○"}
+                </span>
+                <span className={settings.legal_name ? "text-fg" : "text-muted"}>
+                  Legal Name: {settings.legal_name || "Empty"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={settings.legal_entity_type ? "text-emerald-500 font-bold" : "text-amber-500 font-bold"}>
+                  {settings.legal_entity_type ? "✓" : "○"}
+                </span>
+                <span className={settings.legal_entity_type ? "text-fg" : "text-muted"}>
+                  Entity Type: {settings.legal_entity_type || "Pending Owner Choice"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={settings.legal_registered_address ? "text-emerald-500 font-bold" : "text-amber-500 font-bold"}>
+                  {settings.legal_registered_address ? "✓" : "○"}
+                </span>
+                <span className={settings.legal_registered_address ? "text-fg" : "text-muted"}>
+                  Registered Address: {settings.legal_registered_address ? "Configured" : "Not Set"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={settings.grievance_officer_name ? "text-emerald-500 font-bold" : "text-amber-500 font-bold"}>
+                  {settings.grievance_officer_name ? "✓" : "○"}
+                </span>
+                <span className={settings.grievance_officer_name ? "text-fg" : "text-muted"}>
+                  Grievance Officer: {settings.grievance_officer_name || "Appoint Officer"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={settings.grievance_officer_email ? "text-emerald-500 font-bold" : "text-amber-500 font-bold"}>
+                  {settings.grievance_officer_email ? "✓" : "○"}
+                </span>
+                <span className={settings.grievance_officer_email ? "text-fg" : "text-muted"}>
+                  Grievance Email: {settings.grievance_officer_email || "Not Set"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={settings.legal_gstin ? "text-emerald-500 font-bold" : "text-blue-500 font-bold"}>
+                  {settings.legal_gstin ? "✓" : "ℹ"}
+                </span>
+                <span className="text-fg">
+                  GST Status: {settings.legal_gstin ? settings.legal_gstin : "Unregistered (Under ₹40L)"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Form Inputs */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium mb-1">Legal Registered Entity Name</label>
+              <input
+                name="legal_name"
+                defaultValue={settings.legal_name || "Prynth"}
+                placeholder="e.g. Prynth 3D Creations"
+                className="w-full rounded border border-border bg-surface p-2 text-sm"
+              />
+              <p className="text-[11px] text-muted mt-0.5">Appears on invoices, receipts, and statutory disclosures.</p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1">Entity Type</label>
+              <input
+                name="legal_entity_type"
+                defaultValue={settings.legal_entity_type || ""}
+                placeholder="e.g. Sole Proprietorship, LLP, or Private Limited"
+                className="w-full rounded border border-border bg-surface p-2 text-sm"
+              />
+              <p className="text-[11px] text-muted mt-0.5">Confirm with your CA / lawyer.</p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1">Founder / Principal Maker / Director</label>
+              <input
+                name="legal_director_name"
+                defaultValue={settings.legal_director_name || ""}
+                placeholder="e.g. Principal Maker"
+                className="w-full rounded border border-border bg-surface p-2 text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1">GSTIN (Optional until registered)</label>
+              <input
+                name="legal_gstin"
+                defaultValue={settings.legal_gstin || ""}
+                placeholder="e.g. 27AAAAA0000A1Z5"
+                className="w-full rounded border border-border bg-surface p-2 text-sm font-mono"
+              />
+              <p className="text-[11px] text-muted mt-0.5">Leave blank if unregistered; tax invoices will not be issued.</p>
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-medium mb-1">Registered / Operating Office Address</label>
+              <textarea
+                name="legal_registered_address"
+                defaultValue={settings.legal_registered_address || ""}
+                placeholder="Complete street address, City, State, PIN code, India"
+                rows={2}
+                className="w-full rounded border border-border bg-surface p-2 text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1">Customer Care Support Email</label>
+              <input
+                name="legal_customer_email"
+                defaultValue={settings.legal_customer_email || "hello@prynth.in"}
+                placeholder="hello@prynth.in"
+                className="w-full rounded border border-border bg-surface p-2 text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1">Customer Care Support Hours</label>
+              <input
+                name="legal_customer_hours"
+                defaultValue={settings.legal_customer_hours || "Monday–Friday, 10:00 AM – 6:00 PM IST"}
+                placeholder="Mon–Fri, 10:00 AM – 6:00 PM IST"
+                className="w-full rounded border border-border bg-surface p-2 text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1">Grievance Redressal Officer Name</label>
+              <input
+                name="grievance_officer_name"
+                defaultValue={settings.grievance_officer_name || ""}
+                placeholder="e.g. Appointed Officer Name"
+                className="w-full rounded border border-border bg-surface p-2 text-sm"
+              />
+              <p className="text-[11px] text-muted mt-0.5">Owner may appoint themselves; records are kept.</p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1">Grievance Officer Designation</label>
+              <input
+                name="grievance_officer_designation"
+                defaultValue={settings.grievance_officer_designation || "Grievance Redressal Officer"}
+                className="w-full rounded border border-border bg-surface p-2 text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1">Grievance Officer Email</label>
+              <input
+                name="grievance_officer_email"
+                defaultValue={settings.grievance_officer_email || "grievance@prynth.in"}
+                placeholder="grievance@prynth.in"
+                className="w-full rounded border border-border bg-surface p-2 text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1">Dedicated Grievance Phone (Optional)</label>
+              <input
+                name="grievance_officer_phone"
+                defaultValue={settings.grievance_officer_phone || ""}
+                placeholder="e.g. +91 98765 43210 (leave empty if email only)"
+                className="w-full rounded border border-border bg-surface p-2 text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1">Country of Origin Declaration</label>
+              <input
+                name="legal_country_of_origin"
+                defaultValue={settings.legal_country_of_origin || "Made in India"}
+                className="w-full rounded border border-border bg-surface p-2 text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1">Governing Jurisdiction City</label>
+              <input
+                name="legal_jurisdiction_city"
+                defaultValue={settings.legal_jurisdiction_city || "Mumbai, Maharashtra, India"}
+                className="w-full rounded border border-border bg-surface p-2 text-sm"
+              />
             </div>
           </div>
         </section>

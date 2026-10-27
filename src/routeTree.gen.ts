@@ -19,6 +19,7 @@ import { Route as CustomRouteImport } from './routes/custom'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as GalleryRouteImport } from './routes/gallery'
 import { Route as HistoryRouteImport } from './routes/history'
+import { Route as LegalRouteImport } from './routes/legal'
 import { Route as LithophaneRouteImport } from './routes/lithophane'
 import { Route as MaterialsRouteImport } from './routes/materials'
 import { Route as PegboardRouteImport } from './routes/pegboard'
@@ -87,6 +88,11 @@ const GalleryRoute = GalleryRouteImport.update({
 const HistoryRoute = HistoryRouteImport.update({
   id: '/history',
   path: '/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalRoute = LegalRouteImport.update({
+  id: '/legal',
+  path: '/legal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LithophaneRoute = LithophaneRouteImport.update({
@@ -196,6 +202,7 @@ export interface FileRoutesByFullPath {
   '/faq': typeof FaqRoute
   '/gallery': typeof GalleryRoute
   '/history': typeof HistoryRoute
+  '/legal': typeof LegalRoute
   '/lithophane': typeof LithophaneRoute
   '/materials': typeof MaterialsRoute
   '/pegboard': typeof PegboardRoute
@@ -227,6 +234,7 @@ export interface FileRoutesByTo {
   '/faq': typeof FaqRoute
   '/gallery': typeof GalleryRoute
   '/history': typeof HistoryRoute
+  '/legal': typeof LegalRoute
   '/lithophane': typeof LithophaneRoute
   '/materials': typeof MaterialsRoute
   '/pegboard': typeof PegboardRoute
@@ -259,6 +267,7 @@ export interface FileRoutesById {
   '/faq': typeof FaqRoute
   '/gallery': typeof GalleryRoute
   '/history': typeof HistoryRoute
+  '/legal': typeof LegalRoute
   '/lithophane': typeof LithophaneRoute
   '/materials': typeof MaterialsRoute
   '/pegboard': typeof PegboardRoute
@@ -292,6 +301,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/gallery'
     | '/history'
+    | '/legal'
     | '/lithophane'
     | '/materials'
     | '/pegboard'
@@ -323,6 +333,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/gallery'
     | '/history'
+    | '/legal'
     | '/lithophane'
     | '/materials'
     | '/pegboard'
@@ -354,6 +365,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/gallery'
     | '/history'
+    | '/legal'
     | '/lithophane'
     | '/materials'
     | '/pegboard'
@@ -386,6 +398,7 @@ export interface RootRouteChildren {
   FaqRoute: typeof FaqRoute
   GalleryRoute: typeof GalleryRoute
   HistoryRoute: typeof HistoryRoute
+  LegalRoute: typeof LegalRoute
   LithophaneRoute: typeof LithophaneRoute
   MaterialsRoute: typeof MaterialsRoute
   PegboardRoute: typeof PegboardRoute
@@ -477,6 +490,13 @@ declare module '@tanstack/react-router' {
       path: '/history'
       fullPath: '/history'
       preLoaderRoute: typeof HistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal': {
+      id: '/legal'
+      path: '/legal'
+      fullPath: '/legal'
+      preLoaderRoute: typeof LegalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lithophane': {
@@ -626,6 +646,7 @@ const rootRouteChildren: RootRouteChildren = {
   FaqRoute: FaqRoute,
   GalleryRoute: GalleryRoute,
   HistoryRoute: HistoryRoute,
+  LegalRoute: LegalRoute,
   LithophaneRoute: LithophaneRoute,
   MaterialsRoute: MaterialsRoute,
   PegboardRoute: PegboardRoute,

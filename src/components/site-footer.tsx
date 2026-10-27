@@ -22,6 +22,7 @@ const HELP_LINKS = [
   { to: "/about", label: "About Prynth" },
   { to: "/privacy", label: "Privacy Policy" },
   { to: "/terms", label: "Terms of Service" },
+  { to: "/legal", label: "Legal & Grievance" },
 ] as const;
 
 export function SiteFooter() {

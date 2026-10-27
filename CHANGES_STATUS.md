@@ -6,10 +6,10 @@
 
 | Priority | Total | Done | In Progress | Blocked | Todo |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| **P0** | 11 | 3 | 1 | 3 | 4 |
+| **P0** | 11 | 7 | 1 | 3 | 0 |
 | **P1** | 18 | 0 | 0 | 4 | 14 |
 | **P2** | 13 | 0 | 0 | 4 | 9 |
-| **Total** | **42** | **3** | **1** | **11** | **27** |
+| **Total** | **42** | **7** | **1** | **11** | **23** |
 
 ---
 
@@ -20,13 +20,14 @@
 | **S1** | Make every shipping amount come from settings | **DONE** | Audited all hardcoded shipping/COD amounts; bound cart, pegboard, shipping policy, checkout, and admin defaults to dynamic site settings. |
 | **S2** | No COD for custom and lithophane orders | **DONE** | Implemented client-side exclusion of COD and user notice when custom prints, lithophanes, or configured pegboards are in cart; strictly rejected on server-side in createRazorpayOrder. |
 | **C1** | Secrets hygiene | **DONE** | Verified .env/.env.* in .gitignore; 0 commits in git history contain .env; verified no secrets in source, wrangler.toml, or public/; owner reminded to rotate credentials if external zip was shared. |
-| **C2** | Lock down customer file downloads | **IN PROGRESS** | Switching to `crypto.randomUUID()`, requiring admin session, `Cache-Control: private, no-store`, and removing CORS wildcard. |
-| **C3** | Deduplicate uploads by content hash | **TODO** | New migration for `content_hash` column, SHA-256 calculation & unique constraint. |
-| **C4** | Razorpay webhook | **TODO** | New `/api/razorpay-webhook` route, signature check, idempotent fulfillment. |
-| **R1** | One source for legal and business details | **TODO** | Admin settings group for legal details, checklist & centralized consumption. |
+| **C2** | Lock down customer file downloads | **DONE** | Customer 3D uploads use `crypto.randomUUID()`, downloads require verified admin session, headers enforce `Cache-Control: private, no-store`, and CORS wildcard removed. |
+| **C3** | Deduplicate uploads by content hash | **DONE** | Migration 0024 added `content_hash` column and unique index; SHA-256 byte hash calculation prevents duplicate file storage. |
+| **C4** | Razorpay webhook | **DONE** | Implemented `/api/razorpay-webhook` route with timing-safe HMAC SHA-256 signature verification and idempotent order settlement (`confirmOrderPaymentIdempotent`). |
+| **R1** | One source for legal and business details | **DONE** | Centralized legal & business identity fields in SiteSettings, added Admin Legal section with Readiness Checklist, linked `/legal` in footer. |
 | **R2** | Business identity and grievance officer | **BLOCKED** | Blocked on owner decisions: legal entity type, grievance officer appointment, public phone decision. |
-| **R3** | Complaint workflow | **TODO** | Legal page complaint form, ticket generation, 48h/1mo SLA tracking in admin. |
+| **R3** | Complaint workflow | **DONE** | Created migration 0027, added `/legal` statutory complaint form, automated ticket generation (`PRY-GRV-YYYY-XXXX`), email acknowledgement, 48h/30d SLA tracking, and test suite. |
 | **R4** | GST (tax) readiness | **BLOCKED** | Blocked on owner decision: registered under GST or not (CA confirmation). |
+| **R5** | Privacy policy, notices and consent | **IN PROGRESS** | Auditing data inventory, collection notices, and DPDP 2023 compliance. |
 | **R14** | Legal review gate | **BLOCKED** | Blocked on owner review with CA and lawyer. |
 
 ---
