@@ -1,7 +1,17 @@
 import { createFileRoute, Link, getRouteApi } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { products } from "@/lib/products";
-import { Sparkles, ShieldCheck, ArrowRight, Tag, HeartHandshake, Layers } from "lucide-react";
+import {
+  Sparkles,
+  ShieldCheck,
+  ArrowRight,
+  Tag,
+  HeartHandshake,
+  Layers,
+  Users,
+  Cpu,
+  MapPin,
+} from "lucide-react";
 
 const rootRoute = getRouteApi("__root__");
 
@@ -126,8 +136,49 @@ export function AboutPage() {
         </aside>
       </div>
 
+      {/* Founders & Studio Craft Spotlight */}
+      <div className="mt-16 rounded-3xl border border-border bg-surface/50 p-8 sm:p-10 backdrop-blur-sm">
+        <div className="flex flex-col md:flex-row gap-8 items-start justify-between">
+          <div className="max-w-xl space-y-4">
+            <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3 py-0.5 text-xs font-semibold text-accent">
+              <Users className="size-3.5" />
+              <span>Studio Leadership</span>
+            </div>
+            <h2 className="font-display text-2xl sm:text-3xl font-semibold text-fg tracking-tight">
+              Crafted by Makers, Guided by Engineering
+            </h2>
+            <p className="text-sm sm:text-base text-muted leading-relaxed">
+              Prynth was founded by <strong>Ray Kapadia</strong> and <strong>Supas Kumar</strong> (Co-Founders) with a shared obsession: removing the friction, inflated markups, and technical gatekeeping from precision 3D printing in India.
+            </p>
+            <p className="text-sm sm:text-base text-muted leading-relaxed">
+              Operating directly out of our Mumbai studio, every project—from single custom prototypes to full batch production—is reviewed, sliced, and quality-inspected by the founding team.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full md:w-auto shrink-0">
+            <div className="rounded-2xl border border-border bg-surface p-5 space-y-2">
+              <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-accent font-semibold">
+                <MapPin className="size-4" />
+                <span>Studio Location</span>
+              </div>
+              <p className="font-display text-base font-semibold text-fg">Mumbai, Maharashtra</p>
+              <p className="text-xs text-muted">Intra-city dispatch &amp; pan-India courier network</p>
+            </div>
+
+            <div className="rounded-2xl border border-border bg-surface p-5 space-y-2">
+              <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-accent font-semibold">
+                <Cpu className="size-4" />
+                <span>Production Fleet</span>
+              </div>
+              <p className="font-display text-base font-semibold text-fg">Bambu Lab CoreXY</p>
+              <p className="text-xs text-muted">0.08mm–0.24mm precision enclosed print farm</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* 3 Core Value Pillars */}
-      <div className="mt-16 grid gap-5 md:grid-cols-3">
+      <div className="mt-12 grid gap-5 md:grid-cols-3">
         {pillars.map((pillar, idx) => {
           const Icon = pillar.icon;
           return (

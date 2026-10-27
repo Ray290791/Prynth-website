@@ -30,14 +30,14 @@ export const GUIDES: GuideArticle[] = [
     category: "Pricing & Economics",
     readingTime: "4 min read",
     lastUpdated: "27 October 2026",
-    author: "Prynth Engineering Studio",
+    author: "Ray Kapadia & Supas Kumar (Co-Founders, Prynth)",
     directAnswer:
       "In India, professional FDM 3D printing typically costs ₹6 to ₹14 per gram of finished material, plus a modest setup fee of ₹49 to ₹99 per unique geometry. At Prynth, minimum print orders start at ₹149, standard desk accessories range between ₹199 and ₹699, and volume discounts reduce per-unit costs by up to 25% for batches of 25 units or more.",
     keyTakeaways: [
       "FDM 3D printing costs in India are primarily driven by part volume, infill density, and raw polymer type (PLA, PETG, ABS, ASA).",
       "Prynth charges ₹6–₹12/gram with a ₹49 setup fee and a ₹149 minimum order threshold.",
       "Volume batching yields progressive discounts: 10% off for 5–9 units, 18% off for 10–24 units, and 25% off for 25+ units.",
-      "Free standard nationwide shipping applies automatically on all orders over ₹349.",
+      "Free standard nationwide shipping applies automatically on all orders over ₹399.",
     ],
     sections: [
       {
@@ -58,7 +58,7 @@ export const GUIDES: GuideArticle[] = [
       {
         heading: "Typical Turnaround Times and Pan-India Shipping",
         content:
-          "Standard custom print orders in Mumbai are manufactured within 2 to 4 business days. Ground courier shipping across Tier 1 and Tier 2 cities in India takes 3 to 5 business days (standard delivery is ₹79 or free over ₹349), while priority Air Express reaches most metro cities within 24 to 48 hours for a flat ₹189 fee.",
+          "Standard custom print orders in Mumbai are manufactured within 2 to 4 business days. Ground courier shipping across Tier 1 and Tier 2 cities in India takes 3 to 5 business days (₹49 within Maharashtra, ₹79 rest of India, or free over ₹399), while priority Air Express reaches most metro cities within 24 to 48 hours for a flat ₹189 fee.",
       },
     ],
     sources: [
@@ -102,7 +102,7 @@ export const GUIDES: GuideArticle[] = [
     category: "Materials & Engineering",
     readingTime: "5 min read",
     lastUpdated: "27 October 2026",
-    author: "Prynth Engineering Studio",
+    author: "Ray Kapadia & Supas Kumar (Co-Founders, Prynth)",
     directAnswer:
       "Choose PLA for crisp indoor aesthetics and desk accessories (deflects at 55°C). Choose PETG for tough everyday functional parts with water and chemical resistance (deflects at 75°C). Choose ABS for high-heat mechanical enclosures (deflects at 95°C). Choose ASA for outdoor fixtures requiring total UV weather-resistance without yellowing or degradation.",
     keyTakeaways: [
@@ -160,7 +160,7 @@ export const GUIDES: GuideArticle[] = [
     category: "Design for Manufacturing",
     readingTime: "4 min read",
     lastUpdated: "27 October 2026",
-    author: "Prynth Engineering Studio",
+    author: "Ray Kapadia & Supas Kumar (Co-Founders, Prynth)",
     directAnswer:
       "To prepare an STL for 3D printing, ensure your 3D mesh is 100% watertight (manifold) with zero inverted normals, maintain a minimum wall thickness of 1.2mm (at least 3 perimeter walls), design interlocking clearances between 0.2mm and 0.4mm, and export in binary STL or 3MF format with facet deviation under 0.02mm.",
     keyTakeaways: [
@@ -223,14 +223,14 @@ export const GUIDES: GuideArticle[] = [
     category: "Local Manufacturing",
     readingTime: "3 min read",
     lastUpdated: "27 October 2026",
-    author: "Prynth Engineering Studio",
+    author: "Ray Kapadia & Supas Kumar (Co-Founders, Prynth)",
     directAnswer:
       "Prynth operates an automated Bambu CoreXY print farm based in Mumbai, delivering precision custom 3D prints across the Mumbai Metropolitan Region (MMR) and pan-India. With instant automated quoting, transparent pricing from ₹149, and typical production in 2 to 4 days, we support fast local courier dispatch across Mumbai, Thane, and Navi Mumbai.",
     keyTakeaways: [
       "Local Mumbai manufacturing farm equipped with enclosed Bambu Lab CoreXY printers capable of 0.12mm high-resolution layer heights.",
       "Instant automated quoting on your 3D CAD models (STL, OBJ, 3MF, STEP) directly on prynth.in without waiting for email estimates.",
       "Local intra-city dispatch via express courier reaches Mumbai, Thane, and Navi Mumbai addresses within 24–48 hours of print completion.",
-      "Zero tooling costs, transparent server-side pricing with all taxes included, and free standard delivery on orders over ₹349.",
+      "Zero tooling costs, transparent server-side pricing with all taxes included, and free standard delivery on orders over ₹399.",
     ],
     sections: [
       {
