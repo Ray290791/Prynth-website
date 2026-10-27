@@ -284,8 +284,8 @@ function Home() {
             <h2 className="mt-1 font-instrument text-3xl sm:text-4xl font-normal italic tracking-tight text-fg">
               Desk &amp; Everyday Favourites
             </h2>
-            <p className="mt-1 text-xs sm:text-sm text-muted font-jakarta">
-              Functional pieces printed to order in Mumbai. Honest pricing with zero hidden fees.
+            <p className="mt-2 text-xs sm:text-sm text-muted font-jakarta max-w-2xl leading-relaxed">
+              Every piece in our collection is precision-crafted on demand in our Mumbai studio using engineering-grade biopolymers and PETG. From modular desk organization to ergonomic tech accessories, each item is inspected by hand, includes all applicable taxes, and ships with zero hidden fees.
             </p>
           </div>
           <Button asChild variant="outline" size="sm" className="h-9 backdrop-blur-md bg-surface/60">

@@ -32,6 +32,8 @@ import { Route as WishlistRouteImport } from './routes/wishlist'
 import { Route as ApiCreateOrderRouteImport } from './routes/api/create-order'
 import { Route as ApiRazorpayWebhookRouteImport } from './routes/api/razorpay-webhook'
 import { Route as ApiVerifyPaymentRouteImport } from './routes/api/verify-payment'
+import { Route as GuidesIndexRouteImport } from './routes/guides.index'
+import { Route as GuidesSlugRouteImport } from './routes/guides.$slug'
 import { Route as OrderIdRouteImport } from './routes/order.$id'
 import { Route as ServicesIndexRouteImport } from './routes/services.index'
 import { Route as ServicesSlugRouteImport } from './routes/services.$slug'
@@ -155,6 +157,16 @@ const ApiVerifyPaymentRoute = ApiVerifyPaymentRouteImport.update({
   path: '/api/verify-payment',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GuidesIndexRoute = GuidesIndexRouteImport.update({
+  id: '/guides/',
+  path: '/guides/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuidesSlugRoute = GuidesSlugRouteImport.update({
+  id: '/guides/$slug',
+  path: '/guides/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrderIdRoute = OrderIdRouteImport.update({
   id: '/order/$id',
   path: '/order/$id',
@@ -215,9 +227,11 @@ export interface FileRoutesByFullPath {
   '/api/create-order': typeof ApiCreateOrderRoute
   '/api/razorpay-webhook': typeof ApiRazorpayWebhookRoute
   '/api/verify-payment': typeof ApiVerifyPaymentRoute
+  '/guides/$slug': typeof GuidesSlugRoute
   '/order/$id': typeof OrderIdRoute
   '/services/$slug': typeof ServicesSlugRoute
   '/shop/$slug': typeof ShopSlugRoute
+  '/guides/': typeof GuidesIndexRoute
   '/services/': typeof ServicesIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -247,9 +261,11 @@ export interface FileRoutesByTo {
   '/api/create-order': typeof ApiCreateOrderRoute
   '/api/razorpay-webhook': typeof ApiRazorpayWebhookRoute
   '/api/verify-payment': typeof ApiVerifyPaymentRoute
+  '/guides/$slug': typeof GuidesSlugRoute
   '/order/$id': typeof OrderIdRoute
   '/services/$slug': typeof ServicesSlugRoute
   '/shop/$slug': typeof ShopSlugRoute
+  '/guides': typeof GuidesIndexRoute
   '/services': typeof ServicesIndexRoute
   '/shop': typeof ShopIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -280,9 +296,11 @@ export interface FileRoutesById {
   '/api/create-order': typeof ApiCreateOrderRoute
   '/api/razorpay-webhook': typeof ApiRazorpayWebhookRoute
   '/api/verify-payment': typeof ApiVerifyPaymentRoute
+  '/guides/$slug': typeof GuidesSlugRoute
   '/order/$id': typeof OrderIdRoute
   '/services/$slug': typeof ServicesSlugRoute
   '/shop/$slug': typeof ShopSlugRoute
+  '/guides/': typeof GuidesIndexRoute
   '/services/': typeof ServicesIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -314,9 +332,11 @@ export interface FileRouteTypes {
     | '/api/create-order'
     | '/api/razorpay-webhook'
     | '/api/verify-payment'
+    | '/guides/$slug'
     | '/order/$id'
     | '/services/$slug'
     | '/shop/$slug'
+    | '/guides/'
     | '/services/'
     | '/shop/'
     | '/api/auth/$'
@@ -346,9 +366,11 @@ export interface FileRouteTypes {
     | '/api/create-order'
     | '/api/razorpay-webhook'
     | '/api/verify-payment'
+    | '/guides/$slug'
     | '/order/$id'
     | '/services/$slug'
     | '/shop/$slug'
+    | '/guides'
     | '/services'
     | '/shop'
     | '/api/auth/$'
@@ -378,9 +400,11 @@ export interface FileRouteTypes {
     | '/api/create-order'
     | '/api/razorpay-webhook'
     | '/api/verify-payment'
+    | '/guides/$slug'
     | '/order/$id'
     | '/services/$slug'
     | '/shop/$slug'
+    | '/guides/'
     | '/services/'
     | '/shop/'
     | '/api/auth/$'
@@ -411,9 +435,11 @@ export interface RootRouteChildren {
   ApiCreateOrderRoute: typeof ApiCreateOrderRoute
   ApiRazorpayWebhookRoute: typeof ApiRazorpayWebhookRoute
   ApiVerifyPaymentRoute: typeof ApiVerifyPaymentRoute
+  GuidesSlugRoute: typeof GuidesSlugRoute
   OrderIdRoute: typeof OrderIdRoute
   ServicesSlugRoute: typeof ServicesSlugRoute
   ShopSlugRoute: typeof ShopSlugRoute
+  GuidesIndexRoute: typeof GuidesIndexRoute
   ServicesIndexRoute: typeof ServicesIndexRoute
   ShopIndexRoute: typeof ShopIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -583,6 +609,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiVerifyPaymentRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/guides/': {
+      id: '/guides/'
+      path: '/guides'
+      fullPath: '/guides/'
+      preLoaderRoute: typeof GuidesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guides/$slug': {
+      id: '/guides/$slug'
+      path: '/guides/$slug'
+      fullPath: '/guides/$slug'
+      preLoaderRoute: typeof GuidesSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/order/$id': {
       id: '/order/$id'
       path: '/order/$id'
@@ -659,9 +699,11 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCreateOrderRoute: ApiCreateOrderRoute,
   ApiRazorpayWebhookRoute: ApiRazorpayWebhookRoute,
   ApiVerifyPaymentRoute: ApiVerifyPaymentRoute,
+  GuidesSlugRoute: GuidesSlugRoute,
   OrderIdRoute: OrderIdRoute,
   ServicesSlugRoute: ServicesSlugRoute,
   ShopSlugRoute: ShopSlugRoute,
+  GuidesIndexRoute: GuidesIndexRoute,
   ServicesIndexRoute: ServicesIndexRoute,
   ShopIndexRoute: ShopIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,

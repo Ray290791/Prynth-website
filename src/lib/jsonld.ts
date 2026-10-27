@@ -186,3 +186,6 @@ export function generateFaqJsonLd(faqs: Array<{ question: string; answer: string
     })),
   };
 }
+
+export const generateFAQJsonLd = generateFaqJsonLd;
+

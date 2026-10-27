@@ -15,6 +15,7 @@ const SHOP_LINKS = [
 ] as const;
 
 const HELP_LINKS = [
+  { to: "/guides", label: "Engineering Guides" },
   { to: "/faq", label: "FAQ & Turnarounds" },
   { to: "/shipping", label: "Shipping Policy" },
   { to: "/returns", label: "Returns & Replacements" },
