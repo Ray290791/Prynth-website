@@ -1,0 +1,34 @@
+# Prynth!
+
+> Precision on-demand 3D printing and CAD engineering studio based in Mumbai, India. Operating an automated fleet of Bambu Lab CoreXY printers, Prynth crafts functional desk organizers, modular pegboard systems, custom mechanical prototypes, and photo lithophanes with 0.12mm layer precision. Shipped across India.
+
+## Key Services and Products
+
+- [Ready-Made Collection](https://prynth.in/shop): Precision 3D printed desk accessories, phone stands, headphone hangers, and cable organizers.
+- [Custom 3D Printing](https://prynth.in/custom): Instant automated quotes on user-uploaded STL, OBJ, 3MF, and STEP CAD files with real-time slicer volume calculation.
+- [Modular Pegboard System](https://prynth.in/pegboard): Interlocking wall and desk storage tiles with tool-free snap accessories and removable adhesive mounting.
+- [3D Lithophanes](https://prynth.in/lithophane): Personalized tactile relief light panels, curved freestanding arcs, and illuminated LED nightlight boxes.
+- [Engineering Filaments & Materials](https://prynth.in/materials): Technical specifications and comparison of PLA, PETG, ABS, and ASA polymers.
+- [3D Printing Guides](https://prynth.in/guides): Practical answer-style guides covering 3D printing costs in India, filament comparisons, and STL design preparation.
+- [CAD Engineering Services](https://prynth.in/services): Parametric 3D modeling, Design for Additive Manufacturing (DFAM), reverse engineering, and low-volume production batching.
+- [Print Quality Gallery](https://prynth.in/gallery): Genuine macro photography of layer line resolution, surface finishes, and mechanical assemblies.
+
+## Pricing and Policies
+
+- Minimum custom print order threshold: ₹149.
+- Setup fee: ₹49 per unique model geometry.
+- Standard shipping fee: ₹79 across India, free on orders over ₹349.
+- Express priority air delivery: ₹189 flat rate (always charged separately).
+- Payment methods: UPI, credit/debit cards, and net banking via Razorpay. COD available exclusively for ready-made catalog items.
+- Turnaround time: 2 to 4 business days for custom manufacturing, typical delivery in 3 to 5 business days across India.
+
+## Support & Legal Disclosures
+
+- [Frequently Asked Questions](https://prynth.in/faq): Common inquiries regarding turnaround times, file formats, and order tracking.
+- [Shipping Policy](https://prynth.in/shipping): Nationwide delivery terms, courier partners (Shiprocket, Bluedart, Delhivery), and transit timelines.
+- [Returns & Replacements](https://prynth.in/returns): Reprint and refund warranties for defective or transit-damaged items.
+- [Legal & Grievance](https://prynth.in/legal): Statutory business identity, grievance officer contact, and 48-hour SLA complaint submission.
+- [Privacy Policy](https://prynth.in/privacy): DPDP Act 2023 compliant data collection and processing notice.
+- [Terms of Service](https://prynth.in/terms): Conditions of sale, intellectual property warranties, and prohibited items policy.
+- [About Prynth](https://prynth.in/about): Studio background, manufacturing philosophy, and Mumbai workshop details.
+- [Contact Support](https://prynth.in/contact): Customer care inquiries and engineering consultation.
