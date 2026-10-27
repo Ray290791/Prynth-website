@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { generateBreadcrumbJsonLd } from "@/lib/jsonld";
 import { useState, useRef } from "react";
 import {
   ArrowRight,
@@ -46,15 +47,16 @@ export const Route = createFileRoute("/services/$slug")({
   head: ({ loaderData }) => {
     if (!loaderData?.service) return { meta: [{ title: "Service Not Found | Prynth" }] };
     const s = loaderData.service;
+    const desc = `${s.short_desc.replace(/\s+/g, " ").slice(0, 80).trim()}... Custom 3D printing and CAD engineering services in India by Prynth.`;
     return {
       links: [
         { rel: "canonical", href: `https://prynth.in/services/${s.slug}` },
       ],
       meta: [
-        { title: `${s.title} — 3D Printing & Design Services India | Prynth` },
-        { name: "description", content: `${s.short_desc} Custom on-demand additive manufacturing and CAD services across India by Prynth.` },
+        { title: `${s.title} | Prynth 3D Services India` },
+        { name: "description", content: desc },
         { property: "og:title", content: `${s.title} | Prynth 3D Services India` },
-        { property: "og:description", content: s.short_desc },
+        { property: "og:description", content: desc },
         { property: "og:url", content: `https://prynth.in/services/${s.slug}` },
       ],
     };
@@ -193,11 +195,21 @@ function ServiceDetailPage() {
     }
   };
 
+  const breadcrumbJsonLd = generateBreadcrumbJsonLd([
+    { name: "Home", url: "/" },
+    { name: "Services", url: "/services" },
+    { name: service.title, url: `/services/${service.slug}` },
+  ]);
+
   return (
     <div className="pb-24">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       {/* ── Breadcrumb & Back Link ─────────────────────────── */}
       <div className="border-b border-border/50 bg-surface/30">

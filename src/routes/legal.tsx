@@ -1,4 +1,5 @@
 import { createFileRoute, getRouteApi, Link } from "@tanstack/react-router";
+import { generateBreadcrumbJsonLd } from "@/lib/jsonld";
 import {
   Scale,
   ShieldCheck,
@@ -32,6 +33,13 @@ export const Route = createFileRoute("/legal")({
         content:
           "Official legal entity disclosures, terms compliance, and statutory consumer grievance redressal mechanism for Prynth under Indian E-Commerce Rules.",
       },
+      { property: "og:title", content: "Legal Disclosures & Grievance Redressal | Prynth" },
+      {
+        property: "og:description",
+        content:
+          "Official legal entity disclosures, terms compliance, and statutory consumer grievance redressal mechanism for Prynth under Indian E-Commerce Rules.",
+      },
+      { property: "og:url", content: "https://prynth.in/legal" },
     ],
   }),
 });
@@ -116,8 +124,17 @@ function LegalPage() {
     }
   };
 
+  const breadcrumbJsonLd = generateBreadcrumbJsonLd([
+    { name: "Home", url: "/" },
+    { name: "Legal & Grievance", url: "/legal" },
+  ]);
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 md:px-6 md:py-16">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       {/* Breadcrumb */}
       <nav aria-label="Breadcrumb" className="mb-6 flex items-center gap-2 text-xs text-muted">
         <Link to="/" className="hover:text-fg transition-colors">Home</Link>

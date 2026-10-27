@@ -33,22 +33,22 @@ export const Route = createFileRoute("/")({
       { rel: "canonical", href: "https://prynth.in/" },
     ],
     meta: [
-      { title: "Prynth — 3D Printing Services & Custom 3D Printed Products India" },
+      { title: "Prynth — 3D Printing Services & Custom Products India" },
       {
         name: "description",
         content:
-          "Prynth is an on-demand 3D printing studio based in Mumbai, India. Get instant 3D printing quotes for STL files, custom CAD design, and shop precision 3D printed desk accessories with delivery across India.",
+          "Mumbai 3D printing studio. Upload STL files for instant quotes, order custom CAD design, or shop precision 3D printed desk accessories with pan-India delivery.",
       },
       {
         name: "keywords",
         content:
           "3d printing services, 3d printed products, custom 3d printing, 3d printing india, mumbai 3d printing, desk accessories, rapid prototyping, prynth, online 3d printing",
       },
-      { property: "og:title", content: "Prynth — 3D Printing Services & Custom 3D Printed Products India" },
+      { property: "og:title", content: "Prynth — 3D Printing Services & Custom Products India" },
       {
         property: "og:description",
         content:
-          "High quality 3D prints at honest prices. Desk accessories, functional organization, and on-demand custom 3D printing & design. Ships across India.",
+          "Mumbai 3D printing studio. Upload STL files for instant quotes, order custom CAD design, or shop precision 3D printed desk accessories with pan-India delivery.",
       },
       { property: "og:url", content: "https://prynth.in/" },
     ],

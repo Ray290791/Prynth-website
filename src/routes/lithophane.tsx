@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { createFileRoute, useNavigate, Link, getRouteApi } from "@tanstack/react-router";
+import { generateBreadcrumbJsonLd } from "@/lib/jsonld";
 import {
   Upload,
   RotateCw,
@@ -48,7 +49,7 @@ export const Route = createFileRoute("/lithophane")({
       {
         name: "description",
         content:
-          "Transform your favorite memories into glowing 3D lithophanes by Prynth. Available as sunlit window keepsakes or with warm LED light boxes. Handcrafted and shipped across India.",
+          "Turn your favorite memories into glowing 3D lithophanes. Available as sunlit window keepsakes or with warm LED light boxes. Insured pan-India delivery.",
       },
       {
         name: "keywords",
@@ -59,7 +60,7 @@ export const Route = createFileRoute("/lithophane")({
       {
         property: "og:description",
         content:
-          "Transform your favorite memories into glowing 3D lithophanes. Available with warm LED light boxes and free delivery across India.",
+          "Turn your favorite memories into glowing 3D lithophanes. Available as sunlit window keepsakes or with warm LED light boxes. Insured pan-India delivery.",
       },
       { property: "og:url", content: "https://prynth.in/lithophane" },
     ],
@@ -359,6 +360,17 @@ function LithophaneStudioPage() {
       </div>
 
       <div className="mx-auto max-w-6xl px-4 py-8 md:px-6 md:py-12">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(
+              generateBreadcrumbJsonLd([
+                { name: "Home", url: "/" },
+                { name: "Lithophane Studio", url: "/lithophane" },
+              ])
+            ),
+          }}
+        />
         {/* Editorial Hero Header */}
         <div className="max-w-3xl space-y-4">
           <div className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-surface/80 px-3.5 py-1 text-xs font-medium text-fg shadow-xs backdrop-blur-md">

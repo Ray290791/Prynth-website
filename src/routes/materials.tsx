@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { generateBreadcrumbJsonLd } from "@/lib/jsonld";
 import { useQuery } from "@tanstack/react-query";
 import { getMaterials, type Material } from "@/lib/materials-fns";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +18,7 @@ export const Route = createFileRoute("/materials")({
       {
         name: "description",
         content:
-          "Complete technical guide to 3D printing filaments at Prynth. Compare mechanical strength, heat resistance, UV durability, and engineering use cases for functional 3D prints.",
+          "Technical guide to 3D printing filaments at Prynth. Compare PLA, PETG, ABS, and ASA mechanical strength, heat deflection, and engineering use cases.",
       },
       {
         name: "keywords",
@@ -28,7 +29,7 @@ export const Route = createFileRoute("/materials")({
       {
         property: "og:description",
         content:
-          "Complete technical guide to 3D printing filaments at Prynth. Compare mechanical strength, heat resistance, and UV durability.",
+          "Technical guide to 3D printing filaments at Prynth. Compare PLA, PETG, ABS, and ASA mechanical strength, heat deflection, and engineering use cases.",
       },
       { property: "og:url", content: "https://prynth.in/materials" },
     ],
@@ -49,6 +50,17 @@ export default function MaterialsPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-20 animate-in fade-in duration-300">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            generateBreadcrumbJsonLd([
+              { name: "Home", url: "/" },
+              { name: "Materials", url: "/materials" },
+            ])
+          ),
+        }}
+      />
       {/* Hero Section */}
       <div className="relative rounded-2xl border border-border bg-surface p-8 md:p-12 shadow-xs">
         <div className="relative z-10 max-w-2xl">

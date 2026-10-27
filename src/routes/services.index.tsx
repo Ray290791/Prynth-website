@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { generateBreadcrumbJsonLd } from "@/lib/jsonld";
 import {
   DraftingCompass,
   Cpu,
@@ -88,11 +89,20 @@ function ServicesIndexPage() {
     },
   };
 
+  const breadcrumbJsonLd = generateBreadcrumbJsonLd([
+    { name: "Home", url: "/" },
+    { name: "Services", url: "/services" },
+  ]);
+
   return (
     <div className="pb-24">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(servicesJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       {/* ── Hero ───────────────────────────────────────────── */}
       <section className="relative overflow-hidden border-b border-border/60 bg-surface/30 py-16 md:py-24">

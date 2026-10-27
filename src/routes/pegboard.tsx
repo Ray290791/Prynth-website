@@ -1,4 +1,5 @@
 import { createFileRoute, Link, getRouteApi, useNavigate } from "@tanstack/react-router";
+import { generateBreadcrumbJsonLd, generateFaqJsonLd } from "@/lib/jsonld";
 import { useState, useMemo } from "react";
 import {
   Sparkles,
@@ -36,11 +37,11 @@ export const Route = createFileRoute("/pegboard")({
       { rel: "canonical", href: "https://prynth.in/pegboard" },
     ],
     meta: [
-      { title: "Modular Pegboard System — 3D Printed Desk & Wall Organizer | Prynth" },
+      { title: "Modular Pegboard System — 3D Printed Desk Organizer | Prynth" },
       {
         name: "description",
         content:
-          "Transform your desk with the Prynth modular pegboard organizer. Precision 3D-printed interlocking grid system with damage-free adhesive mounting and snap-lock accessories. Made in India.",
+          "Transform your workspace with Prynth's modular 3D printed pegboard. Interlocking tile grid, snap-fit hooks, trays, and phone stands with pan-India delivery.",
       },
       {
         name: "keywords",
@@ -51,7 +52,7 @@ export const Route = createFileRoute("/pegboard")({
       {
         property: "og:description",
         content:
-          "Precision 3D-printed modular interlocking grid organizer with damage-free adhesive mounting and snap-lock accessories.",
+          "Transform your workspace with Prynth's modular 3D printed pegboard. Interlocking tile grid, snap-fit hooks, trays, and phone stands with pan-India delivery.",
       },
       { property: "og:url", content: "https://prynth.in/pegboard" },
     ],
@@ -318,8 +319,27 @@ export function PegboardPage() {
     },
   ];
 
+  const breadcrumbJsonLd = generateBreadcrumbJsonLd([
+    { name: "Home", url: "/" },
+    { name: "Modular Pegboard", url: "/pegboard" },
+  ]);
+
+  const faqJsonLd = generateFaqJsonLd(
+    FAQS.map((f) => ({ question: f.q, answer: f.a }))
+  );
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 md:px-6 md:py-14 space-y-16 sm:space-y-24">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      {faqJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        />
+      )}
       {/* HERO SECTION */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
         {/* LEFT: INTERACTIVE PRODUCT GALLERY */}

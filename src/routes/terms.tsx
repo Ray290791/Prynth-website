@@ -1,4 +1,5 @@
 import { createFileRoute, getRouteApi } from "@tanstack/react-router";
+import { generateBreadcrumbJsonLd } from "@/lib/jsonld";
 import {
   Scale,
   ShieldCheck,
@@ -23,6 +24,13 @@ export const Route = createFileRoute("/terms")({
         content:
           "Terms and Conditions governing orders, custom 3D printing manufacturing services, product safety disclaimers, and website usage at Prynth.",
       },
+      { property: "og:title", content: "Terms & Conditions & Safety Disclaimers | Prynth" },
+      {
+        property: "og:description",
+        content:
+          "Terms and Conditions governing orders, custom 3D printing manufacturing services, product safety disclaimers, and website usage at Prynth.",
+      },
+      { property: "og:url", content: "https://prynth.in/terms" },
     ],
   }),
 });
@@ -174,8 +182,17 @@ export function TermsPage() {
     },
   ];
 
+  const breadcrumbJsonLd = generateBreadcrumbJsonLd([
+    { name: "Home", url: "/" },
+    { name: "Terms & Conditions", url: "/terms" },
+  ]);
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 md:px-6 md:py-20 animate-in fade-in duration-300 space-y-10">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <div>
         <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3.5 py-1 text-xs font-semibold text-accent">
           <Scale className="size-3.5" />

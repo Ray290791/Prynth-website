@@ -1,4 +1,5 @@
 import { createFileRoute, Link, getRouteApi } from "@tanstack/react-router";
+import { generateBreadcrumbJsonLd } from "@/lib/jsonld";
 import { Truck, Clock, ShieldCheck, Box, Zap, MapPin, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatINR } from "@/lib/format";
@@ -8,13 +9,23 @@ const rootRoute = getRouteApi("__root__");
 export const Route = createFileRoute("/shipping")({
   component: ShippingPage,
   head: () => ({
+    links: [
+      { rel: "canonical", href: "https://prynth.in/shipping" },
+    ],
     meta: [
-      { title: "Shipping & Delivery Policy | prynth!" },
+      { title: "Shipping & Delivery Policy | Prynth India" },
       {
         name: "description",
         content:
-          "Fast, insured shipping across India. Standard 3–5 day delivery, Express courier options, and free shipping on qualifying orders.",
+          "Fast, insured shipping across India. Standard 3–5 day delivery, Express air courier options, and free standard delivery on orders above ₹349.",
       },
+      { property: "og:title", content: "Shipping & Delivery Policy | Prynth India" },
+      {
+        property: "og:description",
+        content:
+          "Fast, insured shipping across India. Standard 3–5 day delivery, Express air courier options, and free standard delivery on orders above ₹349.",
+      },
+      { property: "og:url", content: "https://prynth.in/shipping" },
     ],
   }),
 });
@@ -34,8 +45,17 @@ export function ShippingPage() {
     { name: "India Post Speed Post", badge: "Remote PIN Code Coverage" },
   ];
 
+  const breadcrumbJsonLd = generateBreadcrumbJsonLd([
+    { name: "Home", url: "/" },
+    { name: "Shipping Policy", url: "/shipping" },
+  ]);
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 md:px-6 md:py-20 animate-in fade-in duration-300 space-y-12">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       {/* Header */}
       <div>
         <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3.5 py-1 text-xs font-semibold text-accent">

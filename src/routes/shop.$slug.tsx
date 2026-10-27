@@ -1,4 +1,5 @@
-import { createFileRoute, Link, useNavigate, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, notFound, getRouteApi } from "@tanstack/react-router";
+import { generateProductJsonLd, generateBreadcrumbJsonLd } from "@/lib/jsonld";
 import { ShoppingBag, Heart, Minus, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -22,6 +23,8 @@ import { VolumeDiscountBanner } from "@/components/volume-discount-banner";
 import { WhatsAppInlineButton } from "@/components/whatsapp-support";
 import { calculateDiscountedUnitPrice } from "@/lib/volume-discounts";
 
+const rootRoute = getRouteApi("__root__");
+
 export const Route = createFileRoute("/shop/$slug")({
   loader: async ({ params }) => {
     const product = await getProductBySlug({ data: params.slug });
@@ -40,20 +43,29 @@ export const Route = createFileRoute("/shop/$slug")({
         { rel: "canonical", href: `https://prynth.in/shop/${p.slug}` },
       ],
       meta: [
-        { title: `${p.name} — 3D Printed Product India | Prynth` },
-        { name: "description", content: `${p.name} by Prynth. ${p.description.substring(0, 130)} Precision 3D printed with delivery across India.` },
+        { title: `${p.name} | Prynth 3D Products India` },
+        {
+          name: "description",
+          content: `${p.name} by Prynth. ${p.description.replace(/\s+/g, " ").slice(0, 75).trim()}... Precision 3D printed with pan-India delivery.`,
+        },
         {
           name: "keywords",
           content: `${p.name}, 3d printed products, 3d printed desk accessories, buy ${p.name} online, prynth`,
         },
-        { property: "og:title", content: `${p.name} | Prynth 3D Products` },
-        { property: "og:description", content: p.description.substring(0, 160) },
+        { property: "og:title", content: `${p.name} | Prynth 3D Products India` },
+        {
+          property: "og:description",
+          content: `${p.name} by Prynth. ${p.description.replace(/\s+/g, " ").slice(0, 75).trim()}... Precision 3D printed with pan-India delivery.`,
+        },
         { property: "og:image", content: p.image },
         { property: "og:type", content: "product" },
         { property: "og:url", content: `https://prynth.in/shop/${p.slug}` },
         { name: "twitter:card", content: "summary_large_image" },
         { name: "twitter:title", content: `${p.name} | Prynth` },
-        { name: "twitter:description", content: p.description.substring(0, 160) },
+        {
+          name: "twitter:description",
+          content: `${p.name} by Prynth. ${p.description.replace(/\s+/g, " ").slice(0, 75).trim()}... Precision 3D printed with pan-India delivery.`,
+        },
         { name: "twitter:image", content: p.image },
       ],
     };
@@ -63,6 +75,8 @@ export const Route = createFileRoute("/shop/$slug")({
 
 function ProductPage() {
   const { product, related, reviews } = Route.useLoaderData();
+  const rootData = rootRoute.useLoaderData();
+  const settings = rootData?.settings;
   const user = useCurrentUser();
   const navigate = useNavigate();
   const add = useCart((s) => s.add);
@@ -226,48 +240,35 @@ function ProductPage() {
     }
   }
 
-  const productJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    "name": product.name,
-    "description": product.description,
-    "image": product.image.startsWith("http") ? product.image : `https://prynth.in${product.image}`,
-    "sku": product.slug,
-    "countryOfOrigin": {
-      "@type": "Country",
-      "name": "India",
+  const productJsonLd = generateProductJsonLd({
+    slug: product.slug,
+    name: product.name,
+    description: product.description,
+    image: product.image,
+    price: displayPrice,
+    inStock: !isOutOfStock,
+    material: product.material,
+    shippingSettings: {
+      standard_shipping_fee: settings?.standard_shipping_fee,
+      free_shipping_threshold: settings?.free_shipping_threshold,
     },
-    "brand": {
-      "@type": "Brand",
-      "name": "Prynth",
-    },
-    "manufacturer": {
-      "@type": "Organization",
-      "name": "Prynth 3D Studio",
-      "address": {
-        "@type": "PostalAddress",
-        "addressCountry": "IN",
-      },
-    },
-    "offers": {
-      "@type": "Offer",
-      "url": `https://prynth.in/shop/${product.slug}`,
-      "priceCurrency": "INR",
-      "price": displayPrice,
-      "availability": isOutOfStock ? "https://schema.org/OutOfStock" : "https://schema.org/InStock",
-      "itemCondition": "https://schema.org/NewCondition",
-      "seller": {
-        "@type": "Organization",
-        "name": "Prynth",
-      },
-    },
-  };
+  });
+
+  const breadcrumbJsonLd = generateBreadcrumbJsonLd([
+    { name: "Home", url: "/" },
+    { name: "Shop", url: "/shop" },
+    { name: product.name, url: `/shop/${product.slug}` },
+  ]);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 pb-32 md:px-6 md:py-16 md:pb-16 relative">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <p className="text-sm text-subtle">
         <Link to="/shop" className="hover:text-fg">

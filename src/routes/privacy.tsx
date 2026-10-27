@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { openCookiePreferences } from "@/components/cookie-consent";
+import { generateBreadcrumbJsonLd } from "@/lib/jsonld";
 
 const rootRoute = getRouteApi("__root__");
 
@@ -32,8 +33,15 @@ export const Route = createFileRoute("/privacy")({
       {
         name: "description",
         content:
-          "Statutory Privacy Policy for Prynth. Compliant with the Indian DPDP Act 2023, Consumer Protection (E-Commerce) Rules 2020, IT Act, GDPR, and US CCPA/COPPA regulations.",
+          "Privacy Policy for Prynth. Explains data collection, processing, and rights under the Indian DPDP Act 2023 and Consumer Protection (E-Commerce) Rules.",
       },
+      { property: "og:title", content: "Privacy Policy & Statutory Disclosures | Prynth" },
+      {
+        property: "og:description",
+        content:
+          "Privacy Policy for Prynth. Explains data collection, processing, and rights under the Indian DPDP Act 2023 and Consumer Protection (E-Commerce) Rules.",
+      },
+      { property: "og:url", content: "https://prynth.in/privacy" },
     ],
   }),
 });
@@ -270,8 +278,17 @@ export function PrivacyPage() {
     },
   ];
 
+  const breadcrumbJsonLd = generateBreadcrumbJsonLd([
+    { name: "Home", url: "/" },
+    { name: "Privacy Policy", url: "/privacy" },
+  ]);
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 md:px-6 md:py-20 animate-in fade-in duration-300 space-y-10">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <div>
         <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3.5 py-1 text-xs font-semibold text-accent">
           <Shield className="size-3.5" />

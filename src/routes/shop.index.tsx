@@ -1,4 +1,5 @@
 import { createFileRoute, getRouteApi } from "@tanstack/react-router";
+import { generateBreadcrumbJsonLd } from "@/lib/jsonld";
 
 const rootRoute = getRouteApi("__root__");
 import { useMemo, useState } from "react";
@@ -15,22 +16,22 @@ export const Route = createFileRoute("/shop/")({
       { rel: "canonical", href: "https://prynth.in/shop" },
     ],
     meta: [
-      { title: "Buy 3D Printed Products & Desk Organizers Online India | Prynth" },
+      { title: "Shop 3D Printed Desk Organizers & Accessories | Prynth India" },
       {
         name: "description",
         content:
-          "Explore modern 3D printed products by Prynth. Shop modular pegboard organizers, headphone stands, planters, cable management, and desk accessories with delivery across India.",
+          "Shop precision 3D printed products by Prynth. Modular pegboard organizers, headphone stands, cable organizers, and desk accessories with pan-India delivery.",
       },
       {
         name: "keywords",
         content:
           "3d printed products, 3d printed desk accessories, buy 3d printed online india, modular pegboard, desk organization, 3d print shop, prynth",
       },
-      { property: "og:title", content: "Buy 3D Printed Products & Desk Organizers Online India | Prynth" },
+      { property: "og:title", content: "Shop 3D Printed Desk Organizers & Accessories | Prynth India" },
       {
         property: "og:description",
         content:
-          "Browse precision 3D printed desk organizers, headphone stands, cable management, modular pegboards, and modern functional decor.",
+          "Shop precision 3D printed products by Prynth. Modular pegboard organizers, headphone stands, cable organizers, and desk accessories with pan-India delivery.",
       },
       { property: "og:url", content: "https://prynth.in/shop" },
     ],
@@ -93,11 +94,20 @@ function ShopPage() {
     },
   };
 
+  const breadcrumbJsonLd = generateBreadcrumbJsonLd([
+    { name: "Home", url: "/" },
+    { name: "Shop", url: "/shop" },
+  ]);
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-16">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(shopJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <div className="max-w-2xl">
         <p className="text-[11px] font-semibold tracking-[0.2em] text-accent uppercase">

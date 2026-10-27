@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate, Link, getRouteApi } from "@tanstack/react-router";
+import { generateBreadcrumbJsonLd } from "@/lib/jsonld";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -26,22 +27,22 @@ export const Route = createFileRoute("/custom")({
       { rel: "canonical", href: "https://prynth.in/custom" },
     ],
     meta: [
-      { title: "Custom 3D Printing Service India — Instant STL Quote & CAD Design | Prynth" },
+      { title: "Custom 3D Printing Service India — Instant STL Quote | Prynth" },
       {
         name: "description",
         content:
-          "Upload 3D models (STL, 3MF, OBJ) for instant online 3D printing quotes or submit custom CAD design ideas (STEP, F3D). High-precision rapid prototyping across India by Prynth.",
+          "Upload 3D models (STL, 3MF, OBJ) for instant printing quotes, or submit custom CAD ideas (STEP, F3D). High-precision rapid prototyping across India by Prynth.",
       },
       {
         name: "keywords",
         content:
           "custom 3d printing service, online 3d printing quote, stl 3d print india, rapid prototyping service, 3d print on demand, cad design service, prynth",
       },
-      { property: "og:title", content: "Custom 3D Printing Service India — Instant STL Quote & CAD | Prynth" },
+      { property: "og:title", content: "Custom 3D Printing Service India — Instant STL Quote | Prynth" },
       {
         property: "og:description",
         content:
-          "Bring your 3D models and ideas to reality. Instant slice & print estimation for STL, 3MF, and OBJ files, or submit concepts for custom modeling and fabrication.",
+          "Upload 3D models (STL, 3MF, OBJ) for instant printing quotes, or submit custom CAD ideas (STEP, F3D). High-precision rapid prototyping across India by Prynth.",
       },
       { property: "og:url", content: "https://prynth.in/custom" },
     ],
@@ -80,8 +81,17 @@ function CustomPage() {
     void navigate({ search: { path: next, edit, idea: searchIdea } });
   }
 
+  const breadcrumbJsonLd = generateBreadcrumbJsonLd([
+    { name: "Home", url: "/" },
+    { name: "Custom Studio", url: "/custom" },
+  ]);
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-16">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-[11px] font-medium tracking-[0.18em] text-subtle uppercase">

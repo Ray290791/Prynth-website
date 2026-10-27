@@ -1,4 +1,5 @@
 import { createFileRoute, Link, getRouteApi } from "@tanstack/react-router";
+import { generateBreadcrumbJsonLd } from "@/lib/jsonld";
 import { useQuery } from "@tanstack/react-query";
 import { getFaqs, type Faq } from "@/lib/faq-fns";
 import { HelpCircle, Search, ChevronDown, MessageSquare, ArrowRight } from "lucide-react";
@@ -76,6 +77,11 @@ export function FaqPage() {
     );
   };
 
+  const breadcrumbJsonLd = generateBreadcrumbJsonLd([
+    { name: "Home", url: "/" },
+    { name: "FAQ", url: "/faq" },
+  ]);
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 md:px-6 md:py-20 animate-in fade-in duration-300 space-y-10">
       {faqJsonLd && (
@@ -84,6 +90,10 @@ export function FaqPage() {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
         />
       )}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       {/* Header */}
       <div>
         <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3.5 py-1 text-xs font-semibold text-accent">

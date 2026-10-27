@@ -112,11 +112,11 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: "Prynth — 3D Printing Services & Custom 3D Printed Products in India" },
+      { title: "Prynth — 3D Printing Services & Custom Products India" },
       {
         name: "description",
         content:
-          "Prynth is an on-demand 3D printing studio based in Mumbai, India. Custom rapid prototyping, CAD design, online 3D printing quotes, and modern functional desk accessories shipped across India.",
+          "Prynth is an on-demand 3D printing studio based in Mumbai. Rapid prototyping, custom CAD design, instant STL quotes, and functional desk products across India.",
       },
       {
         name: "keywords",
@@ -136,12 +136,12 @@ export const Route = createRootRoute({
       },
       {
         property: "og:title",
-        content: "Prynth — 3D Printing Services & Custom 3D Printed Products in India",
+        content: "Prynth — 3D Printing Services & Custom Products India",
       },
       {
         property: "og:description",
         content:
-          "Quality 3D printing services and modern functional prints at honest prices. Ready-made pieces and custom print or design, ships across India.",
+          "Prynth is an on-demand 3D printing studio based in Mumbai. Rapid prototyping, custom CAD design, instant STL quotes, and functional desk products across India.",
       },
       {
         property: "og:image",
@@ -153,12 +153,12 @@ export const Route = createRootRoute({
       },
       {
         name: "twitter:title",
-        content: "Prynth — 3D Printing Services & Custom 3D Printed Products in India",
+        content: "Prynth — 3D Printing Services & Custom Products India",
       },
       {
         name: "twitter:description",
         content:
-          "Quality 3D printing services and modern functional prints at honest prices. Ready-made pieces and custom print or design, ships across India.",
+          "Prynth is an on-demand 3D printing studio based in Mumbai. Rapid prototyping, custom CAD design, instant STL quotes, and functional desk products across India.",
       },
       {
         name: "twitter:image",
@@ -221,7 +221,7 @@ const SITE_JSON_LD = {
       "inLanguage": "en-IN",
     },
     {
-      "@type": ["Store", "LocalBusiness"],
+      "@type": ["Organization", "Store", "LocalBusiness"],
       "@id": "https://prynth.in/#organization",
       "name": "Prynth",
       "legalName": "Prynth 3D Printing Studio",
@@ -230,6 +230,15 @@ const SITE_JSON_LD = {
       "logo": "https://prynth.in/brand/mark.png",
       "image": "https://prynth.in/og.jpg",
       "description": "Prynth is an on-demand 3D printing studio based in Mumbai, India. We provide instant custom 3D printing from STL/3MF files, CAD modeling, rapid prototyping, and high-quality ready-made functional desk and home products with nationwide delivery.",
+      "contactPoint": [
+        {
+          "@type": "ContactPoint",
+          "email": "support@prynth.in",
+          "contactType": "customer service",
+          "areaServed": "IN",
+          "availableLanguage": ["en", "hi"],
+        },
+      ],
       "address": {
         "@type": "PostalAddress",
         "addressLocality": "Mumbai",

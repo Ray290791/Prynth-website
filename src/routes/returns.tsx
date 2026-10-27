@@ -1,4 +1,5 @@
 import { createFileRoute, Link, getRouteApi } from "@tanstack/react-router";
+import { generateBreadcrumbJsonLd } from "@/lib/jsonld";
 import { RotateCcw, ShieldCheck, CheckCircle2, AlertCircle, ArrowRight, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -7,13 +8,23 @@ const rootRoute = getRouteApi("__root__");
 export const Route = createFileRoute("/returns")({
   component: ReturnsPage,
   head: () => ({
+    links: [
+      { rel: "canonical", href: "https://prynth.in/returns" },
+    ],
     meta: [
-      { title: "Returns & Refund Policy | prynth!" },
+      { title: "Returns & Refund Policy | Prynth India" },
       {
         name: "description",
         content:
-          "Our straightforward 7-day guarantee. If something arrives damaged or off, we reprint it or issue a prompt refund within 5–7 business days.",
+          "7-day replacement guarantee by Prynth. If your 3D print arrives damaged or defective, we reprint it free or issue a prompt refund within 5–7 business days.",
       },
+      { property: "og:title", content: "Returns & Refund Policy | Prynth India" },
+      {
+        property: "og:description",
+        content:
+          "7-day replacement guarantee by Prynth. If your 3D print arrives damaged or defective, we reprint it free or issue a prompt refund within 5–7 business days.",
+      },
+      { property: "og:url", content: "https://prynth.in/returns" },
     ],
   }),
 });
@@ -40,8 +51,17 @@ export function ReturnsPage() {
     },
   ];
 
+  const breadcrumbJsonLd = generateBreadcrumbJsonLd([
+    { name: "Home", url: "/" },
+    { name: "Returns Policy", url: "/returns" },
+  ]);
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 md:px-6 md:py-20 animate-in fade-in duration-300 space-y-12">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       {/* Header */}
       <div>
         <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3.5 py-1 text-xs font-semibold text-emerald-400">

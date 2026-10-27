@@ -7,9 +7,9 @@
 | Priority | Total | Done | In Progress | Blocked | Todo |
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | **P0** | 11 | 8 | 0 | 3 | 0 |
-| **P1** | 18 | 6 | 0 | 4 | 8 |
+| **P1** | 18 | 8 | 0 | 4 | 6 |
 | **P2** | 13 | 0 | 0 | 4 | 9 |
-| **Total** | **42** | **14** | **0** | **11** | **17** |
+| **Total** | **42** | **16** | **0** | **11** | **15** |
 
 ---
 
@@ -43,9 +43,9 @@
 | **C7** | Move uploads to R2 and remove runtime DDL | **DONE** | Removed `ensureCustomFilesTable` runtime DDL on uploads; integrated Cloudflare R2 object storage with streaming support (`r2.server.ts`), saving only object keys in `custom_files.r2_key`; maintained fallback for existing base64 records. |
 | **C8** | Timing-safe signature check | **DONE** | Replaced string equality with `crypto.timingSafeEqual` on Node runtime and constant-time XOR comparison (`timingSafeEqualString`) on Web Crypto/edge runtime across both payment and webhook signature verification; verified via test suite `tests/signature.test.ts`. |
 | **C9** | Remove placeholder phone fallback | **DONE** | Removed "+91 98765 43210" fallback in `privacy.tsx`; only dynamic configured phone is displayed. |
-| **G1** | Structured data (JSON-LD) | **TODO** | Organization, Product with Offer, Breadcrumbs, FAQPage. |
+| **G1** | Structured data (JSON-LD) | **DONE** | Standardized JSON-LD generators for `Organization`, `Product` with `Offer` (price, availability, shippingDetails, returnPolicy from settings), `BreadcrumbList`, and `FAQPage`. Verified with 5 unit tests in `tests/jsonld.test.ts`. |
 | **G2** | LocalBusiness telephone warning | **BLOCKED** | Blocked on owner decision: phone number inclusion in markup vs accept warning. |
-| **G3** | Meta descriptions and titles | **TODO** | 120-160 char descriptions, ~60 char titles across all routes. |
+| **G3** | Meta descriptions and titles | **DONE** | Tuned meta descriptions to 120–160 chars and titles to ~60 chars across all public routes, removing unverified claims. |
 | **G4** | Authorship, dates and first-hand expertise | **BLOCKED** | Blocked on owner providing: founder name, bio, real photos. |
 | **L1** | Audit every route in light mode | **TODO** | Full visual check of light mode across viewports. |
 | **L2** | Move all colors to theme tokens | **TODO** | Semantic CSS variables for light & dark themes. |
