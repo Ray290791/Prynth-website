@@ -17,13 +17,13 @@ export const Route = createFileRoute("/shipping")({
       {
         name: "description",
         content:
-          "Fast, insured shipping across India. Standard 3–5 day delivery, Express air courier options, and free standard delivery on orders above ₹349.",
+          "Fast, insured shipping across India. Standard 3–5 day delivery, Express air courier options, and free standard delivery on qualifying orders.",
       },
       { property: "og:title", content: "Shipping & Delivery Policy | Prynth India" },
       {
         property: "og:description",
         content:
-          "Fast, insured shipping across India. Standard 3–5 day delivery, Express air courier options, and free standard delivery on orders above ₹349.",
+          "Fast, insured shipping across India. Standard 3–5 day delivery, Express air courier options, and free standard delivery on qualifying orders.",
       },
       { property: "og:url", content: "https://prynth.in/shipping" },
     ],
@@ -83,17 +83,11 @@ export function ShippingPage() {
               Free over {formatINR(freeThreshold)}
             </span>
           </div>
-          <div className="flex flex-col gap-1">
-            <div className="flex items-baseline gap-2">
-              <span className="font-display text-3xl font-semibold text-fg">
-                {formatINR(49)}
-              </span>
-              <span className="text-xs text-muted">Maharashtra (PINs 40–44)</span>
-            </div>
-            <div className="flex items-baseline gap-2 text-xs text-muted">
-              <span>{formatINR(standardFee)}</span>
-              <span>rest of India</span>
-            </div>
+          <div className="flex items-baseline gap-2">
+            <span className="font-display text-3xl font-semibold text-fg">
+              {formatINR(standardFee)}
+            </span>
+            <span className="text-xs text-muted">flat rate across India</span>
           </div>
           <p className="text-sm text-muted leading-relaxed">
             Delivered in <strong>3–5 business days</strong> after printing. Ideal

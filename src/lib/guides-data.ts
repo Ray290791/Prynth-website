@@ -58,7 +58,7 @@ export const GUIDES: GuideArticle[] = [
       {
         heading: "Typical Turnaround Times and Pan-India Shipping",
         content:
-          "Standard custom print orders in Mumbai are manufactured within 2 to 4 business days. Ground courier shipping across Tier 1 and Tier 2 cities in India takes 3 to 5 business days (₹49 within Maharashtra, ₹79 rest of India, or free over ₹399), while priority Air Express reaches most metro cities within 24 to 48 hours for a flat ₹189 fee.",
+          "Standard custom print orders in Mumbai are manufactured within 2 to 4 business days. Ground courier shipping across Tier 1 and Tier 2 cities in India takes 3 to 5 business days (₹79 flat rate across India, or free over ₹399), while priority Air Express reaches most metro cities within 24 to 48 hours for a flat ₹189 fee.",
       },
     ],
     sources: [

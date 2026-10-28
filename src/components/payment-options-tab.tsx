@@ -18,7 +18,6 @@ export function PaymentOptionsTab() {
   const [onlineEnabled, setOnlineEnabled] = useState(true);
   const [codEnabled, setCodEnabled] = useState(true);
   const [upiEnabled, setUpiEnabled] = useState(true);
-  const [codFee, setCodFee] = useState("40");
   const [upiId, setUpiId] = useState("");
 
   useEffect(() => {
@@ -26,7 +25,6 @@ export function PaymentOptionsTab() {
       setOnlineEnabled(settings.payment_online_enabled !== "false");
       setCodEnabled(settings.payment_cod_enabled !== "false");
       setUpiEnabled(settings.payment_upi_enabled !== "false");
-      setCodFee(settings.cod_fee || "40");
       setUpiId(settings.payment_upi_id || "");
     }
   }, [settings]);
@@ -44,7 +42,6 @@ export function PaymentOptionsTab() {
           payment_cod_enabled: codEnabled ? "true" : "false",
           payment_upi_enabled: upiEnabled ? "true" : "false",
           payment_upi_id: upiId.trim(),
-          cod_fee: codFee.trim() || "40",
         },
       });
     },
@@ -169,29 +166,16 @@ export function PaymentOptionsTab() {
           </div>
 
           {codEnabled && (
-            <div className="mt-5 border-t border-border/60 pt-4 pl-0 sm:pl-13.5">
-              <div className="max-w-xs">
-                <Label htmlFor="cod_fee" className="text-xs text-muted">
-                  COD Handling Fee (₹)
-                </Label>
-                <div className="relative mt-1.5">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">
-                    ₹
-                  </span>
-                  <Input
-                    id="cod_fee"
-                    type="number"
-                    min="0"
-                    value={codFee}
-                    onChange={(e) => setCodFee(e.target.value)}
-                    className="pl-7"
-                    placeholder="40"
-                  />
-                </div>
-                <p className="text-[11px] text-muted mt-1">
-                  Added to the order total when customer chooses Pay on Delivery.
-                </p>
+            <div className="mt-5 border-t border-border/60 pt-4 pl-0 sm:pl-13.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="text-muted">COD Collection Surcharge:</span>
+                <span className="font-semibold text-fg bg-surface-2 px-2.5 py-1 rounded-lg border border-border tabular-nums">
+                  ₹{settings?.cod_fee || "39"}
+                </span>
               </div>
+              <p className="text-[11px] text-muted">
+                Managed centrally from <strong className="text-fg">Site Settings → Shipping &amp; Delivery Rates</strong>.
+              </p>
             </div>
           )}
         </div>

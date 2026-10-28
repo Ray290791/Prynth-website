@@ -199,7 +199,7 @@ c:\Users\raybe\Documents\Prynth!\Prynth! Website\
 ### 5.2 Payment Methods
 1. **Online Prepayment:** Cards (Visa, Mastercard, RuPay), Netbanking, Wallets via Razorpay.
 2. **UPI Payments:** Direct UPI intent and dynamic QR codes.
-3. **Cash on Delivery (COD):** Available across India with a **₹40** collection fee.
+3. **Cash on Delivery (COD):** Available across India with a **₹39** collection fee.
 
 ### 5.3 Return, Refund & Defect Guarantee
 - **7-Day Reprint Guarantee:** If an item arrives broken, cracked, or defective from transit, Prynth! provides a free reprint upon receipt of photo verification within 7 days of delivery.

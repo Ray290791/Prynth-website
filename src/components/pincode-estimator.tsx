@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { getRouteApi } from "@tanstack/react-router";
 import { Truck, CheckCircle2, MapPin, Sparkles, AlertCircle } from "lucide-react";
 import { formatINR } from "@/lib/format";
+import { FREE_SHIPPING_AT, STANDARD_SHIPPING } from "@/lib/cart-store";
 
 const rootRoute = getRouteApi("__root__");
 
@@ -65,7 +66,7 @@ export function calculateDeliveryEstimate(pincode: string): PincodeEstimate | nu
 }
 
 export function PincodeEstimator({
-  itemPrice = 349,
+  itemPrice = FREE_SHIPPING_AT,
   compact = false,
   className = "",
 }: {
@@ -74,8 +75,8 @@ export function PincodeEstimator({
   className?: string;
 }) {
   const rootData = rootRoute.useLoaderData();
-  const freeThreshold = Number(rootData?.settings?.free_shipping_threshold) || 349;
-  const standardFee = Number(rootData?.settings?.standard_shipping_fee) || 79;
+  const freeThreshold = Number(rootData?.settings?.free_shipping_threshold) || FREE_SHIPPING_AT;
+  const standardFee = Number(rootData?.settings?.standard_shipping_fee) || STANDARD_SHIPPING;
 
   const [pincode, setPincode] = useState("");
   const [estimate, setEstimate] = useState<PincodeEstimate | null>(null);

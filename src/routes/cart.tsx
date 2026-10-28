@@ -8,6 +8,7 @@ import {
   FREE_SHIPPING_AT,
   STANDARD_SHIPPING,
   EXPRESS_SHIPPING,
+  COD_FEE,
   shippingFee,
   hasNonCodItems,
   useCart,
@@ -42,7 +43,7 @@ function CartPage() {
   const freeThreshold = Number(settings?.free_shipping_threshold) || FREE_SHIPPING_AT;
   const standardFee = Number(settings?.standard_shipping_fee) || STANDARD_SHIPPING;
   const expressFee = Number(settings?.express_shipping_fee) || EXPRESS_SHIPPING;
-  const codFee = Number(settings?.cod_fee) || 49;
+  const codFee = Number(settings?.cod_fee) || COD_FEE;
 
   const hydrated = useHydrated();
   const items = useCart((s) => s.items);

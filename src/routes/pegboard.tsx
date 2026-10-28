@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatINR } from "@/lib/format";
-import { useCart } from "@/lib/cart-store";
+import { useCart, FREE_SHIPPING_AT } from "@/lib/cart-store";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { PincodeEstimator } from "@/components/pincode-estimator";
@@ -382,7 +382,7 @@ export function PegboardPage() {
             <div className="p-3 rounded-xl border border-border/70 bg-surface/40 text-center space-y-1">
               <Truck className="size-4 text-accent mx-auto" />
               <span className="text-xs font-semibold text-fg block">Free Standard Delivery</span>
-              <span className="text-[10px] text-muted block">On orders over {formatINR(Number(settings?.free_shipping_threshold) || 349)}</span>
+              <span className="text-[10px] text-muted block">On orders over {formatINR(Number(settings?.free_shipping_threshold) || FREE_SHIPPING_AT)}</span>
             </div>
             <div className="p-3 rounded-xl border border-border/70 bg-surface/40 text-center space-y-1">
               <ShieldCheck className="size-4 text-accent mx-auto" />

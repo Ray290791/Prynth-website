@@ -20,6 +20,7 @@ import { type Product } from "@/lib/products";
 import { getLastVisited } from "@/lib/product-history";
 import { cn } from "@/lib/utils";
 import { TestimonialsSection } from "@/components/testimonials-carousel";
+import { FREE_SHIPPING_AT, STANDARD_SHIPPING } from "@/lib/cart-store";
 
 
 export const Route = createFileRoute("/")({
@@ -139,7 +140,7 @@ function Home() {
     {
       icon: Truck,
       title: "Ships across India",
-      text: `Standard shipping ₹${settings.standard_shipping_fee || 79}, free over ₹${settings.free_shipping_threshold || 349}. Express priority delivery is always charged separately.`,
+      text: `Standard shipping ₹${settings.standard_shipping_fee || STANDARD_SHIPPING}, free over ₹${settings.free_shipping_threshold || FREE_SHIPPING_AT}. Express priority delivery is always charged separately.`,
     },
   ];
 

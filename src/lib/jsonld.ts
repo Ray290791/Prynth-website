@@ -4,6 +4,8 @@
  * Values are dynamically driven from site settings or product records.
  */
 
+import { FREE_SHIPPING_AT, STANDARD_SHIPPING } from "@/lib/cart-store";
+
 export interface BreadcrumbItem {
   name: string;
   url: string;
@@ -100,8 +102,8 @@ export function generateProductJsonLd({
   material,
   shippingSettings,
 }: ProductJsonLdOptions) {
-  const standardFee = Number(shippingSettings?.standard_shipping_fee ?? 79) || 79;
-  const threshold = Number(shippingSettings?.free_shipping_threshold ?? 349) || 349;
+  const standardFee = Number(shippingSettings?.standard_shipping_fee ?? STANDARD_SHIPPING) || STANDARD_SHIPPING;
+  const threshold = Number(shippingSettings?.free_shipping_threshold ?? FREE_SHIPPING_AT) || FREE_SHIPPING_AT;
   const effectiveShippingRate = price >= threshold ? 0 : standardFee;
 
   return {

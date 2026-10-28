@@ -3,7 +3,6 @@ import {
   shippingFee,
   FREE_SHIPPING_AT,
   STANDARD_SHIPPING,
-  MAHARASHTRA_STANDARD_SHIPPING,
   EXPRESS_SHIPPING,
   COD_FEE,
   isMaharashtraPincode,
@@ -53,8 +52,8 @@ describe("Shipping & Delivery Rules (S1, S2, S4)", () => {
   it("S3 & S6: default constants match owner approval (₹399 free threshold, ₹39 COD fee)", () => {
     expect(FREE_SHIPPING_AT).toBe(399);
     expect(COD_FEE).toBe(39);
-    expect(MAHARASHTRA_STANDARD_SHIPPING).toBe(49);
     expect(STANDARD_SHIPPING).toBe(79);
+    expect(EXPRESS_SHIPPING).toBe(189);
   });
 
   it("S5: correctly classifies Maharashtra pincodes (40-44 prefix)", () => {
@@ -73,17 +72,15 @@ describe("Shipping & Delivery Rules (S1, S2, S4)", () => {
     expect(isMaharashtraPincode(undefined)).toBe(false);
   });
 
-  it("S5: charges ₹49 standard shipping for Maharashtra and ₹79 for Rest of India below ₹399", () => {
-    const mhRates = { pincode: "400001" };
-    const restRates = { pincode: "560001" };
+  it("charges single standard delivery fee from site settings below threshold and free above", () => {
+    // Uses default standard fee (79)
+    expect(shippingFee(250, "standard")).toBe(79);
+    expect(shippingFee(399, "standard")).toBe(0);
 
-    // Below 399
-    expect(shippingFee(250, "standard", mhRates)).toBe(49);
-    expect(shippingFee(250, "standard", restRates)).toBe(79);
-
-    // At or above 399: both free
-    expect(shippingFee(399, "standard", mhRates)).toBe(0);
-    expect(shippingFee(399, "standard", restRates)).toBe(0);
+    // Uses dynamic fee from site settings (e.g. 89)
+    const dynamicRates = { standardFee: 89, freeThreshold: 399 };
+    expect(shippingFee(250, "standard", dynamicRates)).toBe(89);
+    expect(shippingFee(399, "standard", dynamicRates)).toBe(0);
   });
 
   it("S2: correctly identifies made-to-order items that restrict Cash on Delivery", () => {
