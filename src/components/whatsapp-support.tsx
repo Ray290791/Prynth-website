@@ -28,11 +28,24 @@ export function WhatsAppFloatingWidget() {
   });
 
   const isEnabled = settings?.whatsapp_enabled === "true";
-  if (!isEnabled) return null;
-
   const rawPhone = settings?.contact_whatsapp || settings?.contact_phone || "";
-  if (!rawPhone.trim()) return null;
   const cleanPhone = getCleanWhatsAppNumber(rawPhone);
+
+  // Auto-show a subtle prompt tooltip after 8 seconds on first visit
+  useEffect(() => {
+    if (!isEnabled || !rawPhone.trim()) return;
+    const hasSeen = sessionStorage.getItem("prynth_wa_prompt_seen");
+    if (!hasSeen && !hasPrompted) {
+      const timer = setTimeout(() => {
+        setIsOpen(true);
+        setHasPrompted(true);
+        sessionStorage.setItem("prynth_wa_prompt_seen", "true");
+      }, 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [isEnabled, rawPhone, hasPrompted]);
+
+  if (!isEnabled || !rawPhone.trim()) return null;
 
   // Generate context-aware prompt based on the current page
   const pathname = location.pathname;
@@ -58,19 +71,6 @@ export function WhatsAppFloatingWidget() {
     defaultPrompt = "Hi Prynth! I saw the print quality in your gallery. Can you produce something similar for my project?";
     badgeText = "Inquire About Prints";
   }
-
-  // Auto-show a subtle prompt tooltip after 8 seconds on first visit
-  useEffect(() => {
-    const hasSeen = sessionStorage.getItem("prynth_wa_prompt_seen");
-    if (!hasSeen && !hasPrompted) {
-      const timer = setTimeout(() => {
-        setIsOpen(true);
-        setHasPrompted(true);
-        sessionStorage.setItem("prynth_wa_prompt_seen", "true");
-      }, 8000);
-      return () => clearTimeout(timer);
-    }
-  }, [hasPrompted]);
 
   const handleOpenWhatsApp = () => {
     const url = buildWhatsAppUrl(cleanPhone, defaultPrompt);

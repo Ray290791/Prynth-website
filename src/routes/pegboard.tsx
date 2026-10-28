@@ -1,4 +1,4 @@
-import { createFileRoute, Link, getRouteApi, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, getRouteApi, useNavigate } from "@tanstack/react-router";
 import { generateBreadcrumbJsonLd, generateFaqJsonLd } from "@/lib/jsonld";
 import { useState, useMemo } from "react";
 import {
@@ -14,13 +14,9 @@ import {
   Maximize2,
   ChevronDown,
   RotateCcw,
-  Star,
   CheckCircle2,
-  HelpCircle,
-  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { formatINR } from "@/lib/format";
 import { useCart } from "@/lib/cart-store";
 import { toast } from "sonner";
@@ -103,7 +99,9 @@ export function PegboardPage() {
         const parsed = JSON.parse(settings.pegboard_images);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
-    } catch (_e) {}
+    } catch {
+      // Fallback to default images if parsing fails
+    }
     return [
       {
         url: "/products/modular-pegboard.jpg",
@@ -141,7 +139,9 @@ export function PegboardPage() {
           }));
         }
       }
-    } catch (_e) {}
+    } catch {
+      // Fallback to default presets if parsing fails
+    }
 
     return [
       {

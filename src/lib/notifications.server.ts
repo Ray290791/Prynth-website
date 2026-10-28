@@ -27,7 +27,7 @@ interface NotificationConfig {
  */
 export async function getNotificationConfig(): Promise<NotificationConfig> {
   const sql = await getSql();
-  let dbSettings: Record<string, string> = {};
+  const dbSettings: Record<string, string> = {};
   try {
     const rows = await sql<{ key: string; value: string }>`
       SELECT key, value FROM site_settings 
@@ -83,7 +83,7 @@ export async function dispatchNotification({
     try {
       if (config.whatsappProvider === "callmebot" && config.whatsappApiKey) {
         // Clean phone: remove spaces, dashes, parentheses and leading '+'
-        const cleanPhone = config.phoneNumber.replace(/[\s\-\(\)\+]/g, "");
+        const cleanPhone = config.phoneNumber.replace(/[\s()+-]/g, "");
         const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(cleanPhone)}&text=${encodeURIComponent(plainText)}&apikey=${encodeURIComponent(config.whatsappApiKey)}`;
         const res = await fetch(url);
         if (!res.ok) {
@@ -387,7 +387,7 @@ Reply in Admin: https://prynth.in/admin`;
 /**
  * Trigger a test alert to verify notification channels on the user's phone
  */
-export async function sendTestNotification(channel?: "all" | "whatsapp" | "telegram" | "sms" | "email") {
+export async function sendTestNotification(_channel?: "all" | "whatsapp" | "telegram" | "sms" | "email") {
   const timeStr = new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
   const plainText = 
 `🎉 PRYNTH PHONE ALERT TEST (${timeStr})

@@ -91,7 +91,9 @@ export function PincodeEstimator({
         setEstimate(calculateDeliveryEstimate(saved));
         setChecked(true);
       }
-    } catch {}
+    } catch {
+      // Ignore localStorage read errors in SSR or restricted environments
+    }
   }, []);
 
   const handleCheck = (e?: React.FormEvent) => {
@@ -111,7 +113,9 @@ export function PincodeEstimator({
 
     try {
       localStorage.setItem("prynth_user_pincode", clean);
-    } catch {}
+    } catch {
+      // Ignore localStorage write errors in private mode or quota exceeded
+    }
   };
 
   const isFreeDelivery = itemPrice >= freeThreshold;

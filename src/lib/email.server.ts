@@ -10,7 +10,7 @@ export async function getSenderEmail(): Promise<string> {
     if (rows.length > 0 && rows[0].value && rows[0].value.trim()) {
       return rows[0].value.trim();
     }
-  } catch (err) {
+  } catch {
     // If DB read fails, fall back to environment variable
   }
   return process.env.RESEND_FROM_EMAIL?.trim() || "onboarding@resend.dev";

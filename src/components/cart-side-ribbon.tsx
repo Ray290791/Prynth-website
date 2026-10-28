@@ -4,7 +4,6 @@ import {
   ShoppingBag,
   ChevronRight,
   ChevronLeft,
-  X,
   Trash2,
   Plus,
   Minus,

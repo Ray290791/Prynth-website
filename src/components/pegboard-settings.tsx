@@ -11,8 +11,6 @@ import {
   Plus,
   Trash2,
   Star,
-  Maximize2,
-  Grid,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -99,7 +97,9 @@ export function PegboardSettings({ settings, onQuickSave, isSaving }: PegboardSe
           }));
         }
       }
-    } catch (_e) {}
+    } catch {
+      // Fallback to default presets if parsing fails
+    }
     return defaultPresets;
   });
 

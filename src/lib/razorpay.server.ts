@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { getSql } from "./db";
 
 /**
@@ -197,14 +198,13 @@ export function timingSafeEqualString(a: string, b: string): boolean {
   }
 
   try {
-    const nodeCrypto = typeof require !== "undefined" ? require("crypto") : undefined;
-    if (nodeCrypto && typeof nodeCrypto.timingSafeEqual === "function") {
+    if (crypto && typeof crypto.timingSafeEqual === "function") {
       const bufA = Buffer.from(a, "utf-8");
       const bufB = Buffer.from(b, "utf-8");
       if (bufA.length === bufB.length) {
-        return nodeCrypto.timingSafeEqual(bufA, bufB);
+        return crypto.timingSafeEqual(bufA, bufB);
       }
-      nodeCrypto.timingSafeEqual(bufA, bufA);
+      crypto.timingSafeEqual(bufA, bufA);
       return false;
     }
   } catch {

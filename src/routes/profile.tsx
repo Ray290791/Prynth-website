@@ -13,7 +13,7 @@ import { updateUserProfile, setDefaultAddress, deleteAddress } from "@/lib/user-
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Layers, Clock, Camera, Package } from "lucide-react";
+import { Layers, Clock, Package } from "lucide-react";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -403,7 +403,9 @@ function ProfilePage() {
                     let parsed: any = null;
                     try {
                       parsed = JSON.parse(t.description);
-                    } catch {}
+                    } catch {
+                      // Fallback when ticket description is plain text
+                    }
 
                     const isCustom = Boolean(parsed?.isCustomRequest);
                     const isOpen = t.status === "open";

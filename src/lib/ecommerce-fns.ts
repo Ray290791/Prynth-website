@@ -62,7 +62,7 @@ export const trackProductView = createServerFn({ method: "POST" })
     return { success: true };
   });
 
-const couponCodeSchema = z.string().trim().min(2).max(30).regex(/^[a-zA-Z0-9_\-]+$/, "Invalid coupon format");
+const couponCodeSchema = z.string().trim().min(2).max(30).regex(/^[a-zA-Z0-9_-]+$/, "Invalid coupon format");
 
 export const validateCoupon = createServerFn({ method: "POST" })
   .validator((code: string) => couponCodeSchema.parse(code))
@@ -149,7 +149,7 @@ export const touchUserActivity = createServerFn({ method: "POST" })
             AND "expiresAt" > NOW() 
             AND "updatedAt" < NOW() - INTERVAL '1 minute'
         `;
-      } catch (err) {
+      } catch {
         // non-blocking fail-safe
       }
     }
@@ -248,7 +248,7 @@ export const getAnalyticsAdmin = createServerFn({ method: "GET" })
   });
 
 const cartSessionSchema = z.object({
-  id: z.string().min(8).max(64).regex(/^[a-zA-Z0-9_\-]+$/, "Invalid session ID format"),
+  id: z.string().min(8).max(64).regex(/^[a-zA-Z0-9_-]+$/, "Invalid session ID format"),
   email: z.string().email().max(150).optional().nullable(),
   items: z.array(z.any()).max(50, "Cart cannot exceed 50 items"),
 });
@@ -278,7 +278,7 @@ export const upsertCartSession = createServerFn({ method: "POST" })
 
 export const getCartSession = createServerFn({ method: "GET" })
   .validator((id: string) => {
-    if (!id || typeof id !== "string" || !/^[a-zA-Z0-9_\-]{8,64}$/.test(id)) {
+    if (!id || typeof id !== "string" || !/^[a-zA-Z0-9_-]{8,64}$/.test(id)) {
       return null;
     }
     return id;

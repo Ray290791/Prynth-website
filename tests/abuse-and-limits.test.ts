@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { RateLimiter, isBotUserAgent, timingSafeEqualString } from "../src/lib/rate-limiter";
+import { RateLimiter, isBotUserAgent } from "../src/lib/rate-limiter";
 
 describe("C5 & C6: Rate Limiting & Bot Protection", () => {
   it("RateLimiter enforces limits within window", () => {
