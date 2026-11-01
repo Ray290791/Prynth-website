@@ -88,7 +88,7 @@ export const DEFAULT_SERVICES: ServiceRecord[] = [
       {
         step: "04",
         title: "Test Print & Delivery",
-        description: "We test-print the part on our Bambu Lab fleet to guarantee fit, then deliver source files or ship the physical piece.",
+        description: "We test-print the part on our calibrated printers to guarantee fit, then deliver source files or ship the physical piece.",
       },
     ],
     faq: [
@@ -102,7 +102,7 @@ export const DEFAULT_SERVICES: ServiceRecord[] = [
       },
       {
         question: "Can you 3D print the model once it is designed?",
-        answer: "Absolutely. We seamlessly bridge the design into our print fleet, using durable PLA, PETG, ABS, or ASA and shipping across India.",
+        answer: "Absolutely. We seamlessly bridge the design into our studio printers, using durable PLA, PETG, ABS, or ASA and shipping across India.",
       },
     ],
     examples: [
@@ -308,7 +308,7 @@ export const DEFAULT_SERVICES: ServiceRecord[] = [
       {
         step: "02",
         title: "Printability & Slicing Review",
-        description: "Our fleet engineers verify wall thickness, overhang angles, and optimal orientation.",
+        description: "Our studio team verifies wall thickness, overhang angles, and optimal orientation.",
       },
       {
         step: "03",
@@ -381,8 +381,8 @@ export const DEFAULT_SERVICES: ServiceRecord[] = [
       },
       {
         step: "02",
-        title: "Fleet Print Farm Allocation",
-        description: "Upon approval, your order is distributed across multiple synchronized printers.",
+        title: "Production Batch Allocation",
+        description: "Upon approval, your order is allocated across dedicated calibrated printers.",
       },
       {
         step: "03",
@@ -402,7 +402,7 @@ export const DEFAULT_SERVICES: ServiceRecord[] = [
       },
       {
         question: "Do you offer GST input tax credit for businesses?",
-        answer: "Yes, enter your business GSTIN during checkout or quotation, and you will receive a tax invoice with full ITC eligibility.",
+        answer: "We issue commercial order receipts for all purchases. Formal tax invoices with GST input credit will be available once statutory GST registration is formalized.",
       },
     ],
     examples: [

@@ -1,6 +1,6 @@
 # Prynth!
 
-> Precision on-demand 3D printing and CAD engineering studio based in Mumbai, India. Operating an automated fleet of Bambu Lab CoreXY printers, Prynth crafts functional desk organizers, modular pegboard systems, custom mechanical prototypes, and photo lithophanes with 0.12mm layer precision. Shipped across India.
+> Precision on-demand 3D printing and CAD engineering studio based in Mumbai, India. Operating calibrated 3D printers, Prynth crafts functional desk organizers, modular pegboard systems, custom mechanical prototypes, and photo lithophanes with 0.12mm layer precision. Shipped across India.
 
 ## Key Services and Products
 
@@ -17,9 +17,9 @@
 
 - Minimum custom print order threshold: ₹149.
 - Setup fee: ₹49 per unique model geometry.
-- Standard shipping fee: ₹79 across India, free on orders over ₹349.
+- Standard shipping fee: ₹79 (free on qualifying orders over ₹399).
 - Express priority air delivery: ₹189 flat rate (always charged separately).
-- Payment methods: UPI, credit/debit cards, and net banking via Razorpay. COD available exclusively for ready-made catalog items.
+- Payment methods: UPI, credit/debit cards, and net banking via Razorpay.
 - Turnaround time: 2 to 4 business days for custom manufacturing, typical delivery in 3 to 5 business days across India.
 
 ## Support & Legal Disclosures

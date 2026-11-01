@@ -219,15 +219,15 @@ export const GUIDES: GuideArticle[] = [
     title: "Custom 3D Printing Service in Mumbai: Turnaround, Materials & Delivery",
     shortTitle: "3D Printing in Mumbai",
     metaDescription:
-      "Reliable on-demand custom 3D printing in Mumbai. High-speed Bambu CoreXY fleet, instant automated quotes, local pickup & express same-day courier dispatch.",
+      "Reliable on-demand custom 3D printing in Mumbai. Calibrated CoreXY 3D printers, instant automated quotes, local pickup & express courier dispatch.",
     category: "Local Manufacturing",
     readingTime: "3 min read",
     lastUpdated: "27 October 2026",
     author: "Ray Kapadia & Supas Kumar (Co-Founders, Prynth)",
     directAnswer:
-      "Prynth operates an automated Bambu CoreXY print farm based in Mumbai, delivering precision custom 3D prints across the Mumbai Metropolitan Region (MMR) and pan-India. With instant automated quoting, transparent pricing from ₹149, and typical production in 2 to 4 days, we support fast local courier dispatch across Mumbai, Thane, and Navi Mumbai.",
+      "Prynth operates calibrated CoreXY 3D printers based in Mumbai, delivering precision custom 3D prints across the Mumbai Metropolitan Region (MMR) and pan-India. With transparent pricing from ₹149 and typical production in 2 to 4 days, we support fast local courier dispatch across Mumbai, Thane, and Navi Mumbai.",
     keyTakeaways: [
-      "Local Mumbai manufacturing farm equipped with enclosed Bambu Lab CoreXY printers capable of 0.12mm high-resolution layer heights.",
+      "Local Mumbai studio equipped with enclosed CoreXY printers capable of 0.12mm high-resolution layer heights.",
       "Instant automated quoting on your 3D CAD models (STL, OBJ, 3MF, STEP) directly on prynth.in without waiting for email estimates.",
       "Local intra-city dispatch via express courier reaches Mumbai, Thane, and Navi Mumbai addresses within 24–48 hours of print completion.",
       "Zero tooling costs, transparent server-side pricing with all taxes included, and free standard delivery on orders over ₹399.",
@@ -241,7 +241,7 @@ export const GUIDES: GuideArticle[] = [
       {
         heading: "From Rapid Prototyping to Low-Volume Production Batches",
         content:
-          "Our automated Bambu CoreXY fleet runs around the clock with vibration compensation and active filament monitoring. We cater to single custom one-offs (minimum ₹149) as well as pilot production runs of 10 to 500 units with progressive volume discounts up to 25%.",
+          "Our calibrated CoreXY printers run with vibration compensation and active filament monitoring. We cater to single custom one-offs (minimum ₹149) as well as pilot production runs of 10 to 500 units with progressive volume discounts up to 25%.",
       },
       {
         heading: "How to Order Custom 3D Prints in Mumbai",
@@ -255,7 +255,7 @@ export const GUIDES: GuideArticle[] = [
         organization: "Government of Maharashtra Industry Department",
       },
       {
-        title: "Prynth Fleet Specifications & Lead Times",
+        title: "Prynth Studio Specifications & Lead Times",
         organization: "Prynth Engineering Studio, Mumbai",
       },
     ],

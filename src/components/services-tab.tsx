@@ -105,7 +105,7 @@ export function ServicesTab() {
         { step: "01", title: "Project Brief", description: "Review customer specs & sketches" },
         { step: "02", title: "Parametric CAD", description: "3D CAD modeling with tolerances" },
         { step: "03", title: "Digital Preview", description: "Customer review and approval" },
-        { step: "04", title: "Manufacture & Ship", description: "Bambu Lab fleet print & delivery" },
+        { step: "04", title: "Manufacture & Ship", description: "Studio 3D print & delivery" },
       ],
       faq: [
         { question: "What files do you deliver?", answer: "We deliver full STEP and STL/3MF files." },

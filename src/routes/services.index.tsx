@@ -269,7 +269,7 @@ function ServicesIndexPage() {
               <div className="font-mono text-xs font-bold text-accent mb-2">PHASE 04</div>
               <h3 className="font-semibold text-fg">Precision Print &amp; Courier</h3>
               <p className="text-xs text-muted mt-2 leading-relaxed">
-                Manufactured on our Bambu Lab fleet, deburred, dimensionally verified, and express couriered right to your doorstep across India.
+                Manufactured in our calibrated studio, deburred, dimensionally verified, and express couriered right to your doorstep.
               </p>
             </div>
           </div>

@@ -286,8 +286,8 @@ function ServiceDetailPage() {
                   <span className="text-fg font-mono font-medium">0.08mm – 0.28mm</span>
                 </div>
                 <div className="pt-2 flex justify-between items-center">
-                  <span className="text-muted">Production Fleet</span>
-                  <span className="text-fg font-medium">Bambu Lab CoreXY</span>
+                  <span className="text-muted">Studio Equipment</span>
+                  <span className="text-fg font-medium">Calibrated CoreXY</span>
                 </div>
                 <div className="pt-2 flex justify-between items-center">
                   <span className="text-muted">Coverage</span>

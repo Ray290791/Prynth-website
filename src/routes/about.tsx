@@ -168,10 +168,10 @@ export function AboutPage() {
             <div className="rounded-2xl border border-border bg-surface p-5 space-y-2">
               <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-accent font-semibold">
                 <Cpu className="size-4" />
-                <span>Production Fleet</span>
+                <span>Studio Equipment</span>
               </div>
-              <p className="font-display text-base font-semibold text-fg">Bambu Lab CoreXY</p>
-              <p className="text-xs text-muted">0.08mm–0.24mm precision enclosed print farm</p>
+              <p className="font-display text-base font-semibold text-fg">Calibrated CoreXY</p>
+              <p className="text-xs text-muted">0.08mm–0.24mm precision enclosed 3D printers</p>
             </div>
           </div>
         </div>

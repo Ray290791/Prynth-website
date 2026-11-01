@@ -180,13 +180,13 @@ function Home() {
             <div className="flex items-center gap-3 pt-0.5">
               <Wordmark className="text-xl sm:text-2xl tracking-tight opacity-95" />
               <span className="text-xs font-mono text-muted uppercase tracking-widest border-l border-border/60 pl-3">
-                Bambu CoreXY Fleet
+                Calibrated 3D Printers
               </span>
             </div>
 
             <p className="text-base sm:text-lg text-muted font-jakarta leading-relaxed max-w-lg font-light">
               {settings.hero_tagline ||
-                "Functional desk accessories, modular organization, and on-demand CAD engineering. Printed with micron precision on Bambu CoreXY."}
+                "Functional desk accessories, modular organization, and on-demand CAD engineering. Printed with high precision."}
             </p>
 
             {/* Focused action buttons */}
@@ -254,7 +254,7 @@ function Home() {
             {/* Floating fleet badge */}
             <div className="absolute -bottom-3 left-3 flex items-center gap-2 rounded-xl border border-border/80 bg-surface/90 px-3 py-1.5 shadow-md backdrop-blur-md">
               <span className="size-2 rounded-full bg-accent animate-pulse" />
-              <span className="text-xs font-medium text-fg">Bambu CoreXY Fleet</span>
+              <span className="text-xs font-medium text-fg">Calibrated CoreXY</span>
             </div>
           </div>
         </div>
@@ -392,7 +392,7 @@ function Home() {
               <span className="font-mono text-[11px] font-bold text-accent uppercase tracking-wider">03. Deliver</span>
               <h3 className="font-display text-xl font-semibold text-fg">Printed &amp; Shipped</h3>
               <p className="text-xs text-muted leading-relaxed font-jakarta">
-                Manufactured on our Bambu Lab fleet, quality checked, and delivered to your doorstep anywhere in India.
+                Manufactured in our Mumbai workshop, quality inspected, and delivered to your doorstep.
               </p>
             </div>
           </div>

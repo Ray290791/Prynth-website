@@ -305,7 +305,7 @@ export function PrivacyPage() {
                   <td className="py-2.5">Files uploaded to the instant quoting engine that do not proceed to checkout are automatically purged after 3 days.</td>
                 </tr>
                 <tr>
-                  <td className="py-2.5 font-medium text-fg">Tax Invoices &amp; Transaction Ledgers</td>
+                  <td className="py-2.5 font-medium text-fg">Order Receipts &amp; Commercial Records</td>
                   <td className="py-2.5 text-accent font-mono font-semibold">8 Years</td>
                   <td className="py-2.5">Mandatory statutory retention under Section 44AA of the Indian Income Tax Act, 1961 and Rule 6F of Income Tax Rules.</td>
                 </tr>

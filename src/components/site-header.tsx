@@ -51,7 +51,7 @@ const EXPLORE_ITEMS = [
   {
     to: "/about",
     label: "About Prynth",
-    desc: "Our Mumbai studio, philosophy & Bambu CoreXY fleet",
+    desc: "Our Mumbai studio, craft & philosophy",
     icon: Info,
   },
   {
