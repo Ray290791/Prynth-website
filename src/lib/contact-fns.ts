@@ -102,6 +102,16 @@ export const submitCustomDesignRequest = createServerFn({ method: "POST" })
     }
 
     const sql = await getSql();
+
+    // Gate C2: Check if custom orders are enabled
+    const { fetchSiteSettings } = await import("./settings-fns");
+    const settings = await fetchSiteSettings(sql);
+    if (settings.custom_orders_enabled !== "true") {
+      const err: any = new Error("Custom order inquiries are temporarily closed. Please join our waitlist.");
+      err.status = 403;
+      throw err;
+    }
+
     const userId = context.userId || `guest-${data.email}`;
 
     const ticketPayload = {
@@ -114,7 +124,7 @@ export const submitCustomDesignRequest = createServerFn({ method: "POST" })
       materialName: data.materialName || "PLA",
       colorName: data.colorName || "Standard",
       quantity: data.quantity || 1,
-      printerName: data.printerName || "Bambu Lab Fleet",
+      printerName: data.printerName || "Calibrated CoreXY Printer",
       specsSummary: data.specsSummary || "",
       photos: (data.photos || []).slice(0, 5),
     };

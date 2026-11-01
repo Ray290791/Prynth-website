@@ -35,6 +35,7 @@ import {
 } from "@/components/lithophane-framing-modal";
 import { DEFAULT_SAMPLE_PHOTO } from "@/lib/lithophane-samples";
 import { compressImageDataUrl } from "@/lib/image-utils";
+import { WaitlistForm } from "@/components/waitlist-form";
 
 const rootRoute = getRouteApi("__root__");
 
@@ -165,6 +166,7 @@ function LithophaneStudioPage() {
 
   // Dynamic pricing loaded from Admin Site Settings
   const { settings } = rootRoute.useLoaderData();
+  const isLithophaneEnabled = settings?.lithophane_enabled === "true";
 
   const priceMedium = Number(settings?.lithophane_price_medium || "399");
   const priceStandard = Number(settings?.lithophane_price_standard || "549");
@@ -270,6 +272,10 @@ function LithophaneStudioPage() {
   };
 
   const handleAddToCart = async () => {
+    if (!isLithophaneEnabled) {
+      toast.error("Lithophane orders are temporarily closed. Please join our waitlist.");
+      return;
+    }
     if (!photoUrl) {
       toast.error("Please upload or select a photo first.");
       return;
@@ -500,34 +506,42 @@ function LithophaneStudioPage() {
                 </div>
 
                 {/* Upload & Framing Action Buttons */}
-                <div className="flex items-center gap-2.5 shrink-0">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoUpload}
-                    className="hidden"
-                  />
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="gap-2 rounded-xl font-semibold shadow-xs cursor-pointer px-4"
-                  >
-                    <Upload className="size-3.5" />
-                    <span>Upload Photo</span>
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsFramingOpen(true)}
-                    className="gap-1.5 rounded-xl font-medium text-xs border-accent/40 text-accent hover:bg-accent/10 cursor-pointer px-3"
-                  >
-                    <Crop className="size-3.5" />
-                    <span>Crop &amp; Frame</span>
-                  </Button>
-                </div>
+                {isLithophaneEnabled ? (
+                  <div className="flex items-center gap-2.5 shrink-0">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="gap-2 rounded-xl font-semibold shadow-xs cursor-pointer px-4"
+                    >
+                      <Upload className="size-3.5" />
+                      <span>Upload Photo</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsFramingOpen(true)}
+                      className="gap-1.5 rounded-xl font-medium text-xs border-accent/40 text-accent hover:bg-accent/10 cursor-pointer px-3"
+                    >
+                      <Crop className="size-3.5" />
+                      <span>Crop &amp; Frame</span>
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="rounded-full bg-accent/15 px-3 py-1 text-xs font-semibold text-accent">
+                      Upload Opening Soon
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Romantic framing tip if Heart Keepsake is selected */}
@@ -988,33 +1002,52 @@ function LithophaneStudioPage() {
                   </Link>.
                 </div>
 
-                {/* R9: Photo Ownership & Consent Warranty */}
-                {!isSample && (
-                  <div className="rounded-xl border border-border/80 bg-surface-2/40 p-3.5 space-y-2">
-                    <label className="flex items-start gap-2.5 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={photoConsentAccepted}
-                        onChange={(e) => setPhotoConsentAccepted(e.target.checked)}
-                        className="mt-0.5 size-4 rounded border-border accent-accent cursor-pointer shrink-0"
-                      />
-                      <span className="text-[11px] text-fg leading-relaxed">
-                        I confirm that I own or hold legal permission to reproduce this photograph, that all persons depicted (and guardians for minors) have consented, and that the image contains no unlawful or infringing content.
+                {isLithophaneEnabled ? (
+                  <>
+                    {/* R9: Photo Ownership & Consent Warranty */}
+                    {!isSample && (
+                      <div className="rounded-xl border border-border/80 bg-surface-2/40 p-3.5 space-y-2">
+                        <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={photoConsentAccepted}
+                            onChange={(e) => setPhotoConsentAccepted(e.target.checked)}
+                            className="mt-0.5 size-4 rounded border-border accent-accent cursor-pointer shrink-0"
+                          />
+                          <span className="text-[11px] text-fg leading-relaxed">
+                            I confirm that I own or hold legal permission to reproduce this photograph, that all persons depicted (and guardians for minors) have consented, and that the image contains no unlawful or infringing content.
+                          </span>
+                        </label>
+                      </div>
+                    )}
+
+                    <Button
+                      type="button"
+                      size="lg"
+                      onClick={handleAddToCart}
+                      disabled={!photoUrl || isProcessing || (!isSample && !photoConsentAccepted)}
+                      className="w-full h-12 rounded-2xl gap-2 font-bold text-base shadow-lg hover:shadow-accent/20 cursor-pointer transition-all active:scale-[0.98]"
+                    >
+                      <ShoppingBag className="size-4" />
+                      Add to Cart · {formatINR(finalTotal)}
+                    </Button>
+                  </>
+                ) : (
+                  <div className="rounded-2xl border border-accent/25 bg-accent/5 p-4 space-y-3">
+                    <div>
+                      <span className="rounded-full bg-accent/20 px-2.5 py-0.5 text-[11px] font-semibold text-accent">
+                        Opening Soon
                       </span>
-                    </label>
+                      <h4 className="mt-2 font-display text-base font-semibold text-fg">
+                        Lithophane Studio Opening Soon
+                      </h4>
+                      <p className="mt-1 text-xs text-muted leading-relaxed">
+                        We are currently focusing on catalog production batches. Join our waitlist below to be notified as soon as personal photo uploads open.
+                      </p>
+                    </div>
+                    <WaitlistForm interest="lithophane" />
                   </div>
                 )}
-
-                <Button
-                  type="button"
-                  size="lg"
-                  onClick={handleAddToCart}
-                  disabled={!photoUrl || isProcessing || (!isSample && !photoConsentAccepted)}
-                  className="w-full h-12 rounded-2xl gap-2 font-bold text-base shadow-lg hover:shadow-accent/20 cursor-pointer transition-all active:scale-[0.98]"
-                >
-                  <ShoppingBag className="size-4" />
-                  Add to Cart · {formatINR(finalTotal)}
-                </Button>
 
                 {/* Trust reassurance pills */}
                 <div className="grid grid-cols-2 gap-2 pt-1 text-[11px] text-muted">

@@ -38,6 +38,15 @@ export const uploadCustomFile = createServerFn({ method: "POST" })
     try {
       const sql = await getSql();
 
+      // Gate C2: Check if custom orders are enabled
+      const { fetchSiteSettings } = await import("./settings-fns");
+      const settings = await fetchSiteSettings(sql);
+      if (settings.custom_orders_enabled !== "true") {
+        const err: any = new Error("Custom 3D model uploads are temporarily closed. Join the waitlist to be notified when custom printing opens.");
+        err.status = 403;
+        throw err;
+      }
+
       // 1. Per-IP Rate Limiting across Worker isolates
       const { getRequest } = await import("@tanstack/react-start/server");
       const { RateLimiter, getClientIp } = await import("./rate-limiter");

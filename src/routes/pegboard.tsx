@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { PincodeEstimator } from "@/components/pincode-estimator";
 import { WhatsAppInlineButton } from "@/components/whatsapp-support";
+import { WaitlistForm } from "@/components/waitlist-form";
 
 const rootRoute = getRouteApi("__root__");
 
@@ -89,6 +90,7 @@ const ADDON_PACKS: AddonPack[] = [
 
 export function PegboardPage() {
   const { settings } = rootRoute.useLoaderData();
+  const isPegboardCheckoutEnabled = settings?.pegboard_checkout_enabled === "true";
   const addToCart = useCart((s) => s.add);
   const navigate = useNavigate();
 
@@ -252,6 +254,10 @@ export function PegboardPage() {
   };
 
   const handleAddToCart = (redirectCheckout = false) => {
+    if (!isPegboardCheckoutEnabled) {
+      toast.error("Pegboard checkout is opening soon. Join the waitlist to be notified.");
+      return;
+    }
     const addonNames = selectedAddons
       .map((id) => ADDON_PACKS.find((p) => p.id === id)?.name)
       .filter(Boolean)
@@ -617,26 +623,43 @@ export function PegboardPage() {
 
           {/* CALL TO ACTION BUTTONS */}
           <div className="space-y-2.5 pt-2">
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                type="button"
-                onClick={() => handleAddToCart(false)}
-                variant="outline"
-                className="h-12 font-medium cursor-pointer border-border hover:bg-surface-2 text-fg"
-              >
-                <ShoppingBag className="size-4 mr-2" />
-                <span>Add to Cart</span>
-              </Button>
+            {isPegboardCheckoutEnabled ? (
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  type="button"
+                  onClick={() => handleAddToCart(false)}
+                  variant="outline"
+                  className="h-12 font-medium cursor-pointer border-border hover:bg-surface-2 text-fg"
+                >
+                  <ShoppingBag className="size-4 mr-2" />
+                  <span>Add to Cart</span>
+                </Button>
 
-              <Button
-                type="button"
-                onClick={() => handleAddToCart(true)}
-                className="h-12 bg-accent text-ink hover:opacity-90 font-semibold cursor-pointer shadow-lg shadow-accent/20"
-              >
-                <span>Buy Now</span>
-                <ArrowRight className="size-4 ml-1.5" />
-              </Button>
-            </div>
+                <Button
+                  type="button"
+                  onClick={() => handleAddToCart(true)}
+                  className="h-12 bg-accent text-ink hover:opacity-90 font-semibold cursor-pointer shadow-lg shadow-accent/20"
+                >
+                  <span>Buy Now</span>
+                  <ArrowRight className="size-4 ml-1.5" />
+                </Button>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-accent/25 bg-accent/5 p-4 space-y-3">
+                <div>
+                  <span className="rounded-full bg-accent/20 px-2.5 py-0.5 text-[11px] font-semibold text-accent">
+                    Configurator Preview
+                  </span>
+                  <h4 className="mt-2 font-display text-base font-semibold text-fg">
+                    Pegboard Checkout Opening Soon
+                  </h4>
+                  <p className="mt-1 text-xs text-muted leading-relaxed">
+                    Custom tile batches and add-on packs are opening soon. Join our waitlist below to get early access.
+                  </p>
+                </div>
+                <WaitlistForm interest="pegboard" />
+              </div>
+            )}
 
             <p className="text-[11px] text-muted text-center">
               Printed to order with premium matte filament · Ships across India
@@ -858,24 +881,40 @@ export function PegboardPage() {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <Button
-            type="button"
-            onClick={() => handleAddToCart(false)}
-            variant="outline"
-            size="sm"
-            className="h-9 px-3 text-xs font-medium cursor-pointer"
-          >
-            Add
-          </Button>
+          {isPegboardCheckoutEnabled ? (
+            <>
+              <Button
+                type="button"
+                onClick={() => handleAddToCart(false)}
+                variant="outline"
+                size="sm"
+                className="h-9 px-3 text-xs font-medium cursor-pointer"
+              >
+                Add
+              </Button>
 
-          <Button
-            type="button"
-            onClick={() => handleAddToCart(true)}
-            size="sm"
-            className="h-9 px-4 text-xs font-semibold bg-accent text-ink hover:opacity-90 cursor-pointer shadow-md shadow-accent/20"
-          >
-            Buy Now
-          </Button>
+              <Button
+                type="button"
+                onClick={() => handleAddToCart(true)}
+                size="sm"
+                className="h-9 px-4 text-xs font-semibold bg-accent text-ink hover:opacity-90 cursor-pointer shadow-md shadow-accent/20"
+              >
+                Buy Now
+              </Button>
+            </>
+          ) : (
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              className="h-9 px-4 text-xs font-semibold cursor-pointer"
+              onClick={() => {
+                window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+              }}
+            >
+              Join Waitlist
+            </Button>
+          )}
         </div>
       </div>
     </div>
