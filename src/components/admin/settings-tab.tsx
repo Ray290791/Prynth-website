@@ -9,7 +9,7 @@ import { getAdminSiteSettings, updateSiteSettings } from "@/lib/settings-fns";
 import { getAllProductsAdmin } from "@/lib/products-fns";
 import { triggerDatabaseMaintenance } from "@/lib/orders-fns";
 import { cn } from "@/lib/utils";
-import { Truck } from "lucide-react";
+import { Truck, Shield, AlertTriangle, CheckCircle2, Lock, Unlock, Power, Info, Sparkles } from "lucide-react";
 
 export function SettingsTab() {
   const queryClient = useQueryClient();
@@ -46,6 +46,10 @@ export function SettingsTab() {
 
   const [maintenanceStatus, setMaintenanceStatus] = useState<string | null>(null);
   const [isCleaning, setIsCleaning] = useState(false);
+  const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
+  const [checkoutAction, setCheckoutAction] = useState<"open" | "pause">("pause");
+  const [confirmPhraseInput, setConfirmPhraseInput] = useState("");
+  const isCheckoutOpen = settings?.checkout_enabled === "true";
 
   useEffect(() => {
     if (settings?.hero_featured_slots) {
@@ -185,6 +189,27 @@ export function SettingsTab() {
       payment_upi_id: ((fd.get("payment_upi_id") as string) || "").trim(),
       resend_from_email: ((fd.get("resend_from_email") as string) || "").trim(),
       razorpay_key_id: ((fd.get("razorpay_key_id") as string) || "").trim(),
+      // Interim Selling Phase Controls
+      cod_enabled: fd.get("cod_enabled") === "on" ? "true" : "false",
+      max_orders_per_day: ((fd.get("max_orders_per_day") as string) || settings?.max_orders_per_day || "3").trim(),
+      max_orders_per_week: ((fd.get("max_orders_per_week") as string) || settings?.max_orders_per_week || "10").trim(),
+      profit_target_inr: ((fd.get("profit_target_inr") as string) || settings?.profit_target_inr || "10000").trim(),
+      custom_orders_enabled: fd.get("custom_orders_enabled") === "on" ? "true" : "false",
+      lithophane_enabled: fd.get("lithophane_enabled") === "on" ? "true" : "false",
+      pegboard_checkout_enabled: fd.get("pegboard_checkout_enabled") === "on" ? "true" : "false",
+      allowed_delivery_states: ((fd.get("allowed_delivery_states") as string) || settings?.allowed_delivery_states || '["Maharashtra"]').trim(),
+      invoice_mode: ((fd.get("invoice_mode") as string) || settings?.invoice_mode || "receipt").trim(),
+      turnaround_min_days: ((fd.get("turnaround_min_days") as string) || settings?.turnaround_min_days || "4").trim(),
+      turnaround_max_days: ((fd.get("turnaround_max_days") as string) || settings?.turnaround_max_days || "7").trim(),
+      payment_fee_percent: ((fd.get("payment_fee_percent") as string) || settings?.payment_fee_percent || "2").trim(),
+      gst_on_fee_percent: ((fd.get("gst_on_fee_percent") as string) || settings?.gst_on_fee_percent || "18").trim(),
+      seller_display_name: ((fd.get("seller_display_name") as string) || settings?.seller_display_name || "Prynth").trim(),
+      seller_city: ((fd.get("seller_city") as string) || settings?.seller_city || "Mumbai").trim(),
+      seller_state: ((fd.get("seller_state") as string) || settings?.seller_state || "Maharashtra").trim(),
+      seller_address: ((fd.get("seller_address") as string) || settings?.seller_address || "").trim(),
+      seller_email: ((fd.get("seller_email") as string) || settings?.seller_email || "hello@prynth.in").trim(),
+      seller_whatsapp: ((fd.get("seller_whatsapp") as string) || settings?.seller_whatsapp || "").trim(),
+      shiprocket_pickup_address: ((fd.get("shiprocket_pickup_address") as string) || settings?.shiprocket_pickup_address || "").trim(),
     };
     const secretInput = ((fd.get("razorpay_key_secret") as string) || "").trim();
     if (secretInput && !secretInput.includes("•")) {
@@ -199,6 +224,169 @@ export function SettingsTab() {
         <h2 className="text-2xl font-semibold">Site Settings</h2>
         <p className="text-muted mt-1 text-sm">Update the global content across your site.</p>
       </div>
+
+      {/* MASTER CHECKOUT GATEWAY SWITCH (A1 & A2) */}
+      <div className={cn(
+        "rounded-2xl border p-6 transition-all shadow-md",
+        isCheckoutOpen 
+          ? "border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-950/20" 
+          : "border-amber-500/30 bg-amber-500/5 dark:bg-amber-950/20"
+      )}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <span className={cn(
+                "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase border",
+                isCheckoutOpen 
+                  ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30" 
+                  : "bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30"
+              )}>
+                <Power className="size-3.5" />
+                {isCheckoutOpen ? "Checkout Open (Accepting Orders)" : "Checkout Closed (Waitlist Active)"}
+              </span>
+
+              {settings.razorpay_mode === "live" ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">
+                  <Shield className="size-3" /> Live Gateway Keys
+                </span>
+              ) : settings.razorpay_mode === "test" ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                  <Info className="size-3" /> Test / Sandbox Gateway Keys
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-500/10 text-gray-500 border border-gray-500/20">
+                  Gateway Unconfigured
+                </span>
+              )}
+            </div>
+            <h3 className="text-xl font-bold text-fg">
+              {isCheckoutOpen ? "Customer Storefront is Live" : "Customer Storefront is Protected by The Gate"}
+            </h3>
+            <p className="text-xs sm:text-sm text-muted max-w-2xl leading-relaxed">
+              {isCheckoutOpen 
+                ? "Customers can place orders on sellable catalog products within Maharashtra. Order caps and profit targets are monitored automatically."
+                : "Checkout is completely paused. Customers visiting the shop, cart, or checkout see demand-capture waitlist forms. All server order creation endpoints reject requests."}
+            </p>
+          </div>
+
+          <div className="shrink-0 flex items-center gap-2">
+            {isCheckoutOpen ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setCheckoutAction("pause");
+                  setCheckoutModalOpen(true);
+                }}
+                className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs sm:text-sm transition-all shadow-sm cursor-pointer flex items-center gap-2"
+              >
+                <Lock className="size-4" /> Pause Checkout
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setCheckoutAction("open");
+                  setConfirmPhraseInput("");
+                  setCheckoutModalOpen(true);
+                }}
+                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs sm:text-sm transition-all shadow-sm cursor-pointer flex items-center gap-2"
+              >
+                <Unlock className="size-4" /> Open Customer Checkout
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Confirmation Modal for Checkout Toggle */}
+      {checkoutModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-150">
+          <div className="relative w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3">
+              <div className={cn(
+                "p-2.5 rounded-xl",
+                checkoutAction === "open" ? "bg-emerald-500/10 text-emerald-500" : "bg-amber-500/10 text-amber-500"
+              )}>
+                {checkoutAction === "open" ? <Unlock className="size-6" /> : <Lock className="size-6" />}
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-fg">
+                  {checkoutAction === "open" 
+                    ? (settings.is_live_key ? "Live Gateway: Open Checkout" : "Open Checkout in Test Mode")
+                    : "Pause Customer Checkout"}
+                </h3>
+                <p className="text-xs text-muted">
+                  {checkoutAction === "open" ? "Enable public purchasing" : "Halt incoming orders immediately"}
+                </p>
+              </div>
+            </div>
+
+            {checkoutAction === "open" && settings.is_live_key ? (
+              <div className="space-y-3 pt-2">
+                <div className="rounded-xl border border-danger/30 bg-danger/10 p-3 text-xs text-danger leading-relaxed">
+                  <p className="font-bold flex items-center gap-1.5">
+                    <AlertTriangle className="size-4 shrink-0" /> Live Gateway Gate Active
+                  </p>
+                  <p className="mt-1">
+                    Live Razorpay keys are detected. To prevent accidental launch before the CA call and written co-founder agreements are executed, please type <strong className="font-mono">OPEN CHECKOUT</strong> below to confirm.
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-muted mb-1">
+                    Type "OPEN CHECKOUT" to confirm:
+                  </label>
+                  <input
+                    type="text"
+                    value={confirmPhraseInput}
+                    onChange={(e) => setConfirmPhraseInput(e.target.value)}
+                    placeholder="OPEN CHECKOUT"
+                    className="w-full rounded-lg border border-border bg-surface-2 p-2.5 text-sm font-mono focus:border-accent focus:outline-none"
+                    autoFocus
+                  />
+                </div>
+              </div>
+            ) : checkoutAction === "open" ? (
+              <p className="text-xs text-muted leading-relaxed">
+                Customer checkout will be activated using Razorpay Test Mode. Customers can place test orders and join waitlists.
+              </p>
+            ) : (
+              <p className="text-xs text-muted leading-relaxed">
+                Customer checkout will be immediately paused. The site will display waitlist forms on the cart and checkout pages. Any orders already placed remain valid and will be delivered.
+              </p>
+            )}
+
+            <div className="flex gap-2 justify-end pt-3 border-t border-border">
+              <button
+                type="button"
+                onClick={() => setCheckoutModalOpen(false)}
+                className="px-4 py-2 rounded-lg border border-border text-xs font-semibold hover:bg-surface-2 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={checkoutAction === "open" && settings.is_live_key && confirmPhraseInput.trim() !== "OPEN CHECKOUT"}
+                onClick={() => {
+                  const newStatus = checkoutAction === "open" ? "true" : "false";
+                  updateMutation.mutate({
+                    checkout_enabled: newStatus,
+                    confirm_phrase: confirmPhraseInput.trim(),
+                  });
+                  setCheckoutModalOpen(false);
+                }}
+                className={cn(
+                  "px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+                  checkoutAction === "open"
+                    ? "bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    : "bg-amber-600 hover:bg-amber-700 text-white"
+                )}
+              >
+                {checkoutAction === "open" ? "Confirm & Open Checkout" : "Confirm & Pause Checkout"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-12 max-w-3xl">
         {/* HOMEPAGE SECTION */}
@@ -821,6 +1009,275 @@ export function SettingsTab() {
               </div>
               <div className="flex items-center gap-2 text-emerald-500">
                 <span>✓</span> <span>Shipping Policy (Estimated 3–5 days across India)</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* INTERIM SELLING PHASE CONTROLS & CAPS (NOV 2026) */}
+        <section className="space-y-6 rounded-2xl border border-accent/30 bg-surface-2/60 p-6 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-3">
+            <div>
+              <h3 className="text-lg font-semibold text-fg flex items-center gap-2">
+                <span>🛡️</span> Interim Selling Phase Controls &amp; Caps
+              </h3>
+              <p className="text-xs text-muted mt-0.5">
+                Enforce safety limits for the interim unregistered phase: order velocity caps, profit target auto-pause, region restrictions, and service toggles.
+              </p>
+            </div>
+            <span className="rounded-full bg-accent/10 border border-accent/20 px-3 py-1 text-xs font-semibold text-accent self-start sm:self-auto">
+              Pre-LLP Safety Active
+            </span>
+          </div>
+
+          {/* Caps & Auto-Pause Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-medium mb-1">Max Orders per Day (Rolling 24h IST)</label>
+              <input
+                type="number"
+                min="1"
+                name="max_orders_per_day"
+                defaultValue={settings.max_orders_per_day || "3"}
+                required
+                className="w-full rounded border border-border bg-surface p-2 text-sm font-mono"
+              />
+              <p className="text-[11px] text-muted mt-1">Stops incoming orders after cap until older orders roll off.</p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1">Max Orders per Week (Mon–Sun IST)</label>
+              <input
+                type="number"
+                min="1"
+                name="max_orders_per_week"
+                defaultValue={settings.max_orders_per_week || "10"}
+                required
+                className="w-full rounded border border-border bg-surface p-2 text-sm font-mono"
+              />
+              <p className="text-[11px] text-muted mt-1">Weekly volume safeguard aligned with lab print capacity.</p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1">Profit Target Auto-Pause (₹ Raw Profit)</label>
+              <input
+                type="number"
+                min="1000"
+                step="500"
+                name="profit_target_inr"
+                defaultValue={settings.profit_target_inr || "10000"}
+                required
+                className="w-full rounded border border-border bg-surface p-2 text-sm font-mono"
+              />
+              <p className="text-[11px] text-muted mt-1">Auto-pauses checkout once reached to allow LLP registration.</p>
+            </div>
+          </div>
+
+          {/* Delivery Region & Turnaround Promise */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-border">
+            <div>
+              <label className="block text-xs font-medium mb-1">Allowed Delivery States (JSON or list)</label>
+              <input
+                name="allowed_delivery_states"
+                defaultValue={settings.allowed_delivery_states || '["Maharashtra"]'}
+                required
+                className="w-full rounded border border-border bg-surface p-2 text-sm font-mono"
+              />
+              <p className="text-[11px] text-muted mt-1">Enforced at checkout and pincode verification. Default: Maharashtra only.</p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1">Turnaround Min Days (Workshop)</label>
+              <input
+                type="number"
+                min="1"
+                name="turnaround_min_days"
+                defaultValue={settings.turnaround_min_days || "4"}
+                required
+                className="w-full rounded border border-border bg-surface p-2 text-sm font-mono"
+              />
+              <p className="text-[11px] text-muted mt-1">Minimum manufacturing and cooling bench days.</p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1">Turnaround Max Days (Workshop)</label>
+              <input
+                type="number"
+                min="1"
+                name="turnaround_max_days"
+                defaultValue={settings.turnaround_max_days || "7"}
+                required
+                className="w-full rounded border border-border bg-surface p-2 text-sm font-mono"
+              />
+              <p className="text-[11px] text-muted mt-1">Maximum dispatch turnaround promise across all pages.</p>
+            </div>
+          </div>
+
+          {/* Made-to-Order Services & COD Toggles (C2 & C3) */}
+          <div className="pt-4 border-t border-border space-y-3">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted">
+              Service Gating &amp; Payment Options
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+              <label className="flex items-center gap-2 p-3 rounded-xl border border-border bg-surface cursor-pointer hover:bg-surface-2 transition-colors">
+                <input
+                  type="checkbox"
+                  name="custom_orders_enabled"
+                  defaultChecked={settings.custom_orders_enabled === "true"}
+                  className="size-4 rounded border-border accent-accent"
+                />
+                <div>
+                  <span className="font-semibold block text-fg">Custom CAD Orders</span>
+                  <span className="text-[11px] text-muted">File upload &amp; quoting</span>
+                </div>
+              </label>
+
+              <label className="flex items-center gap-2 p-3 rounded-xl border border-border bg-surface cursor-pointer hover:bg-surface-2 transition-colors">
+                <input
+                  type="checkbox"
+                  name="lithophane_enabled"
+                  defaultChecked={settings.lithophane_enabled === "true"}
+                  className="size-4 rounded border-border accent-accent"
+                />
+                <div>
+                  <span className="font-semibold block text-fg">Lithophane Studio</span>
+                  <span className="text-[11px] text-muted">Photo uploads &amp; boxes</span>
+                </div>
+              </label>
+
+              <label className="flex items-center gap-2 p-3 rounded-xl border border-border bg-surface cursor-pointer hover:bg-surface-2 transition-colors">
+                <input
+                  type="checkbox"
+                  name="pegboard_checkout_enabled"
+                  defaultChecked={settings.pegboard_checkout_enabled === "true"}
+                  className="size-4 rounded border-border accent-accent"
+                />
+                <div>
+                  <span className="font-semibold block text-fg">Pegboard Checkout</span>
+                  <span className="text-[11px] text-muted">Configurator ordering</span>
+                </div>
+              </label>
+
+              <label className="flex items-center gap-2 p-3 rounded-xl border border-border bg-surface cursor-pointer hover:bg-surface-2 transition-colors">
+                <input
+                  type="checkbox"
+                  name="cod_enabled"
+                  defaultChecked={settings.cod_enabled === "true"}
+                  className="size-4 rounded border-border accent-accent"
+                />
+                <div>
+                  <span className="font-semibold block text-fg">Cash on Delivery (COD)</span>
+                  <span className="text-[11px] text-muted">Disabled for interim phase</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          {/* Launch Ledger Cost Defaults (D1) & Dispatch Address (D4) */}
+          <div className="pt-4 border-t border-border grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-medium mb-1">Razorpay Gateway Fee (%)</label>
+              <input
+                type="number"
+                step="0.1"
+                name="payment_fee_percent"
+                defaultValue={settings.payment_fee_percent || "2"}
+                required
+                className="w-full rounded border border-border bg-surface p-2 text-sm font-mono"
+              />
+              <p className="text-[11px] text-muted mt-1">Deducted from gross total in Launch Ledger (default 2%).</p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1">GST on Payment Fee (%)</label>
+              <input
+                type="number"
+                step="0.1"
+                name="gst_on_fee_percent"
+                defaultValue={settings.gst_on_fee_percent || "18"}
+                required
+                className="w-full rounded border border-border bg-surface p-2 text-sm font-mono"
+              />
+              <p className="text-[11px] text-muted mt-1">GST charged on the gateway fee (default 18%).</p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1">Invoice Generation Mode (B3)</label>
+              <select
+                name="invoice_mode"
+                defaultValue={settings.invoice_mode || "receipt"}
+                className="w-full rounded border border-border bg-surface p-2 text-sm"
+              >
+                <option value="receipt">Order Receipt (Unregistered Phase)</option>
+                <option value="tax_invoice" disabled>Tax Invoice (Requires GSTIN)</option>
+              </select>
+              <p className="text-[11px] text-muted mt-1">Shows 'Order receipt' without GSTIN or tax tables.</p>
+            </div>
+
+            <div className="sm:col-span-3">
+              <label className="block text-xs font-medium mb-1">Shiprocket Pickup Physical Address (D4)</label>
+              <input
+                name="shiprocket_pickup_address"
+                defaultValue={settings.shiprocket_pickup_address || ""}
+                placeholder="Physical dispatch studio address (leave empty to keep courier booking safely blocked)"
+                className="w-full rounded border border-border bg-surface p-2 text-sm"
+              />
+              <p className="text-[11px] text-muted mt-1">
+                ⚠️ Courier booking via Shiprocket is intentionally blocked while this is empty, preventing accidental dispatches from unconfirmed addresses.
+              </p>
+            </div>
+          </div>
+
+          {/* Seller Details Group (B2) */}
+          <div className="pt-4 border-t border-border space-y-3">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted">
+              Seller Identity Details (B2 — Truthful Storefront)
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-medium mb-1">Seller Display Brand Name</label>
+                <input
+                  name="seller_display_name"
+                  defaultValue={settings.seller_display_name || "Prynth"}
+                  className="w-full rounded border border-border bg-surface p-2 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium mb-1">Seller City</label>
+                <input
+                  name="seller_city"
+                  defaultValue={settings.seller_city || "Mumbai"}
+                  className="w-full rounded border border-border bg-surface p-2 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium mb-1">Seller State</label>
+                <input
+                  name="seller_state"
+                  defaultValue={settings.seller_state || "Maharashtra"}
+                  className="w-full rounded border border-border bg-surface p-2 text-sm"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-medium mb-1">Seller Street Address (Optional)</label>
+                <input
+                  name="seller_address"
+                  defaultValue={settings.seller_address || ""}
+                  placeholder="Street / Office Address (optional during interim phase)"
+                  className="w-full rounded border border-border bg-surface p-2 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium mb-1">Seller Contact Email</label>
+                <input
+                  name="seller_email"
+                  defaultValue={settings.seller_email || "hello@prynth.in"}
+                  className="w-full rounded border border-border bg-surface p-2 text-sm"
+                />
               </div>
             </div>
           </div>
