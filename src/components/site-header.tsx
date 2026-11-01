@@ -13,6 +13,7 @@ import {
   HelpCircle,
   Mail,
   Layers,
+  Shield,
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { LogoLink } from "@/components/logo";
@@ -21,6 +22,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { InlineSearch } from "@/components/inline-search";
 import { ServicesDropdown, usePublicServices } from "@/components/services-dropdown";
 import { SignedIn, SignedOut, UserButton } from "@/lib/auth/gates";
+import { useIsAdmin } from "@/lib/auth/use-admin";
 import { cartCount, useCart } from "@/lib/cart-store";
 import { useHydrated } from "@/lib/use-hydrated";
 import { cn } from "@/lib/utils";
@@ -191,6 +193,7 @@ export function SiteHeader() {
   const hydrated = useHydrated();
   const count = hydrated ? cartCount(items) : 0;
   const [open, setOpen] = useState(false);
+  const { isAdmin } = useIsAdmin();
   const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
   const [mobileExploreOpen, setMobileExploreOpen] = useState(false);
   const services = usePublicServices();
@@ -399,8 +402,20 @@ export function SiteHeader() {
               </Link>
 
               <SignedIn>
+                {isAdmin && (
+                  <Link
+                    to="/admin"
+                    search={{ tab: "orders" }}
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-base font-semibold text-accent bg-accent/10 border border-accent/20 transition-colors"
+                  >
+                    <Shield className="size-5 text-accent" strokeWidth={1.75} />
+                    Admin Console
+                  </Link>
+                )}
                 <Link
                   to="/profile"
+                  onClick={() => setOpen(false)}
                   className="flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-base font-medium text-fg hover:bg-surface-2 transition-colors"
                 >
                   <User className="size-5 text-accent" strokeWidth={1.75} />
@@ -408,6 +423,7 @@ export function SiteHeader() {
                 </Link>
                 <Link
                   to="/history"
+                  onClick={() => setOpen(false)}
                   className="flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-base font-medium text-fg hover:bg-surface-2 transition-colors"
                 >
                   <Clock className="size-5 text-muted" strokeWidth={1.75} />

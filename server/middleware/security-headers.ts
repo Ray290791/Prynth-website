@@ -20,10 +20,10 @@ export default defineEventHandler((event) => {
     "default-src 'self'",
     // Own scripts + Razorpay checkout SDK + Google Tag Manager
     "script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://*.razorpay.com https://www.googletagmanager.com",
-    // Own styles + Google Fonts + Tailwind inline
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    // Own styles + Google Fonts + Fontshare + Tailwind inline
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.fontshare.com",
     // Font files
-    "font-src 'self' https://fonts.gstatic.com",
+    "font-src 'self' https://fonts.gstatic.com https://cdn.fontshare.com",
     // Images: own origin, base64 data URIs (thumbnails), blob (canvas) + Razorpay + Google Analytics
     "img-src 'self' data: blob: https://*.razorpay.com https://www.google-analytics.com https://*.google-analytics.com",
     // API / WebSocket calls: own origin + Razorpay (payments) + Neon (DB) + Google Analytics

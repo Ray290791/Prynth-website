@@ -2,6 +2,7 @@ import { type ReactNode, useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { LogOut, User, Shield, Clock } from "lucide-react";
 import { useCurrentUserState } from "./use-current-user";
+import { useIsAdmin } from "./use-admin";
 import { signOut } from "./client";
 
 export function SignedOut({ children }: { children: ReactNode }) {
@@ -24,6 +25,7 @@ export function RedirectToSignIn() {
 
 export function UserButton() {
   const { user, isPending } = useCurrentUserState();
+  const { isAdmin } = useIsAdmin();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -84,15 +86,15 @@ export function UserButton() {
             Recently Viewed
           </Link>
 
-          {user.primaryEmail === "prynth07@gmail.com" && (
+          {isAdmin && (
             <Link
               to="/admin"
               search={{ tab: "orders" }}
               onClick={() => setOpen(false)}
-              className="flex w-full items-center rounded-xl px-2.5 py-2 text-sm font-medium text-fg hover:bg-surface-2 transition-colors"
+              className="flex w-full items-center rounded-xl px-2.5 py-2 text-sm font-medium text-accent hover:bg-accent/10 transition-colors"
             >
-              <Shield className="mr-2.5 h-4 w-4 text-muted" />
-              Admin
+              <Shield className="mr-2.5 h-4 w-4 text-accent" />
+              Admin Console
             </Link>
           )}
 

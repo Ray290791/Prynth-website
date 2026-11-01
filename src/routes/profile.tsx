@@ -13,7 +13,8 @@ import { updateUserProfile, setDefaultAddress, deleteAddress } from "@/lib/user-
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Layers, Clock, Package } from "lucide-react";
+import { Layers, Clock, Package, Shield, ArrowRight } from "lucide-react";
+import { useIsAdmin } from "@/lib/auth/use-admin";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -31,6 +32,7 @@ export const Route = createFileRoute("/profile")({
 
 function ProfilePage() {
   const user = useCurrentUser();
+  const { isAdmin } = useIsAdmin();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
@@ -206,6 +208,24 @@ function ProfilePage() {
             </div>
           </div>
           
+          {isAdmin && (
+            <div className="rounded-2xl border border-accent/40 bg-accent/5 p-5 space-y-3 shadow-xs">
+              <div className="flex items-center gap-2 text-xs font-semibold text-accent uppercase tracking-wider">
+                <Shield className="size-4 text-accent" />
+                <span>Admin Console Access</span>
+              </div>
+              <p className="text-xs text-muted leading-relaxed">
+                Your account ({user.primaryEmail}) has verified administrative privileges to manage orders, catalog, pricing, and system settings.
+              </p>
+              <Button asChild size="sm" className="w-full bg-accent text-ink font-semibold hover:opacity-90 cursor-pointer">
+                <Link to="/admin" search={{ tab: "orders" }}>
+                  <span>Open Admin Console</span>
+                  <ArrowRight className="size-3.5 ml-1.5" />
+                </Link>
+              </Button>
+            </div>
+          )}
+
           <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
             <h3 className="text-lg font-semibold">Saved Addresses</h3>
             {addresses && addresses.length > 0 ? (

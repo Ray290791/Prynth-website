@@ -1,8 +1,13 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { getAllOrdersAdmin, updateOrderStatus, deleteOrderAdmin } from "@/lib/orders-fns";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatINR } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { AuthModal } from "@/components/auth-modal";
+import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import { useIsAdmin } from "@/lib/auth/use-admin";
+import { signOut } from "@/lib/auth/client";
 import { toast } from "sonner";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -64,6 +69,9 @@ function AdminPage() {
   const navigate = useNavigate({ from: Route.fullPath });
   const setActiveTab = (tab: string) => navigate({ search: { tab } });
   
+  const { user, isPending: authPending } = useCurrentUserState();
+  const { isAdmin, isLoading: adminCheckLoading } = useIsAdmin();
+
   const queryClient = useQueryClient();
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [deletingOrder, setDeletingOrder] = useState<string | null>(null);
@@ -76,7 +84,7 @@ function AdminPage() {
       const data = await getAllOrdersAdmin();
       return data ?? [];
     },
-    enabled: activeTab === "orders" || activeTab === "users",
+    enabled: Boolean(user) && isAdmin && (activeTab === "orders" || activeTab === "users"),
     staleTime: 60_000,
   });
 
@@ -119,11 +127,66 @@ function AdminPage() {
     }
   });
 
-  if (error) {
+  // 1. Session is still loading
+  if (authPending || adminCheckLoading) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-24 text-center">
-        <h1 className="font-display text-3xl font-semibold text-danger">Unauthorized</h1>
-        <p className="mt-2 text-muted">You do not have administrative privileges to access this console.</p>
+        <div className="inline-flex size-10 animate-spin items-center justify-center rounded-full border-2 border-accent border-t-transparent" />
+        <p className="mt-4 text-sm text-muted font-medium">Verifying administrative access...</p>
+      </div>
+    );
+  }
+
+  // 2. User is not signed in
+  if (!user) {
+    return (
+      <div className="mx-auto max-w-md px-4 py-24 text-center space-y-4">
+        <div className="inline-flex size-14 items-center justify-center rounded-2xl bg-surface-2 border border-border text-accent">
+          <Shield className="size-7" />
+        </div>
+        <h1 className="font-display text-2xl sm:text-3xl font-bold text-fg">
+          Admin Sign-In Required
+        </h1>
+        <p className="text-sm text-muted leading-relaxed">
+          Please sign in with your administrative account to access the Prynth Admin Console.
+        </p>
+        <div className="pt-2 flex justify-center">
+          <AuthModal
+            trigger={
+              <Button className="h-11 px-6 bg-accent text-ink font-semibold shadow-xs cursor-pointer">
+                <span>Sign In as Admin</span>
+              </Button>
+            }
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // 3. User is signed in, but does not have admin privileges
+  if (!isAdmin || error) {
+    return (
+      <div className="mx-auto max-w-md px-4 py-24 text-center space-y-4">
+        <div className="inline-flex size-14 items-center justify-center rounded-2xl bg-danger/10 border border-danger/20 text-danger">
+          <Shield className="size-7" />
+        </div>
+        <h1 className="font-display text-2xl sm:text-3xl font-bold text-fg">
+          Access Restricted
+        </h1>
+        <p className="text-sm text-muted leading-relaxed">
+          You are currently signed in as <strong className="text-fg">{user.primaryEmail}</strong>, but this account does not have administrative privileges.
+        </p>
+        <p className="text-xs text-subtle leading-relaxed">
+          If this account was just granted admin rights, ask a Super Admin to ensure <code className="font-mono bg-surface-2 px-1.5 py-0.5 rounded text-fg">{user.primaryEmail}</code> is listed in the Admin Team settings.
+        </p>
+        <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
+          <Button variant="outline" onClick={() => void signOut("/admin")}>
+            Switch Account
+          </Button>
+          <Button asChild variant="ghost">
+            <Link to="/">Back to Home</Link>
+          </Button>
+        </div>
       </div>
     );
   }

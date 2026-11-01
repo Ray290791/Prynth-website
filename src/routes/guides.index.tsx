@@ -52,7 +52,7 @@ export default function GuidesIndexPage() {
           <BookOpen className="size-3.5 text-accent" />
           <span>PRYNTH ENGINEERING FIELD GUIDES</span>
         </div>
-        <h1 className="font-instrument text-4xl sm:text-5xl font-normal tracking-tight text-fg leading-tight">
+        <h1 className="font-display text-4xl sm:text-5xl font-bold tracking-tight text-fg leading-tight">
           Clear, practical answers for{" "}
           <span className="italic text-accent">precision 3D printing.</span>
         </h1>
@@ -79,7 +79,7 @@ export default function GuidesIndexPage() {
                 </span>
               </div>
 
-              <h2 className="font-instrument text-2xl font-normal text-fg group-hover:text-accent transition-colors leading-snug">
+              <h2 className="font-display text-2xl font-semibold text-fg group-hover:text-accent transition-colors leading-snug">
                 <Link to="/guides/$slug" params={{ slug: guide.slug }}>
                   {guide.title}
                 </Link>
@@ -116,7 +116,7 @@ export default function GuidesIndexPage() {
       {/* Studio CTA */}
       <div className="rounded-2xl border border-border bg-surface-2/50 p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div>
-          <h2 className="font-instrument text-xl font-normal text-fg">Have a specific file to print?</h2>
+          <h2 className="font-display text-xl font-semibold text-fg">Have a specific file to print?</h2>
           <p className="text-xs sm:text-sm text-muted mt-0.5">
             Upload your STL, OBJ, or 3MF for instant automated slicing, bed clearance checks, and transparent quotes.
           </p>

@@ -170,9 +170,9 @@ function Home() {
               <span>PRECISION 3D STUDIO · MUMBAI, INDIA</span>
             </div>
 
-            <h1 className="font-instrument text-5xl sm:text-6xl lg:text-7xl font-normal tracking-tight text-fg leading-[1.06]">
+            <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-fg leading-[1.06]">
               Engineered form in{" "}
-              <span className="italic text-transparent bg-clip-text bg-gradient-to-r from-zinc-900 via-zinc-800 to-[#007369] dark:from-white dark:via-zinc-200 dark:to-[#00b8a9] dark:drop-shadow-sm">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-900 via-zinc-800 to-[#007369] dark:from-white dark:via-zinc-200 dark:to-[#00b8a9] dark:drop-shadow-sm">
                 monolithic balance.
               </span>
             </h1>
@@ -269,7 +269,7 @@ function Home() {
                 <item.icon className="size-4.5" strokeWidth={1.8} />
               </div>
               <div>
-                <h2 className="font-instrument text-lg font-normal text-fg">{item.title}</h2>
+                <h2 className="font-display text-lg font-semibold text-fg">{item.title}</h2>
                 <p className="mt-0.5 text-xs text-muted leading-relaxed font-jakarta">{item.text}</p>
               </div>
             </div>
@@ -282,7 +282,7 @@ function Home() {
         <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end mb-8">
           <div>
             <p className="text-[11px] font-mono tracking-[0.2em] text-accent uppercase">Shop Collection</p>
-            <h2 className="mt-1 font-instrument text-3xl sm:text-4xl font-normal italic tracking-tight text-fg">
+            <h2 className="mt-1 font-display text-3xl sm:text-4xl font-bold tracking-tight text-fg">
               Desk &amp; Everyday Favourites
             </h2>
             <p className="mt-2 text-xs sm:text-sm text-muted font-jakarta max-w-2xl leading-relaxed">
@@ -312,7 +312,7 @@ function Home() {
                 <Sparkles className="size-3.5" />
                 <span>{settings.pegboard_badge || "Signature Star Product"}</span>
               </div>
-              <h2 className="font-instrument text-3xl sm:text-4xl md:text-5xl font-normal tracking-tight text-fg">
+              <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-fg">
                 {settings.pegboard_hero_title || "The Modular Pegboard System"}
               </h2>
               <p className="text-sm sm:text-base text-muted max-w-xl leading-relaxed font-jakarta">
@@ -364,7 +364,7 @@ function Home() {
               <Layers className="size-3.5" />
               <span>On-Demand Custom Fabrication</span>
             </div>
-            <h2 className="mt-3 font-instrument text-3xl sm:text-4xl md:text-5xl font-normal tracking-tight text-fg">
+            <h2 className="mt-3 font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-fg">
               Got a 3D model, sketch, or broken part?
             </h2>
             <p className="mt-2 text-sm sm:text-base text-muted leading-relaxed font-jakarta">
@@ -376,21 +376,21 @@ function Home() {
           <div className="mt-8 grid gap-4 md:grid-cols-3">
             <div className="rounded-2xl border border-border/80 bg-surface-2/40 p-5 space-y-2 backdrop-blur-sm">
               <span className="font-mono text-[11px] font-bold text-accent uppercase tracking-wider">01. Submit</span>
-              <h3 className="font-instrument text-xl font-normal text-fg">File or Photo Idea</h3>
+              <h3 className="font-display text-xl font-semibold text-fg">File or Photo Idea</h3>
               <p className="text-xs text-muted leading-relaxed font-jakarta">
                 Upload your STL/3MF for an instant quote, or send phone photos of a broken part or paper sketch.
               </p>
             </div>
             <div className="rounded-2xl border border-border/80 bg-surface-2/40 p-5 space-y-2 backdrop-blur-sm">
               <span className="font-mono text-[11px] font-bold text-accent uppercase tracking-wider">02. Engineer</span>
-              <h3 className="font-instrument text-xl font-normal text-fg">CAD &amp; Tolerance Check</h3>
+              <h3 className="font-display text-xl font-semibold text-fg">CAD &amp; Tolerance Check</h3>
               <p className="text-xs text-muted leading-relaxed font-jakarta">
                 We verify slice geometries, optimize infill density, and ensure structural rigidity for functional use.
               </p>
             </div>
             <div className="rounded-2xl border border-border/80 bg-surface-2/40 p-5 space-y-2 backdrop-blur-sm">
               <span className="font-mono text-[11px] font-bold text-accent uppercase tracking-wider">03. Deliver</span>
-              <h3 className="font-instrument text-xl font-normal text-fg">Printed &amp; Shipped</h3>
+              <h3 className="font-display text-xl font-semibold text-fg">Printed &amp; Shipped</h3>
               <p className="text-xs text-muted leading-relaxed font-jakarta">
                 Manufactured on our Bambu Lab fleet, quality checked, and delivered to your doorstep anywhere in India.
               </p>
@@ -426,7 +426,7 @@ function Home() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
             <div>
               <p className="text-[11px] font-mono tracking-[0.2em] text-accent uppercase">Filament Guide</p>
-              <h2 className="font-instrument text-2xl sm:text-3xl lg:text-4xl font-normal tracking-tight text-fg mt-1">
+              <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-fg mt-1">
                 Choose the right polymer for your application
               </h2>
             </div>

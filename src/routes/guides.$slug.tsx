@@ -118,7 +118,7 @@ export default function GuideArticlePage() {
 
       {/* Title & Metadata Byline */}
       <header className="space-y-4 border-b border-border/80 pb-8">
-        <h1 className="font-instrument text-4xl sm:text-5xl font-normal tracking-tight text-fg leading-tight">
+        <h1 className="font-display text-4xl sm:text-5xl font-bold tracking-tight text-fg leading-tight">
           {guide.title}
         </h1>
 
@@ -171,7 +171,7 @@ export default function GuideArticlePage() {
       <div className="space-y-8 pt-2">
         {guide.sections.map((section, idx) => (
           <section key={idx} className="space-y-3">
-            <h2 className="font-instrument text-2xl sm:text-3xl font-normal text-fg leading-snug">
+            <h2 className="font-display text-2xl sm:text-3xl font-semibold text-fg leading-snug">
               {section.heading}
             </h2>
             <p className="text-sm sm:text-base text-muted font-jakarta leading-relaxed font-light">
@@ -184,7 +184,7 @@ export default function GuideArticlePage() {
       {/* Frequently Asked Questions */}
       {guide.faqs && guide.faqs.length > 0 && (
         <section className="space-y-4 pt-6 border-t border-border/80">
-          <h2 className="font-instrument text-2xl sm:text-3xl font-normal text-fg flex items-center gap-2">
+          <h2 className="font-display text-2xl sm:text-3xl font-semibold text-fg flex items-center gap-2">
             <HelpCircle className="size-6 text-accent" />
             <span>Frequently Asked Questions</span>
           </h2>
@@ -225,7 +225,7 @@ export default function GuideArticlePage() {
       {/* Bottom Sticky Action Banner */}
       <div className="rounded-2xl border border-border bg-surface-2 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div>
-          <h3 className="font-instrument text-xl font-normal text-fg">Ready to print your parts?</h3>
+          <h3 className="font-display text-xl font-semibold text-fg">Ready to print your parts?</h3>
           <p className="text-xs text-muted mt-0.5">
             Instant quotes from ₹149. Real-time slicer geometry checks in your browser.
           </p>

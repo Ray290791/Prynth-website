@@ -176,6 +176,12 @@ export const Route = createRootRoute({
       { rel: "stylesheet", href: appCss },
       { rel: "apple-touch-icon", href: "/brand/mark.png" },
       { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "preconnect", href: "https://api.fontshare.com" },
+      {
+        rel: "preconnect",
+        href: "https://cdn.fontshare.com",
+        crossOrigin: "anonymous",
+      },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       {
         rel: "preconnect",
@@ -185,11 +191,20 @@ export const Route = createRootRoute({
       {
         rel: "preload",
         as: "style",
-        href: "https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap",
+        href: "https://api.fontshare.com/v2/css?f[]=satoshi@900,800,700,600,500,400&f[]=general-sans@700,600,500,400&display=swap",
       },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap",
+        href: "https://api.fontshare.com/v2/css?f[]=satoshi@900,800,700,600,500,400&f[]=general-sans@700,600,500,400&display=swap",
+      },
+      {
+        rel: "preload",
+        as: "style",
+        href: "https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap",
+      },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap",
       },
     ],
   }),

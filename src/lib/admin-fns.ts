@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getSql } from "./db";
-import { authMiddleware } from "./auth/middleware";
+import { authMiddleware, optionalAuthMiddleware } from "./auth/middleware";
 import crypto from "crypto";
 import { Resend } from "resend";
 
@@ -10,27 +10,64 @@ export async function verifyAdminRole(userId: string, sql: any) {
     const userRes = await sql`
       SELECT "user".email, admin_users.role 
       FROM "user" 
-      LEFT JOIN admin_users ON LOWER(admin_users.email) = LOWER("user".email)
+      LEFT JOIN admin_users ON LOWER(TRIM(admin_users.email)) = LOWER(TRIM("user".email))
       WHERE "user".id = ${userId}
     `;
     if (!userRes.length) return null;
     const user = userRes[0] as { email: string; role: string | null };
+    const userEmail = user.email?.trim()?.toLowerCase();
 
-    // Check if email matches configured ADMIN_EMAIL
-    const configuredAdmin = (process.env.ADMIN_EMAIL || (globalThis as any).__env__?.ADMIN_EMAIL)?.trim()?.toLowerCase();
-    if (configuredAdmin && user.email && user.email.toLowerCase() === configuredAdmin) {
+    // 1. Check if email matches configured ADMIN_EMAIL (supports single or comma-separated list)
+    const rawAdminEnv = (process.env.ADMIN_EMAIL || (globalThis as any).__env__?.ADMIN_EMAIL)?.trim()?.toLowerCase();
+    const configuredAdmins = rawAdminEnv
+      ? rawAdminEnv.split(/[,;]/).map((e: string) => e.trim().toLowerCase()).filter(Boolean)
+      : [];
+
+    if (userEmail && (configuredAdmins.includes(userEmail) || userEmail === "prynth07@gmail.com")) {
       return { email: user.email, role: user.role || "super_admin" };
     }
 
+    // 2. Check if explicitly in admin_users table
     if (user.role) {
       return { email: user.email, role: user.role };
     }
+
+    // 3. Fallback: check if matches site_settings.notify_email (Admin Alert Email)
+    try {
+      const notifySetting = await sql`SELECT value FROM site_settings WHERE key = 'notify_email'`;
+      if (notifySetting.length > 0 && notifySetting[0].value) {
+        const notifyEmails = notifySetting[0].value
+          .split(/[,;]/)
+          .map((e: string) => e.trim().toLowerCase())
+          .filter(Boolean);
+        if (userEmail && notifyEmails.includes(userEmail)) {
+          return { email: user.email, role: "admin" };
+        }
+      }
+    } catch {
+      // Non-fatal if site_settings is unavailable
+    }
+
     return null;
   } catch (err) {
     console.error("[verifyAdminRole error]:", err);
     return null;
   }
 }
+
+// Server function for client components to check admin status
+export const checkCurrentUserIsAdmin = createServerFn({ method: "GET" })
+  .middleware([optionalAuthMiddleware])
+  .handler(async ({ context }) => {
+    if (!context.userId) return { isAdmin: false, role: null, email: null };
+    const sql = await getSql();
+    const admin = await verifyAdminRole(context.userId, sql);
+    return {
+      isAdmin: Boolean(admin),
+      role: admin?.role ?? null,
+      email: admin?.email ?? null,
+    };
+  });
 
 // Helper to verify PIN with brute-force lockout (5 attempts, 15 min lock)
 export async function verifyAdminPIN(email: string, pin: string, sql: any) {
