@@ -5,7 +5,7 @@ import { formatINR } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Search, Plus, Edit2, Trash2, X, Eye, EyeOff, Package, Image as ImageIcon } from "lucide-react";
-import { getAllProductsAdmin, deleteProduct, updateProduct, createProduct } from "@/lib/products-fns";
+import { getAllProductsAdmin, deleteProduct, updateProduct, createProduct, toggleProductSellableAdmin, updateProductCostAdmin } from "@/lib/products-fns";
 import { getSiteSettings } from "@/lib/settings-fns";
 import type { Product, ProductImage } from "@/lib/products";
 import { TagInput } from "@/components/admin/tag-input";
@@ -29,6 +29,17 @@ export function ProductsTable() {
       toast.success("Product deleted successfully");
     },
     onError: () => toast.error("Failed to delete product")
+  });
+
+  const toggleSellableMutation = useMutation({
+    mutationFn: async ({ slug, sellable }: { slug: string; sellable: boolean }) => {
+      await toggleProductSellableAdmin({ data: { slug, sellable } });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminProducts"] });
+      toast.success("Product sellable status updated!");
+    },
+    onError: (err: any) => toast.error(err?.message || "Failed to update sellable status"),
   });
 
   if (isLoading) {
@@ -58,6 +69,8 @@ export function ProductsTable() {
             <th className="p-4 font-medium">Product</th>
             <th className="p-4 font-medium">Price</th>
             <th className="p-4 font-medium">Category</th>
+            <th className="p-4 font-medium text-center">Interim Gate</th>
+            <th className="p-4 font-medium text-right">Unit / Pack Cost</th>
             <th className="p-4 font-medium text-right w-44 min-w-[150px]">Actions</th>
           </tr>
         </thead>
@@ -75,6 +88,26 @@ export function ProductsTable() {
               </td>
               <td className="p-4 tabular-nums font-medium">{formatINR(p.price)}</td>
               <td className="p-4 capitalize">{Array.isArray(p.categories) ? p.categories.join(", ") : p.category}</td>
+              <td className="p-4 text-center whitespace-nowrap">
+                <button
+                  type="button"
+                  onClick={() => toggleSellableMutation.mutate({ slug: p.slug, sellable: !p.sellable })}
+                  disabled={toggleSellableMutation.isPending}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer",
+                    p.sellable 
+                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20" 
+                      : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/20"
+                  )}
+                  title="Click to toggle sellable status for interim phase"
+                >
+                  <span className={cn("size-1.5 rounded-full", p.sellable ? "bg-emerald-500" : "bg-amber-500")} />
+                  {p.sellable ? "Sellable" : "Paused"}
+                </button>
+              </td>
+              <td className="p-4 text-right tabular-nums text-xs font-mono text-muted whitespace-nowrap">
+                ₹{p.unitCostInr || 0} / ₹{p.packagingCostInr || 0}
+              </td>
               <td className="p-4 text-right whitespace-nowrap w-44 min-w-[150px]">
                 <div className="inline-flex items-center justify-end gap-2">
                   <button
@@ -208,6 +241,9 @@ function ProductModal({
                 badge: (fd.get("badge") as "Favourite" | "New") || undefined,
                 includes: fd.get("includes") as string,
                 care: fd.get("care") as string,
+                sellable: fd.get("sellable") === "on",
+                unitCostInr: parseInt(fd.get("unitCostInr") as string, 10) || 0,
+                packagingCostInr: parseInt(fd.get("packagingCostInr") as string, 10) || 0,
               };
               mutation.mutate(data);
             }}
@@ -359,6 +395,42 @@ function ProductModal({
               <div className="flex items-center gap-2">
                 <input type="checkbox" name="featured" id="featured" defaultChecked={product?.featured} className="rounded" />
                 <label htmlFor="featured" className="text-sm font-medium">Featured Product</label>
+              </div>
+
+              <div className="col-span-2 rounded-xl border border-accent/20 bg-surface-2/40 p-4 space-y-3">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-accent">Interim Selling Phase &amp; Launch Ledger (D1)</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium mb-1">Unit Material &amp; Print Cost (₹)</label>
+                    <input 
+                      name="unitCostInr" 
+                      type="number" 
+                      defaultValue={product?.unitCostInr ?? 0} 
+                      className="w-full rounded-xl border border-border/50 bg-surface-2/50 px-3 py-2 text-sm font-mono" 
+                    />
+                    <p className="text-[11px] text-muted mt-0.5">Filament, energy, &amp; machine fee</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1">Packaging &amp; Box Cost (₹)</label>
+                    <input 
+                      name="packagingCostInr" 
+                      type="number" 
+                      defaultValue={product?.packagingCostInr ?? 0} 
+                      className="w-full rounded-xl border border-border/50 bg-surface-2/50 px-3 py-2 text-sm font-mono" 
+                    />
+                    <p className="text-[11px] text-muted mt-0.5">Cardboard box, paper fill, stickers</p>
+                  </div>
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer pt-1">
+                  <input 
+                    type="checkbox" 
+                    name="sellable" 
+                    id="sellable" 
+                    defaultChecked={product?.sellable ?? false} 
+                    className="size-4 rounded border-border accent-accent" 
+                  />
+                  <span className="text-xs font-semibold text-fg">Sellable in Interim Phase (Allow Customer Checkout)</span>
+                </label>
               </div>
             </div>
 

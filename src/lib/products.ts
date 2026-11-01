@@ -49,6 +49,9 @@ export type Product = {
   care: string;
   inStock?: boolean;
   stockCount?: number;
+  sellable?: boolean;
+  unitCostInr?: number;
+  packagingCostInr?: number;
   variants?: ProductVariant[];
 };
 
@@ -57,6 +60,7 @@ export type Product = {
 export const products: Product[] = [
   {
     slug: "modular-pegboard",
+    sellable: false,
     name: "Modular Desk Pegboard System (Complete Kit)",
     price: 699,
     image: "/products/modular-pegboard.jpg",
@@ -84,6 +88,7 @@ export const products: Product[] = [
   },
   {
     slug: "wave-stand",
+    sellable: false,
     name: "Wave Stand",
     price: 249,
     image: "/products/wave-stand.jpg",
@@ -103,6 +108,7 @@ export const products: Product[] = [
   },
   {
     slug: "cable-nest",
+    sellable: true,
     name: "Cable Nest",
     price: 199,
     image: "/products/cable-nest.jpg",
@@ -119,6 +125,7 @@ export const products: Product[] = [
   },
   {
     slug: "geo-planter",
+    sellable: true,
     name: "Geo Planter",
     price: 349,
     image: "/products/geo-planter.jpg",
@@ -137,6 +144,7 @@ export const products: Product[] = [
   },
   {
     slug: "desk-tray",
+    sellable: true,
     name: "Desk Tray",
     price: 399,
     image: "/products/desk-tray.jpg",
@@ -153,6 +161,7 @@ export const products: Product[] = [
   },
   {
     slug: "pebble-hooks",
+    sellable: false,
     name: "Pebble Hooks",
     price: 279,
     image: "/products/pebble-hooks.jpg",
@@ -169,6 +178,7 @@ export const products: Product[] = [
   },
   {
     slug: "hex-coasters",
+    sellable: true,
     name: "Hex Coasters",
     price: 329,
     image: "/products/hex-coasters.jpg",
@@ -187,6 +197,7 @@ export const products: Product[] = [
   },
   {
     slug: "headphone-rest",
+    sellable: false,
     name: "Headphone Rest",
     price: 449,
     image: "/products/headphone-rest.jpg",
@@ -204,6 +215,7 @@ export const products: Product[] = [
   },
   {
     slug: "catch-bowl",
+    sellable: true,
     name: "Catch Bowl",
     price: 229,
     image: "/products/catch-bowl.jpg",
@@ -221,6 +233,7 @@ export const products: Product[] = [
   },
   {
     slug: "ripple-soap",
+    sellable: false,
     name: "Ripple Soap Dish",
     price: 179,
     image: "/products/ripple-soap.jpg",
@@ -238,6 +251,7 @@ export const products: Product[] = [
   },
   {
     slug: "pen-well",
+    sellable: true,
     name: "Pen Well",
     price: 199,
     image: "/products/pen-well.jpg",

@@ -129,6 +129,9 @@ function mapDbProduct(row: any): Product {
     sizes: typeof row.sizes === "string" ? JSON.parse(row.sizes) : row.sizes,
     gallery: typeof row.gallery === "string" ? JSON.parse(row.gallery) : (row.gallery || []),
     categories: typeof row.categories === "string" ? JSON.parse(row.categories) : (row.categories || []),
+    sellable: Boolean(row.sellable),
+    unitCostInr: Number(row.unit_cost_inr) || 0,
+    packagingCostInr: Number(row.packaging_cost_inr) || 0,
     materials: typeof row.materials === "string" ? JSON.parse(row.materials) : (row.materials || []),
     variants: row.variants ? (typeof row.variants === "string" ? JSON.parse(row.variants) : row.variants) : [],
   };
@@ -300,7 +303,10 @@ export const updateProduct = createServerFn({ method: "POST" })
         includes = ${data.includes},
         care = ${data.care},
         in_stock = ${data.inStock ?? true},
-        stock_count = ${data.stockCount ?? -1}
+        stock_count = ${data.stockCount ?? -1},
+        sellable = COALESCE(${data.sellable ?? null}, sellable),
+        unit_cost_inr = COALESCE(${data.unitCostInr ?? null}, unit_cost_inr),
+        packaging_cost_inr = COALESCE(${data.packagingCostInr ?? null}, packaging_cost_inr)
       WHERE slug = ${data.slug}
     `;
     return { success: true };
@@ -402,5 +408,45 @@ export const createReview = createServerFn({ method: "POST" })
         created_at = now()
     `;
     
+    return { success: true };
+  });
+
+export const toggleProductSellableAdmin = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator((data: { slug: string; sellable: boolean }) => data)
+  .handler(async ({ data, context }) => {
+    const sql = await getSql();
+    const admin = await verifyAdminRole(context.userId, sql);
+    if (!admin) throw new Error("Unauthorized");
+
+    await sql`
+      UPDATE products
+      SET sellable = ${data.sellable}
+      WHERE slug = ${data.slug}
+    `;
+    return { success: true };
+  });
+
+export const updateProductCostAdmin = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator(
+    (data: {
+      slug: string;
+      unit_cost_inr?: number;
+      packaging_cost_inr?: number;
+    }) => data
+  )
+  .handler(async ({ data, context }) => {
+    const sql = await getSql();
+    const admin = await verifyAdminRole(context.userId, sql);
+    if (!admin) throw new Error("Unauthorized");
+
+    await sql`
+      UPDATE products
+      SET
+        unit_cost_inr = COALESCE(${data.unit_cost_inr ?? null}, unit_cost_inr),
+        packaging_cost_inr = COALESCE(${data.packaging_cost_inr ?? null}, packaging_cost_inr)
+      WHERE slug = ${data.slug}
+    `;
     return { success: true };
   });
