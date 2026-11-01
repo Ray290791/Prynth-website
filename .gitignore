@@ -2,6 +2,8 @@ node_modules
 .env
 .env.*
 !.env.example
+*.env
+*.env.*
 .vercel
 dist
 build
@@ -11,3 +13,15 @@ build
 screenshots
 scratch_*
 *.zip
+
+# Internal studio knowledge base, memory & audit documents (keep local only)
+PRYNTH_MASTER_MEMORY.md
+*MASTER_MEMORY*.md
+CHANGES_STATUS.md
+*CHANGES*.md
+AUDIT_REPORT.md
+COMPLIANCE.md
+RECOMMENDATIONS.md
+AGENTS.md
+*.xlsx
+
