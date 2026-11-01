@@ -22,6 +22,7 @@ import { PincodeEstimator } from "@/components/pincode-estimator";
 import { VolumeDiscountBanner } from "@/components/volume-discount-banner";
 import { WhatsAppInlineButton } from "@/components/whatsapp-support";
 import { calculateDiscountedUnitPrice } from "@/lib/volume-discounts";
+import { WaitlistForm } from "@/components/waitlist-form";
 
 const rootRoute = getRouteApi("__root__");
 
@@ -198,9 +199,14 @@ function ProductPage() {
   const displayPrice = selectedVariant?.price ?? product.price;
   const displayStock = selectedVariant?.stockCount ?? product.stockCount ?? -1;
   const isOutOfStock = product.inStock === false || displayStock === 0;
+  const isSellable = product.sellable !== false;
 
   function addToCart() {
     if (!product) return;
+    if (!isSellable) {
+      toast.error(`"${product.name}" is coming soon and not currently available for purchase.`);
+      return;
+    }
     const effectiveUnitPrice = calculateDiscountedUnitPrice(displayPrice, qty);
     add({
       kind: "product",
@@ -394,7 +400,30 @@ function ProductPage() {
             </div>
           )}
 
-          {!isOutOfStock ? (
+          {!isSellable ? (
+            <div className="mt-8 rounded-2xl border border-accent/20 bg-accent/5 p-6 space-y-4">
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-accent/20 px-3 py-1 text-xs font-semibold text-accent">
+                  Coming Soon
+                </span>
+                <span className="text-xs text-muted">
+                  Batch production opening soon
+                </span>
+              </div>
+              <div>
+                <h3 className="font-display text-lg font-semibold text-fg">
+                  Get notified when {product.name} is available
+                </h3>
+                <p className="mt-1 text-xs text-muted leading-relaxed">
+                  We are finalizing print calibrations for this piece before opening orders. Leave your email to receive an early alert.
+                </p>
+              </div>
+              <WaitlistForm
+                interest={product.slug}
+                placeholder="Enter your email to be notified..."
+              />
+            </div>
+          ) : !isOutOfStock ? (
             <>
               {totalQty === 0 && (
                 <div className="mt-6">

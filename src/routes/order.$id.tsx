@@ -122,7 +122,7 @@ function OrderPage() {
           </p>
           <div className="flex sm:hidden flex-wrap gap-2 mt-5 print:hidden">
             <Button variant="outline" size="sm" onClick={handlePrintInvoice}>
-              <Receipt className="mr-2 size-4" /> Download Invoice
+              <Receipt className="mr-2 size-4" /> Download Receipt
             </Button>
             <Button variant="outline" size="sm" onClick={handleReorder}>
               <RotateCcw className="mr-2 size-4" /> Order Again
@@ -131,7 +131,7 @@ function OrderPage() {
         </div>
         <div className="hidden sm:flex flex-col gap-2">
           <Button variant="outline" size="sm" onClick={handlePrintInvoice} className="print:hidden">
-            <Receipt className="mr-2 size-4" /> Download Invoice
+            <Receipt className="mr-2 size-4" /> Download Receipt
           </Button>
           <Button variant="outline" size="sm" onClick={handleReorder} className="print:hidden">
             <RotateCcw className="mr-2 size-4" /> Order Again
@@ -346,7 +346,7 @@ function OrderPage() {
           <Link to="/shop">Continue shopping</Link>
         </Button>
         <Button variant="secondary" className="sm:hidden" onClick={handlePrintInvoice}>
-          Download Invoice
+          Download Receipt
         </Button>
         <Button variant="secondary" className="sm:hidden" onClick={handleReorder}>
           Order Again
@@ -359,7 +359,7 @@ function OrderPage() {
       {/* Print only footer */}
       <div className="hidden print:block mt-16 text-center text-sm text-muted">
         <p>Thank you for shopping with Prynth!</p>
-        <p>Questions? Contact us at support@prynth.com</p>
+        <p>Questions? Contact us at hello@prynth.in</p>
       </div>
 
       {/* Review Dialog */}

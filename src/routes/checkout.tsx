@@ -1,10 +1,13 @@
 import { createFileRoute, Link, useNavigate, getRouteApi } from "@tanstack/react-router";
 import { useState, useEffect, useMemo, type ChangeEvent } from "react";
 import { toast } from "sonner";
+import { ShoppingBag, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { WaitlistForm } from "@/components/waitlist-form";
+import { getCheckoutStatus } from "@/lib/settings-fns";
 import {
   cartSubtotal,
   COD_FEE,
@@ -56,6 +59,23 @@ function CheckoutPage() {
   const expressFee = Number(settings?.express_shipping_fee) || EXPRESS_SHIPPING;
   const codFee = Number(settings?.cod_fee) || COD_FEE;
   const hydrated = useHydrated();
+  const { data: checkoutStatus } = useQuery({
+    queryKey: ["checkout-status"],
+    queryFn: () => getCheckoutStatus(),
+    staleTime: 30000,
+  });
+  const isCheckoutOpen = checkoutStatus?.checkoutEnabled ?? false;
+
+  const allowedStateList = useMemo(() => {
+    const states = checkoutStatus?.allowedStates || ["Maharashtra"];
+    if (states.some((s) => s.toLowerCase() === "all india")) {
+      return INDIAN_STATES;
+    }
+    return INDIAN_STATES.filter((s) =>
+      states.some((allowed) => allowed.trim().toLowerCase() === s.trim().toLowerCase())
+    );
+  }, [checkoutStatus?.allowedStates]);
+
   const items = useCart((s) => s.items);
   const clear = useCart((s) => s.clear);
   const navigate = useNavigate();
@@ -107,7 +127,7 @@ function CheckoutPage() {
     if (settings?.payment_online_enabled !== "false") {
       options.push({ id: "online", label: "Online" });
     }
-    if (settings?.payment_cod_enabled !== "false" && !isCodRestricted) {
+    if (settings?.payment_cod_enabled !== "false" && checkoutStatus?.codEnabled && !isCodRestricted) {
       options.push({ id: "cod", label: "Cash on delivery" });
     }
     if (settings?.payment_upi_enabled !== "false") {
@@ -397,6 +417,13 @@ function CheckoutPage() {
         return;
       }
 
+      const utm = typeof window !== "undefined" ? {
+        source: sessionStorage.getItem("prynth_utm_source") || undefined,
+        medium: sessionStorage.getItem("prynth_utm_medium") || undefined,
+        campaign: sessionStorage.getItem("prynth_utm_campaign") || undefined,
+        content: sessionStorage.getItem("prynth_utm_content") || undefined,
+      } : undefined;
+
       if (pay === "online") {
         const orderPayload = {
           items,
@@ -409,6 +436,7 @@ function CheckoutPage() {
           paymentMethod: "razorpay",
           notes: formattedNotes,
           couponCode: appliedCoupon?.code,
+          utm,
         };
 
         const { orderId, amount, internalOrderNumber, keyId } = await createRazorpayOrder({
@@ -427,6 +455,7 @@ function CheckoutPage() {
             shippingMethod: ship,
             paymentMethod: pay,
             notes: formattedNotes,
+            utm,
           }
         });
         clear();
@@ -462,9 +491,46 @@ function CheckoutPage() {
     );
   }
 
+  if (!isCheckoutOpen) {
+    return (
+      <div className="mx-auto max-w-xl px-4 py-20 text-center md:px-6">
+        <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-accent/10 text-accent mb-4">
+          <ShoppingBag className="size-6" />
+        </div>
+        <h1 className="font-display text-3xl font-semibold tracking-tight">
+          {checkoutStatus?.reason === "daily_cap_reached" || checkoutStatus?.reason === "weekly_cap_reached"
+            ? "Fully booked for now"
+            : "Orders open soon"}
+        </h1>
+        <p className="mt-3 text-sm text-muted leading-relaxed">
+          {checkoutStatus?.reason === "daily_cap_reached" || checkoutStatus?.reason === "weekly_cap_reached"
+            ? "We have reached our studio printing capacity for this production window. Enter your email below to receive an alert when the next order slots open."
+            : "We are currently running test batches before opening public checkout. Join our waitlist to be notified first."}
+        </p>
+        <div className="mt-8 rounded-2xl border border-border bg-surface p-6 text-left shadow-xs">
+          <WaitlistForm interest="launch" />
+        </div>
+        <div className="mt-6">
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/cart">Return to cart</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-16">
       <h1 className="font-display text-4xl font-semibold tracking-tight">Checkout</h1>
+
+      {checkoutStatus?.isTestMode && (
+        <div className="mt-6 flex items-center gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-700 dark:text-amber-300 font-medium">
+          <span className="inline-block rounded-md bg-amber-500 text-black px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider shrink-0">
+            TEST MODE
+          </span>
+          <span>Payment gateway is operating in Razorpay Sandbox mode. Transactions are simulated and no real money is charged.</span>
+        </div>
+      )}
       <form onSubmit={placeOrder} className="mt-10 grid gap-10 md:grid-cols-12">
         <div className="space-y-8 md:col-span-7">
           <section>
@@ -530,12 +596,15 @@ function CheckoutPage() {
                   value={address.state}
                   onChange={(e) => setAddress((a) => ({ ...a, state: e.target.value }))}
                 >
-                  {INDIAN_STATES.map((s) => (
+                  {allowedStateList.map((s) => (
                     <option key={s} value={s}>
                       {s}
                     </option>
                   ))}
                 </select>
+                <p className="mt-1.5 text-[11px] text-muted">
+                  We currently deliver within Maharashtra. More states are opening soon.
+                </p>
               </div>
               
               {user && (

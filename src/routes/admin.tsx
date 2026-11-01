@@ -34,6 +34,8 @@ import {
   DraftingCompass,
   MessageSquareQuote,
   Scale,
+  TrendingUp,
+  Clock,
 } from "lucide-react";
 import { InquiriesTab } from "@/components/inquiries-tab";
 import { GrievancesTab } from "@/components/admin/grievances-tab";
@@ -56,6 +58,8 @@ import { AdminProfileTab } from "@/components/admin/profile-tab";
 import { FaqsTab } from "@/components/admin/faqs-tab";
 import { UsersTab } from "@/components/admin/users-tab";
 import { MaterialsTab } from "@/components/admin/materials-tab";
+import { LaunchLedgerTab } from "@/components/admin/ledger-tab";
+import { WaitlistTab } from "@/components/admin/waitlist-tab";
 
 export const Route = createFileRoute("/admin")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -194,6 +198,8 @@ function AdminPage() {
   const navItems = [
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     { id: "orders", label: "Orders", icon: Package },
+    { id: "ledger", label: "Launch Ledger", icon: TrendingUp },
+    { id: "waitlist", label: "Waitlist", icon: Clock },
     { id: "inquiries", label: "Inquiries", icon: Mail },
     { id: "grievances", label: "Grievances & DPDP", icon: Scale },
     { id: "services", label: "Services", icon: DraftingCompass },
@@ -454,6 +460,14 @@ function AdminPage() {
 
         {activeTab === "grievances" && (
           <GrievancesTab />
+        )}
+
+        {activeTab === "ledger" && (
+          <LaunchLedgerTab />
+        )}
+
+        {activeTab === "waitlist" && (
+          <WaitlistTab />
         )}
       </main>
 
