@@ -13,12 +13,22 @@
  * the same files at startup instead (see src/lib/db.ts).
  */
 import { readdir, readFile } from "node:fs/promises";
+import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import dns from "node:dns";
 import pg from "pg";
 import { pendingMigrations } from "./migration-plan.mjs";
 
-const rawDatabaseUrl = process.env.DATABASE_URL;
+let rawDatabaseUrl = process.env.DATABASE_URL;
+if (!rawDatabaseUrl && existsSync(".env")) {
+  const envText = readFileSync(".env", "utf8");
+  const match = envText.match(/^DATABASE_URL=(.*)$/m);
+  if (match) {
+    rawDatabaseUrl = match[1].trim().replace(/["']/g, '');
+  }
+}
+
 if (!rawDatabaseUrl || !rawDatabaseUrl.trim()) {
   console.log(
     "[migrate] DATABASE_URL not set — skipping (the PGLite fallback migrates itself).",
@@ -43,7 +53,31 @@ async function main() {
     return;
   }
 
-  const pool = new pg.Pool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 8000 });
+  const urlObj = new URL(databaseUrl);
+  let host = urlObj.hostname;
+  const originalHost = host;
+  try {
+    const resolver = new dns.promises.Resolver();
+    resolver.setServers(["8.8.8.8", "1.1.1.1"]);
+    const ips = await resolver.resolve4(host);
+    if (ips && ips.length > 0) {
+      host = ips[0];
+    }
+  } catch {}
+
+  const pool = new pg.Pool({
+    user: decodeURIComponent(urlObj.username),
+    password: decodeURIComponent(urlObj.password),
+    host: host,
+    port: Number(urlObj.port) || 5432,
+    database: urlObj.pathname.slice(1),
+    ssl: {
+      rejectUnauthorized: false,
+      servername: originalHost,
+    },
+    max: 1,
+    connectionTimeoutMillis: 10000,
+  });
   const client = await pool.connect();
   try {
     await client.query(

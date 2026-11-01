@@ -15,6 +15,7 @@ scratch_*
 *.zip
 
 # Internal studio knowledge base, memory & audit documents (keep local only)
+backups/
 PRYNTH_MASTER_MEMORY.md
 *MASTER_MEMORY*.md
 CHANGES_STATUS.md
