@@ -2,12 +2,12 @@ import { createServerFn } from "@tanstack/react-start";
 import { getSql } from "./db";
 import { authMiddleware, optionalAuthMiddleware } from "./auth/middleware";
 import { verifyAdminRole, verifyAdminPIN } from "./admin-fns";
-import { createRazorpayOrder as rzpCreateOrder, verifyRazorpaySignature, getRazorpayCredentials } from "./razorpay.server";
+import { createRazorpayOrder as rzpCreateOrder, verifyRazorpaySignature, getRazorpayCredentials, refundRazorpayPayment } from "./razorpay.server";
 import { sendOrderConfirmationEmail, sendOrderStatusUpdateEmail } from "./email.server";
 import { notifyNewOrder } from "./notifications.server";
 import { DEFAULT_MIN_PRINT } from "./quote";
 import { getBulkDiscount, shippingFee, hasNonCodItems, type CartItem } from "./cart-store";
-import { getSiteSettings } from "./settings-fns";
+import { getSiteSettings, fetchSiteSettings, calculateSettledProfit } from "./settings-fns";
 import type { Address } from "./orders-store";
 import {
   createShiprocketOrder,
@@ -58,6 +58,12 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
       paymentMethod: string;
       notes?: string;
       couponCode?: string;
+      utm?: {
+        source?: string;
+        medium?: string;
+        campaign?: string;
+        content?: string;
+      };
     }) => data,
   )
   .handler(async ({ data, context }) => {
@@ -65,6 +71,87 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
 
     // Opportunistic database maintenance: auto-prunes stale temporary files & guest carts (throttled to once per 4h)
     import("./maintenance.server").then(({ runDatabaseMaintenance }) => runDatabaseMaintenance(sql)).catch(() => {});
+
+    const settings = await fetchSiteSettings(sql);
+
+    // Gate A1: Master Checkout Switch
+    if (settings.checkout_enabled !== "true") {
+      const err: any = new Error("Customer checkout is currently closed. Join our waitlist to be notified when orders reopen.");
+      err.status = 403;
+      throw err;
+    }
+
+    // Gate A4: Profit Target Auto-Pause
+    const profitTarget = parseFloat(settings.profit_target_inr || "10000");
+    const profitData = await calculateSettledProfit(sql);
+    if (profitData.settledProfit >= profitTarget) {
+      await sql`UPDATE site_settings SET value = 'false' WHERE key = 'checkout_enabled'`;
+      const logId = "log_" + Date.now().toString(36);
+      await sql`
+        INSERT INTO admin_audit_logs (id, admin_email, action, details)
+        VALUES (${logId}, 'system:profit_target', 'AUTO_PAUSE_PROFIT_TARGET_REACHED', ${JSON.stringify({
+          settledProfit: profitData.settledProfit,
+          profitTarget,
+          timestamp: new Date().toISOString(),
+        })})
+      `;
+      const err: any = new Error("We have reached our production target for this batch. Orders are temporarily paused.");
+      err.status = 403;
+      throw err;
+    }
+
+    // Gate A3: Rolling Daily & Weekly Order Caps in IST
+    const maxPerDay = parseInt(settings.max_orders_per_day || "3", 10);
+    const maxPerWeek = parseInt(settings.max_orders_per_week || "10", 10);
+
+    const dayRows = await sql<{ count: string }>`
+      SELECT COUNT(*)::text as count FROM orders 
+      WHERE (payment_status = 'paid' OR payment_method = 'cod') 
+        AND status != 'cancelled' 
+        AND created_at >= (NOW() - INTERVAL '24 hours')
+    `;
+    const ordersToday = parseInt(dayRows[0]?.count || "0", 10);
+    if (ordersToday >= maxPerDay) {
+      const err: any = new Error("Daily order capacity reached. Please join the waitlist for the next release window.");
+      err.status = 429;
+      throw err;
+    }
+
+    const weekRows = await sql<{ count: string }>`
+      SELECT COUNT(*)::text as count FROM orders 
+      WHERE (payment_status = 'paid' OR payment_method = 'cod') 
+        AND status != 'cancelled' 
+        AND (created_at AT TIME ZONE 'Asia/Kolkata') >= date_trunc('week', NOW() AT TIME ZONE 'Asia/Kolkata')
+    `;
+    const ordersThisWeek = parseInt(weekRows[0]?.count || "0", 10);
+    if (ordersThisWeek >= maxPerWeek) {
+      const err: any = new Error("Weekly order capacity reached. Please join the waitlist for the next release window.");
+      err.status = 429;
+      throw err;
+    }
+
+    // Gate C3: Cash on Delivery Off
+    if (data.paymentMethod === "cod" && settings.cod_enabled !== "true") {
+      throw new Error("Cash on Delivery is currently unavailable.");
+    }
+
+    // Gate C4: Maharashtra Delivery Only (or Allowed Delivery States)
+    let allowedStates: string[] = ["Maharashtra"];
+    try {
+      if (settings.allowed_delivery_states) {
+        allowedStates = JSON.parse(settings.allowed_delivery_states);
+      }
+    } catch {
+      allowedStates = ["Maharashtra"];
+    }
+    const isAllIndia = allowedStates.some((s) => s.toLowerCase() === "all india");
+    if (!isAllIndia) {
+      const userState = (data.address.state || "").trim().toLowerCase();
+      const isStateAllowed = allowedStates.some((s) => s.trim().toLowerCase() === userState);
+      if (!isStateAllowed) {
+        throw new Error("We currently deliver within Maharashtra only. More states are opening soon.");
+      }
+    }
 
     // 0. Payload & Input Integrity Validation
     if (!data.items || !Array.isArray(data.items) || data.items.length === 0) {
@@ -84,10 +171,34 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
     let serverSubtotal = 0;
     for (const item of data.items) {
       const qty = Math.max(1, Math.min(1000, Math.floor(Number(item.qty) || 1)));
+
+      // Gate C2: Made-to-order services check
+      const isLithophaneItem = item.name?.toLowerCase().includes("lithophane") || item.productSlug?.includes("lithophane") || Boolean((item as any).custom?.isLithophane);
+      if (item.kind === "custom") {
+        if (isLithophaneItem) {
+          if (settings.lithophane_enabled !== "true") {
+            throw new Error("Lithophane orders are temporarily closed. Join the waitlist to be notified.");
+          }
+        } else if (settings.custom_orders_enabled !== "true") {
+          throw new Error("Custom 3D printing orders are temporarily closed. Join the waitlist to be notified.");
+        }
+      }
+      if (item.productSlug === "modular-pegboard") {
+        if (settings.pegboard_checkout_enabled !== "true") {
+          throw new Error("Pegboard orders are temporarily closed. Join the waitlist to be notified.");
+        }
+      }
+
       if (item.kind === "product" && item.productSlug) {
-        const productRes = await sql`SELECT price, stock_count, in_stock FROM products WHERE slug = ${item.productSlug}`;
-        const product = productRes[0] as { price: number; stock_count: number; in_stock: boolean } | undefined;
+        const productRes = await sql`SELECT price, stock_count, in_stock, sellable FROM products WHERE slug = ${item.productSlug}`;
+        const product = productRes[0] as { price: number; stock_count: number; in_stock: boolean; sellable?: boolean } | undefined;
         if (!product) throw new Error(`Product ${item.name} not found`);
+
+        // Gate C1: Sellable product allowlist
+        if (product.sellable === false) {
+          throw new Error(`Product "${item.name}" is not currently available for purchase in this phase.`);
+        }
+
         if (product.in_stock === false) throw new Error(`Product ${item.name} is currently out of stock`);
         
         const variants = await sql`SELECT * FROM product_variants WHERE product_slug = ${item.productSlug}`;
@@ -142,7 +253,7 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
 
     const discount = bulkDiscount + couponDiscount;
 
-    const settings = await getSiteSettings();
+    // settings already loaded at top of handler
     const freeThreshold = Number(settings.free_shipping_threshold || 399);
     const standardFee = Number(settings.standard_shipping_fee || 79);
     const expressFee = Number(settings.express_shipping_fee || 189);
@@ -191,11 +302,13 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
         INSERT INTO orders (
           user_id, guest_email, order_number, status, total, subtotal, shipping, extra, 
           items, shipping_address, shipping_method, payment_method, 
-          razorpay_order_id, payment_status, notes
+          razorpay_order_id, payment_status, notes,
+          utm_source, utm_medium, utm_campaign, utm_content
         ) VALUES (
           ${context.userId || null}, ${!context.userId ? data.address.email : null}, ${orderNumber}, 'pending', ${finalTotal}, ${finalSubtotal}, ${shipping}, ${extra},
           ${JSON.stringify(dbItems)}, ${JSON.stringify(data.address)}, ${data.shippingMethod}, 'razorpay',
-          ${rzpOrder.id}, 'pending', ${data.notes || null}
+          ${rzpOrder.id}, 'pending', ${data.notes || null},
+          ${data.utm?.source || null}, ${data.utm?.medium || null}, ${data.utm?.campaign || null}, ${data.utm?.content || null}
         )
       `;
 
@@ -215,11 +328,13 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
         INSERT INTO orders (
           user_id, guest_email, order_number, status, total, subtotal, shipping, extra, 
           items, shipping_address, shipping_method, payment_method, 
-          payment_status, notes
+          payment_status, notes,
+          utm_source, utm_medium, utm_campaign, utm_content
         ) VALUES (
           ${context.userId || null}, ${!context.userId ? data.address.email : null}, ${orderNumber}, 'pending', ${finalTotal}, ${finalSubtotal}, ${shipping}, ${extra},
           ${JSON.stringify(dbItems)}, ${JSON.stringify(data.address)}, ${data.shippingMethod}, ${data.paymentMethod},
-          'pending', ${data.notes || null}
+          'pending', ${data.notes || null},
+          ${data.utm?.source || null}, ${data.utm?.medium || null}, ${data.utm?.campaign || null}, ${data.utm?.content || null}
         )
       `;
 
@@ -584,6 +699,16 @@ export const shipWithShiprocket = createServerFn({ method: "POST" })
     const admin = await verifyAdminRole(context.userId, sql);
     if (!admin) throw new Error("Unauthorized");
 
+    // Gate D4: Check dispatch address from settings
+    const settings = await fetchSiteSettings(sql);
+    const pickupLocation = (data.pickup_location || settings.shiprocket_pickup_location)?.trim();
+    const pickupAddress = settings.shiprocket_pickup_address?.trim();
+    if (!pickupAddress && !pickupLocation) {
+      throw new Error(
+        "Courier booking blocked: Shiprocket pickup dispatch address is not configured. Please set your studio pickup dispatch address in Admin Settings before booking courier dispatch."
+      );
+    }
+
     // Fetch order
     const orderRes = await sql`SELECT * FROM orders WHERE order_number = ${data.order_number}`;
     if (orderRes.length === 0) throw new Error("Order not found");
@@ -764,5 +889,307 @@ export const updateOrderTrackingAdmin = createServerFn({ method: "POST" })
       tracking_url: trackUrl,
     };
   });
+
+/**
+ * Admin Refund Endpoint (D3)
+ * Full or partial refund with Razorpay integration, notes timeline, and ledger update.
+ */
+export const refundOrderAdmin = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator(
+    (data: {
+      order_id: number;
+      amount_inr: number;
+      reason: string;
+      category?: "defect" | "delay" | "transit_damage" | "other";
+    }) => data
+  )
+  .handler(async ({ data, context }) => {
+    const sql = await getSql();
+    const admin = await verifyAdminRole(context.userId, sql);
+    if (!admin) throw new Error("Unauthorized");
+
+    const orderRows = await sql<any>`SELECT * FROM orders WHERE id = ${data.order_id} LIMIT 1`;
+    if (orderRows.length === 0) throw new Error("Order not found");
+    const order = orderRows[0];
+
+    const currentRefund = Number(order.refund_amount) || 0;
+    const orderTotal = Number(order.total) || 0;
+    const refundAmount = Number(data.amount_inr);
+
+    if (isNaN(refundAmount) || refundAmount <= 0) {
+      throw new Error("Refund amount must be greater than ₹0.");
+    }
+
+    if (currentRefund + refundAmount > orderTotal + 0.01) {
+      throw new Error(
+        `Refund exceeds maximum permissible amount. Order total is ₹${orderTotal}, already refunded ₹${currentRefund}.`
+      );
+    }
+
+    let rzpRefundId: string | null = null;
+    // Call Razorpay refund API if payment was online and has payment ID
+    if (order.razorpay_payment_id) {
+      try {
+        const refundResult = await refundRazorpayPayment({
+          paymentId: order.razorpay_payment_id,
+          amountPaise: Math.round(refundAmount * 100),
+          notes: {
+            order_number: order.order_number,
+            reason: data.reason,
+            admin: admin.email || "admin",
+          },
+        });
+        rzpRefundId = refundResult.id;
+      } catch (err: any) {
+        console.error("Razorpay refund error:", err);
+        throw new Error(`Razorpay refund failed: ${err.message || String(err)}`);
+      }
+    }
+
+    const newRefundTotal = currentRefund + refundAmount;
+    const isFullRefund = newRefundTotal >= orderTotal - 0.5;
+
+    const noteEntry = {
+      id: "note_" + Date.now().toString(36),
+      type: "refund",
+      category: data.category || "other",
+      amount: refundAmount,
+      reason: data.reason,
+      razorpay_refund_id: rzpRefundId,
+      created_at: new Date().toISOString(),
+      created_by: admin.email || "admin",
+    };
+
+    const currentTimeline = Array.isArray(order.notes_timeline) ? order.notes_timeline : [];
+    const updatedTimeline = [...currentTimeline, noteEntry];
+
+    await sql`
+      UPDATE orders
+      SET
+        refund_amount = ${newRefundTotal},
+        payment_status = ${isFullRefund ? "refunded" : order.payment_status},
+        notes_timeline = ${JSON.stringify(updatedTimeline)}::jsonb
+      WHERE id = ${order.id}
+    `;
+
+    // Audit log
+    const auditId = "log_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 6);
+    await sql`
+      INSERT INTO admin_audit_logs (id, admin_email, action, details)
+      VALUES (
+        ${auditId},
+        ${admin.email || "admin"},
+        'ORDER_REFUND',
+        ${JSON.stringify({
+          order_number: order.order_number,
+          amount: refundAmount,
+          reason: data.reason,
+          rzp_refund_id: rzpRefundId,
+          timestamp: new Date().toISOString(),
+        })}
+      )
+    `;
+
+    // Send customer email update
+    try {
+      const customerEmail =
+        order.guest_email ||
+        (typeof order.shipping_address === "string"
+          ? JSON.parse(order.shipping_address)?.email
+          : order.shipping_address?.email);
+      if (customerEmail) {
+        await sendOrderStatusUpdateEmail(order.order_number, customerEmail, "refunded");
+      }
+    } catch (e) {
+      console.warn("Refund customer email skipped:", e);
+    }
+
+    return {
+      success: true,
+      refundedAmount: refundAmount,
+      totalRefunded: newRefundTotal,
+      isFullRefund,
+      razorpayRefundId: rzpRefundId,
+    };
+  });
+
+/**
+ * Admin Timeline Note Endpoint (D3)
+ * Adds an issue or operational note (defect, delay, transit damage, general) to order.
+ */
+export const addOrderNoteAdmin = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator(
+    (data: {
+      order_id: number;
+      category: "defect" | "delay" | "transit_damage" | "general";
+      note: string;
+    }) => data
+  )
+  .handler(async ({ data, context }) => {
+    const sql = await getSql();
+    const admin = await verifyAdminRole(context.userId, sql);
+    if (!admin) throw new Error("Unauthorized");
+
+    const orderRows = await sql<any>`SELECT notes_timeline FROM orders WHERE id = ${data.order_id} LIMIT 1`;
+    if (orderRows.length === 0) throw new Error("Order not found");
+
+    const currentTimeline = Array.isArray(orderRows[0].notes_timeline) ? orderRows[0].notes_timeline : [];
+    const noteEntry = {
+      id: "note_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 6),
+      type: "note",
+      category: data.category,
+      note: data.note,
+      created_at: new Date().toISOString(),
+      created_by: admin.email || "admin",
+    };
+
+    const updatedTimeline = [...currentTimeline, noteEntry];
+
+    await sql`
+      UPDATE orders
+      SET notes_timeline = ${JSON.stringify(updatedTimeline)}::jsonb
+      WHERE id = ${data.order_id}
+    `;
+
+    return { success: true, note: noteEntry };
+  });
+
+/**
+ * Admin Machine-Time Production Logs (D2)
+ */
+export const getOrderItemProductionLogsAdmin = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .validator((orderId: number) => orderId)
+  .handler(async ({ data: orderId, context }) => {
+    const sql = await getSql();
+    const admin = await verifyAdminRole(context.userId, sql);
+    if (!admin) throw new Error("Unauthorized");
+
+    const rows = await sql<any>`
+      SELECT * FROM order_item_production_logs 
+      WHERE order_id = ${orderId} 
+      ORDER BY item_index ASC, created_at ASC
+    `;
+    return rows;
+  });
+
+export const saveOrderItemProductionLogAdmin = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator(
+    (data: {
+      order_id: number;
+      item_index: number;
+      item_name?: string;
+      printer_label?: string;
+      print_minutes?: number;
+      filament_grams?: number;
+      printed_by?: string;
+      qc_passed?: boolean;
+      notes?: string;
+    }) => data
+  )
+  .handler(async ({ data, context }) => {
+    const sql = await getSql();
+    const admin = await verifyAdminRole(context.userId, sql);
+    if (!admin) throw new Error("Unauthorized");
+
+    const logId = "prod_" + data.order_id + "_" + data.item_index;
+
+    await sql`
+      INSERT INTO order_item_production_logs (
+        id, order_id, item_index, item_name, printer_label, print_minutes, 
+        filament_grams, printed_by, qc_passed, notes
+      ) VALUES (
+        ${logId}, ${data.order_id}, ${data.item_index}, ${data.item_name || null},
+        ${data.printer_label || null}, ${data.print_minutes || 0}, ${data.filament_grams || 0},
+        ${data.printed_by || admin.email || "admin"}, ${data.qc_passed ?? true}, ${data.notes || null}
+      )
+      ON CONFLICT (id) DO UPDATE SET
+        printer_label = EXCLUDED.printer_label,
+        print_minutes = EXCLUDED.print_minutes,
+        filament_grams = EXCLUDED.filament_grams,
+        printed_by = EXCLUDED.printed_by,
+        qc_passed = EXCLUDED.qc_passed,
+        notes = EXCLUDED.notes
+    `;
+
+    return { success: true };
+  });
+
+/**
+ * Admin Settlement & Ledger Operations (D1)
+ */
+export const toggleOrderSettledAdmin = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator(
+    (data: {
+      order_id: number;
+      settled: boolean;
+      courier_actual_cost?: number;
+      payment_fee_actual?: number;
+    }) => data
+  )
+  .handler(async ({ data, context }) => {
+    const sql = await getSql();
+    const admin = await verifyAdminRole(context.userId, sql);
+    if (!admin) throw new Error("Unauthorized");
+
+    const settledDate = data.settled ? new Date().toISOString() : null;
+
+    await sql`
+      UPDATE orders
+      SET
+        settled = ${data.settled},
+        settled_date = ${settledDate},
+        courier_actual_cost = COALESCE(${data.courier_actual_cost ?? null}, courier_actual_cost),
+        payment_fee_actual = COALESCE(${data.payment_fee_actual ?? null}, payment_fee_actual)
+      WHERE id = ${data.order_id}
+    `;
+
+    return { success: true };
+  });
+
+export const addOrderAdjustmentAdmin = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator((data: { order_id?: number; reason: string; amount_inr: number }) => data)
+  .handler(async ({ data, context }) => {
+    const sql = await getSql();
+    const admin = await verifyAdminRole(context.userId, sql);
+    if (!admin) throw new Error("Unauthorized");
+
+    const id = "adj_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 6);
+
+    await sql`
+      INSERT INTO order_adjustments (id, order_id, reason, amount_inr, created_by)
+      VALUES (${id}, ${data.order_id || null}, ${data.reason}, ${data.amount_inr}, ${admin.email || "admin"})
+    `;
+
+    return { success: true, id };
+  });
+
+export const deleteOrderAdjustmentAdmin = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator((id: string) => id)
+  .handler(async ({ data: id, context }) => {
+    const sql = await getSql();
+    const admin = await verifyAdminRole(context.userId, sql);
+    if (!admin) throw new Error("Unauthorized");
+
+    await sql`DELETE FROM order_adjustments WHERE id = ${id}`;
+    return { success: true };
+  });
+
+export const getLaunchLedgerAdmin = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => {
+    const sql = await getSql();
+    const admin = await verifyAdminRole(context.userId, sql);
+    if (!admin) throw new Error("Unauthorized");
+
+    return calculateSettledProfit(sql);
+  });
+
 
 

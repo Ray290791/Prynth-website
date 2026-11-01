@@ -6,8 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { shipWithShiprocket, updateOrderTrackingAdmin } from "@/lib/orders-fns";
+import { cn } from "@/lib/utils";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  shipWithShiprocket,
+  updateOrderTrackingAdmin,
+  refundOrderAdmin,
+  addOrderNoteAdmin,
+  getOrderItemProductionLogsAdmin,
+  saveOrderItemProductionLogAdmin,
+  toggleOrderSettledAdmin,
+} from "@/lib/orders-fns";
 import {
   ExternalLink,
   Download,
@@ -25,6 +34,14 @@ import {
   MapPin,
   Clock,
   Box,
+  RefreshCcw,
+  AlertTriangle,
+  ShieldCheck,
+  CheckCircle2,
+  History,
+  RotateCcw,
+  Wrench,
+  MessageSquare,
 } from "lucide-react";
 import type { CartItem } from "@/lib/cart-store";
 import type { Address } from "@/lib/orders-store";
@@ -134,6 +151,80 @@ export function OrderDetailsDialog({
           : err?.message || "Failed to create Shiprocket shipment."
       );
     },
+  });
+
+  // ── Interim Selling Phase: Production Logs (D2) ───────────────────────────
+  const { data: productionLogs = [], refetch: refetchProdLogs } = useQuery({
+    queryKey: ["orderProdLogs", order.id],
+    queryFn: () => getOrderItemProductionLogsAdmin({ data: order.id }),
+    staleTime: 30_000,
+  });
+
+  const saveProdLogMutation = useMutation({
+    mutationFn: (data: any) => saveOrderItemProductionLogAdmin({ data }),
+    onSuccess: () => {
+      refetchProdLogs();
+      toast.success("Production log saved!");
+    },
+    onError: (err: any) => toast.error(err?.message || "Failed to save production log"),
+  });
+
+  // ── Interim Selling Phase: Refunds & Notes Timeline (D3) ───────────────────
+  const [showRefundModal, setShowRefundModal] = useState(false);
+  const [refundAmount, setRefundAmount] = useState("");
+  const [refundReason, setRefundReason] = useState("");
+  const [refundCategory, setRefundCategory] = useState<"defect" | "delay" | "transit_damage" | "cancellation" | "other">("cancellation");
+
+  const refundMutation = useMutation({
+    mutationFn: (data: { order_id: number; amount_inr: number; reason: string; category?: any }) =>
+      refundOrderAdmin({ data }),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["adminOrders"] });
+      queryClient.invalidateQueries({ queryKey: ["launchLedgerAdmin"] });
+      toast.success(`Refund of ₹${res.refundedAmount} processed successfully!`);
+      order.refund_amount = res.totalRefunded;
+      if (res.isFullRefund) order.payment_status = "refunded";
+      setShowRefundModal(false);
+      setRefundAmount("");
+      setRefundReason("");
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || "Failed to process refund");
+    },
+  });
+
+  const [noteText, setNoteText] = useState("");
+  const [noteCategory, setNoteCategory] = useState<"defect" | "delay" | "transit_damage" | "general">("general");
+
+  const addNoteMutation = useMutation({
+    mutationFn: (data: { order_id: number; category: any; note: string }) =>
+      addOrderNoteAdmin({ data }),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["adminOrders"] });
+      toast.success("Timeline note logged!");
+      const current = Array.isArray(order.notes_timeline) ? order.notes_timeline : [];
+      order.notes_timeline = [...current, res.note];
+      setNoteText("");
+    },
+    onError: (err: any) => toast.error(err?.message || "Failed to add note"),
+  });
+
+  // ── Interim Selling Phase: Settlement & Actual Courier (D1) ────────────────
+  const [actualCourierCost, setActualCourierCost] = useState(
+    order.courier_actual_cost != null ? String(order.courier_actual_cost) : (order.shipping ? String(order.shipping) : "0")
+  );
+
+  const settleMutation = useMutation({
+    mutationFn: (data: { order_id: number; settled: boolean; courier_actual_cost?: number }) =>
+      toggleOrderSettledAdmin({ data }),
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["adminOrders"] });
+      queryClient.invalidateQueries({ queryKey: ["launchLedgerAdmin"] });
+      order.settled = vars.settled;
+      if (vars.courier_actual_cost != null) order.courier_actual_cost = vars.courier_actual_cost;
+      toast.success(vars.settled ? "Order marked as settled in Launch Ledger!" : "Order unmarked as settled");
+    },
+    onError: (err: any) => toast.error(err?.message || "Failed to update settlement"),
   });
 
   useEffect(() => {
@@ -958,6 +1049,361 @@ export function OrderDetailsDialog({
               )}
             </div>
           </div>
+
+          {/* INTERIM PHASE D2: Machine-Time & Production Logs */}
+          <div className="border border-border rounded-2xl overflow-hidden">
+            <div className="flex items-center justify-between bg-surface-2/60 px-4 py-3">
+              <div className="flex items-center gap-2">
+                <PrinterIcon className="size-4 text-accent" />
+                <span className="text-sm font-semibold text-fg">Machine-Time &amp; Production Logs (D2)</span>
+              </div>
+              <span className="text-[11px] text-muted">Admin internal records</span>
+            </div>
+            <div className="p-4 space-y-4">
+              <p className="text-xs text-muted leading-relaxed">
+                Log printer minutes, filament usage, and QC verification for each item to calculate machine wear and partner revenue shares.
+              </p>
+              <div className="space-y-3">
+                {items.map((item, idx) => {
+                  const existingLog = (productionLogs || []).find((l: any) => l.item_index === idx) || {};
+                  return (
+                    <div key={idx} className="p-3 rounded-xl border border-border bg-surface-2/30 space-y-2.5 text-xs">
+                      <div className="flex items-center justify-between font-semibold text-fg">
+                        <span>Item #{idx + 1}: {item.name} ({item.qty}x)</span>
+                        {existingLog.qc_passed && (
+                          <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-[10px]">
+                            QC Passed
+                          </Badge>
+                        )}
+                      </div>
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          const fd = new FormData(e.currentTarget);
+                          saveProdLogMutation.mutate({
+                            order_id: order.id,
+                            item_index: idx,
+                            item_name: item.name,
+                            printer_label: (fd.get("printer_label") as string)?.trim(),
+                            print_minutes: parseInt(fd.get("print_minutes") as string, 10) || 0,
+                            filament_grams: parseInt(fd.get("filament_grams") as string, 10) || 0,
+                            printed_by: (fd.get("printed_by") as string)?.trim(),
+                            qc_passed: fd.get("qc_passed") === "on",
+                            notes: (fd.get("notes") as string)?.trim(),
+                          });
+                        }}
+                        className="space-y-2"
+                      >
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          <div>
+                            <Label className="text-[10px] text-muted">Printer Label</Label>
+                            <Input
+                              name="printer_label"
+                              defaultValue={existingLog.printer_label || "Bambu Lab"}
+                              placeholder="e.g. Bambu X1C #1"
+                              className="h-7 text-xs mt-0.5"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-muted">Print Minutes</Label>
+                            <Input
+                              name="print_minutes"
+                              type="number"
+                              defaultValue={existingLog.print_minutes ?? 120}
+                              className="h-7 text-xs mt-0.5 font-mono"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-muted">Filament (Grams)</Label>
+                            <Input
+                              name="filament_grams"
+                              type="number"
+                              defaultValue={existingLog.filament_grams ?? 60}
+                              className="h-7 text-xs mt-0.5 font-mono"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-muted">Operator / Maker</Label>
+                            <Input
+                              name="printed_by"
+                              defaultValue={existingLog.printed_by || ""}
+                              placeholder="Founder"
+                              className="h-7 text-xs mt-0.5"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-center">
+                          <div className="sm:col-span-2">
+                            <Input
+                              name="notes"
+                              defaultValue={existingLog.notes || ""}
+                              placeholder="Production notes (layer lines, bed temp, cooling)..."
+                              className="h-7 text-xs"
+                            />
+                          </div>
+                          <div className="flex items-center justify-between gap-2">
+                            <label className="flex items-center gap-1.5 cursor-pointer text-xs">
+                              <input
+                                type="checkbox"
+                                name="qc_passed"
+                                defaultChecked={existingLog.qc_passed ?? true}
+                                className="size-3.5 rounded border-border text-accent"
+                              />
+                              <span className="font-medium text-[11px]">QC Pass</span>
+                            </label>
+                            <Button
+                              type="submit"
+                              size="sm"
+                              disabled={saveProdLogMutation.isPending}
+                              className="h-7 text-xs px-3 bg-surface hover:bg-surface-2 border border-border text-fg font-semibold cursor-pointer"
+                            >
+                              Save Log
+                            </Button>
+                          </div>
+                        </div>
+                      </form>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* INTERIM PHASE D3: Issue Handling, Refunds & Timeline Notes */}
+          <div className="border border-border rounded-2xl overflow-hidden">
+            <div className="flex items-center justify-between bg-surface-2/60 px-4 py-3">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="size-4 text-accent" />
+                <span className="text-sm font-semibold text-fg">Issue Handling &amp; Refunds (D3)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {Number(order.refund_amount) > 0 && (
+                  <Badge className="bg-danger/10 text-danger border border-danger/30 text-xs font-mono">
+                    Refunded: {formatINR(order.refund_amount)}
+                  </Badge>
+                )}
+                {Number(order.total) > Number(order.refund_amount || 0) && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setRefundAmount(String(Number(order.total) - Number(order.refund_amount || 0)));
+                      setShowRefundModal(true);
+                    }}
+                    className="text-xs h-7 px-2.5 text-danger border-danger/30 hover:bg-danger/10 cursor-pointer"
+                  >
+                    <RotateCcw className="size-3 mr-1" /> Issue Refund
+                  </Button>
+                )}
+              </div>
+            </div>
+            <div className="p-4 space-y-4">
+              {/* Notes Timeline History */}
+              <div className="space-y-2">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-1.5">
+                  <History className="size-3.5" /> Order Notes Timeline
+                </h4>
+                {Array.isArray(order.notes_timeline) && order.notes_timeline.length > 0 ? (
+                  <div className="space-y-2">
+                    {order.notes_timeline.map((item: any, nIdx: number) => (
+                      <div key={nIdx} className="p-2.5 rounded-lg border border-border bg-surface-2/30 text-xs flex flex-col gap-1">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold capitalize text-fg flex items-center gap-1.5">
+                            <span className="size-1.5 rounded-full bg-accent" />
+                            {item.category?.replace("_", " ") || "Note"}
+                          </span>
+                          <span className="text-[10px] text-muted">
+                            {item.created_at ? new Date(item.created_at).toLocaleString() : ""} by {item.created_by || "Admin"}
+                          </span>
+                        </div>
+                        <p className="text-muted leading-relaxed">{item.note}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted italic">No timeline notes recorded yet.</p>
+                )}
+              </div>
+
+              {/* Add Note Form */}
+              <div className="pt-2 border-t border-border flex flex-col sm:flex-row gap-2">
+                <select
+                  value={noteCategory}
+                  onChange={(e) => setNoteCategory(e.target.value as any)}
+                  className="rounded-lg border border-border bg-surface p-1.5 text-xs text-fg h-8"
+                >
+                  <option value="general">General Note</option>
+                  <option value="defect">Print Defect</option>
+                  <option value="delay">Workshop Delay</option>
+                  <option value="transit_damage">Transit Damage</option>
+                </select>
+                <Input
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  placeholder="Log defect, reprint status, customer inquiry, or delay notes..."
+                  className="h-8 text-xs flex-1"
+                />
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    if (!noteText.trim()) return;
+                    addNoteMutation.mutate({
+                      order_id: order.id,
+                      category: noteCategory,
+                      note: noteText.trim(),
+                    });
+                  }}
+                  disabled={addNoteMutation.isPending || !noteText.trim()}
+                  className="h-8 text-xs px-3 font-semibold cursor-pointer shrink-0"
+                >
+                  Log Note
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* INTERIM PHASE D1: Launch Ledger Settlement */}
+          <div className="border border-border rounded-2xl p-4 bg-surface-2/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-fg flex items-center gap-1.5">
+                  <CheckCircle2 className="size-4 text-accent" /> Launch Ledger Settlement Gate (D1)
+                </span>
+                {order.settled ? (
+                  <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[10px]">
+                    Settled in Raw Profit
+                  </Badge>
+                ) : (
+                  <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[10px]">
+                    Unsettled (Pending)
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-muted max-w-md">
+                Only settled orders are counted towards the ₹10,000 profit target. Mark as settled when parcel is delivered and money is in your bank.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 self-end sm:self-auto">
+              <div>
+                <Label className="text-[10px] text-muted block mb-0.5">Actual Courier Cost (₹)</Label>
+                <Input
+                  type="number"
+                  value={actualCourierCost}
+                  onChange={(e) => setActualCourierCost(e.target.value)}
+                  className="h-8 w-24 text-xs font-mono"
+                  placeholder="79"
+                />
+              </div>
+              <Button
+                size="sm"
+                onClick={() => {
+                  settleMutation.mutate({
+                    order_id: order.id,
+                    settled: !order.settled,
+                    courier_actual_cost: parseFloat(actualCourierCost) || 0,
+                  });
+                }}
+                disabled={settleMutation.isPending}
+                className={cn(
+                  "h-8 text-xs font-semibold px-4 cursor-pointer mt-3 sm:mt-4",
+                  order.settled
+                    ? "bg-surface hover:bg-surface-2 border border-border text-fg"
+                    : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                )}
+              >
+                {order.settled ? "Unsettle" : "Mark as Settled"}
+              </Button>
+            </div>
+          </div>
+
+          {/* Refund Modal */}
+          {showRefundModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-150">
+              <div className="relative w-full max-w-sm rounded-2xl border border-border bg-surface p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+                <div className="flex items-center gap-2.5">
+                  <RotateCcw className="size-5 text-danger" />
+                  <h3 className="text-base font-bold text-fg">Process Order Refund</h3>
+                </div>
+                <p className="text-xs text-muted leading-relaxed">
+                  Calls Razorpay Refunds API, updates order status, emails customer, and logs to audit ledger.
+                </p>
+
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-xs">Refund Category *</Label>
+                    <select
+                      value={refundCategory}
+                      onChange={(e) => setRefundCategory(e.target.value as any)}
+                      className="w-full rounded-lg border border-border bg-surface-2 p-2 text-xs mt-1"
+                    >
+                      <option value="cancellation">Customer Cancellation</option>
+                      <option value="defect">Print Defect / Quality Issue</option>
+                      <option value="transit_damage">Damaged in Transit</option>
+                      <option value="delay">Excessive Delay</option>
+                      <option value="other">Other Reason</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs">Refund Amount (₹) *</Label>
+                    <Input
+                      type="number"
+                      max={Number(order.total) - Number(order.refund_amount || 0)}
+                      value={refundAmount}
+                      onChange={(e) => setRefundAmount(e.target.value)}
+                      placeholder="Amount to refund in INR"
+                      className="h-8 text-xs mt-1 font-mono"
+                    />
+                    <p className="text-[10px] text-muted mt-0.5">
+                      Max refundable: {formatINR(Number(order.total) - Number(order.refund_amount || 0))}
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs">Reason for Refund *</Label>
+                    <Input
+                      value={refundReason}
+                      onChange={(e) => setRefundReason(e.target.value)}
+                      placeholder="e.g. Broken in transit, customer requested cancellation"
+                      className="h-8 text-xs mt-1"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-2 justify-end pt-3 border-t border-border">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowRefundModal(false)}
+                    className="text-xs"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      const amt = parseFloat(refundAmount);
+                      if (!refundReason.trim() || isNaN(amt) || amt <= 0) {
+                        toast.error("Please enter a valid amount and reason");
+                        return;
+                      }
+                      refundMutation.mutate({
+                        order_id: order.id,
+                        amount_inr: amt,
+                        reason: refundReason.trim(),
+                        category: refundCategory,
+                      });
+                    }}
+                    disabled={refundMutation.isPending || !refundReason.trim() || !refundAmount}
+                    className="text-xs bg-danger hover:bg-danger/90 text-white font-semibold cursor-pointer"
+                  >
+                    {refundMutation.isPending ? "Refunding..." : "Confirm Refund"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Pricing Summary */}
 
