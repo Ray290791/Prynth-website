@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { getUserOrders } from "@/lib/orders-fns";
 import { getUserTickets } from "@/lib/contact-fns";
 import { getUserProfile, getAddresses } from "@/lib/user-profile-fns";
+import { getSiteSettings } from "@/lib/settings-fns";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatINR } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +14,7 @@ import { updateUserProfile, setDefaultAddress, deleteAddress } from "@/lib/user-
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Layers, Clock, Package, Shield, ArrowRight } from "lucide-react";
+import { Layers, Clock, Package, Shield, ArrowRight, MessageCircle, Mail } from "lucide-react";
 import { useIsAdmin } from "@/lib/auth/use-admin";
 
 export const Route = createFileRoute("/profile")({
@@ -86,6 +87,11 @@ function ProfilePage() {
   const { data: tickets = [], isLoading: ticketsLoading } = useQuery({
     queryKey: ["userTickets"],
     queryFn: () => getUserTickets(),
+  });
+
+  const { data: siteSettings } = useQuery({
+    queryKey: ["siteSettings"],
+    queryFn: () => getSiteSettings(),
   });
 
   if (!user) return <div className="p-8 text-center">Please log in to view your profile.</div>;
@@ -428,13 +434,57 @@ function ProfilePage() {
                     }
 
                     const isCustom = Boolean(parsed?.isCustomRequest);
-                    const isOpen = t.status === "open";
+                    const rawPhone = siteSettings?.contact_whatsapp || siteSettings?.contact_phone || "918369485272";
+                    const cleanPhone = rawPhone.replace(/\D/g, "");
+                    const studioPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+
+                    const customerWaUrl = `https://wa.me/${studioPhone}?text=${encodeURIComponent(
+                      `Hi Prynth! I am inquiring about my Custom 3D Request #${t.id}${parsed?.sizeName ? ` (${parsed.sizeName})` : ""}.`
+                    )}`;
+
+                    const getStageInfo = (status: string) => {
+                      switch (status) {
+                        case "discussion":
+                          return {
+                            label: "In Discussion with Engineering",
+                            badgeClass: "bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30",
+                            dotClass: "bg-sky-500",
+                          };
+                        case "quoted":
+                          return {
+                            label: "Quotation Sent (Check WhatsApp / Email)",
+                            badgeClass: "bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30",
+                            dotClass: "bg-purple-500",
+                          };
+                        case "in_production":
+                          return {
+                            label: "Fabricating in Studio (3D Printing)",
+                            badgeClass: "bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30",
+                            dotClass: "bg-cyan-500",
+                          };
+                        case "resolved":
+                        case "closed":
+                          return {
+                            label: "Completed & Delivered",
+                            badgeClass: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
+                            dotClass: "bg-emerald-500",
+                          };
+                        default:
+                          return {
+                            label: "Under Review (Quote in 24h)",
+                            badgeClass: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
+                            dotClass: "bg-amber-500",
+                          };
+                      }
+                    };
+
+                    const stage = getStageInfo(t.status);
 
                     return (
                       <div key={t.id} className="rounded-xl border border-border bg-surface p-5 shadow-sm space-y-3">
                         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 pb-3">
                           <div className="space-y-0.5">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-semibold text-fg text-sm sm:text-base">
                                 Request #{t.id}
                               </span>
@@ -443,15 +493,9 @@ function ProfilePage() {
                                   Custom 3D Idea
                                 </Badge>
                               )}
-                              <Badge
-                                className={cn(
-                                  "capitalize text-[11px] px-2 py-0.5 font-medium rounded-full border",
-                                  isOpen
-                                    ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
-                                    : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
-                                )}
-                              >
-                                {isOpen ? "Under Review (Quote in 24h)" : "Quote Provided / Resolved"}
+                              <Badge className={cn("text-[11px] px-2.5 py-0.5 font-medium rounded-full border flex items-center gap-1.5", stage.badgeClass)}>
+                                <span className={cn("size-1.5 rounded-full", stage.dotClass)} />
+                                <span>{stage.label}</span>
                               </Badge>
                             </div>
                             <p className="text-xs text-muted">
@@ -504,6 +548,27 @@ function ProfilePage() {
                             </div>
                           </div>
                         )}
+
+                        {/* Customer 2-way communication buttons */}
+                        <div className="flex items-center gap-2 pt-3 border-t border-border/30 flex-wrap">
+                          <a
+                            href={customerWaUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600/10 hover:bg-emerald-600 text-emerald-700 dark:text-emerald-300 hover:text-white border border-emerald-600/30 text-xs font-medium transition-colors"
+                          >
+                            <MessageCircle className="size-3.5" />
+                            <span>Chat with Studio on WhatsApp</span>
+                          </a>
+
+                          <a
+                            href={`mailto:hello@prynth.in?subject=${encodeURIComponent(`Update on Custom Request #${t.id}`)}`}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-2 hover:bg-surface-3 text-muted hover:text-fg border border-border text-xs font-medium transition-colors"
+                          >
+                            <Mail className="size-3.5" />
+                            <span>Email Studio</span>
+                          </a>
+                        </div>
                       </div>
                     );
                   })}

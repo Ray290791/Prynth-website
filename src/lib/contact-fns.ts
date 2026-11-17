@@ -60,7 +60,7 @@ export interface Ticket {
   user_id: string;
   title: string;
   description: string;
-  status: "open" | "resolved" | "closed";
+  status: "open" | "discussion" | "quoted" | "in_production" | "resolved" | "closed" | string;
   created_at: string;
 }
 
@@ -238,6 +238,45 @@ export const updateTicketStatusAdmin = createServerFn({ method: "POST" })
       WHERE id = ${data.id}
     `;
     return { success: true };
+  });
+
+export const updateTicketMetadataAdmin = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator((data: { id: number; adminNotes?: string; customerPhone?: string }) => data)
+  .handler(async ({ data, context }) => {
+    const sql = await getSql();
+    const admin = await verifyAdminRole(context.userId, sql);
+    if (!admin) {
+      throw new Error("Unauthorized");
+    }
+
+    const [t] = await sql<{ description: string }>`SELECT description FROM tickets WHERE id = ${data.id}`;
+    if (!t) throw new Error("Ticket not found");
+
+    let payload: any = {};
+    try {
+      payload = JSON.parse(t.description);
+      if (typeof payload !== "object" || payload === null) {
+        payload = { idea: t.description, isCustomRequest: true };
+      }
+    } catch {
+      payload = { idea: t.description, isCustomRequest: true };
+    }
+
+    if (data.adminNotes !== undefined) {
+      payload.adminNotes = data.adminNotes.trim();
+    }
+    if (data.customerPhone !== undefined) {
+      payload.customerPhone = data.customerPhone.trim();
+    }
+
+    await sql`
+      UPDATE tickets
+      SET description = ${JSON.stringify(payload)}
+      WHERE id = ${data.id}
+    `;
+
+    return { success: true, payload };
   });
 
 export const deleteTicketAdmin = createServerFn({ method: "POST" })
