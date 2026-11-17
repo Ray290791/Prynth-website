@@ -29,13 +29,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const POLYMER_DATA = [
-  { name: "PLA Tough / Silk", value: 52, color: "#00b8a9" },
-  { name: "PETG Technical", value: 26, color: "#3b82f6" },
-  { name: "ABS Engineering", value: 14, color: "#f59e0b" },
-  { name: "TPU & Resin", value: 8, color: "#8b5cf6" },
-];
-
 export function AnalyticsTab() {
   const [timeRange, setTimeRange] = useState<"7d" | "30d" | "90d" | "all">("30d");
 
@@ -47,6 +40,8 @@ export function AnalyticsTab() {
 
   if (isLoading) return <div className="p-8 text-center text-muted text-sm animate-pulse">Loading studio telemetry…</div>;
   if (error || !analytics) return <div className="p-8 text-danger text-sm">Failed to load analytics telemetry</div>;
+
+  const polymerList = analytics.polymerDistribution || [];
 
   const CustomTooltip = ({ active, payload, label, formatter }: any) => {
     if (active && payload && payload.length) {
@@ -91,42 +86,41 @@ export function AnalyticsTab() {
         </div>
       </div>
 
-      {/* Tactile Executive KPI Cards (Reel 2 & 8) */}
+      {/* Tactile Executive KPI Cards (Strictly Real Data — Zero Dummy Data) */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {/* Total Revenue */}
         <div className="rounded-2xl border border-border/70 bg-surface/70 backdrop-blur-xl p-5 shadow-xs hover-lift transition-all hover:border-accent/40">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted uppercase tracking-wider">Studio Revenue</span>
-            <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">
-              <ArrowUpRight className="size-3" />
-              +18.4%
-            </span>
+            {analytics.revenueGrowthPercent !== null && analytics.revenueGrowthPercent !== undefined && (
+              <span className={cn(
+                "inline-flex items-center gap-0.5 text-[11px] font-semibold px-1.5 py-0.5 rounded-md",
+                analytics.revenueGrowthPercent >= 0
+                  ? "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
+                  : "text-rose-600 dark:text-rose-400 bg-rose-500/10"
+              )}>
+                <ArrowUpRight className={cn("size-3", analytics.revenueGrowthPercent < 0 && "rotate-90")} />
+                {analytics.revenueGrowthPercent >= 0 ? `+${analytics.revenueGrowthPercent}%` : `${analytics.revenueGrowthPercent}%`}
+              </span>
+            )}
           </div>
           <div className="mt-2.5 text-2xl font-bold text-fg tracking-tight">{formatINR(analytics.revenue)}</div>
-          <p className="mt-1 text-[11px] text-muted">All fabrication &amp; design work</p>
+          <p className="mt-1 text-[11px] text-muted">Confirmed paid orders</p>
         </div>
 
         {/* Total Orders */}
         <div className="rounded-2xl border border-border/70 bg-surface/70 backdrop-blur-xl p-5 shadow-xs hover-lift transition-all hover:border-accent/40">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted uppercase tracking-wider">Total Orders</span>
-            <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-sky-600 dark:text-sky-400 bg-sky-500/10 px-1.5 py-0.5 rounded-md">
-              <ArrowUpRight className="size-3" />
-              +12.2%
-            </span>
           </div>
           <div className="mt-2.5 text-2xl font-bold text-fg tracking-tight">{analytics.ordersCount}</div>
-          <p className="mt-1 text-[11px] text-muted">Active and completed print jobs</p>
+          <p className="mt-1 text-[11px] text-muted">All fabrication jobs in system</p>
         </div>
 
         {/* Registered Users */}
         <div className="rounded-2xl border border-border/70 bg-surface/70 backdrop-blur-xl p-5 shadow-xs hover-lift transition-all hover:border-accent/40">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted uppercase tracking-wider">Registered Clients</span>
-            <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">
-              <ArrowUpRight className="size-3" />
-              +9.5%
-            </span>
           </div>
           <div className="mt-2.5 text-2xl font-bold text-fg tracking-tight">{analytics.usersCount}</div>
           <p className="mt-1 text-[11px] text-muted">Verified customer accounts</p>
@@ -149,7 +143,7 @@ export function AnalyticsTab() {
         </div>
       </div>
 
-      {/* Dual Analytics Section (Reel 2: Area Chart + Donut Chart) */}
+      {/* Dual Analytics Section (Area Chart + Real Polymer Distribution) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Revenue Trend (2 Cols) */}
         <div className="lg:col-span-2 rounded-2xl border border-border/70 bg-surface/70 backdrop-blur-xl p-5 sm:p-6 shadow-xs flex flex-col h-[360px]">
@@ -179,64 +173,81 @@ export function AnalyticsTab() {
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex h-full items-center justify-center text-xs text-muted">No telemetry recorded yet</div>
+              <div className="flex flex-col h-full items-center justify-center text-xs text-muted text-center p-6">
+                <span className="font-medium text-fg">No invoice data yet</span>
+                <span className="text-[11px] text-muted mt-1">Revenue chart updates automatically when customer payments settle.</span>
+              </div>
             )}
           </div>
         </div>
 
-        {/* Polymer Distribution Donut Chart (1 Col - Reel 2 Reference) */}
+        {/* Polymer Distribution Donut Chart (1 Col - Real data or clean blank state) */}
         <div className="lg:col-span-1 rounded-2xl border border-border/70 bg-surface/70 backdrop-blur-xl p-5 sm:p-6 shadow-xs flex flex-col h-[360px]">
           <div className="mb-2">
             <h3 className="text-sm font-semibold text-fg flex items-center gap-1.5">
               <Layers className="size-4 text-accent" />
               <span>Polymer Distribution</span>
             </h3>
-            <p className="text-[11px] text-muted">Material share by print mass</p>
+            <p className="text-[11px] text-muted">Material share by order items</p>
           </div>
 
-          <div className="flex-1 w-full min-h-0 relative flex items-center justify-center">
-            <ResponsiveContainer width="100%" height={190}>
-              <PieChart>
-                <Pie
-                  data={POLYMER_DATA}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={75}
-                  paddingAngle={4}
-                  dataKey="value"
-                >
-                  {POLYMER_DATA.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(val: number) => [`${val}%`, "Share"]}
-                  contentStyle={{
-                    backgroundColor: "var(--surface)",
-                    borderColor: "var(--border)",
-                    borderRadius: "12px",
-                    fontSize: "12px",
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-xs font-mono font-bold text-fg">100%</span>
-              <span className="text-[10px] text-muted">Fleet Blend</span>
-            </div>
-          </div>
-
-          {/* Legend */}
-          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/40 text-xs">
-            {POLYMER_DATA.map((item) => (
-              <div key={item.name} className="flex items-center gap-1.5">
-                <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                <span className="text-muted text-[11px] truncate">{item.name}</span>
-                <span className="text-fg font-semibold text-[11px] ml-auto">{item.value}%</span>
+          {polymerList.length > 0 ? (
+            <>
+              <div className="flex-1 w-full min-h-0 relative flex items-center justify-center">
+                <ResponsiveContainer width="100%" height={190}>
+                  <PieChart>
+                    <Pie
+                      data={polymerList}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={75}
+                      paddingAngle={4}
+                      dataKey="value"
+                    >
+                      {polymerList.map((entry: any, index: number) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(val: number) => [`${val}%`, "Share"]}
+                      contentStyle={{
+                        backgroundColor: "var(--surface)",
+                        borderColor: "var(--border)",
+                        borderRadius: "12px",
+                        fontSize: "12px",
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-xs font-mono font-bold text-fg">100%</span>
+                  <span className="text-[10px] text-muted">Fleet Share</span>
+                </div>
               </div>
-            ))}
-          </div>
+
+              {/* Legend with Real Material Data */}
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/40 text-xs">
+                {polymerList.map((item: any) => (
+                  <div key={item.name} className="flex items-center gap-1.5">
+                    <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                    <span className="text-muted text-[11px] truncate">{item.name}</span>
+                    <span className="text-fg font-semibold text-[11px] ml-auto">{item.value}%</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-muted">
+              <div className="size-12 rounded-2xl bg-surface-2/60 border border-border/60 flex items-center justify-center mb-3 text-muted">
+                <Layers className="size-6 opacity-40" />
+              </div>
+              <p className="text-xs font-semibold text-fg">No Material Telemetry Yet</p>
+              <p className="text-[11px] text-muted max-w-xs mt-1 leading-relaxed">
+                Polymer distribution will render automatically as customer orders specify filaments.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -257,7 +268,10 @@ export function AnalyticsTab() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex h-full items-center justify-center text-xs text-muted">No order volume data yet</div>
+              <div className="flex flex-col h-full items-center justify-center text-xs text-muted text-center p-6">
+                <span className="font-medium text-fg">No order volume data yet</span>
+                <span className="text-[11px] text-muted mt-1">Volume bars appear automatically as incoming orders are registered.</span>
+              </div>
             )}
           </div>
         </div>
@@ -277,7 +291,10 @@ export function AnalyticsTab() {
                 </LineChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex h-full items-center justify-center text-xs text-muted">No user growth data yet</div>
+              <div className="flex flex-col h-full items-center justify-center text-xs text-muted text-center p-6">
+                <span className="font-medium text-fg">No client signup telemetry yet</span>
+                <span className="text-[11px] text-muted mt-1">Client curve tracks new user accounts over time.</span>
+              </div>
             )}
           </div>
         </div>

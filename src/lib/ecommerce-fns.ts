@@ -235,6 +235,62 @@ export const getAnalyticsAdmin = createServerFn({ method: "GET" })
     const ordersOverTime = groupByDate(ordersRes, 'created_at', () => 1);
     const usersJoinedOverTime = groupByDate(usersRes, 'createdAt', () => 1);
 
+    // Calculate real polymer & material distribution strictly from actual orders in DB (Zero false/mock data)
+    const materialColorPalette = ["#00b8a9", "#3b82f6", "#f59e0b", "#8b5cf6", "#ec4899", "#10b981", "#6366f1"];
+    const materialCounts: Record<string, number> = {};
+    let totalMaterialQuantity = 0;
+
+    ordersRes.forEach((o: any) => {
+      let itemsList: any[] = [];
+      try {
+        itemsList = typeof o.items === "string" ? JSON.parse(o.items) : (o.items || []);
+      } catch {
+        itemsList = [];
+      }
+      if (Array.isArray(itemsList)) {
+        itemsList.forEach((it: any) => {
+          const rawMat = it.custom?.material || it.material || it.selected_material;
+          if (rawMat && typeof rawMat === "string") {
+            const matKey = rawMat.trim().toUpperCase();
+            const qty = Number(it.quantity) || 1;
+            materialCounts[matKey] = (materialCounts[matKey] || 0) + qty;
+            totalMaterialQuantity += qty;
+          }
+        });
+      }
+    });
+
+    const polymerDistribution = totalMaterialQuantity > 0
+      ? Object.entries(materialCounts)
+          .sort((a, b) => b[1] - a[1])
+          .map(([name, count], idx) => ({
+            name,
+            value: Math.round((count / totalMaterialQuantity) * 100),
+            count,
+            color: materialColorPalette[idx % materialColorPalette.length],
+          }))
+      : [];
+
+    // Real MoM revenue trend strictly from actual dates (returns null if insufficient comparison data exists)
+    const now = Date.now();
+    const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+    const sixtyDaysAgo = now - 60 * 24 * 60 * 60 * 1000;
+
+    const currentPeriodRevenue = paidOrders
+      .filter((o: any) => new Date(o.created_at).getTime() >= thirtyDaysAgo)
+      .reduce((acc: number, o: any) => acc + parseFloat(o.total || "0"), 0);
+
+    const previousPeriodRevenue = paidOrders
+      .filter((o: any) => {
+        const t = new Date(o.created_at).getTime();
+        return t >= sixtyDaysAgo && t < thirtyDaysAgo;
+      })
+      .reduce((acc: number, o: any) => acc + parseFloat(o.total || "0"), 0);
+
+    const revenueGrowthPercent = previousPeriodRevenue > 0
+      ? Math.round(((currentPeriodRevenue - previousPeriodRevenue) / previousPeriodRevenue) * 100)
+      : null;
+
     return {
       revenue: totalRevenue,
       ordersCount: totalOrders,
@@ -243,7 +299,9 @@ export const getAnalyticsAdmin = createServerFn({ method: "GET" })
       activeUsers10m,
       revenueOverTime,
       ordersOverTime,
-      usersJoinedOverTime
+      usersJoinedOverTime,
+      polymerDistribution,
+      revenueGrowthPercent,
     };
   });
 
