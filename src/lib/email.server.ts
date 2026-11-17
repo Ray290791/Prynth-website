@@ -191,10 +191,15 @@ export async function sendOrderStatusUpdateEmail(orderNumber: string, email: str
 
 export async function sendContactFormEmail(name: string, replyToEmail: string, message: string) {
   const resend = await getResend();
-  const adminEmail = process.env.ADMIN_EMAIL;
-  
-  if (!resend || !adminEmail) {
-    console.log("No RESEND_API_KEY or ADMIN_EMAIL set, skipping contact form email");
+  if (!resend) {
+    console.log("No RESEND_API_KEY set, skipping contact form email");
+    return;
+  }
+
+  const { getAllAdminEmails } = await import("./admin-fns");
+  const adminEmails = await getAllAdminEmails();
+  if (!adminEmails || adminEmails.length === 0) {
+    console.log("No admin emails found, skipping contact form email");
     return;
   }
 
@@ -206,7 +211,7 @@ export async function sendContactFormEmail(name: string, replyToEmail: string, m
     const fromEmail = await getSenderEmail();
     const { data, error } = await resend.emails.send({
       from: fromEmail,
-      to: adminEmail,
+      to: adminEmails,
       replyTo: replyToEmail,
       subject: `New Contact Form Message from ${safeName}`,
       html: `
@@ -299,8 +304,11 @@ export async function sendCustomRequestAdminEmail(params: {
   photosCount?: number;
 }) {
   const resend = await getResend();
-  const adminEmail = process.env.ADMIN_EMAIL || "hello@prynth.in";
   if (!resend) return;
+
+  const { getAllAdminEmails } = await import("./admin-fns");
+  const adminEmails = await getAllAdminEmails();
+  if (!adminEmails || adminEmails.length === 0) return;
 
   const safeName = escapeHtml(params.name);
   const safeEmail = escapeHtml(params.email);
@@ -311,7 +319,7 @@ export async function sendCustomRequestAdminEmail(params: {
   try {
     await resend.emails.send({
       from: fromEmail,
-      to: adminEmail,
+      to: adminEmails,
       replyTo: params.email,
       subject: `[Custom Request #${params.ticketId}] New 3D Print Quote Request from ${safeName}`,
       html: `

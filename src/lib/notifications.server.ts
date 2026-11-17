@@ -18,6 +18,7 @@ interface NotificationConfig {
   fast2smsApiKey: string;
   emailEnabled: boolean;
   adminEmail: string;
+  adminEmails: string[];
   notifyOnNewOrder: boolean;
   notifyOnFilamentOver: boolean;
   notifyOnLowStock: boolean;
@@ -44,6 +45,9 @@ export async function getNotificationConfig(): Promise<NotificationConfig> {
 
   const env = process.env;
 
+  const { getAllAdminEmails } = await import("./admin-fns");
+  const adminEmails = await getAllAdminEmails(sql);
+
   return {
     phoneNumber: dbSettings.notify_phone_number || env.NOTIFY_PHONE_NUMBER || "+918369485272",
     whatsappEnabled: (dbSettings.notify_whatsapp_enabled ?? env.NOTIFY_WHATSAPP_ENABLED) === "true",
@@ -59,7 +63,8 @@ export async function getNotificationConfig(): Promise<NotificationConfig> {
     twilioFrom: dbSettings.notify_twilio_from_phone || env.TWILIO_FROM_PHONE || "PRYNTH",
     fast2smsApiKey: dbSettings.notify_fast2sms_apikey || env.FAST2SMS_API_KEY || "",
     emailEnabled: (dbSettings.notify_email_enabled ?? "true") !== "false",
-    adminEmail: dbSettings.notify_email || env.ADMIN_EMAIL || "prynth07@gmail.com",
+    adminEmail: dbSettings.notify_email || env.ADMIN_EMAIL || adminEmails[0] || "prynth07@gmail.com",
+    adminEmails,
     notifyOnNewOrder: (dbSettings.notify_on_new_order ?? "true") !== "false",
     notifyOnFilamentOver: (dbSettings.notify_on_filament_over ?? "true") !== "false",
     notifyOnLowStock: (dbSettings.notify_on_low_stock ?? "true") !== "false",
@@ -98,7 +103,7 @@ export async function dispatchNotification({
         const url = `https://api.twilio.com/2010-04-01/Accounts/${config.twilioSid}/Messages.json`;
         const toPhone = config.phoneNumber.startsWith("whatsapp:") ? config.phoneNumber : `whatsapp:${config.phoneNumber}`;
         const fromPhone = config.twilioFrom.startsWith("whatsapp:") ? config.twilioFrom : `whatsapp:${config.twilioFrom}`;
-        
+
         const params = new URLSearchParams({
           From: fromPhone,
           To: toPhone,
@@ -215,16 +220,17 @@ export async function dispatchNotification({
     }
   }
 
-  // 4. Resend High-Priority Admin Email Notification
-  if (config.emailEnabled && config.adminEmail) {
+  // 4. Resend High-Priority Admin Email Notification (Sent to all admins in the Admin Team)
+  if (config.emailEnabled && (config.adminEmails?.length > 0 || config.adminEmail)) {
     try {
       const { getResend } = await import("./email.server");
       const resend = await getResend();
       if (resend) {
         const fromEmail = await getSenderEmail();
+        const recipients = config.adminEmails?.length > 0 ? config.adminEmails : [config.adminEmail];
         await resend.emails.send({
           from: fromEmail,
-          to: config.adminEmail,
+          to: recipients,
           subject: `[Prynth Alert] ${subject}`,
           html: `
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; color: #1e2124; line-height: 1.5;">
@@ -283,8 +289,8 @@ export async function notifyNewOrder(orderData: {
     })
     .join("\n");
 
-  const plainText = 
-`🛒 NEW ORDER: #${orderData.orderNumber}
+  const plainText =
+    `🛒 NEW ORDER: #${orderData.orderNumber}
 Amount: ${formatINR(orderData.total)} (${orderData.paymentMethod.toUpperCase()})
 Customer: ${orderData.name} ${orderData.phone ? `(${orderData.phone})` : ""}
 Email: ${orderData.email}
@@ -294,8 +300,8 @@ ${itemList}
 
 Manage order: https://prynth.in/admin`;
 
-  const formattedHtml = 
-`<b>🛒 NEW ORDER: #${orderData.orderNumber}</b>
+  const formattedHtml =
+    `<b>🛒 NEW ORDER: #${orderData.orderNumber}</b>
 <b>Total:</b> ${formatINR(orderData.total)} (${orderData.paymentMethod.toUpperCase()})
 <b>Customer:</b> ${orderData.name} ${orderData.phone ? `(${orderData.phone})` : ""}
 <b>Email:</b> ${orderData.email}
@@ -325,8 +331,8 @@ export async function notifyFilamentOver(filament: {
   if (!config.notifyOnFilamentOver) return;
 
   const brandStr = filament.brand ? `${filament.brand} ` : "";
-  const plainText = 
-`🔴 FILAMENT OVER ALERT!
+  const plainText =
+    `🔴 FILAMENT OVER ALERT!
 Spool empty: ${filament.name}
 Material: ${brandStr}${filament.material.toUpperCase()}
 Color: ${filament.colorName}
@@ -335,8 +341,8 @@ Color: ${filament.colorName}
 
 Restock inventory: https://prynth.in/admin`;
 
-  const formattedHtml = 
-`<b>🔴 FILAMENT OVER ALERT!</b>
+  const formattedHtml =
+    `<b>🔴 FILAMENT OVER ALERT!</b>
 Spool empty: <b>${filament.name}</b>
 <b>Material:</b> ${brandStr}${filament.material.toUpperCase()}
 <b>Color:</b> ${filament.colorName}
@@ -364,16 +370,16 @@ export async function notifyFilamentLow(filament: {
   const config = await getNotificationConfig();
   if (!config.notifyOnLowStock) return;
 
-  const plainText = 
-`🟡 LOW FILAMENT WARNING
+  const plainText =
+    `🟡 LOW FILAMENT WARNING
 Spool: ${filament.name} (${filament.colorName})
 Stock: Only ${filament.spoolsRemaining} spool remaining in print farm.
 
 Consider ordering a replacement soon.
 Inventory: https://prynth.in/admin`;
 
-  const formattedHtml = 
-`<b>🟡 LOW FILAMENT WARNING</b>
+  const formattedHtml =
+    `<b>🟡 LOW FILAMENT WARNING</b>
 Spool: <b>${filament.name}</b> (${filament.colorName})
 Stock: <b>Only ${filament.spoolsRemaining} spool remaining</b> in print farm.
 
@@ -400,16 +406,16 @@ export async function notifyNewInquiry(inquiry: {
 
   const preview = inquiry.message.length > 250 ? inquiry.message.slice(0, 250) + "…" : inquiry.message;
 
-  const plainText = 
-`✉️ NEW CUSTOMER INQUIRY
+  const plainText =
+    `✉️ NEW CUSTOMER INQUIRY
 From: ${inquiry.name} (${inquiry.email})
 Message:
 "${preview}"
 
 Reply in Admin: https://prynth.in/admin`;
 
-  const formattedHtml = 
-`<b>✉️ NEW CUSTOMER INQUIRY</b>
+  const formattedHtml =
+    `<b>✉️ NEW CUSTOMER INQUIRY</b>
 <b>From:</b> ${inquiry.name} (${inquiry.email})
 
 <b>Message:</b>
@@ -443,8 +449,8 @@ export async function notifyCustomDesignRequest(request: {
   const config = await getNotificationConfig();
   if (!config.notifyOnInquiry) return;
 
-  const plainText = 
-`🔔 PRYNTH: NEW CUSTOM 3D PRINT REQUEST #${request.ticketId}
+  const plainText =
+    `🔔 PRYNTH: NEW CUSTOM 3D PRINT REQUEST #${request.ticketId}
 Customer: ${request.name} (${request.phone || request.email})
 Specs: ${request.sizeName || "Standard"} · ${request.materialName || "PLA"} (${request.colorName || "Standard"}) · ${request.quantity || 1} unit(s)
 ${request.photosCount ? `Photos Attached: ${request.photosCount}\n` : ""}
@@ -453,8 +459,8 @@ Description:
 
 Send official quote: https://prynth.in/admin?tab=inquiries`;
 
-  const formattedHtml = 
-`<b>🔔 PRYNTH: NEW CUSTOM 3D PRINT REQUEST #${request.ticketId}</b>
+  const formattedHtml =
+    `<b>🔔 PRYNTH: NEW CUSTOM 3D PRINT REQUEST #${request.ticketId}</b>
 <b>Customer:</b> ${request.name} (${request.phone || request.email})
 <b>Specs:</b> ${request.sizeName} · ${request.materialName} (${request.colorName}) · ${request.quantity} unit(s)
 ${request.photosCount ? `<b>Photos:</b> ${request.photosCount} attached\n` : ""}
@@ -480,13 +486,13 @@ export async function sendTestNotification(_channel?: "all" | "whatsapp" | "tele
     minute: "2-digit",
     hour12: true,
   });
-  const plainText = 
-`🎉 PRYNTH PHONE ALERT TEST (${timeStr})
+  const plainText =
+    `🎉 PRYNTH PHONE ALERT TEST (${timeStr})
 Your phone notification system is working perfectly!
 You will receive instant alerts here for new orders, finished filaments, and inquiries.`;
 
-  const formattedHtml = 
-`<b>🎉 PRYNTH PHONE ALERT TEST (${timeStr})</b>
+  const formattedHtml =
+    `<b>🎉 PRYNTH PHONE ALERT TEST (${timeStr})</b>
 Your phone notification system is working perfectly!
 You will receive instant alerts here for <b>new orders</b>, <b>finished filaments</b>, and <b>customer inquiries</b>.`;
 

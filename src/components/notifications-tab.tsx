@@ -491,18 +491,33 @@ export function NotificationsTab() {
             </div>
 
             {form.emailEnabled && (
-              <div className="pt-2 border-t border-border/70 max-w-md">
-                <Label htmlFor="admin-email-field">Admin Notification Email</Label>
-                <Input
-                  id="admin-email-field"
-                  type="email"
-                  value={form.adminEmail}
-                  onChange={(e) =>
-                    setForm({ ...form, adminEmail: e.target.value })
-                  }
-                  placeholder="prynth07@gmail.com"
-                  className="mt-1 font-mono text-xs"
-                />
+              <div className="pt-2 border-t border-border/70 space-y-3 max-w-lg">
+                <div className="rounded-xl bg-accent/10 border border-accent/20 p-3 text-xs text-muted flex items-start gap-2">
+                  <ShieldCheck className="size-4 text-accent shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold text-fg">Admin Team Broadcasting Active:</span>
+                    <p className="mt-0.5">
+                      Alerts automatically broadcast to <b>all verified admins</b> in your Admin Team.
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="admin-email-field">Additional Alert Email(s) (Optional, comma-separated)</Label>
+                  <Input
+                    id="admin-email-field"
+                    type="text"
+                    value={form.adminEmail}
+                    onChange={(e) =>
+                      setForm({ ...form, adminEmail: e.target.value })
+                    }
+                    placeholder="prynth07@gmail.com, alerts@prynth.in"
+                    className="mt-1 font-mono text-xs"
+                  />
+                  <p className="text-[11px] text-muted mt-1">
+                    Separate multiple additional addresses with commas.
+                  </p>
+                </div>
               </div>
             )}
           </div>

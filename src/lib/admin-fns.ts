@@ -55,6 +55,52 @@ export async function verifyAdminRole(userId: string, sql: any) {
   }
 }
 
+/**
+ * Resolves all admin team emails dynamically (from admin_users table, site_settings, and env)
+ */
+export async function getAllAdminEmails(sqlInstance?: any): Promise<string[]> {
+  const emails = new Set<string>();
+
+  try {
+    const sql = sqlInstance || (await getSql());
+    const rows = await sql<{ email: string }>`SELECT email FROM admin_users`;
+    for (const r of rows) {
+      if (r.email) emails.add(r.email.trim().toLowerCase());
+    }
+  } catch (err) {
+    console.error("Failed to query admin_users for admin emails:", err);
+  }
+
+  try {
+    const sql = sqlInstance || (await getSql());
+    const settings = await sql<{ value: string }>`SELECT value FROM site_settings WHERE key = 'notify_email'`;
+    if (settings.length > 0 && settings[0].value) {
+      const parts = settings[0].value.split(/[,;]/);
+      for (const p of parts) {
+        const clean = p.trim().toLowerCase();
+        if (clean && clean.includes("@")) emails.add(clean);
+      }
+    }
+  } catch {
+    // Non-fatal if site_settings is unavailable
+  }
+
+  const rawEnvAdmin = (process.env.ADMIN_EMAIL || (globalThis as any).__env__?.ADMIN_EMAIL)?.trim()?.toLowerCase();
+  if (rawEnvAdmin) {
+    const parts = rawEnvAdmin.split(/[,;]/);
+    for (const p of parts) {
+      const clean = p.trim().toLowerCase();
+      if (clean && clean.includes("@")) emails.add(clean);
+    }
+  }
+
+  if (emails.size === 0) {
+    emails.add("prynth07@gmail.com");
+  }
+
+  return Array.from(emails);
+}
+
 // Server function for client components to check admin status
 export const checkCurrentUserIsAdmin = createServerFn({ method: "GET" })
   .middleware([optionalAuthMiddleware])
