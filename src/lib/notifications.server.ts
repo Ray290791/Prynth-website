@@ -474,7 +474,12 @@ ${request.photosCount ? `<b>Photos:</b> ${request.photosCount} attached\n` : ""}
  * Trigger a test alert to verify notification channels on the user's phone
  */
 export async function sendTestNotification(_channel?: "all" | "whatsapp" | "telegram" | "sms" | "email") {
-  const timeStr = new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+  const timeStr = new Date().toLocaleTimeString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
   const plainText = 
 `🎉 PRYNTH PHONE ALERT TEST (${timeStr})
 Your phone notification system is working perfectly!
