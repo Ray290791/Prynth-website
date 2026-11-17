@@ -163,7 +163,13 @@ export async function dispatchNotification({
     if (config.smsProvider === "fast2sms" && config.fast2smsApiKey) {
       try {
         const cleanPhone = config.phoneNumber.replace(/\D/g, "").slice(-10);
-        const smsMessage = plainText.length > 320 ? plainText.slice(0, 317) + "..." : plainText;
+        // Strip emojis and Unicode characters to avoid the 70-character UCS-2 limit, and clamp strictly to 150 chars (1 SMS credit)
+        const cleanAscii = plainText
+          .replace(/[^\x20-\x7E\n]/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
+        const smsMessage = cleanAscii.length > 150 ? cleanAscii.slice(0, 147) + "..." : cleanAscii;
+
         const res = await fetch("https://www.fast2sms.com/dev/bulkV2", {
           method: "POST",
           headers: {

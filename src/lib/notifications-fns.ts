@@ -130,16 +130,25 @@ const notificationSchema = z.object({
   notifyOnInquiry: z.boolean().optional().default(true),
 });
 
+let lastTestDispatchTime = 0;
+
 /**
  * Admin: Trigger an immediate test notification to verify phone alerts
+ * Rate-limited to 1 request per 10 seconds to protect wallet credits
  */
 export const testAdminNotification = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
+    const now = Date.now();
+    if (now - lastTestDispatchTime < 10000) {
+      throw new Error("Please wait 10 seconds before sending another test alert to protect your SMS credits.");
+    }
+
     const sql = await getSql();
     const admin = await verifyAdminRole(context.userId, sql);
     if (!admin) throw new Error("Unauthorized");
 
+    lastTestDispatchTime = now;
     const results = await sendTestNotification();
     return { success: true, results };
   });
