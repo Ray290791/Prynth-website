@@ -195,62 +195,94 @@ function AdminPage() {
     );
   }
 
-  const navItems = [
-    { id: "analytics", label: "Analytics", icon: BarChart3 },
-    { id: "orders", label: "Orders", icon: Package },
-    { id: "ledger", label: "Launch Ledger", icon: TrendingUp },
-    { id: "waitlist", label: "Waitlist", icon: Clock },
-    { id: "inquiries", label: "Inquiries", icon: Mail },
-    { id: "grievances", label: "Grievances & DPDP", icon: Scale },
-    { id: "services", label: "Services", icon: DraftingCompass },
-    { id: "printers", label: "Printers", icon: PrinterIcon },
-    { id: "filaments", label: "Filaments", icon: Disc },
-    { id: "products", label: "Products", icon: Box },
-    { id: "inventory", label: "Inventory", icon: ClipboardList },
-    { id: "gallery", label: "Showcase & Gallery", icon: ImageIcon },
-    { id: "testimonials", label: "Testimonials", icon: MessageSquareQuote },
-    { id: "materials", label: "Materials", icon: Layers },
-    { id: "coupons", label: "Coupons", icon: Tag },
-    { id: "faqs", label: "FAQs", icon: HelpCircle },
-    { id: "admin-team", label: "Admin Team", icon: Shield },
-    { id: "admin-profile", label: "Admin Profile", icon: UserCog },
-    { id: "users", label: "Users", icon: Users },
-    { id: "payments", label: "Payment Options", icon: CreditCard },
-    { id: "settings", label: "Site Settings", icon: Settings },
-    { id: "notifications", label: "Phone Alerts", icon: Bell },
+  const navSections = [
+    {
+      title: "Operations",
+      items: [
+        { id: "orders", label: "Orders", icon: Package },
+        { id: "inquiries", label: "Inquiries & Quotes", icon: Mail },
+        { id: "waitlist", label: "Waitlist", icon: Clock },
+        { id: "ledger", label: "Launch Ledger", icon: TrendingUp },
+        { id: "analytics", label: "Analytics", icon: BarChart3 },
+      ],
+    },
+    {
+      title: "Studio & Catalog",
+      items: [
+        { id: "products", label: "Products", icon: Box },
+        { id: "inventory", label: "Inventory", icon: ClipboardList },
+        { id: "services", label: "Services", icon: DraftingCompass },
+        { id: "printers", label: "Printers", icon: PrinterIcon },
+        { id: "filaments", label: "Filaments", icon: Disc },
+        { id: "materials", label: "Materials", icon: Layers },
+      ],
+    },
+    {
+      title: "Storefront",
+      items: [
+        { id: "gallery", label: "Showcase & Gallery", icon: ImageIcon },
+        { id: "testimonials", label: "Testimonials", icon: MessageSquareQuote },
+        { id: "coupons", label: "Coupons", icon: Tag },
+        { id: "faqs", label: "FAQs", icon: HelpCircle },
+      ],
+    },
+    {
+      title: "Settings & System",
+      items: [
+        { id: "settings", label: "Site Settings", icon: Settings },
+        { id: "notifications", label: "Phone Alerts", icon: Bell },
+        { id: "payments", label: "Payment Options", icon: CreditCard },
+        { id: "admin-team", label: "Admin Team", icon: Shield },
+        { id: "admin-profile", label: "Admin Profile", icon: UserCog },
+        { id: "users", label: "Users", icon: Users },
+        { id: "grievances", label: "Grievances & DPDP", icon: Scale },
+      ],
+    },
   ];
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-12 flex flex-col md:flex-row gap-8 items-start">
-      {/* Responsive Navigation: horizontal swipeable ribbon on mobile/tablet, sticky vertical sidebar on desktop */}
-      <aside className="w-full shrink-0 md:w-64 md:sticky md:top-20 md:self-start md:z-20 md:max-h-[calc(100dvh-5.5rem)] md:overflow-y-auto no-scrollbar">
-        <div className="flex items-center justify-between mb-3 md:mb-5">
-          <h1 className="font-display text-xl sm:text-2xl font-semibold tracking-tight">Admin Console</h1>
+    <div className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-10 flex flex-col md:flex-row gap-6 lg:gap-8 items-start">
+      {/* Responsive Navigation: horizontal swipeable ribbon on mobile, structured categorized sidebar on desktop */}
+      <aside className="w-full shrink-0 md:w-60 md:sticky md:top-20 md:self-start md:z-20 md:max-h-[calc(100dvh-5.5rem)] md:overflow-y-auto no-scrollbar">
+        <div className="flex items-center justify-between mb-2 md:mb-4 px-1">
+          <div>
+            <h1 className="font-display text-lg sm:text-xl font-bold tracking-tight text-fg">Admin Console</h1>
+            <p className="text-[11px] text-muted hidden md:block">Studio Management Suite</p>
+          </div>
           <span className="md:hidden text-[11px] text-muted font-medium bg-surface-2 px-2.5 py-1 rounded-full border border-border">
             Swipe tabs →
           </span>
         </div>
+
         <div className="sticky top-14 sm:top-16 z-30 md:static -mx-4 px-4 py-1.5 md:mx-0 md:px-0 md:py-0 bg-bg/85 md:bg-transparent backdrop-blur-xl md:backdrop-blur-none">
-          <nav className="flex md:flex-col gap-1.5 p-2 sm:p-2.5 md:p-3 rounded-2xl md:rounded-3xl border border-white/20 dark:border-white/10 bg-surface/50 backdrop-blur-2xl backdrop-saturate-150 shadow-xl shadow-black/5 overflow-x-auto md:overflow-visible no-scrollbar">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={cn(
-                    "flex items-center gap-2 md:gap-3 rounded-xl px-3.5 py-2 md:px-4 md:py-2.5 text-xs sm:text-sm font-medium transition-all leading-none shrink-0 whitespace-nowrap cursor-pointer",
-                    isActive
-                      ? "bg-accent text-ink font-semibold shadow-xs"
-                      : "text-muted hover:bg-surface-2 hover:text-fg"
-                  )}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
+          <nav className="flex md:flex-col gap-1 md:gap-3 p-1.5 md:p-2.5 rounded-2xl border border-border/70 bg-surface/80 backdrop-blur-xl shadow-xs overflow-x-auto md:overflow-visible no-scrollbar">
+            {navSections.map((section, sIdx) => (
+              <div key={section.title} className="flex md:flex-col gap-0.5 shrink-0">
+                <div className="hidden md:flex items-center text-[10px] font-bold text-muted/70 uppercase tracking-wider px-2.5 pt-1 pb-1">
+                  {section.title}
+                </div>
+                {section.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setActiveTab(item.id)}
+                      className={cn(
+                        "flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium transition-all leading-none shrink-0 whitespace-nowrap cursor-pointer text-left",
+                        isActive
+                          ? "bg-accent text-ink font-semibold shadow-xs"
+                          : "text-muted hover:bg-surface-2 hover:text-fg"
+                      )}
+                    >
+                      <Icon className="size-3.5 shrink-0" />
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+                {sIdx < navSections.length - 1 && <div className="hidden md:block my-1.5 border-t border-border/40" />}
+              </div>
+            ))}
           </nav>
         </div>
       </aside>
@@ -266,13 +298,13 @@ function AdminPage() {
               </div>
               <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
                 <div className="relative w-full sm:w-72">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted pointer-events-none" />
                   <input
                     type="text"
                     placeholder="Search by order #, name or email..."
                     value={orderSearchQuery}
                     onChange={(e) => setOrderSearchQuery(e.target.value)}
-                    className="w-full rounded-lg border border-border bg-surface-2 pl-9 pr-4 py-2 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
+                    className="w-full h-9 rounded-lg border border-border bg-surface-2 pl-9 pr-4 text-xs sm:text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
                   />
                 </div>
                 <button
@@ -298,7 +330,7 @@ function AdminPage() {
                     a.click();
                     window.URL.revokeObjectURL(url);
                   }}
-                  className="w-full sm:w-auto rounded-lg bg-accent px-4 py-2 text-sm font-medium text-ink hover:opacity-90 shrink-0"
+                  className="w-full sm:w-auto h-9 rounded-lg bg-accent px-4 text-xs sm:text-sm font-semibold text-ink hover:opacity-90 shrink-0 inline-flex items-center justify-center cursor-pointer shadow-xs"
                 >
                   Export CSV
                 </button>
@@ -353,12 +385,12 @@ function AdminPage() {
                             <button
                               type="button"
                               onClick={() => setSelectedOrder(order)}
-                              className="text-xs px-2.5 py-1.5 rounded-lg bg-surface-2 hover:bg-surface-3 transition-colors border border-border font-medium shadow-2xs"
+                              className="h-8 text-xs px-3 rounded-lg bg-surface-2 hover:bg-surface-3 transition-colors border border-border font-medium shadow-2xs inline-flex items-center justify-center cursor-pointer"
                             >
                               Details
                             </button>
                             <select
-                              className="text-xs rounded-lg border border-border bg-surface px-2 py-1.5 focus:ring-1 focus:ring-accent font-medium"
+                              className="h-8 text-xs rounded-lg border border-border bg-surface px-2.5 focus:ring-1 focus:ring-accent font-medium cursor-pointer"
                               value={order.status}
                               onChange={(e) => updateMutation.mutate({ order_number: order.order_number, status: e.target.value })}
                               disabled={updatingId === order.order_number}
@@ -375,7 +407,7 @@ function AdminPage() {
                             <button
                               type="button"
                               onClick={() => setDeletingOrder(order.order_number)}
-                              className="text-xs px-2.5 py-1.5 rounded-lg bg-danger/10 text-danger hover:bg-danger/20 transition-colors border border-danger/20 font-medium"
+                              className="h-8 text-xs px-2.5 rounded-lg bg-danger/10 text-danger hover:bg-danger/20 transition-colors border border-danger/20 font-medium inline-flex items-center justify-center cursor-pointer"
                             >
                               Delete
                             </button>
