@@ -67,7 +67,7 @@ export function AnalyticsTab() {
             Live fabrication metrics, material usage breakdown, and revenue volume.
           </p>
         </div>
-        <div className="flex items-center gap-1 p-1 rounded-xl border border-border/70 bg-surface/80 backdrop-blur-md self-start sm:self-center">
+        <div className="flex items-center gap-1 p-1 rounded-xl glass-ios-card self-start sm:self-center">
           {(["7d", "30d", "90d", "all"] as const).map((range) => (
             <button
               key={range}
@@ -89,7 +89,7 @@ export function AnalyticsTab() {
       {/* Tactile Executive KPI Cards (Strictly Real Data — Zero Dummy Data) */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {/* Total Revenue */}
-        <div className="rounded-2xl border border-border/70 bg-surface/70 backdrop-blur-xl p-5 shadow-xs hover-lift transition-all hover:border-accent/40">
+        <div className="rounded-2xl glass-ios-card p-5 shadow-xs hover-lift transition-all hover:border-accent/40">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted uppercase tracking-wider">Studio Revenue</span>
             {analytics.revenueGrowthPercent !== null && analytics.revenueGrowthPercent !== undefined && (
@@ -109,7 +109,7 @@ export function AnalyticsTab() {
         </div>
 
         {/* Total Orders */}
-        <div className="rounded-2xl border border-border/70 bg-surface/70 backdrop-blur-xl p-5 shadow-xs hover-lift transition-all hover:border-accent/40">
+        <div className="rounded-2xl glass-ios-card p-5 shadow-xs hover-lift transition-all hover:border-accent/40">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted uppercase tracking-wider">Total Orders</span>
           </div>
@@ -118,7 +118,7 @@ export function AnalyticsTab() {
         </div>
 
         {/* Registered Users */}
-        <div className="rounded-2xl border border-border/70 bg-surface/70 backdrop-blur-xl p-5 shadow-xs hover-lift transition-all hover:border-accent/40">
+        <div className="rounded-2xl glass-ios-card p-5 shadow-xs hover-lift transition-all hover:border-accent/40">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted uppercase tracking-wider">Registered Clients</span>
           </div>
@@ -127,7 +127,7 @@ export function AnalyticsTab() {
         </div>
 
         {/* Live Active */}
-        <div className="rounded-2xl border border-accent/30 bg-accent/10 backdrop-blur-xl p-5 shadow-xs hover-lift transition-all hover:border-accent/60">
+        <div className="rounded-2xl border border-accent/40 bg-accent/15 backdrop-blur-2xl p-5 shadow-xs hover-lift transition-all hover:border-accent/70">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-accent uppercase tracking-wider flex items-center gap-1.5">
               <span className="relative flex h-2 w-2">
@@ -146,7 +146,7 @@ export function AnalyticsTab() {
       {/* Dual Analytics Section (Area Chart + Real Polymer Distribution) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Revenue Trend (2 Cols) */}
-        <div className="lg:col-span-2 rounded-2xl border border-border/70 bg-surface/70 backdrop-blur-xl p-5 sm:p-6 shadow-xs flex flex-col h-[360px]">
+        <div className="lg:col-span-2 rounded-2xl glass-ios-card p-5 sm:p-6 shadow-xs flex flex-col h-[360px]">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-sm font-semibold text-fg">Revenue Trajectory</h3>
@@ -182,7 +182,7 @@ export function AnalyticsTab() {
         </div>
 
         {/* Polymer Distribution Donut Chart (1 Col - Real data or clean blank state) */}
-        <div className="lg:col-span-1 rounded-2xl border border-border/70 bg-surface/70 backdrop-blur-xl p-5 sm:p-6 shadow-xs flex flex-col h-[360px]">
+        <div className="lg:col-span-1 rounded-2xl glass-ios-card p-5 sm:p-6 shadow-xs flex flex-col h-[360px]">
           <div className="mb-2">
             <h3 className="text-sm font-semibold text-fg flex items-center gap-1.5">
               <Layers className="size-4 text-accent" />
@@ -254,7 +254,7 @@ export function AnalyticsTab() {
       {/* Order Volume & Signups Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Order Volume */}
-        <div className="rounded-2xl border border-border/70 bg-surface/70 backdrop-blur-xl p-5 sm:p-6 shadow-xs flex flex-col h-[300px]">
+        <div className="rounded-2xl glass-ios-card p-5 sm:p-6 shadow-xs flex flex-col h-[300px]">
           <h3 className="text-sm font-semibold text-fg mb-4">Fabrication Volume</h3>
           <div className="flex-1 w-full min-h-0">
             {analytics.ordersOverTime?.length > 0 ? (
@@ -277,7 +277,7 @@ export function AnalyticsTab() {
         </div>
 
         {/* User Growth */}
-        <div className="rounded-2xl border border-border/70 bg-surface/70 backdrop-blur-xl p-5 sm:p-6 shadow-xs flex flex-col h-[300px]">
+        <div className="rounded-2xl glass-ios-card p-5 sm:p-6 shadow-xs flex flex-col h-[300px]">
           <h3 className="text-sm font-semibold text-fg mb-4">Client Onboarding Growth</h3>
           <div className="flex-1 w-full min-h-0">
             {analytics.usersJoinedOverTime?.length > 0 ? (

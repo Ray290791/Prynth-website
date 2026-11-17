@@ -460,14 +460,14 @@ https://prynth.in | hello@prynth.in`;
       {/* Filter and Search Bar */}
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
         {/* Status Pipeline Tabs */}
-        <div className="flex items-center gap-1 p-1 bg-surface-2/60 rounded-xl border border-border/60 overflow-x-auto no-scrollbar max-w-full shrink-0">
+        <div className="flex items-center gap-1 p-1 glass-ios-card rounded-xl overflow-x-auto no-scrollbar max-w-full shrink-0">
           <button
             type="button"
             onClick={() => setStatusFilter("all")}
             className={cn(
               "h-8 px-3 text-xs font-medium rounded-lg transition-colors cursor-pointer shrink-0 whitespace-nowrap",
               statusFilter === "all"
-                ? "bg-surface text-fg shadow-xs border border-border/40 font-semibold"
+                ? "bg-white/15 dark:bg-white/10 text-fg shadow-xs border border-white/20 font-semibold"
                 : "text-muted hover:text-fg"
             )}
           >
@@ -479,7 +479,7 @@ https://prynth.in | hello@prynth.in`;
             className={cn(
               "h-8 px-3 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap",
               statusFilter === "open"
-                ? "bg-surface text-fg shadow-xs border border-border/40 font-semibold"
+                ? "bg-white/15 dark:bg-white/10 text-fg shadow-xs border border-white/20 font-semibold"
                 : "text-muted hover:text-fg"
             )}
           >
@@ -492,7 +492,7 @@ https://prynth.in | hello@prynth.in`;
             className={cn(
               "h-8 px-3 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap",
               statusFilter === "discussion"
-                ? "bg-surface text-fg shadow-xs border border-border/40 font-semibold"
+                ? "bg-white/15 dark:bg-white/10 text-fg shadow-xs border border-white/20 font-semibold"
                 : "text-muted hover:text-fg"
             )}
           >
@@ -505,7 +505,7 @@ https://prynth.in | hello@prynth.in`;
             className={cn(
               "h-8 px-3 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap",
               statusFilter === "quoted"
-                ? "bg-surface text-fg shadow-xs border border-border/40 font-semibold"
+                ? "bg-white/15 dark:bg-white/10 text-fg shadow-xs border border-white/20 font-semibold"
                 : "text-muted hover:text-fg"
             )}
           >
@@ -518,7 +518,7 @@ https://prynth.in | hello@prynth.in`;
             className={cn(
               "h-8 px-3 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap",
               statusFilter === "in_production"
-                ? "bg-surface text-fg shadow-xs border border-border/40 font-semibold"
+                ? "bg-white/15 dark:bg-white/10 text-fg shadow-xs border border-white/20 font-semibold"
                 : "text-muted hover:text-fg"
             )}
           >
@@ -531,7 +531,7 @@ https://prynth.in | hello@prynth.in`;
             className={cn(
               "h-8 px-3 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap",
               statusFilter === "resolved"
-                ? "bg-surface text-fg shadow-xs border border-border/40 font-semibold"
+                ? "bg-white/15 dark:bg-white/10 text-fg shadow-xs border border-white/20 font-semibold"
                 : "text-muted hover:text-fg"
             )}
           >
@@ -547,7 +547,7 @@ https://prynth.in | hello@prynth.in`;
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name, email, keyword…"
-            className="pl-9 text-xs sm:text-sm h-8 bg-surface border-border/70"
+            className="pl-9 text-xs sm:text-sm h-8 glass-ios-subtle rounded-xl text-fg placeholder:text-muted focus:border-accent"
           />
         </div>
       </div>
@@ -556,7 +556,7 @@ https://prynth.in | hello@prynth.in`;
       {isLoading ? (
         <div className="p-12 text-center text-muted animate-pulse text-sm">Loading inquiries…</div>
       ) : filteredTickets.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border p-12 text-center bg-surface/40">
+        <div className="rounded-2xl border border-dashed border-white/15 p-12 text-center glass-ios-subtle">
           <Mail className="size-10 text-muted mx-auto mb-3 opacity-40" />
           <h3 className="font-semibold text-fg">No inquiries found</h3>
           <p className="text-xs sm:text-sm text-muted mt-1 max-w-sm mx-auto">
@@ -593,20 +593,20 @@ https://prynth.in | hello@prynth.in`;
               <div
                 key={ticket.id}
                 className={cn(
-                  "rounded-2xl border transition-all duration-200 overflow-hidden bg-surface shadow-xs",
+                  "rounded-2xl transition-all duration-200 overflow-hidden shadow-xs glass-ios-card",
                   ticket.status === "open"
-                    ? "border-amber-500/30 hover:border-amber-500/50"
+                    ? "border-amber-500/40 hover:border-amber-500/70"
                     : ticket.status === "discussion"
-                      ? "border-sky-500/30 hover:border-sky-500/50"
+                      ? "border-sky-500/40 hover:border-sky-500/70"
                       : ticket.status === "quoted"
-                        ? "border-purple-500/30 hover:border-purple-500/50"
+                        ? "border-purple-500/40 hover:border-purple-500/70"
                         : ticket.status === "in_production"
-                          ? "border-cyan-500/30 hover:border-cyan-500/50"
-                          : "border-border/70 hover:border-border"
+                          ? "border-cyan-500/40 hover:border-cyan-500/70"
+                          : "hover:border-border"
                 )}
               >
                 {/* Header row: Left metadata, Right action bar */}
-                <div className="p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 border-b border-border/40 bg-surface-2/20">
+                <div className="p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 border-b border-white/10 dark:border-white/10 bg-white/[0.04] dark:bg-white/[0.03]">
                   <div className="space-y-1.5 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold text-fg text-base">{name}</span>
@@ -677,7 +677,7 @@ https://prynth.in | hello@prynth.in`;
                         })
                       }
                       disabled={updateStatusMutation.isPending}
-                      className="h-8 text-xs rounded-lg border border-border/80 bg-surface px-2.5 text-fg font-medium cursor-pointer hover:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
+                      className="h-8 text-xs rounded-lg glass-ios-subtle px-2.5 text-fg font-medium cursor-pointer hover:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
                       title="Move request along the production pipeline"
                     >
                       <option value="open">Stage: New Request</option>
@@ -814,26 +814,26 @@ https://prynth.in | hello@prynth.in`;
                         <div className="text-xs font-semibold text-subtle uppercase tracking-wider mb-1.5">
                           Customer Idea &amp; Requirements
                         </div>
-                        <div className="p-4 rounded-xl bg-surface-2/40 border border-border/50 text-fg">
+                        <div className="p-4 rounded-xl glass-ios-subtle text-fg">
                           <FormattedIdeaContent text={payload.idea} />
                         </div>
                       </div>
 
                       {/* Specifications Summary Grid */}
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
-                        <div className="rounded-xl border border-border/60 bg-surface p-2.5">
+                        <div className="rounded-xl glass-ios-subtle p-2.5">
                           <span className="text-muted block text-[11px]">Approx Size</span>
                           <span className="font-semibold text-fg capitalize">{payload.sizeName || "Custom"}</span>
                         </div>
-                        <div className="rounded-xl border border-border/60 bg-surface p-2.5">
+                        <div className="rounded-xl glass-ios-subtle p-2.5">
                           <span className="text-muted block text-[11px]">Material</span>
                           <span className="font-semibold text-fg uppercase">{payload.materialName || "PLA"}</span>
                         </div>
-                        <div className="rounded-xl border border-border/60 bg-surface p-2.5">
+                        <div className="rounded-xl glass-ios-subtle p-2.5">
                           <span className="text-muted block text-[11px]">Colour</span>
                           <span className="font-semibold text-fg capitalize">{payload.colorName || "Standard"}</span>
                         </div>
-                        <div className="rounded-xl border border-border/60 bg-surface p-2.5">
+                        <div className="rounded-xl glass-ios-subtle p-2.5">
                           <span className="text-muted block text-[11px]">Quantity</span>
                           <span className="font-semibold text-fg">
                             {payload.quantity || 1} unit{(payload.quantity || 1) > 1 ? "s" : ""}
@@ -876,7 +876,7 @@ https://prynth.in | hello@prynth.in`;
                       <div className="text-xs font-semibold text-subtle uppercase tracking-wider mb-2">
                         Inquiry Details
                       </div>
-                      <div className="p-4 rounded-xl bg-surface-2/40 border border-border/40 text-sm text-fg whitespace-pre-wrap leading-relaxed">
+                      <div className="p-4 rounded-xl glass-ios-subtle text-sm text-fg whitespace-pre-wrap leading-relaxed">
                         {ticket.description}
                       </div>
                     </div>

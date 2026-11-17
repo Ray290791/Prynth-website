@@ -39,14 +39,14 @@ export function SilkWaveBackground({
         color: isDarkTheme() ? 0x00d4c3 : 0x008075,
         wireframe: true,
         transparent: true,
-        opacity: isDarkTheme() ? 0.45 : 0.22,
+        opacity: isDarkTheme() ? 0.60 : 0.30,
       });
 
       const themeObserver = new MutationObserver(() => {
         if (!mat) return;
         const dark = isDarkTheme();
         mat.color.set(dark ? 0x00d4c3 : 0x008075);
-        mat.opacity = dark ? 0.45 : 0.22;
+        mat.opacity = dark ? 0.60 : 0.30;
       });
       themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
 
@@ -128,12 +128,12 @@ export function SilkWaveBackground({
 
   return (
     <div className={`fixed inset-0 pointer-events-none z-0 overflow-hidden ${className}`}>
-      {/* Three.js Silk Wave Canvas - dimmed when subtle on inner pages, subtle contrast in light mode */}
+      {/* Three.js Silk Wave Canvas - tuned for authentic frosted glass refraction */}
       <canvas
         ref={canvasRef}
         className={cn(
           "absolute inset-0 w-full h-full transition-opacity duration-700 ease-out",
-          subtle ? "opacity-15 dark:opacity-30" : "opacity-35 dark:opacity-75"
+          subtle ? "opacity-35 dark:opacity-60" : "opacity-50 dark:opacity-85"
         )}
       />
       {/* Soft Vignette Overlay matching theme background */}
@@ -141,8 +141,8 @@ export function SilkWaveBackground({
         className={cn(
           "absolute inset-0 bg-radial transition-opacity duration-700 ease-out",
           subtle
-            ? "from-transparent via-[var(--bg)]/40 to-[var(--bg)]/95"
-            : "from-transparent via-[var(--bg)]/25 to-[var(--bg)]"
+            ? "from-transparent via-[var(--bg)]/15 to-[var(--bg)]/60"
+            : "from-transparent via-[var(--bg)]/10 to-[var(--bg)]/75"
         )}
       />
     </div>

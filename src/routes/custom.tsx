@@ -150,7 +150,7 @@ function CustomPage() {
       {!customOrdersEnabled ? (
         <div className="mt-8 space-y-8">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 opacity-85">
-            <div className="rounded-2xl p-5 text-left border border-border bg-surface shadow-xs">
+            <div className="rounded-2xl p-5 text-left glass-ios-card shadow-xs hover-lift">
               <div className="flex items-center justify-between">
                 <p className="font-display text-lg font-semibold">Upload your model</p>
                 <span className="rounded-full bg-accent/15 px-2.5 py-0.5 text-[11px] font-semibold text-accent">Opening Soon</span>
@@ -159,7 +159,7 @@ function CustomPage() {
                 Direct STL, 3MF, and OBJ uploads with instant slicer volume estimation will open soon.
               </p>
             </div>
-            <div className="rounded-2xl p-5 text-left border border-border bg-surface shadow-xs">
+            <div className="rounded-2xl p-5 text-left glass-ios-card shadow-xs hover-lift">
               <div className="flex items-center justify-between">
                 <p className="font-display text-lg font-semibold">Describe your idea</p>
                 <span className="rounded-full bg-accent/15 px-2.5 py-0.5 text-[11px] font-semibold text-accent">Opening Soon</span>
@@ -170,7 +170,7 @@ function CustomPage() {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-accent/25 bg-surface p-8 sm:p-10 shadow-xs max-w-2xl mx-auto space-y-4 text-center">
+          <div className="rounded-3xl border border-accent/25 glass-ios-card p-8 sm:p-10 shadow-xs max-w-2xl mx-auto space-y-4 text-center">
             <div className="inline-flex size-12 items-center justify-center rounded-2xl bg-accent/10 text-accent mx-auto">
               <Sliders className="size-6" />
             </div>
@@ -197,8 +197,8 @@ function CustomPage() {
               type="button"
               onClick={() => switchTab("upload")}
               className={cn(
-                "rounded-2xl p-5 text-left shadow-[var(--shadow-border)] transition-shadow duration-150",
-                tab === "upload" ? "bg-accent-soft ring-2 ring-accent" : "bg-surface hover:shadow-[var(--shadow-border-hover)]",
+                "rounded-2xl p-5 text-left transition-all duration-150 cursor-pointer",
+                tab === "upload" ? "bg-accent-soft ring-2 ring-accent shadow-xs" : "glass-ios-card hover-lift",
               )}
             >
               <p className="font-display text-lg font-semibold">Upload your model</p>
@@ -210,8 +210,8 @@ function CustomPage() {
               type="button"
               onClick={() => switchTab("idea")}
               className={cn(
-                "rounded-2xl p-5 text-left shadow-[var(--shadow-border)] transition-shadow duration-150",
-                tab === "idea" ? "bg-accent-soft ring-2 ring-accent" : "bg-surface hover:shadow-[var(--shadow-border-hover)]",
+                "rounded-2xl p-5 text-left transition-all duration-150 cursor-pointer",
+                tab === "idea" ? "bg-accent-soft ring-2 ring-accent shadow-xs" : "glass-ios-card hover-lift",
               )}
             >
               <p className="font-display text-lg font-semibold">Describe your idea</p>
