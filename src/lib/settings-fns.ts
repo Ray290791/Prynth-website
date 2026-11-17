@@ -595,12 +595,14 @@ export async function calculateSettledProfit(sqlInstance?: any) {
   }
   const effectiveFeeMultiplier = (feePct / 100) * (1 + gstPct / 100);
 
-  // 3. Fetch all orders
+  // 3. Fetch all valid orders (exclude unpaid, pending, or abandoned checkout attempts)
   const orders = await sql<any>`
     SELECT id, order_number, total, subtotal, shipping, extra, refund_amount, 
            courier_actual_cost, payment_fee_actual, settled, settled_date, 
            items, payment_status, created_at, utm_source, utm_campaign
     FROM orders
+    WHERE (payment_status = 'paid' OR payment_method = 'cod')
+      AND status != 'cancelled'
     ORDER BY created_at DESC
   `;
 

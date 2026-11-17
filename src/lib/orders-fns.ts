@@ -551,6 +551,28 @@ export const getOrderById = createServerFn({ method: "GET" })
     };
   });
 
+/**
+ * Customer / Gateway: Clean up an unpaid pending order attempt when user dismisses/cancels Razorpay modal
+ */
+export const cancelPendingOrder = createServerFn({ method: "POST" })
+  .validator((data: { orderNumber: string }) => data)
+  .handler(async ({ data }) => {
+    if (!data.orderNumber) return { success: false };
+    const sql = await getSql();
+    try {
+      await sql`
+        DELETE FROM orders
+        WHERE order_number = ${data.orderNumber}
+          AND payment_status = 'pending'
+          AND status = 'pending'
+      `;
+      return { success: true };
+    } catch (err) {
+      console.error("Failed to cancel pending order attempt:", err);
+      return { success: false };
+    }
+  });
+
 export const getAllOrdersAdmin = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {

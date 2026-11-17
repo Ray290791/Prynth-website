@@ -25,7 +25,7 @@ import type { Address } from "@/lib/orders-store";
 import { productColor } from "@/lib/products";
 import { useHydrated } from "@/lib/use-hydrated";
 import { cn } from "@/lib/utils";
-import { createRazorpayOrder, verifyRazorpayPayment } from "@/lib/orders-fns";
+import { createRazorpayOrder, verifyRazorpayPayment, cancelPendingOrder } from "@/lib/orders-fns";
 import { getAddresses, saveAddress } from "@/lib/user-profile-fns";
 import { validateCoupon } from "@/lib/ecommerce-fns";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -348,6 +348,7 @@ function CheckoutPage() {
       modal: {
         ondismiss: function () {
           restoreScrollAndCleanup();
+          void cancelPendingOrder({ data: { orderNumber: internalOrderNumber } }).catch(() => {});
           toast.info("Payment cancelled. You can change payment method or retry whenever you're ready.");
         },
         escape: true,
@@ -367,6 +368,7 @@ function CheckoutPage() {
       const rzp1 = new window.Razorpay(options);
       rzp1.on("payment.failed", function (response: any) {
         restoreScrollAndCleanup();
+        void cancelPendingOrder({ data: { orderNumber: internalOrderNumber } }).catch(() => {});
         const reason = response?.error?.description || response?.error?.reason || "Payment declined or failed.";
         toast.error(`Payment failed: ${reason}. Please try again or choose another payment method.`, { duration: 7000 });
       });
