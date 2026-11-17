@@ -31,10 +31,48 @@ import {
 import { cn } from "@/lib/utils";
 
 const MODEL_PRESETS = [
-  { name: "Bambu Lab P1S", volume: "256 × 256 × 256 mm", nozzle: "0.4 mm Hardened Steel" },
-  { name: "Bambu Lab X1-Carbon", volume: "256 × 256 × 256 mm", nozzle: "0.4 mm Hardened Steel" },
-  { name: "Bambu Lab A1", volume: "256 × 256 × 256 mm", nozzle: "0.4 mm Stainless Steel" },
-  { name: "Bambu Lab A1 Mini", volume: "180 × 180 × 180 mm", nozzle: "0.4 mm Stainless Steel" },
+  {
+    name: "Bambu Lab X1-Carbon",
+    volume: "256 × 256 × 256 mm",
+    nozzle: "0.4 mm Hardened Steel",
+    description: "Flagship enclosed CoreXY with micro-LiDAR first layer inspection and high-temp printing.",
+  },
+  {
+    name: "Bambu Lab X1E",
+    volume: "256 × 256 × 256 mm",
+    nozzle: "0.4 mm Hardened Steel",
+    description: "Enterprise engineering printer with actively heated chamber and high-temp hotend.",
+  },
+  {
+    name: "Bambu Lab X1",
+    volume: "256 × 256 × 256 mm",
+    nozzle: "0.4 mm Hardened Steel",
+    description: "Original enclosed CoreXY with dual auto-bed leveling and micro-LiDAR inspection.",
+  },
+  {
+    name: "Bambu Lab P1S",
+    volume: "256 × 256 × 256 mm",
+    nozzle: "0.4 mm Hardened Steel",
+    description: "Fully enclosed high-speed CoreXY optimized for advanced filaments (ABS, ASA, PETG, PLA).",
+  },
+  {
+    name: "Bambu Lab P1P",
+    volume: "256 × 256 × 256 mm",
+    nozzle: "0.4 mm Stainless Steel",
+    description: "Open-frame high-speed CoreXY designed for rapid prototyping with PLA and PETG.",
+  },
+  {
+    name: "Bambu Lab A1",
+    volume: "256 × 256 × 256 mm",
+    nozzle: "0.4 mm Stainless Steel",
+    description: "Full-size bed-slinger with active flow rate compensation and quick-swap nozzle.",
+  },
+  {
+    name: "Bambu Lab A1 Mini",
+    volume: "180 × 180 × 180 mm",
+    nozzle: "0.4 mm Stainless Steel",
+    description: "Compact precision bed-slinger with active motor noise cancellation and quick-swap nozzle.",
+  },
 ];
 
 export function PrintersTab() {
@@ -141,6 +179,12 @@ export function PrintersTab() {
     setModel(preset.name);
     setBuildVolume(preset.volume);
     setNozzleSize(preset.nozzle);
+    if (!name || MODEL_PRESETS.some((p) => p.name === name)) {
+      setName(preset.name);
+    }
+    if (!description || MODEL_PRESETS.some((p) => p.description === description)) {
+      setDescription(preset.description || "");
+    }
   }
 
   // Summary counts
@@ -350,18 +394,21 @@ export function PrintersTab() {
             <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5 overscroll-contain">
               {/* Quick Model Presets */}
               <div>
-                <Label className="text-xs text-muted mb-2 block">Quick Bambu Presets</Label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full">
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="text-xs text-muted block">Quick Bambu Presets</Label>
+                  <span className="text-[11px] text-muted font-medium">Bambu Lab Fleet Lineup</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 w-full">
                   {MODEL_PRESETS.map((preset) => (
                     <button
                       key={preset.name}
                       type="button"
                       onClick={() => handleModelSelect(preset)}
                       className={cn(
-                        "h-9 rounded-xl px-2 text-xs font-medium border transition-colors flex items-center justify-center text-center leading-none",
+                        "h-9 rounded-xl px-2 text-xs font-medium border transition-colors flex items-center justify-center text-center leading-none cursor-pointer",
                         model === preset.name
-                          ? "border-accent bg-accent-soft text-accent font-semibold"
-                          : "border-border bg-surface-2 text-muted hover:text-fg"
+                          ? "border-accent bg-accent-soft text-accent font-semibold shadow-xs"
+                          : "border-border bg-surface-2 text-muted hover:text-fg hover:border-border/80"
                       )}
                     >
                       {preset.name}
