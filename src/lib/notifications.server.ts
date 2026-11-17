@@ -5,15 +5,17 @@ import { getSenderEmail } from "./email.server";
 interface NotificationConfig {
   phoneNumber: string;
   whatsappEnabled: boolean;
-  whatsappProvider: "callmebot" | "twilio";
+  whatsappProvider: "twilio" | "callmebot";
   whatsappApiKey: string;
   telegramEnabled: boolean;
   telegramBotToken: string;
   telegramChatId: string;
   smsEnabled: boolean;
+  smsProvider: "twilio" | "fast2sms";
   twilioSid: string;
   twilioToken: string;
   twilioFrom: string;
+  fast2smsApiKey: string;
   emailEnabled: boolean;
   adminEmail: string;
   notifyOnNewOrder: boolean;
@@ -43,17 +45,19 @@ export async function getNotificationConfig(): Promise<NotificationConfig> {
   const env = process.env;
 
   return {
-    phoneNumber: dbSettings.notify_phone_number || env.NOTIFY_PHONE_NUMBER || "",
+    phoneNumber: dbSettings.notify_phone_number || env.NOTIFY_PHONE_NUMBER || "+918369485272",
     whatsappEnabled: (dbSettings.notify_whatsapp_enabled ?? env.NOTIFY_WHATSAPP_ENABLED) === "true",
-    whatsappProvider: (dbSettings.notify_whatsapp_provider || env.NOTIFY_WHATSAPP_PROVIDER || "callmebot") as "callmebot" | "twilio",
+    whatsappProvider: (dbSettings.notify_whatsapp_provider || env.NOTIFY_WHATSAPP_PROVIDER || "twilio") as "twilio" | "callmebot",
     whatsappApiKey: dbSettings.notify_whatsapp_apikey || env.NOTIFY_WHATSAPP_APIKEY || "",
     telegramEnabled: (dbSettings.notify_telegram_enabled ?? env.NOTIFY_TELEGRAM_ENABLED) === "true",
     telegramBotToken: dbSettings.notify_telegram_bot_token || env.NOTIFY_TELEGRAM_BOT_TOKEN || "",
     telegramChatId: dbSettings.notify_telegram_chat_id || env.NOTIFY_TELEGRAM_CHAT_ID || "",
     smsEnabled: (dbSettings.notify_sms_enabled ?? env.NOTIFY_SMS_ENABLED) === "true",
+    smsProvider: (dbSettings.notify_sms_provider || env.NOTIFY_SMS_PROVIDER || "fast2sms") as "twilio" | "fast2sms",
     twilioSid: dbSettings.notify_twilio_account_sid || env.TWILIO_ACCOUNT_SID || "",
     twilioToken: dbSettings.notify_twilio_auth_token || env.TWILIO_AUTH_TOKEN || "",
-    twilioFrom: dbSettings.notify_twilio_from_phone || env.TWILIO_FROM_PHONE || "",
+    twilioFrom: dbSettings.notify_twilio_from_phone || env.TWILIO_FROM_PHONE || "PRYNTH",
+    fast2smsApiKey: dbSettings.notify_fast2sms_apikey || env.FAST2SMS_API_KEY || "",
     emailEnabled: (dbSettings.notify_email_enabled ?? "true") !== "false",
     adminEmail: dbSettings.notify_email || env.ADMIN_EMAIL || "prynth07@gmail.com",
     notifyOnNewOrder: (dbSettings.notify_on_new_order ?? "true") !== "false",
@@ -149,59 +153,95 @@ export async function dispatchNotification({
     }
   }
 
-  // 3. SMS Notification (via Twilio)
-  if (config.smsEnabled && config.phoneNumber && config.twilioSid && config.twilioToken && config.twilioFrom) {
-    try {
-      const url = `https://api.twilio.com/2010-04-01/Accounts/${config.twilioSid}/Messages.json`;
-      const params = new URLSearchParams({
-        From: config.twilioFrom.replace("whatsapp:", ""),
-        To: config.phoneNumber.replace("whatsapp:", ""),
-        Body: plainText,
-      });
+  // 3. SMS Notification (Directly from PRYNTH via Twilio or Fast2SMS)
+  if (config.smsEnabled && config.phoneNumber) {
+    if (config.smsProvider === "fast2sms" && config.fast2smsApiKey) {
+      try {
+        const cleanPhone = config.phoneNumber.replace(/\D/g, "").slice(-10);
+        const smsMessage = plainText.length > 320 ? plainText.slice(0, 317) + "..." : plainText;
+        const res = await fetch("https://www.fast2sms.com/dev/bulkV2", {
+          method: "POST",
+          headers: {
+            authorization: config.fast2smsApiKey,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            route: "q",
+            message: smsMessage,
+            language: "english",
+            flash: 0,
+            numbers: cleanPhone,
+          }),
+        });
 
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          Authorization: `Basic ${Buffer.from(`${config.twilioSid}:${config.twilioToken}`).toString("base64")}`,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: params.toString(),
-      });
-
-      if (!res.ok) {
-        throw new Error(`Twilio SMS HTTP ${res.status}: ${await res.text()}`);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || (data && data.return === false)) {
+          throw new Error(data?.message || `Fast2SMS HTTP ${res.status}`);
+        }
+        results.push({ channel: "sms", success: true });
+      } catch (err: any) {
+        console.error("Fast2SMS error:", err);
+        results.push({ channel: "sms", success: false, error: err?.message || String(err) });
       }
-      results.push({ channel: "sms", success: true });
-    } catch (err: any) {
-      console.error("SMS notification error:", err);
-      results.push({ channel: "sms", success: false, error: err?.message || String(err) });
+    } else if (config.twilioSid && config.twilioToken && config.twilioFrom) {
+      try {
+        const url = `https://api.twilio.com/2010-04-01/Accounts/${config.twilioSid}/Messages.json`;
+        const senderFrom = config.twilioFrom.replace("whatsapp:", "").trim() || "PRYNTH";
+        const params = new URLSearchParams({
+          From: senderFrom,
+          To: config.phoneNumber.replace("whatsapp:", ""),
+          Body: plainText,
+        });
+
+        const res = await fetch(url, {
+          method: "POST",
+          headers: {
+            Authorization: `Basic ${Buffer.from(`${config.twilioSid}:${config.twilioToken}`).toString("base64")}`,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: params.toString(),
+        });
+
+        if (!res.ok) {
+          throw new Error(`Twilio SMS HTTP ${res.status}: ${await res.text()}`);
+        }
+        results.push({ channel: "sms", success: true });
+      } catch (err: any) {
+        console.error("SMS notification error:", err);
+        results.push({ channel: "sms", success: false, error: err?.message || String(err) });
+      }
+    } else {
+      results.push({ channel: "sms", success: false, error: "Missing SMS credentials (Twilio or Fast2SMS)" });
     }
   }
 
   // 4. Resend High-Priority Admin Email Notification
-  if (config.emailEnabled && process.env.RESEND_API_KEY && config.adminEmail) {
+  if (config.emailEnabled && config.adminEmail) {
     try {
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      const fromEmail = await getSenderEmail();
-      await resend.emails.send({
-        from: fromEmail,
-        to: config.adminEmail,
-        subject: `[Prynth Alert] ${subject}`,
-        html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; color: #1e2124; line-height: 1.5;">
-            <div style="background-color: #00b8a9; padding: 20px; border-radius: 12px 12px 0 0; color: #fff;">
-              <h2 style="margin: 0; font-size: 18px; font-weight: 700;">🔔 Prynth Store Notification</h2>
-            </div>
-            <div style="padding: 24px; border: 1px solid #e4e4e7; border-top: none; border-radius: 0 0 12px 12px; background-color: #ffffff;">
-              <div style="font-size: 15px; margin-bottom: 20px; white-space: pre-wrap;">${formattedHtml}</div>
-              <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #f4f4f5; text-align: center;">
-                <a href="https://prynth.in/admin" style="display: inline-block; background-color: #00b8a9; color: #fff; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Open Admin Dashboard</a>
+      const { getResend } = await import("./email.server");
+      const resend = await getResend();
+      if (resend) {
+        const fromEmail = await getSenderEmail();
+        await resend.emails.send({
+          from: fromEmail,
+          to: config.adminEmail,
+          subject: `[Prynth Alert] ${subject}`,
+          html: `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; color: #1e2124; line-height: 1.5;">
+              <div style="background-color: #00b8a9; padding: 20px; border-radius: 12px 12px 0 0; color: #fff;">
+                <h2 style="margin: 0; font-size: 18px; font-weight: 700;">🔔 Prynth Store Notification</h2>
+              </div>
+              <div style="padding: 24px; border: 1px solid #e4e4e7; border-top: none; border-radius: 0 0 12px 12px; background-color: #ffffff;">
+                <div style="font-size: 15px; margin-bottom: 20px; white-space: pre-wrap;">${formattedHtml}</div>
+                <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #f4f4f5; text-align: center;">
+                  <a href="https://prynth.in/admin" style="display: inline-block; background-color: #00b8a9; color: #fff; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Open Admin Dashboard</a>
+                </div>
               </div>
             </div>
-          </div>
-        `,
-      });
-      results.push({ channel: "email", success: true });
+          `,
+        });
+        results.push({ channel: "email", success: true });
+      }
     } catch (err: any) {
       console.error("Email alert error:", err);
       results.push({ channel: "email", success: false, error: err?.message || String(err) });
@@ -381,6 +421,52 @@ Reply in Admin: https://prynth.in/admin`;
     plainText,
     formattedHtml,
     subject: `New Inquiry from ${inquiry.name}`,
+  });
+}
+
+/**
+ * Trigger immediate phone and email alert when a new custom 3D design request is submitted
+ */
+export async function notifyCustomDesignRequest(request: {
+  ticketId: number;
+  name: string;
+  email: string;
+  phone?: string;
+  idea: string;
+  sizeName?: string;
+  materialName?: string;
+  colorName?: string;
+  quantity?: number;
+  printerName?: string;
+  photosCount?: number;
+}) {
+  const config = await getNotificationConfig();
+  if (!config.notifyOnInquiry) return;
+
+  const plainText = 
+`🔔 PRYNTH: NEW CUSTOM 3D PRINT REQUEST #${request.ticketId}
+Customer: ${request.name} (${request.phone || request.email})
+Specs: ${request.sizeName || "Standard"} · ${request.materialName || "PLA"} (${request.colorName || "Standard"}) · ${request.quantity || 1} unit(s)
+${request.photosCount ? `Photos Attached: ${request.photosCount}\n` : ""}
+Description:
+"${request.idea.slice(0, 180)}${request.idea.length > 180 ? "..." : ""}"
+
+Send official quote: https://prynth.in/admin?tab=inquiries`;
+
+  const formattedHtml = 
+`<b>🔔 PRYNTH: NEW CUSTOM 3D PRINT REQUEST #${request.ticketId}</b>
+<b>Customer:</b> ${request.name} (${request.phone || request.email})
+<b>Specs:</b> ${request.sizeName} · ${request.materialName} (${request.colorName}) · ${request.quantity} unit(s)
+${request.photosCount ? `<b>Photos:</b> ${request.photosCount} attached\n` : ""}
+<b>Description:</b>
+<blockquote>${request.idea.slice(0, 250)}${request.idea.length > 250 ? "..." : ""}</blockquote>
+
+<a href="https://prynth.in/admin?tab=inquiries">👉 Open Inquiries to Send Quote</a>`;
+
+  return await dispatchNotification({
+    plainText,
+    formattedHtml,
+    subject: `New Custom 3D Design Request #${request.ticketId} from ${request.name}`,
   });
 }
 

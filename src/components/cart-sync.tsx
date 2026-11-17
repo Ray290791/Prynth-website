@@ -1,12 +1,54 @@
 import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useCurrentUser } from "@/lib/auth/use-current-user";
 import { useCart } from "@/lib/cart-store";
 import { getCartFromDb, syncCartToDb } from "@/lib/cart-fns";
+import { getProductsPublic } from "@/lib/products-fns";
 import { upsertCartSession, touchUserActivity } from "@/lib/ecommerce-fns";
 
 export function CartSync() {
   const user = useCurrentUser();
   const items = useCart((s) => s.items);
+
+  // Fetch live catalog products from database to ensure cart item prices never drift from site editor
+  const { data: liveProducts } = useQuery({
+    queryKey: ["publicProducts"],
+    queryFn: () => getProductsPublic(),
+    staleTime: 60_000,
+  });
+
+  // Reconcile and auto-heal cart prices and names against live database product records
+  useEffect(() => {
+    if (!liveProducts || liveProducts.length === 0) return;
+    const currentItems = useCart.getState().items;
+    let changed = false;
+    const syncedItems = currentItems.map((item) => {
+      if (item.kind === "product" && item.productSlug) {
+        const live = liveProducts.find((p) => p.slug === item.productSlug);
+        if (live) {
+          const variant = live.variants?.find((v: any) =>
+            (v.size === item.size || (!v.size && !item.size)) &&
+            (v.color === item.color || (!v.color && !item.color))
+          );
+          const currentLivePrice = Number(variant ? variant.price : live.price);
+          if (currentLivePrice && (item.unitPrice !== currentLivePrice || item.name !== live.name)) {
+            changed = true;
+            return {
+              ...item,
+              unitPrice: currentLivePrice,
+              name: live.name,
+              image: live.image || item.image,
+            };
+          }
+        }
+      }
+      return item;
+    });
+
+    if (changed) {
+      useCart.setState({ items: syncedItems });
+    }
+  }, [liveProducts]);
 
   // Keep active user session timestamp fresh while tab is open
   useEffect(() => {

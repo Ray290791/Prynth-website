@@ -86,10 +86,9 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
     const profitData = await calculateSettledProfit(sql);
     if (profitData.settledProfit >= profitTarget) {
       await sql`UPDATE site_settings SET value = 'false' WHERE key = 'checkout_enabled'`;
-      const logId = "log_" + Date.now().toString(36);
       await sql`
-        INSERT INTO admin_audit_logs (id, admin_email, action, details)
-        VALUES (${logId}, 'system:profit_target', 'AUTO_PAUSE_PROFIT_TARGET_REACHED', ${JSON.stringify({
+        INSERT INTO admin_audit_logs (admin_email, action, details)
+        VALUES ('system:profit_target', 'AUTO_PAUSE_PROFIT_TARGET_REACHED', ${JSON.stringify({
           settledProfit: profitData.settledProfit,
           profitTarget,
           timestamp: new Date().toISOString(),
@@ -974,11 +973,9 @@ export const refundOrderAdmin = createServerFn({ method: "POST" })
     `;
 
     // Audit log
-    const auditId = "log_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 6);
     await sql`
-      INSERT INTO admin_audit_logs (id, admin_email, action, details)
+      INSERT INTO admin_audit_logs (admin_email, action, details)
       VALUES (
-        ${auditId},
         ${admin.email || "admin"},
         'ORDER_REFUND',
         ${JSON.stringify({

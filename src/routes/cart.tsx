@@ -55,9 +55,28 @@ function CartPage() {
     staleTime: 30000,
   });
   const isCheckoutOpen = checkoutStatus?.checkoutEnabled ?? false;
+  const sellableSlugs = checkoutStatus?.sellableProductSlugs ?? [];
   const items = useCart((s) => s.items);
   const setQty = useCart((s) => s.setQty);
   const remove = useCart((s) => s.remove);
+
+  const isItemWaitlistOnly = (item: (typeof items)[number]) => {
+    if (item.kind === "product" && item.productSlug) {
+      if (sellableSlugs.length > 0) {
+        return !sellableSlugs.includes(item.productSlug);
+      }
+      return false;
+    }
+    if (item.kind === "custom") {
+      const isLitho = item.name?.toLowerCase().includes("lithophane") || Boolean((item as any).custom?.isLithophane);
+      return isLitho ? !checkoutStatus?.lithophaneEnabled : !checkoutStatus?.customOrdersEnabled;
+    }
+    return false;
+  };
+
+  const waitlistItems = items.filter(isItemWaitlistOnly);
+  const hasWaitlistItems = waitlistItems.length > 0;
+  const allItemsWaitlist = items.length > 0 && waitlistItems.length === items.length;
   
   const isCodRestricted = hasNonCodItems(items);
 
@@ -176,6 +195,12 @@ function CartPage() {
                         </div>
                       </div>
                     )}
+                    {isItemWaitlistOnly(item) && (
+                      <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg border border-amber-500/25 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-500">
+                        <AlertCircle className="size-3.5 shrink-0" />
+                        <span>Waitlist only · Remove to checkout available items</span>
+                      </div>
+                    )}
                   </div>
                   <p className="shrink-0 font-medium tabular-nums">
                     {formatINR(item.unitPrice * item.qty)}
@@ -272,11 +297,7 @@ function CartPage() {
             <span className="tabular-nums">{formatINR(discountedSubtotal + ship)}</span>
           </div>
 
-          {isCheckoutOpen ? (
-            <Button asChild size="lg" className="w-full cursor-pointer shadow-xs">
-              <Link to="/checkout">Proceed to Checkout</Link>
-            </Button>
-          ) : (
+          {!isCheckoutOpen ? (
             <div className="rounded-2xl border border-accent/25 bg-accent/5 p-4 space-y-3">
               <div>
                 <h3 className="font-display text-base font-semibold text-fg">
@@ -292,6 +313,30 @@ function CartPage() {
               </div>
               <WaitlistForm interest="launch" />
             </div>
+          ) : hasWaitlistItems ? (
+            <div className="space-y-3">
+              <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 space-y-2">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-500">
+                  <AlertCircle className="size-4 shrink-0" />
+                  <span>Waitlist items in cart</span>
+                </div>
+                <p className="text-xs text-muted leading-relaxed">
+                  {waitlistItems.map((w) => w.name).join(", ")} {waitlistItems.length > 1 ? "are" : "is"} currently in batch preparation and available on waitlist only.
+                </p>
+                <p className="text-xs text-muted">
+                  Please remove {waitlistItems.length > 1 ? "these items" : "this item"} to proceed with checkout for your ready-to-order pieces.
+                </p>
+              </div>
+              {allItemsWaitlist && (
+                <div className="rounded-2xl border border-border bg-surface-2/40 p-4">
+                  <WaitlistForm interest="launch" placeholder="Enter your email to get notified..." />
+                </div>
+              )}
+            </div>
+          ) : (
+            <Button asChild size="lg" className="w-full cursor-pointer shadow-xs">
+              <Link to="/checkout">Proceed to Checkout</Link>
+            </Button>
           )}
 
           <Button asChild variant="ghost" className="w-full cursor-pointer text-xs">
@@ -307,7 +352,7 @@ function CartPage() {
             <p className="text-[11px] text-muted uppercase font-medium tracking-wider">Est. Total</p>
             <p className="text-base font-semibold tabular-nums text-fg">{formatINR(discountedSubtotal + ship)}</p>
           </div>
-          {isCheckoutOpen ? (
+          {isCheckoutOpen && !hasWaitlistItems ? (
             <Button asChild size="md" className="shadow-xs cursor-pointer">
               <Link to="/checkout">Checkout ({items.reduce((s, i) => s + i.qty, 0)})</Link>
             </Button>
@@ -320,7 +365,7 @@ function CartPage() {
                 window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
               }}
             >
-              Join Waitlist
+              {hasWaitlistItems ? "View Waitlist Alert" : "Join Waitlist"}
             </Button>
           )}
         </div>

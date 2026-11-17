@@ -171,11 +171,19 @@ export const submitCustomDesignRequest = createServerFn({ method: "POST" })
     }
 
     try {
-      const { notifyNewInquiry } = await import("./notifications.server");
-      await notifyNewInquiry({
+      const { notifyCustomDesignRequest } = await import("./notifications.server");
+      await notifyCustomDesignRequest({
+        ticketId: inserted.id,
         name: data.name,
         email: data.email,
-        message: `Custom 3D Print Request (#${inserted.id}): ${data.idea.slice(0, 100)}... (${(data.photos || []).length} photos attached)`,
+        phone: data.phone,
+        idea: data.idea,
+        sizeName: data.sizeName,
+        materialName: data.materialName,
+        colorName: data.colorName,
+        quantity: data.quantity || 1,
+        printerName: data.printerName,
+        photosCount: (data.photos || []).length,
       });
     } catch (err) {
       console.error("Failed to send phone notification for custom request:", err);
@@ -251,7 +259,19 @@ export const deleteTicketAdmin = createServerFn({ method: "POST" })
 
 export const replyToTicketAdmin = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .validator((data: { id: number; toEmail: string; customerName: string; originalMessage: string; replyMessage: string; markResolved?: boolean }) => data)
+  .validator(
+    (data: {
+      id: number;
+      toEmail: string;
+      customerName: string;
+      originalMessage: string;
+      replyMessage: string;
+      subject?: string;
+      quoteAmount?: number;
+      turnaround?: string;
+      markResolved?: boolean;
+    }) => data
+  )
   .handler(async ({ data, context }) => {
     const sql = await getSql();
     const admin = await verifyAdminRole(context.userId, sql);
@@ -264,7 +284,18 @@ export const replyToTicketAdmin = createServerFn({ method: "POST" })
     }
 
     const { sendTicketReplyEmail } = await import("./email.server");
-    await sendTicketReplyEmail(data.customerName, data.toEmail, data.originalMessage, data.replyMessage);
+    await sendTicketReplyEmail(
+      data.customerName,
+      data.toEmail,
+      data.originalMessage,
+      data.replyMessage,
+      data.subject,
+      {
+        estimatedAmount: data.quoteAmount,
+        timeline: data.turnaround,
+        ticketId: data.id,
+      }
+    );
 
     if (data.markResolved !== false) {
       await sql`

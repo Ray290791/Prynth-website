@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { getSql } from "./db";
+import { generateQuoteEmailFullHtml } from "./quote-email-formatter";
 
 export async function getSenderEmail(): Promise<string> {
   try {
@@ -16,9 +17,30 @@ export async function getSenderEmail(): Promise<string> {
   return process.env.RESEND_FROM_EMAIL?.trim() || "onboarding@resend.dev";
 }
 
-function getResend(): Resend | null {
-  if (!process.env.RESEND_API_KEY) return null;
-  return new Resend(process.env.RESEND_API_KEY);
+let cachedResendApiKey: string | null = null;
+
+export async function getResend(): Promise<Resend | null> {
+  let key =
+    (typeof process !== "undefined" ? process.env.RESEND_API_KEY : undefined)?.trim() ||
+    (globalThis as any).__env__?.RESEND_API_KEY?.trim() ||
+    cachedResendApiKey ||
+    "";
+
+  if (!key) {
+    try {
+      const sql = await getSql();
+      const rows = await sql<{ value: string }>`
+        SELECT value FROM site_settings WHERE key = 'resend_api_key' LIMIT 1
+      `;
+      if (rows.length > 0 && rows[0].value?.trim()) {
+        key = rows[0].value.trim();
+        cachedResendApiKey = key;
+      }
+    } catch {}
+  }
+
+  if (!key) return null;
+  return new Resend(key);
 }
 
 function escapeHtml(str: string | null | undefined): string {
@@ -37,7 +59,7 @@ export async function sendOrderConfirmationEmail(
   name: string,
   orderDetails?: { items: any[], subtotal: number, shipping: number, extra: number, total: number }
 ) {
-  const resend = getResend();
+  const resend = await getResend();
   if (!resend) {
     console.log("No RESEND_API_KEY set, skipping order confirmation email to", email);
     return;
@@ -134,7 +156,7 @@ export async function sendOrderConfirmationEmail(
 }
 
 export async function sendOrderStatusUpdateEmail(orderNumber: string, email: string, status: string) {
-  const resend = getResend();
+  const resend = await getResend();
   if (!resend) {
     console.log("No RESEND_API_KEY set, skipping order status email to", email);
     return;
@@ -168,7 +190,7 @@ export async function sendOrderStatusUpdateEmail(orderNumber: string, email: str
 }
 
 export async function sendContactFormEmail(name: string, replyToEmail: string, message: string) {
-  const resend = getResend();
+  const resend = await getResend();
   const adminEmail = process.env.ADMIN_EMAIL;
   
   if (!resend || !adminEmail) {
@@ -220,40 +242,40 @@ export async function sendTicketReplyEmail(
   name: string,
   toEmail: string,
   originalMessage: string,
-  replyMessage: string
+  replyMessage: string,
+  customSubject?: string,
+  quoteInfo?: {
+    estimatedAmount?: number;
+    timeline?: string;
+    ticketId?: number;
+  }
 ) {
-  const resend = getResend();
-  const adminEmail = process.env.ADMIN_EMAIL || "hello@prynth.in";
+  const resend = await getResend();
+  const adminEmail = process.env.ADMIN_EMAIL || "prynth07@gmail.com";
   if (!resend) {
     throw new Error("Email service (Resend) is not configured with an API key.");
   }
 
-  const safeName = escapeHtml(name);
-  const safeOriginal = escapeHtml(originalMessage);
-  const safeReply = escapeHtml(replyMessage);
   const fromEmail = await getSenderEmail();
+  const subject = customSubject?.trim() || `Re: Your inquiry to prynth!`;
+
+  const html = generateQuoteEmailFullHtml({
+    customerName: name,
+    replyMessage,
+    originalMessage,
+    quoteAmount: quoteInfo?.estimatedAmount,
+    turnaround: quoteInfo?.timeline,
+    ticketId: quoteInfo?.ticketId,
+    brandEmail: adminEmail,
+    brandWebsite: "https://prynth.in",
+  });
 
   const { data, error } = await resend.emails.send({
     from: fromEmail,
     to: toEmail,
     replyTo: adminEmail,
-    subject: `Re: Your inquiry to prynth!`,
-    html: `
-      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #1e2124; line-height: 1.6;">
-        <div style="background-color: #00b8a9; padding: 20px 24px; border-radius: 8px 8px 0 0; color: #ffffff;">
-          <h1 style="margin: 0; font-size: 20px; font-weight: 700;">prynth! Support</h1>
-        </div>
-        <div style="padding: 24px; border: 1px solid #e4e4e7; border-top: none; border-radius: 0 0 8px 8px; background-color: #ffffff;">
-          <p style="margin-top: 0;">Hi ${safeName},</p>
-          <div style="padding: 16px; background-color: #f9fafb; border-left: 4px solid #00b8a9; border-radius: 4px; white-space: pre-wrap; margin: 16px 0; font-size: 15px;">${safeReply}</div>
-          <p style="font-size: 14px; color: #666; margin-bottom: 0;">If you have any further questions, feel free to reply directly to this email.</p>
-          <div style="margin-top: 28px; padding-top: 16px; border-top: 1px solid #e4e4e7; font-size: 13px; color: #888;">
-            <p style="margin: 0 0 6px 0; font-weight: 600;">Original Inquiry:</p>
-            <div style="white-space: pre-wrap; font-style: italic;">${safeOriginal}</div>
-          </div>
-        </div>
-      </div>
-    `,
+    subject,
+    html,
   });
 
   if (error) {
@@ -276,7 +298,7 @@ export async function sendCustomRequestAdminEmail(params: {
   printerName?: string;
   photosCount?: number;
 }) {
-  const resend = getResend();
+  const resend = await getResend();
   const adminEmail = process.env.ADMIN_EMAIL || "hello@prynth.in";
   if (!resend) return;
 
@@ -334,7 +356,7 @@ export async function sendCustomRequestCustomerAckEmail(params: {
   materialName?: string;
   photosCount?: number;
 }) {
-  const resend = getResend();
+  const resend = await getResend();
   if (!resend) return;
 
   const safeName = escapeHtml(params.name);
@@ -396,7 +418,7 @@ export async function sendGrievanceAcknowledgementEmail(params: {
   grievanceOfficerName?: string;
   grievanceOfficerEmail?: string;
 }) {
-  const resend = getResend();
+  const resend = await getResend();
   if (!resend) {
     console.log("No RESEND_API_KEY set, skipping grievance acknowledgement email to", params.email);
     return;

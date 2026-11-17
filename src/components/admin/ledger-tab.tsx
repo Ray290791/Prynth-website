@@ -106,9 +106,10 @@ export function LaunchLedgerTab() {
   }
 
   if (error || !ledger) {
+    const errorMsg = error instanceof Error ? error.message : typeof error === "string" ? error : "Failed to load launch ledger. Please check admin authorization.";
     return (
       <div className="p-8 text-center text-danger">
-        Failed to load launch ledger. Please check admin authorization.
+        {errorMsg}
       </div>
     );
   }

@@ -14,6 +14,8 @@ export function ProductsTable() {
   const queryClient = useQueryClient();
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
+  const [deletePin, setDeletePin] = useState("");
 
   const { data: products, isLoading } = useQuery({
     queryKey: ["adminProducts"],
@@ -21,14 +23,19 @@ export function ProductsTable() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (slug: string) => {
-      await deleteProduct({ data: slug });
+    mutationFn: async ({ slug, pin }: { slug: string; pin: string }) => {
+      await deleteProduct({ data: { slug, pin } });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["adminProducts"] });
-      toast.success("Product deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["publicProducts"] });
+      queryClient.invalidateQueries({ queryKey: ["featuredProducts"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      toast.success("Product permanently deleted from everywhere.");
+      setDeletingProduct(null);
+      setDeletePin("");
     },
-    onError: () => toast.error("Failed to delete product")
+    onError: (err: any) => toast.error(err?.message || "Failed to delete product"),
   });
 
   const toggleSellableMutation = useMutation({
@@ -37,6 +44,9 @@ export function ProductsTable() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["adminProducts"] });
+      queryClient.invalidateQueries({ queryKey: ["publicProducts"] });
+      queryClient.invalidateQueries({ queryKey: ["featuredProducts"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success("Product sellable status updated!");
     },
     onError: (err: any) => toast.error(err?.message || "Failed to update sellable status"),
@@ -121,11 +131,10 @@ export function ProductsTable() {
                   </button>
                   <button
                     onClick={() => {
-                      if (confirm(`Are you sure you want to delete ${p.name}?`)) {
-                        deleteMutation.mutate(p.slug);
-                      }
+                      setDeletingProduct(p);
+                      setDeletePin("");
                     }}
-                    className="text-xs px-2.5 py-1.5 rounded-lg bg-danger/10 text-danger hover:bg-danger/20 transition-colors border border-danger/20 font-medium"
+                    className="text-xs px-2.5 py-1.5 rounded-lg bg-danger/10 text-danger hover:bg-danger/20 transition-colors border border-danger/20 font-medium cursor-pointer"
                   >
                     Delete
                   </button>
@@ -135,6 +144,117 @@ export function ProductsTable() {
           ))}
         </tbody>
       </table>
+
+      {/* Second Line of Verification: Admin PIN Product Deletion Modal */}
+      {deletingProduct && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-in fade-in duration-150"
+          onClick={() => {
+            if (!deleteMutation.isPending) {
+              setDeletingProduct(null);
+              setDeletePin("");
+            }
+          }}
+        >
+          <div
+            className="relative w-full max-w-md rounded-2xl sm:rounded-3xl border border-danger/30 bg-surface p-6 shadow-2xl animate-in zoom-in-95 duration-200 cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3.5">
+              <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-danger/15 text-danger border border-danger/25">
+                <Trash2 className="size-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-fg">Delete Product</h3>
+                <p className="text-xs text-muted mt-1 leading-relaxed">
+                  Second line of verification required. Enter your 6-digit Admin PIN to permanently delete this item.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setDeletingProduct(null);
+                  setDeletePin("");
+                }}
+                disabled={deleteMutation.isPending}
+                className="text-muted hover:text-fg p-1 rounded-lg cursor-pointer"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            {/* Product Summary */}
+            <div className="my-4 p-3 rounded-xl bg-surface-2/60 border border-border flex items-center gap-3">
+              <img
+                src={deletingProduct.image}
+                alt={deletingProduct.name}
+                className="size-12 rounded-lg object-cover bg-surface shrink-0"
+              />
+              <div className="min-w-0 flex-1 text-xs">
+                <div className="font-semibold text-fg truncate">{deletingProduct.name}</div>
+                <div className="text-muted font-mono text-[11px] truncate">{deletingProduct.slug}</div>
+                <div className="text-accent font-medium mt-0.5">{formatINR(deletingProduct.price)}</div>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-600 dark:text-amber-400 mb-4 leading-relaxed">
+              <strong>Warning:</strong> This will permanently erase the product from all catalog listings, PostgreSQL database tables, customer wishlists, and reviews.
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!deletePin || deletePin.length !== 6) {
+                  toast.error("Please enter your 6-digit Admin PIN");
+                  return;
+                }
+                deleteMutation.mutate({ slug: deletingProduct.slug, pin: deletePin });
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-xs font-semibold text-fg mb-1.5">
+                  6-Digit Admin PIN
+                </label>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  value={deletePin}
+                  onChange={(e) => setDeletePin(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  placeholder="••••••"
+                  autoFocus
+                  required
+                  className="w-full text-center tracking-[0.5em] text-xl font-mono py-2.5 rounded-xl border border-border bg-surface-2 text-fg focus:border-danger focus:ring-1 focus:ring-danger outline-none transition-all"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeletingProduct(null);
+                    setDeletePin("");
+                  }}
+                  disabled={deleteMutation.isPending}
+                  className="px-4 py-2 rounded-xl border border-border text-xs font-medium text-muted hover:text-fg hover:bg-surface-2 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={deletePin.length !== 6 || deleteMutation.isPending}
+                  className="px-4 py-2 rounded-xl bg-danger text-white text-xs font-semibold hover:bg-danger/90 disabled:opacity-50 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                >
+                  <Trash2 className="size-3.5" />
+                  <span>{deleteMutation.isPending ? "Verifying PIN & Deleting..." : "Permanently Delete"}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <ProductModal
         isOpen={isModalOpen}
@@ -191,6 +311,9 @@ function ProductModal({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["adminProducts"] });
+      queryClient.invalidateQueries({ queryKey: ["publicProducts"] });
+      queryClient.invalidateQueries({ queryKey: ["featuredProducts"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success(`Product ${product ? "updated" : "created"}!`);
       onClose();
     },

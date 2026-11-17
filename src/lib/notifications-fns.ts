@@ -17,9 +17,11 @@ export interface NotificationSettingsData {
   telegramBotToken: string;
   telegramChatId: string;
   smsEnabled: boolean;
+  smsProvider: "twilio" | "fast2sms";
   twilioSid: string;
   twilioToken: string;
   twilioFrom: string;
+  fast2smsApiKey: string;
   emailEnabled: boolean;
   adminEmail: string;
   notifyOnNewOrder: boolean;
@@ -61,9 +63,11 @@ export const updateAdminNotificationSettings = createServerFn({ method: "POST" }
       notify_telegram_bot_token: data.telegramBotToken?.trim() || "",
       notify_telegram_chat_id: data.telegramChatId?.trim() || "",
       notify_sms_enabled: String(Boolean(data.smsEnabled)),
+      notify_sms_provider: data.smsProvider || "fast2sms",
       notify_twilio_account_sid: data.twilioSid?.trim() || "",
       notify_twilio_auth_token: data.twilioToken?.trim() || "",
-      notify_twilio_from_phone: data.twilioFrom?.trim() || "",
+      notify_twilio_from_phone: data.twilioFrom?.trim() || "PRYNTH",
+      notify_fast2sms_apikey: data.fast2smsApiKey?.trim() || "",
       notify_email_enabled: String(Boolean(data.emailEnabled)),
       notify_email: data.adminEmail?.trim() || "",
       notify_on_new_order: String(Boolean(data.notifyOnNewOrder)),
@@ -92,9 +96,11 @@ const notificationSchema = z.object({
   telegramBotToken: z.string().optional().default(""),
   telegramChatId: z.string().optional().default(""),
   smsEnabled: z.boolean().optional().default(false),
+  smsProvider: z.enum(["twilio", "fast2sms"]).optional().default("fast2sms"),
   twilioSid: z.string().optional().default(""),
   twilioToken: z.string().optional().default(""),
-  twilioFrom: z.string().optional().default(""),
+  twilioFrom: z.string().optional().default("PRYNTH"),
+  fast2smsApiKey: z.string().optional().default(""),
   emailEnabled: z.boolean().optional().default(true),
   adminEmail: z.string().optional().default(""),
   notifyOnNewOrder: z.boolean().optional().default(true),

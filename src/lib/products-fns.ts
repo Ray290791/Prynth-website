@@ -309,6 +309,15 @@ export const updateProduct = createServerFn({ method: "POST" })
         packaging_cost_inr = COALESCE(${data.packagingCostInr ?? null}, packaging_cost_inr)
       WHERE slug = ${data.slug}
     `;
+
+    // Ensure all variant records for this product reflect the updated price and stock count
+    await sql`
+      UPDATE product_variants
+      SET price = ${data.price},
+          stock_count = CASE WHEN stock_count = -1 THEN -1 ELSE ${data.stockCount ?? -1} END
+      WHERE product_slug = ${data.slug}
+    `;
+
     return { success: true };
   });
 
@@ -325,6 +334,11 @@ export const updateProductInventory = createServerFn({ method: "POST" })
         stock_count = ${data.stockCount},
         in_stock = ${data.stockCount > 0 || data.stockCount === -1}
       WHERE slug = ${data.slug}
+    `;
+    await sql`
+      UPDATE product_variants SET
+        stock_count = ${data.stockCount}
+      WHERE product_slug = ${data.slug}
     `;
     return { success: true };
   });
@@ -359,14 +373,55 @@ export const createProduct = createServerFn({ method: "POST" })
 
 export const deleteProduct = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .validator((slug: string) => slug)
-  .handler(async ({ data: slug, context }) => {
+  .validator((data: { slug: string; pin: string }) => data)
+  .handler(async ({ data, context }) => {
     const sql = await getSql();
     
     const admin = await verifyAdminRole(context.userId, sql);
     if (!admin) throw new Error("Unauthorized");
     
-    await sql`DELETE FROM products WHERE slug = ${slug}`;
+    // Require 6-digit Admin PIN verification as second line of defense
+    if (!data.pin || !/^\d{6}$/.test(data.pin)) {
+      throw new Error("A valid 6-digit Admin PIN is required to permanently delete a product.");
+    }
+
+    const { verifyAdminPIN } = await import("./admin-fns");
+    const isPinValid = await verifyAdminPIN(admin.email, data.pin, sql);
+    if (!isPinValid) {
+      throw new Error("Incorrect Admin PIN. Product deletion cancelled.");
+    }
+
+    // Completely delete product and all associated dependencies across the entire system
+    await sql`DELETE FROM wishlists WHERE product_slug = ${data.slug}`;
+    await sql`DELETE FROM recently_viewed WHERE product_slug = ${data.slug}`;
+    await sql`DELETE FROM product_reviews WHERE product_slug = ${data.slug}`;
+    await sql`DELETE FROM product_variants WHERE product_slug = ${data.slug}`;
+    await sql`DELETE FROM products WHERE slug = ${data.slug}`;
+
+    // Clean up hero featured slots if present in settings
+    try {
+      const rows = await sql<{ value: string }>`SELECT value FROM site_settings WHERE key = 'hero_featured_slots'`;
+      if (rows.length > 0 && rows[0].value) {
+        let slots = JSON.parse(rows[0].value);
+        if (Array.isArray(slots) && slots.includes(data.slug)) {
+          slots = slots.filter((s: string) => s !== data.slug);
+          await sql`UPDATE site_settings SET value = ${JSON.stringify(slots)} WHERE key = 'hero_featured_slots'`;
+        }
+      }
+    } catch {}
+
+    // Audit log deletion permanently
+    try {
+      await sql`
+        INSERT INTO admin_audit_logs (admin_email, action, details)
+        VALUES (
+          ${admin.email},
+          'DELETE_PRODUCT',
+          ${JSON.stringify({ slug: data.slug, timestamp: new Date().toISOString() })}
+        )
+      `;
+    } catch {}
+
     return { success: true };
   });
 

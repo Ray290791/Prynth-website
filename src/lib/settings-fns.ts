@@ -212,7 +212,7 @@ function parseSiteSettings(rows: { key: string; value: string }[]): SiteSettings
     pegboard_hero_title: "The Modular Pegboard System",
     pegboard_hero_subtitle: "Precision 3D printed modular wall and desk organization. Engineered for creators, tech setups, and intentional workspaces.",
     pegboard_badge: "Signature Star Product",
-    pegboard_price_compact: "699",
+    pegboard_price_compact: "200",
     pegboard_price_studio: "999",
     pegboard_price_executive: "1499",
     pegboard_price_duo: "1799",
@@ -222,7 +222,7 @@ function parseSiteSettings(rows: { key: string; value: string }[]): SiteSettings
         name: "Compact",
         dims: "20 × 20 cm Tile",
         desc: "Perfect for monitor risers & small headphone nooks",
-        price: 699,
+        price: 200,
         popular: false,
       },
       {
@@ -304,12 +304,17 @@ function parseSiteSettings(rows: { key: string; value: string }[]): SiteSettings
   };
 
   for (const row of rows) {
-    // Security: NEVER expose private credentials (e.g. razorpay_key_secret, notification tokens) in public site settings
+    // Security: NEVER expose private credentials (e.g. razorpay_key_secret, notification tokens, API keys) in public site settings
     if (
       row.key === "razorpay_key_secret" ||
+      row.key === "resend_api_key" ||
       row.key.includes("secret") ||
       row.key.includes("token") ||
-      row.key.includes("apikey")
+      row.key.includes("apikey") ||
+      row.key.includes("api_key") ||
+      row.key.includes("password") ||
+      row.key.includes("fast2sms") ||
+      row.key.includes("twilio_auth")
     ) {
       continue;
     }
@@ -318,6 +323,7 @@ function parseSiteSettings(rows: { key: string; value: string }[]): SiteSettings
     }
   }
   delete (settings as any).razorpay_key_secret;
+  delete (settings as any).resend_api_key;
 
   // Auto-heal legacy buggy formula records if present in DB
   if (
@@ -521,11 +527,9 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
 
     // Write audit log if checkout_enabled flag is modified
     if (data.checkout_enabled !== undefined && data.checkout_enabled !== currentSettings.checkout_enabled) {
-      const logId = "log_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 6);
       await sql`
-        INSERT INTO admin_audit_logs (id, admin_email, action, details)
+        INSERT INTO admin_audit_logs (admin_email, action, details)
         VALUES (
-          ${logId},
           ${admin.email || "admin"},
           'UPDATE_CHECKOUT_ENABLED',
           ${JSON.stringify({
@@ -706,6 +710,7 @@ export const getCheckoutStatus = createServerFn({ method: "GET" }).handler(
     pegboardCheckoutEnabled: boolean;
     turnaroundMin: number;
     turnaroundMax: number;
+    sellableProductSlugs: string[];
   }> => {
     const sql = await getSql();
     const settings = await fetchSiteSettings(sql);
@@ -745,11 +750,9 @@ export const getCheckoutStatus = createServerFn({ method: "GET" }).handler(
       if (settings.checkout_enabled === "true") {
         // Auto-pause checkout
         await sql`UPDATE site_settings SET value = 'false' WHERE key = 'checkout_enabled'`;
-        const logId = "log_" + Date.now().toString(36);
         await sql`
-          INSERT INTO admin_audit_logs (id, admin_email, action, details)
+          INSERT INTO admin_audit_logs (admin_email, action, details)
           VALUES (
-            ${logId},
             'system:profit_target',
             'AUTO_PAUSE_PROFIT_TARGET_REACHED',
             ${JSON.stringify({ settledProfit: settledProfitInr, profitTarget, timestamp: new Date().toISOString() })}
@@ -782,6 +785,16 @@ export const getCheckoutStatus = createServerFn({ method: "GET" }).handler(
       allowedStates = ["Maharashtra"];
     }
 
+    let sellableProductSlugs: string[] = [];
+    try {
+      const sellableRows = await sql<{ slug: string }>`
+        SELECT slug FROM products WHERE sellable = true
+      `;
+      sellableProductSlugs = sellableRows.map((r) => r.slug);
+    } catch {
+      sellableProductSlugs = ["hex-coasters", "catch-bowl", "pen-well", "cable-nest", "desk-tray", "geo-planter"];
+    }
+
     return {
       checkoutEnabled,
       reason,
@@ -799,6 +812,7 @@ export const getCheckoutStatus = createServerFn({ method: "GET" }).handler(
       pegboardCheckoutEnabled: settings.pegboard_checkout_enabled === "true",
       turnaroundMin: parseInt(settings.turnaround_min_days || "4", 10),
       turnaroundMax: parseInt(settings.turnaround_max_days || "7", 10),
+      sellableProductSlugs,
     };
   }
 );

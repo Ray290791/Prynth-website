@@ -175,7 +175,7 @@ export function SettingsTab() {
       pegboard_hero_subtitle: ((fd.get("pegboard_hero_subtitle") as string) || settings?.pegboard_hero_subtitle || "").trim(),
       pegboard_badge: ((fd.get("pegboard_badge") as string) || settings?.pegboard_badge || "").trim(),
       pegboard_size_presets: ((fd.get("pegboard_size_presets") as string) || settings?.pegboard_size_presets || "").trim(),
-      pegboard_price_compact: ((fd.get("pegboard_price_compact") as string) || settings?.pegboard_price_compact || "699").trim(),
+      pegboard_price_compact: ((fd.get("pegboard_price_compact") as string) || settings?.pegboard_price_compact || "200").trim(),
       pegboard_price_studio: ((fd.get("pegboard_price_studio") as string) || settings?.pegboard_price_studio || "999").trim(),
       pegboard_price_executive: ((fd.get("pegboard_price_executive") as string) || settings?.pegboard_price_executive || "1499").trim(),
       pegboard_price_duo: ((fd.get("pegboard_price_duo") as string) || settings?.pegboard_price_duo || "1799").trim(),

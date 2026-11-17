@@ -151,7 +151,7 @@ export function PegboardPage() {
         name: "Compact Desk",
         dims: "20 × 20 cm",
         desc: "Perfect for monitor risers & small headphone nooks",
-        price: Number(settings?.pegboard_price_compact || 699),
+        price: Number(settings?.pegboard_price_compact || 200),
         popular: false,
       },
       {

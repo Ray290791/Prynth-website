@@ -53,7 +53,7 @@ export function PegboardSettings({ settings, onQuickSave, isSaving }: PegboardSe
       name: "Compact Desk",
       dims: "20 × 20 cm Tile",
       desc: "Perfect for monitor risers & small headphone nooks",
-      price: Number(settings.pegboard_price_compact || 699),
+      price: Number(settings.pegboard_price_compact || 200),
       popular: false,
     },
     {
@@ -168,7 +168,7 @@ export function PegboardSettings({ settings, onQuickSave, isSaving }: PegboardSe
     const payload: Record<string, string> = {
       ...formData,
       pegboard_size_presets: serializedPresets,
-      pegboard_price_compact: String(compactPreset?.price ?? (presets[0]?.price || 699)),
+      pegboard_price_compact: String(compactPreset?.price ?? (presets[0]?.price || 200)),
       pegboard_price_studio: String(studioPreset?.price ?? (presets[1]?.price || 999)),
       pegboard_price_executive: String(execPreset?.price ?? (presets[2]?.price || 1499)),
       pegboard_price_duo: String(duoPreset?.price ?? (presets[3]?.price || 1799)),
@@ -186,7 +186,7 @@ export function PegboardSettings({ settings, onQuickSave, isSaving }: PegboardSe
       <input
         type="hidden"
         name="pegboard_price_compact"
-        value={String(presets.find((p) => p.id === "compact")?.price ?? presets[0]?.price ?? 699)}
+        value={String(presets.find((p) => p.id === "compact")?.price ?? presets[0]?.price ?? 200)}
       />
       <input
         type="hidden"

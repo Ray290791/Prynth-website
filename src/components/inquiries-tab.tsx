@@ -20,7 +20,6 @@ import {
   Search,
   RefreshCw,
   Send,
-  CornerDownRight,
   ExternalLink,
   Copy,
   Clock,
@@ -29,17 +28,33 @@ import {
   Camera,
   Layers,
   Phone,
+  X,
+  FileText,
+  Sparkles,
+  IndianRupee,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  PenLine,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { generateQuoteEmailFullHtml } from "@/lib/quote-email-formatter";
 
 export function InquiriesTab() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "open" | "resolved">("all");
-  const [replyingTicketId, setReplyingTicketId] = useState<number | null>(null);
-  const [replyText, setReplyText] = useState("");
-  const [autoResolve, setAutoResolve] = useState(true);
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
+
+  // Quote / Reply Modal State
+  const [activeModalTicket, setActiveModalTicket] = useState<Ticket | null>(null);
+  const [modalMode, setModalMode] = useState<"compose" | "preview">("compose");
+  const [modalSubject, setModalSubject] = useState("");
+  const [modalQuoteAmount, setModalQuoteAmount] = useState<string>("");
+  const [modalTurnaround, setModalTurnaround] = useState("3-5 business days");
+  const [modalMessage, setModalMessage] = useState("");
+  const [autoResolve, setAutoResolve] = useState(true);
+  const [showInquiryDetailsInModal, setShowInquiryDetailsInModal] = useState(true);
 
   const { data: tickets = [], isLoading, isFetching, refetch } = useQuery({
     queryKey: ["adminTickets"],
@@ -71,15 +86,17 @@ export function InquiriesTab() {
       customerName: string;
       originalMessage: string;
       replyMessage: string;
+      subject?: string;
+      quoteAmount?: number;
+      turnaround?: string;
       markResolved?: boolean;
     }) => replyToTicketAdmin({ data: vars }),
-    onSuccess: () => {
+    onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ["adminTickets"] });
-      toast.success("Reply sent successfully via email!");
-      setReplyingTicketId(null);
-      setReplyText("");
+      toast.success(`Quotation email sent successfully to ${vars.toEmail}!`);
+      setActiveModalTicket(null);
     },
-    onError: (err: any) => toast.error(err?.message || "Failed to send email reply"),
+    onError: (err: any) => toast.error(err?.message || "Failed to send email"),
   });
 
   const counts = useMemo(() => {
@@ -116,6 +133,62 @@ export function InquiriesTab() {
     return { name, email, isCustom, payload };
   };
 
+  const generateDefaultQuoteTemplate = (
+    name: string,
+    payload: any,
+    quoteAmountStr: string,
+    turnaroundStr: string
+  ) => {
+    const specs: string[] = [];
+    if (payload?.sizeName) specs.push(`• Dimensions / Scope: ${payload.sizeName}`);
+    if (payload?.materialName)
+      specs.push(`• Material: ${payload.materialName.toUpperCase()}${payload.colorName ? ` (${payload.colorName})` : ""}`);
+    if (payload?.quantity) specs.push(`• Quantity: ${payload.quantity} unit${payload.quantity > 1 ? "s" : ""}`);
+    if (payload?.printerName) specs.push(`• Production Technology: ${payload.printerName}`);
+
+    const priceText = quoteAmountStr ? `₹${Number(quoteAmountStr).toLocaleString("en-IN")}` : "[Price Quote]";
+    const timelineText = turnaroundStr || "3-5 business days";
+
+    return `Hi ${name},
+
+Thank you for reaching out to Prynth! We have reviewed your custom 3D design specifications and reference materials.
+
+Here is our official studio quotation:
+
+${specs.length > 0 ? "Specifications:\n" + specs.join("\n") + "\n\n" : ""}Estimated Investment: ${priceText}
+Production & Delivery Timeline: ${timelineText}
+
+Next Steps:
+To confirm this order and initiate studio production, simply reply directly to this email with your preferred shipping address or any design refinements, and we will send over your payment link to schedule your print.
+
+Best regards,
+The Prynth Engineering Team
+https://prynth.in`;
+  };
+
+  const openQuoteModal = (ticket: Ticket) => {
+    const { name, isCustom, payload } = parseTicketSender(ticket);
+    setActiveModalTicket(ticket);
+    setModalMode("compose");
+    setAutoResolve(true);
+    setShowInquiryDetailsInModal(true);
+
+    if (isCustom && payload) {
+      const defaultSubj = `[Prynth Quotation #${ticket.id}] Custom 3D Fabrication — ${name}`;
+      setModalSubject(defaultSubj);
+      setModalTurnaround("3-5 business days");
+      setModalQuoteAmount("");
+      setModalMessage(generateDefaultQuoteTemplate(name, payload, "", "3-5 business days"));
+    } else {
+      setModalSubject(`Re: Your inquiry to prynth! [#${ticket.id}]`);
+      setModalTurnaround("");
+      setModalQuoteAmount("");
+      setModalMessage(
+        `Hi ${name},\n\nThank you for getting in touch with us at Prynth!\n\nRegarding your inquiry:\n\n\n\nPlease let us know if you have any questions.\n\nBest regards,\nThe Prynth Team\nhttps://prynth.in`
+      );
+    }
+  };
+
   const filteredTickets = useMemo(() => {
     return tickets.filter((t) => {
       if (statusFilter !== "all" && t.status !== statusFilter) return false;
@@ -133,6 +206,23 @@ export function InquiriesTab() {
     toast.success("Email copied to clipboard");
   };
 
+  const activeTicketDetails = activeModalTicket ? parseTicketSender(activeModalTicket) : null;
+
+  const previewHtml = useMemo(() => {
+    if (!activeModalTicket || !activeTicketDetails) return "";
+    const quoteAmt = modalQuoteAmount ? parseFloat(modalQuoteAmount) : undefined;
+    return generateQuoteEmailFullHtml({
+      customerName: activeTicketDetails.name,
+      replyMessage: modalMessage,
+      originalMessage: activeTicketDetails.payload?.idea || activeModalTicket.description,
+      quoteAmount: quoteAmt && !isNaN(quoteAmt) ? quoteAmt : undefined,
+      turnaround: modalTurnaround || undefined,
+      ticketId: activeModalTicket.id,
+      brandEmail: "hello@prynth.in",
+      brandWebsite: "https://prynth.in",
+    });
+  }, [activeModalTicket, activeTicketDetails, modalMessage, modalQuoteAmount, modalTurnaround]);
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
       {/* Header */}
@@ -147,7 +237,7 @@ export function InquiriesTab() {
             )}
           </div>
           <p className="text-muted mt-1 text-sm">
-            Messages and support tickets submitted by customers through the contact form.
+            Messages and custom 3D printing requests submitted by customers through the website.
           </p>
         </div>
 
@@ -171,7 +261,7 @@ export function InquiriesTab() {
             type="button"
             onClick={() => setStatusFilter("all")}
             className={cn(
-              "px-3.5 py-1.5 text-xs font-medium rounded-lg transition-colors",
+              "px-3.5 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer",
               statusFilter === "all"
                 ? "bg-surface text-fg shadow-xs border border-border/40"
                 : "text-muted hover:text-fg"
@@ -183,7 +273,7 @@ export function InquiriesTab() {
             type="button"
             onClick={() => setStatusFilter("open")}
             className={cn(
-              "px-3.5 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5",
+              "px-3.5 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer",
               statusFilter === "open"
                 ? "bg-surface text-fg shadow-xs border border-border/40"
                 : "text-muted hover:text-fg"
@@ -196,7 +286,7 @@ export function InquiriesTab() {
             type="button"
             onClick={() => setStatusFilter("resolved")}
             className={cn(
-              "px-3.5 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5",
+              "px-3.5 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer",
               statusFilter === "resolved"
                 ? "bg-surface text-fg shadow-xs border border-border/40"
                 : "text-muted hover:text-fg"
@@ -230,8 +320,8 @@ export function InquiriesTab() {
             {search
               ? "No messages match your search term. Try another keyword."
               : statusFilter === "open"
-              ? "All caught up! There are no open inquiries needing attention."
-              : "No messages currently in this view."}
+                ? "All caught up! There are no open inquiries needing attention."
+                : "No messages currently in this view."}
           </p>
         </div>
       ) : (
@@ -239,7 +329,6 @@ export function InquiriesTab() {
           {filteredTickets.map((ticket) => {
             const { name, email, isCustom, payload } = parseTicketSender(ticket);
             const isOpen = ticket.status === "open";
-            const isReplying = replyingTicketId === ticket.id;
             const dateStr = new Date(ticket.created_at).toLocaleString("en-IN", {
               day: "numeric",
               month: "short",
@@ -263,6 +352,7 @@ export function InquiriesTab() {
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold text-fg text-base">{name}</span>
+                      <span className="text-xs font-mono text-muted">#{ticket.id}</span>
                       {isCustom && (
                         <Badge className="bg-accent/15 text-accent border-accent/30 text-[11px] px-2 py-0.5 font-medium rounded-full flex items-center gap-1">
                           <Layers className="size-3" />
@@ -296,13 +386,35 @@ export function InquiriesTab() {
                         <Copy className="size-3" />
                       </button>
 
+                      <span className="text-subtle">·</span>
+
+                      {/* Direct email links */}
+                      <span className="text-subtle">Email directly:</span>
                       <a
-                        href={`mailto:${email}?subject=Re:%20Inquiry%20to%20prynth!`}
-                        className="inline-flex items-center gap-1 hover:text-accent transition-colors underline"
-                        title="Open email in default client"
+                        href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(`Re: [Prynth #${ticket.id}] Inquiry from ${name}`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-accent/10 hover:bg-accent/20 text-accent font-medium text-[11px] transition-colors cursor-pointer"
+                        title="Open Gmail compose in a new browser tab"
                       >
                         <ExternalLink className="size-3" />
-                        <span>Email directly</span>
+                        <span>Gmail</span>
+                      </a>
+
+                      <a
+                        href={`mailto:${email}?subject=${encodeURIComponent(`Re: [Prynth #${ticket.id}] Inquiry from ${name}`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => {
+                          try {
+                            window.location.href = `mailto:${email}?subject=${encodeURIComponent(`Re: [Prynth #${ticket.id}] Inquiry from ${name}`)}`;
+                          } catch { }
+                        }}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-surface-2 hover:bg-surface-3 text-muted hover:text-fg font-medium text-[11px] border border-border/50 transition-colors cursor-pointer"
+                        title="Open in your default desktop mail app (Outlook, Apple Mail, etc.)"
+                      >
+                        <Mail className="size-3" />
+                        <span>Mail App</span>
                       </a>
 
                       {payload?.customerPhone && (
@@ -324,7 +436,7 @@ export function InquiriesTab() {
                     </div>
                   </div>
 
-                  {/* Quick Action Buttons */}
+                  {/* Action Buttons */}
                   <div className="flex items-center gap-2 self-start sm:self-center">
                     <Button
                       size="sm"
@@ -336,7 +448,7 @@ export function InquiriesTab() {
                         })
                       }
                       disabled={updateStatusMutation.isPending}
-                      className="h-8 text-xs gap-1.5"
+                      className="h-8 text-xs gap-1.5 cursor-pointer"
                     >
                       {isOpen ? (
                         <>
@@ -353,19 +465,21 @@ export function InquiriesTab() {
 
                     <Button
                       size="sm"
-                      variant={isReplying ? "secondary" : "primary"}
-                      onClick={() => {
-                        if (isReplying) {
-                          setReplyingTicketId(null);
-                        } else {
-                          setReplyingTicketId(ticket.id);
-                          setReplyText("");
-                        }
-                      }}
-                      className="h-8 text-xs gap-1.5"
+                      variant="primary"
+                      onClick={() => openQuoteModal(ticket)}
+                      className="h-8 text-xs gap-1.5 cursor-pointer shadow-xs"
                     >
-                      <CornerDownRight className="size-3.5" />
-                      <span>{isReplying ? "Cancel" : isCustom ? "Send Quote" : "Reply"}</span>
+                      {isCustom ? (
+                        <>
+                          <IndianRupee className="size-3.5" />
+                          <span>Send Quote</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="size-3.5" />
+                          <span>Reply</span>
+                        </>
+                      )}
                     </Button>
 
                     <Button
@@ -377,7 +491,7 @@ export function InquiriesTab() {
                         }
                       }}
                       disabled={deleteMutation.isPending}
-                      className="size-8 text-muted hover:text-danger"
+                      className="size-8 text-muted hover:text-danger cursor-pointer"
                       title="Delete message"
                     >
                       <Trash2 className="size-3.5" />
@@ -414,7 +528,9 @@ export function InquiriesTab() {
                         </div>
                         <div className="rounded-xl border border-border/60 bg-surface p-2.5">
                           <span className="text-muted block text-[11px]">Quantity</span>
-                          <span className="font-semibold text-fg">{payload.quantity} unit{payload.quantity > 1 ? "s" : ""}</span>
+                          <span className="font-semibold text-fg">
+                            {payload.quantity} unit{payload.quantity > 1 ? "s" : ""}
+                          </span>
                         </div>
                       </div>
 
@@ -459,75 +575,339 @@ export function InquiriesTab() {
                     </div>
                   )}
                 </div>
-
-                {/* Inline Email Reply Box */}
-                {isReplying && (
-                  <div className="p-4 sm:p-5 border-t border-border/60 bg-accent/5 animate-in fade-in duration-200">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Send className="size-4 text-accent" />
-                      <span className="text-sm font-semibold text-fg">
-                        Send Reply to {email}
-                      </span>
-                    </div>
-                    <Textarea
-                      value={replyText}
-                      onChange={(e) => setReplyText(e.target.value)}
-                      placeholder={`Write your response to ${name} here…`}
-                      className="min-h-[100px] text-sm bg-surface resize-y"
-                    />
-
-                    <div className="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <label className="flex items-center gap-2 text-xs text-muted cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={autoResolve}
-                          onChange={(e) => setAutoResolve(e.target.checked)}
-                          className="rounded text-accent focus:ring-accent"
-                        />
-                        <span>Automatically mark as resolved upon sending</span>
-                      </label>
-
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setReplyingTicketId(null)}
-                          className="text-xs h-8"
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={() =>
-                            replyMutation.mutate({
-                              id: ticket.id,
-                              customerName: name,
-                              toEmail: email,
-                              originalMessage: payload?.idea || ticket.description,
-                              replyMessage: replyText,
-                              markResolved: autoResolve,
-                            })
-                          }
-                          disabled={replyMutation.isPending || !replyText.trim()}
-                          className="text-xs h-8 gap-1.5"
-                        >
-                          <Send className="size-3" />
-                          <span>{replyMutation.isPending ? "Sending…" : "Send Email"}</span>
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             );
           })}
         </div>
       )}
 
+      {/* Quote & Reply Modal Dialog */}
+      {activeModalTicket && activeTicketDetails && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 sm:p-6 backdrop-blur-md animate-in fade-in duration-200"
+          onClick={() => {
+            if (!replyMutation.isPending) setActiveModalTicket(null);
+          }}
+        >
+          <div
+            className="relative w-full max-w-2xl max-h-[92vh] flex flex-col rounded-2xl bg-surface border border-border shadow-2xl overflow-hidden cursor-default animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 border-b border-border/60 bg-surface-2/40 flex items-start justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-semibold text-fg text-lg">
+                    {activeTicketDetails.isCustom ? "Send Quotation" : "Reply to Customer"}
+                  </span>
+                  <Badge className="bg-accent/15 text-accent border-accent/30 text-xs">
+                    Ticket #{activeModalTicket.id}
+                  </Badge>
+                  {activeTicketDetails.isCustom && (
+                    <Badge className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30 text-xs">
+                      Custom 3D Print
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-xs text-muted mt-1 flex items-center gap-1.5 flex-wrap">
+                  <span>Recipient: <strong className="text-fg">{activeTicketDetails.name}</strong> &lt;{activeTicketDetails.email}&gt;</span>
+                  <button
+                    type="button"
+                    onClick={() => copyEmail(activeTicketDetails.email)}
+                    className="p-1 hover:text-accent transition-colors cursor-pointer"
+                    title="Copy email address"
+                  >
+                    <Copy className="size-3" />
+                  </button>
+                  <span className="text-subtle">·</span>
+                  <a
+                    href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(activeTicketDetails.email)}&su=${encodeURIComponent(modalSubject)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[11px] text-accent hover:underline cursor-pointer"
+                    title="Open in Gmail"
+                  >
+                    <ExternalLink className="size-3" />
+                    <span>Open in Gmail</span>
+                  </a>
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setActiveModalTicket(null)}
+                disabled={replyMutation.isPending}
+                className="rounded-lg p-1.5 text-muted hover:text-fg hover:bg-surface-2 transition-colors cursor-pointer"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            {/* Mode Switcher Tabs */}
+            <div className="px-4 sm:px-6 pt-3 pb-0 border-b border-border/50 bg-surface-2/20 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-1.5 pb-2.5">
+                <button
+                  type="button"
+                  onClick={() => setModalMode("compose")}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all cursor-pointer",
+                    modalMode === "compose"
+                      ? "bg-surface text-fg shadow-xs font-semibold border border-border"
+                      : "text-muted hover:text-fg hover:bg-surface-2/50"
+                  )}
+                >
+                  <PenLine className="size-3.5" />
+                  <span>Compose Message</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModalMode("preview")}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all cursor-pointer",
+                    modalMode === "preview"
+                      ? "bg-surface text-accent shadow-xs font-semibold border border-accent/30"
+                      : "text-muted hover:text-fg hover:bg-surface-2/50"
+                  )}
+                >
+                  <Eye className="size-3.5 text-accent" />
+                  <span>Live Email Template Preview</span>
+                </button>
+              </div>
+              <span className="text-[11px] text-muted hidden sm:inline-block pb-2.5">
+                {modalMode === "compose" ? "Edit specs & text" : "Prynth Studio Branded View"}
+              </span>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+              {modalMode === "preview" ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs text-muted px-1">
+                    <span>This is the elegant template the customer will receive in their inbox:</span>
+                    <Badge className="text-[10px] text-accent border-accent/30 bg-accent/5 gap-1">
+                      <Sparkles className="size-3" />
+                      <span>Auto-Formatted Studio Template</span>
+                    </Badge>
+                  </div>
+                  <div className="rounded-xl border border-border overflow-hidden shadow-inner bg-slate-100">
+                    <iframe
+                      srcDoc={previewHtml}
+                      title="Customer Email Preview"
+                      className="w-full h-[520px] border-none bg-slate-100"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* Collapsible Customer Specs / Request Summary */}
+                  {activeTicketDetails.isCustom && activeTicketDetails.payload && (
+                    <div className="rounded-xl border border-border/60 bg-surface-2/30 overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => setShowInquiryDetailsInModal((prev) => !prev)}
+                        className="w-full flex items-center justify-between p-3 text-xs font-medium text-muted hover:text-fg transition-colors"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <FileText className="size-3.5 text-accent" />
+                          <span>Customer Requirements &amp; Reference ({activeTicketDetails.payload.sizeName}, {activeTicketDetails.payload.materialName})</span>
+                        </span>
+                        {showInquiryDetailsInModal ? (
+                          <ChevronUp className="size-4" />
+                        ) : (
+                          <ChevronDown className="size-4" />
+                        )}
+                      </button>
+
+                      {showInquiryDetailsInModal && (
+                        <div className="p-3 pt-0 space-y-3 border-t border-border/40 text-xs">
+                          <div className="p-2.5 rounded-lg bg-surface border border-border/50 text-fg whitespace-pre-wrap leading-relaxed mt-2">
+                            {activeTicketDetails.payload.idea}
+                          </div>
+
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <div className="bg-surface p-2 rounded-lg border border-border/50">
+                              <span className="text-[10px] text-muted block">Size</span>
+                              <span className="font-semibold capitalize text-fg">{activeTicketDetails.payload.sizeName}</span>
+                            </div>
+                            <div className="bg-surface p-2 rounded-lg border border-border/50">
+                              <span className="text-[10px] text-muted block">Material</span>
+                              <span className="font-semibold uppercase text-fg">{activeTicketDetails.payload.materialName}</span>
+                            </div>
+                            <div className="bg-surface p-2 rounded-lg border border-border/50">
+                              <span className="text-[10px] text-muted block">Colour</span>
+                              <span className="font-semibold capitalize text-fg">{activeTicketDetails.payload.colorName}</span>
+                            </div>
+                            <div className="bg-surface p-2 rounded-lg border border-border/50">
+                              <span className="text-[10px] text-muted block">Quantity</span>
+                              <span className="font-semibold text-fg">{activeTicketDetails.payload.quantity || 1} unit(s)</span>
+                            </div>
+                          </div>
+
+                          {activeTicketDetails.payload.photos && activeTicketDetails.payload.photos.length > 0 && (
+                            <div className="pt-2">
+                              <span className="text-[11px] text-muted block mb-1.5">Customer Attached Photos ({activeTicketDetails.payload.photos.length}):</span>
+                              <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                                {activeTicketDetails.payload.photos.map((src: string, idx: number) => (
+                                  <button
+                                    key={idx}
+                                    type="button"
+                                    onClick={() => setPreviewPhoto(src)}
+                                    className="relative size-12 shrink-0 rounded-lg overflow-hidden border border-border hover:border-accent"
+                                    title="Click to enlarge"
+                                  >
+                                    <img src={src} alt="Thumb" className="size-full object-cover" />
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Subject Input */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-fg">Email Subject</label>
+                    <Input
+                      value={modalSubject}
+                      onChange={(e) => setModalSubject(e.target.value)}
+                      placeholder="Subject line..."
+                      className="text-xs sm:text-sm bg-surface"
+                    />
+                  </div>
+
+                  {/* Quote Parameters (for custom orders) */}
+                  {activeTicketDetails.isCustom && (
+                    <div className="rounded-xl border border-accent/25 bg-accent/5 p-3.5 space-y-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-semibold text-accent flex items-center gap-1.5">
+                          <IndianRupee className="size-3.5" />
+                          <span>Quotation Parameters</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newMsg = generateDefaultQuoteTemplate(
+                              activeTicketDetails.name,
+                              activeTicketDetails.payload,
+                              modalQuoteAmount,
+                              modalTurnaround
+                            );
+                            setModalMessage(newMsg);
+                            toast.success("Applied parameters to email template!");
+                          }}
+                          className="text-[11px] font-medium text-accent hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <Sparkles className="size-3" />
+                          <span>Update Template</span>
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-medium text-muted">Estimated Price (₹ INR)</label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted">₹</span>
+                            <Input
+                              type="number"
+                              value={modalQuoteAmount}
+                              onChange={(e) => setModalQuoteAmount(e.target.value)}
+                              placeholder="e.g. 750"
+                              className="pl-7 text-xs sm:text-sm bg-surface h-9"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-medium text-muted">Turnaround Timeline</label>
+                          <Input
+                            value={modalTurnaround}
+                            onChange={(e) => setModalTurnaround(e.target.value)}
+                            placeholder="e.g. 3-5 business days"
+                            className="text-xs sm:text-sm bg-surface h-9"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Email Body */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-fg">Message Content</label>
+                      <span className="text-[11px] text-muted">Customer will receive this via email</span>
+                    </div>
+                    <Textarea
+                      value={modalMessage}
+                      onChange={(e) => setModalMessage(e.target.value)}
+                      placeholder="Compose your reply or quotation details here..."
+                      className="min-h-[200px] text-xs sm:text-sm bg-surface font-sans leading-relaxed resize-y"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Status resolution checkbox */}
+              <label className="flex items-center gap-2 text-xs text-muted cursor-pointer select-none pt-1">
+                <input
+                  type="checkbox"
+                  checked={autoResolve}
+                  onChange={(e) => setAutoResolve(e.target.checked)}
+                  className="rounded text-accent focus:ring-accent"
+                />
+                <span>Automatically mark ticket #{activeModalTicket.id} as resolved upon sending</span>
+              </label>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 sm:p-5 border-t border-border/60 bg-surface-2/40 flex items-center justify-between gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setActiveModalTicket(null)}
+                disabled={replyMutation.isPending}
+                className="text-xs cursor-pointer"
+              >
+                Cancel
+              </Button>
+
+              <Button
+                size="sm"
+                variant="primary"
+                onClick={() => {
+                  if (!modalMessage.trim()) {
+                    toast.error("Please enter a message to send.");
+                    return;
+                  }
+                  const quoteAmt = modalQuoteAmount ? parseFloat(modalQuoteAmount) : undefined;
+                  replyMutation.mutate({
+                    id: activeModalTicket.id,
+                    customerName: activeTicketDetails.name,
+                    toEmail: activeTicketDetails.email,
+                    originalMessage: activeTicketDetails.payload?.idea || activeModalTicket.description,
+                    replyMessage: modalMessage,
+                    subject: modalSubject,
+                    quoteAmount: quoteAmt && !isNaN(quoteAmt) ? quoteAmt : undefined,
+                    turnaround: modalTurnaround || undefined,
+                    markResolved: autoResolve,
+                  });
+                }}
+                disabled={replyMutation.isPending || !modalMessage.trim()}
+                className="text-xs gap-1.5 cursor-pointer shadow-xs"
+              >
+                <Send className="size-3.5" />
+                <span>{replyMutation.isPending ? "Sending Email..." : activeTicketDetails.isCustom ? "Send Official Quotation" : "Send Email Reply"}</span>
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Lightbox Photo Preview Modal */}
       {previewPhoto && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in duration-200 cursor-pointer"
+          className="fixed inset-0 z-60 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md animate-in fade-in duration-200 cursor-pointer"
           onClick={() => setPreviewPhoto(null)}
         >
           <div
@@ -537,7 +917,7 @@ export function InquiriesTab() {
             <img src={previewPhoto} alt="Reference Preview" className="max-h-[80vh] w-auto object-contain" />
             <div className="flex items-center justify-between p-3 border-t border-border bg-surface-2/60">
               <span className="text-xs font-medium text-muted">Customer Reference Photo</span>
-              <Button size="sm" variant="outline" onClick={() => setPreviewPhoto(null)} className="text-xs h-8">
+              <Button size="sm" variant="outline" onClick={() => setPreviewPhoto(null)} className="text-xs h-8 cursor-pointer">
                 Close Preview
               </Button>
             </div>
