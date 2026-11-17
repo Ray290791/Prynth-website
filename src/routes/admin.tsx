@@ -60,6 +60,8 @@ import { UsersTab } from "@/components/admin/users-tab";
 import { MaterialsTab } from "@/components/admin/materials-tab";
 import { LaunchLedgerTab } from "@/components/admin/ledger-tab";
 import { WaitlistTab } from "@/components/admin/waitlist-tab";
+import { getTicketsAdmin } from "@/lib/contact-fns";
+import { getWaitlistAdmin } from "@/lib/waitlist-fns";
 
 export const Route = createFileRoute("/admin")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -91,6 +93,63 @@ function AdminPage() {
     enabled: Boolean(user) && isAdmin && (activeTab === "orders" || activeTab === "users"),
     staleTime: 60_000,
   });
+
+  const { data: tickets } = useQuery({
+    queryKey: ["adminTickets"],
+    queryFn: () => getTicketsAdmin(),
+    enabled: Boolean(user) && isAdmin,
+    staleTime: 30_000,
+  });
+
+  const { data: waitlist } = useQuery({
+    queryKey: ["waitlistAdmin"],
+    queryFn: () => getWaitlistAdmin(),
+    enabled: Boolean(user) && isAdmin,
+    staleTime: 60_000,
+  });
+
+  const openTicketsCount = tickets?.filter((t: any) => t.status === "open").length || 0;
+  const pendingOrdersCount = orders?.filter((o: any) => o.status === "pending" || o.status === "processing").length || 0;
+  const waitlistCount = waitlist?.length || 0;
+
+  const greeting = (() => {
+    const h = new Date().getHours();
+    if (h < 12) return "Good morning";
+    if (h < 17) return "Good afternoon";
+    return "Good evening";
+  })();
+
+  const firstName = user?.name?.split(" ")[0] || "Ray";
+  const todayFormatted = new Date().toLocaleDateString("en-IN", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+
+  const getBadge = (itemId: string) => {
+    if (itemId === "inquiries" && openTicketsCount > 0) {
+      return (
+        <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+          {openTicketsCount}
+        </span>
+      );
+    }
+    if (itemId === "orders" && pendingOrdersCount > 0) {
+      return (
+        <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30">
+          {pendingOrdersCount}
+        </span>
+      );
+    }
+    if (itemId === "waitlist" && waitlistCount > 0) {
+      return (
+        <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted/20 text-muted border border-border/50">
+          {waitlistCount}
+        </span>
+      );
+    }
+    return null;
+  };
 
   const filteredOrders = orders?.filter((o: any) => {
     const q = orderSearchQuery.toLowerCase().replace(/^#/, '').trim();
@@ -269,14 +328,15 @@ function AdminPage() {
                       key={item.id}
                       onClick={() => setActiveTab(item.id)}
                       className={cn(
-                        "flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium transition-all leading-none shrink-0 whitespace-nowrap cursor-pointer text-left",
+                        "flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium transition-all leading-none shrink-0 whitespace-nowrap cursor-pointer text-left w-full",
                         isActive
                           ? "bg-accent text-ink font-semibold shadow-xs"
                           : "text-muted hover:bg-surface-2 hover:text-fg"
                       )}
                     >
                       <Icon className="size-3.5 shrink-0" />
-                      <span>{item.label}</span>
+                      <span className="truncate">{item.label}</span>
+                      {getBadge(item.id)}
                     </button>
                   );
                 })}
@@ -284,11 +344,74 @@ function AdminPage() {
               </div>
             ))}
           </nav>
+
+          {/* Studio Capacity & Health Cockpit (Reel 2 & Zero-Bloat Architecture) */}
+          <div className="hidden md:flex flex-col gap-2 p-3 mt-3 rounded-2xl border border-border/60 bg-surface/60 backdrop-blur-md">
+            <div className="flex items-center justify-between text-[11px] font-semibold text-fg">
+              <span className="flex items-center gap-1.5">
+                <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                Fleet Online
+              </span>
+              <span className="text-muted font-mono text-[10px]">0.08mm</span>
+            </div>
+            <p className="text-[10px] text-muted leading-tight">
+              Bambu Lab CoreXY calibrated
+            </p>
+            <div className="pt-1.5 border-t border-border/40 flex items-center justify-between text-[10px] text-muted">
+              <span className="flex items-center gap-1">
+                <span>💾</span> Zero-Bloat DB
+              </span>
+              <span className="font-mono text-emerald-600 dark:text-emerald-400 font-semibold">Active</span>
+            </div>
+          </div>
         </div>
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 min-w-0">
+        {/* Executive Briefing Cockpit (Reel 2 & Reel 4) */}
+        <div className="mb-6 rounded-2xl border border-border/70 bg-surface/70 backdrop-blur-xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h2 className="text-lg sm:text-xl font-bold tracking-tight text-fg font-display">
+                {greeting}, {firstName} 👋
+              </h2>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25">
+                <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Studio Active
+              </span>
+            </div>
+            <p className="text-xs text-muted">
+              {todayFormatted} · {openTicketsCount > 0 ? `${openTicketsCount} custom inquiries awaiting quotes` : "All custom inquiries up to date"} · Zero-bloat WhatsApp &amp; Gmail active
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setActiveTab("inquiries")}
+              className={cn(
+                "h-8 text-xs px-3 gap-1.5 cursor-pointer rounded-lg font-medium",
+                activeTab === "inquiries" ? "bg-accent text-ink font-semibold" : "bg-surface hover:bg-surface-2"
+              )}
+            >
+              <Mail className="size-3.5" />
+              <span>Inquiries {openTicketsCount > 0 ? `(${openTicketsCount})` : ""}</span>
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setActiveTab("orders")}
+              className={cn(
+                "h-8 text-xs px-3 gap-1.5 cursor-pointer rounded-lg font-medium",
+                activeTab === "orders" ? "bg-accent text-ink font-semibold" : "bg-surface hover:bg-surface-2"
+              )}
+            >
+              <Package className="size-3.5" />
+              <span>Orders {pendingOrdersCount > 0 ? `(${pendingOrdersCount})` : ""}</span>
+            </Button>
+          </div>
+        </div>
         {activeTab === "orders" && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">

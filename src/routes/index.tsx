@@ -146,8 +146,8 @@ function Home() {
 
   return (
     <div className="relative space-y-16 sm:space-y-24 pb-16 overflow-hidden">
-      {/* ── Hero ───────────────────────────────────────────── */}
-      <section className="relative z-10 overflow-hidden pt-2 sm:pt-4">
+      {/* ── Hero (With CAD Grid Material Texture - Reel 5) ───────────── */}
+      <section className="relative z-10 overflow-hidden pt-2 sm:pt-4 bg-cad-grid">
         {/* Floating promo announcement pill */}
         {settings.announcement_enabled !== "false" && (
           <div className="mx-auto max-w-6xl px-4 md:px-6">
@@ -170,54 +170,50 @@ function Home() {
               <span>PRECISION 3D STUDIO · MUMBAI, INDIA</span>
             </div>
 
-            <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-fg leading-[1.06]">
-              Engineered form in{" "}
+            <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-fg leading-[1.08]">
+              Precision 3D Fabrication.{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-900 via-zinc-800 to-[#007369] dark:from-white dark:via-zinc-200 dark:to-[#00b8a9] dark:drop-shadow-sm">
-                monolithic balance.
+                Built for Physical Reality.
               </span>
             </h1>
 
             <div className="flex items-center gap-3 pt-0.5">
               <Wordmark className="text-xl sm:text-2xl tracking-tight opacity-95" />
               <span className="text-xs font-mono text-muted uppercase tracking-widest border-l border-border/60 pl-3">
-                Calibrated 3D Printers
+                Calibrated CoreXY Fleet
               </span>
             </div>
 
-            <p className="text-base sm:text-lg text-muted font-jakarta leading-relaxed max-w-lg font-light">
+            <p className="text-base sm:text-lg text-muted font-jakarta leading-relaxed max-w-lg font-normal">
               {settings.hero_tagline ||
-                "Functional desk accessories, modular organization, and on-demand CAD engineering. Printed with high precision."}
+                "Bespoke CAD design, functional enclosures, and calibrated 3D printing. Engineered in Mumbai with 0.08mm micro-layer accuracy."}
             </p>
 
-            {/* Focused action buttons */}
+            {/* Focused action buttons (Hick's Law: 1 Dominant Action + Clear Alternative) */}
             <div className="flex flex-wrap items-center gap-3 pt-2">
-              <Button asChild size="lg" className="h-11 px-6 shadow-sm cursor-pointer">
+              <Button asChild size="lg" className="h-11 px-6 shadow-sm cursor-pointer bg-accent text-ink font-semibold hover:opacity-90">
                 <Link to="/shop">
-                  <span>Explore Shop</span>
+                  <span>Explore Catalog</span>
                   <ArrowRight className="size-4 ml-1.5" />
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="secondary" className="h-11 px-6 cursor-pointer">
+              <Button asChild size="lg" variant="outline" className="h-11 px-6 cursor-pointer border-border/80 hover:bg-surface-2 font-medium">
                 <Link to="/custom">
-                  <PenTool className="size-4 mr-1.5" />
-                  <span>Custom Print / CAD</span>
+                  <PenTool className="size-4 mr-1.5 text-accent" />
+                  <span>Custom CAD / Printing</span>
                 </Link>
               </Button>
-              <div className="text-xs font-mono text-muted flex items-center gap-2 pl-1">
-                <span className="size-1.5 rounded-full bg-accent" />
-                <span>DYNAMIC FLUID WAVE ACTIVE</span>
-              </div>
             </div>
 
             {/* Sleek inline trust points */}
             <div className="flex flex-wrap items-center gap-y-2 gap-x-4 text-xs text-muted border-t border-border/60 pt-4">
               <span className="inline-flex items-center gap-1.5 font-medium text-fg">
                 <CheckCircle2 className="size-3.5 text-accent shrink-0" />
-                <span>0.12mm Layer Precision</span>
+                <span>0.08mm Micro-Layer Accuracy</span>
               </span>
               <span className="inline-flex items-center gap-1.5 font-medium text-fg">
                 <CheckCircle2 className="size-3.5 text-accent shrink-0" />
-                <span>Zero Minimum Quantity</span>
+                <span>Zero Minimum Order Quantity</span>
               </span>
               <span className="inline-flex items-center gap-1.5 font-medium text-fg">
                 <CheckCircle2 className="size-3.5 text-accent shrink-0" />
