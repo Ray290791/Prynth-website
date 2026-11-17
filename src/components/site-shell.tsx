@@ -48,6 +48,23 @@ export function SiteShell({ children }: { children: ReactNode }) {
       {/* Full-Screen Interactive Silk Wave WebGL Background (subtle & higher transparency on all other pages) */}
       <SilkWaveBackground subtle={!isHome} />
 
+      {/* Authentic Liquid Glass Optical Refraction SVG Filters (Reel 3 / Ania Kubow) */}
+      <svg
+        width="0"
+        height="0"
+        className="pointer-events-none absolute -z-50 size-0 overflow-hidden"
+        aria-hidden="true"
+      >
+        <filter id="glass-refraction" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox">
+          <feTurbulence type="fractalNoise" baseFrequency="0.035 0.035" numOctaves="1" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="10" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+        <filter id="glass-refraction-subtle" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox">
+          <feTurbulence type="fractalNoise" baseFrequency="0.04 0.04" numOctaves="1" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </svg>
+
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-accent focus:px-3 focus:py-2 focus:text-ink"
