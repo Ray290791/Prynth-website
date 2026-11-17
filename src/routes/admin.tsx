@@ -300,127 +300,118 @@ function AdminPage() {
   ];
 
   return (
-    <div className="relative min-h-[calc(100vh-4rem)] bg-cad-grid overflow-hidden">
-      {/* Real iOS Ambient Backlight / Refraction Glows (Reel 3 & Reel 5 - enables genuine frosted glass refraction) */}
-      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-        <div className="absolute -top-24 -left-20 size-[36rem] rounded-full bg-accent/25 blur-[100px] dark:bg-accent/20" />
-        <div className="absolute top-1/4 -right-24 size-[40rem] rounded-full bg-sky-500/25 blur-[120px] dark:bg-sky-400/20" />
-        <div className="absolute bottom-10 left-1/3 size-[42rem] rounded-full bg-teal-500/20 blur-[130px] dark:bg-teal-400/18" />
-        <div className="absolute top-2/3 right-1/4 size-[30rem] rounded-full bg-indigo-500/18 blur-[110px] dark:bg-indigo-500/15" />
-      </div>
-
-      <div className="relative z-10 mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-10 flex flex-col md:flex-row gap-6 lg:gap-8 items-start">
-        {/* Responsive Navigation: horizontal swipeable ribbon on mobile, structured categorized sidebar on desktop */}
-        <aside className="w-full shrink-0 md:w-60 md:sticky md:top-20 md:self-start md:z-20 md:max-h-[calc(100dvh-5.5rem)] md:overflow-y-auto no-scrollbar">
-          <div className="flex items-center justify-between mb-2 md:mb-4 px-1">
-            <div>
-              <h1 className="font-display text-lg sm:text-xl font-bold tracking-tight text-fg">Admin Console</h1>
-              <p className="text-[11px] text-muted hidden md:block">Studio Management Suite</p>
-            </div>
-            <span className="md:hidden text-[11px] text-muted font-medium bg-surface-2 px-2.5 py-1 rounded-full border border-border">
-              Swipe tabs →
-            </span>
+    <div className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-10 flex flex-col md:flex-row gap-6 lg:gap-8 items-start">
+      {/* Responsive Navigation: horizontal swipeable ribbon on mobile, structured categorized sidebar on desktop */}
+      <aside className="w-full shrink-0 md:w-60 md:sticky md:top-20 md:self-start md:z-20 md:max-h-[calc(100dvh-5.5rem)] md:overflow-y-auto no-scrollbar">
+        <div className="flex items-center justify-between mb-2 md:mb-4 px-1">
+          <div>
+            <h1 className="font-display text-lg sm:text-xl font-bold tracking-tight text-fg">Admin Console</h1>
+            <p className="text-[11px] text-muted hidden md:block">Studio Management Suite</p>
           </div>
+          <span className="md:hidden text-[11px] text-muted font-medium bg-surface-2 px-2.5 py-1 rounded-full border border-border">
+            Swipe tabs →
+          </span>
+        </div>
 
-          <div className="sticky top-14 sm:top-16 z-30 md:static -mx-4 px-4 py-1.5 md:mx-0 md:px-0 md:py-0 bg-bg/85 md:bg-transparent backdrop-blur-xl md:backdrop-blur-none">
-            <nav className="flex md:flex-col gap-1 md:gap-3 p-1.5 md:p-2.5 rounded-2xl glass-ios-card shadow-xs overflow-x-auto md:overflow-visible no-scrollbar">
-              {navSections.map((section, sIdx) => (
-                <div key={section.title} className="flex md:flex-col gap-0.5 shrink-0">
-                  <div className="hidden md:flex items-center text-[10px] font-bold text-muted/70 uppercase tracking-wider px-2.5 pt-1 pb-1">
-                    {section.title}
-                  </div>
-                  {section.items.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = activeTab === item.id;
-                    return (
-                      <button
-                        key={item.id}
-                        onClick={() => setActiveTab(item.id)}
-                        className={cn(
-                          "flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium transition-all leading-none shrink-0 whitespace-nowrap cursor-pointer text-left w-full",
-                          isActive
-                            ? "bg-accent text-ink font-semibold shadow-xs"
-                            : "text-muted hover:bg-white/10 hover:text-fg"
-                        )}
-                      >
-                        <Icon className="size-3.5 shrink-0" />
-                        <span className="truncate">{item.label}</span>
-                        {getBadge(item.id)}
-                      </button>
-                    );
-                  })}
-                  {sIdx < navSections.length - 1 && <div className="hidden md:block my-1.5 border-t border-border/40" />}
+        <div className="sticky top-14 sm:top-16 z-30 md:static -mx-4 px-4 py-1.5 md:mx-0 md:px-0 md:py-0 bg-bg/85 md:bg-transparent backdrop-blur-xl md:backdrop-blur-none">
+          <nav className="flex md:flex-col gap-1 md:gap-3 p-1.5 md:p-2.5 rounded-2xl border border-border/70 bg-surface/80 backdrop-blur-xl shadow-xs overflow-x-auto md:overflow-visible no-scrollbar">
+            {navSections.map((section, sIdx) => (
+              <div key={section.title} className="flex md:flex-col gap-0.5 shrink-0">
+                <div className="hidden md:flex items-center text-[10px] font-bold text-muted/70 uppercase tracking-wider px-2.5 pt-1 pb-1">
+                  {section.title}
                 </div>
-              ))}
-            </nav>
+                {section.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setActiveTab(item.id)}
+                      className={cn(
+                        "flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium transition-all leading-none shrink-0 whitespace-nowrap cursor-pointer text-left w-full",
+                        isActive
+                          ? "bg-accent text-ink font-semibold shadow-xs"
+                          : "text-muted hover:bg-surface-2 hover:text-fg"
+                      )}
+                    >
+                      <Icon className="size-3.5 shrink-0" />
+                      <span className="truncate">{item.label}</span>
+                      {getBadge(item.id)}
+                    </button>
+                  );
+                })}
+                {sIdx < navSections.length - 1 && <div className="hidden md:block my-1.5 border-t border-border/40" />}
+              </div>
+            ))}
+          </nav>
 
-            {/* Studio Capacity & Health Cockpit (Reel 2 & Zero-Bloat Architecture) */}
-            <div className="hidden md:flex flex-col gap-2 p-3 mt-3 rounded-2xl glass-ios-card shadow-xs">
-              <div className="flex items-center justify-between text-[11px] font-semibold text-fg">
-                <span className="flex items-center gap-1.5">
-                  <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-                  Fleet Online
-                </span>
-                <span className="text-muted font-mono text-[10px]">0.08mm</span>
-              </div>
-              <p className="text-[10px] text-muted leading-tight">
-                Bambu Lab CoreXY calibrated
-              </p>
-              <div className="pt-1.5 border-t border-border/40 flex items-center justify-between text-[10px] text-muted">
-                <span className="flex items-center gap-1">
-                  <span>💾</span> Zero-Bloat DB
-                </span>
-                <span className="font-mono text-emerald-600 dark:text-emerald-400 font-semibold">Active</span>
-              </div>
+          {/* Studio Capacity & Health Cockpit (Reel 2 & Zero-Bloat Architecture) */}
+          <div className="hidden md:flex flex-col gap-2 p-3 mt-3 rounded-2xl border border-border/60 bg-surface/60 backdrop-blur-md">
+            <div className="flex items-center justify-between text-[11px] font-semibold text-fg">
+              <span className="flex items-center gap-1.5">
+                <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                Fleet Online
+              </span>
+              <span className="text-muted font-mono text-[10px]">0.08mm</span>
+            </div>
+            <p className="text-[10px] text-muted leading-tight">
+              Bambu Lab CoreXY calibrated
+            </p>
+            <div className="pt-1.5 border-t border-border/40 flex items-center justify-between text-[10px] text-muted">
+              <span className="flex items-center gap-1">
+                <span>💾</span> Zero-Bloat DB
+              </span>
+              <span className="font-mono text-emerald-600 dark:text-emerald-400 font-semibold">Active</span>
             </div>
           </div>
-        </aside>
+        </div>
+      </aside>
 
-        {/* Main Content */}
-        <main className="flex-1 min-w-0">
-          {/* Executive Briefing Cockpit (Reel 2 & Reel 3 Liquid Glass) */}
-          <div className="mb-6 rounded-2xl glass-ios-card p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <h2 className="text-lg sm:text-xl font-bold tracking-tight text-fg font-display">
-                  {greeting}, {firstName} 👋
-                </h2>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25">
-                  <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Studio Active
-                </span>
-              </div>
-              <p className="text-xs text-muted">
-                {todayFormatted} · {openTicketsCount > 0 ? `${openTicketsCount} custom inquiries awaiting quotes` : "All custom inquiries up to date"} · Zero-bloat WhatsApp &amp; Gmail active
-              </p>
+      {/* Main Content */}
+      <main className="flex-1 min-w-0">
+        {/* Executive Briefing Cockpit (Reel 2 & Reel 4) */}
+        <div className="mb-6 rounded-2xl border border-border/70 bg-surface/70 backdrop-blur-xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h2 className="text-lg sm:text-xl font-bold tracking-tight text-fg font-display">
+                {greeting}, {firstName} 👋
+              </h2>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25">
+                <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Studio Active
+              </span>
             </div>
-            <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setActiveTab("inquiries")}
-                className={cn(
-                  "h-8 text-xs px-3 gap-1.5 cursor-pointer rounded-lg font-medium",
-                  activeTab === "inquiries" ? "bg-accent text-ink font-semibold" : "glass-ios-subtle hover:bg-white/10"
-                )}
-              >
-                <Mail className="size-3.5" />
-                <span>Inquiries {openTicketsCount > 0 ? `(${openTicketsCount})` : ""}</span>
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setActiveTab("orders")}
-                className={cn(
-                  "h-8 text-xs px-3 gap-1.5 cursor-pointer rounded-lg font-medium",
-                  activeTab === "orders" ? "bg-accent text-ink font-semibold" : "glass-ios-subtle hover:bg-white/10"
-                )}
-              >
-                <Package className="size-3.5" />
-                <span>Orders {pendingOrdersCount > 0 ? `(${pendingOrdersCount})` : ""}</span>
-              </Button>
-            </div>
+            <p className="text-xs text-muted">
+              {todayFormatted} · {openTicketsCount > 0 ? `${openTicketsCount} custom inquiries awaiting quotes` : "All custom inquiries up to date"} · Zero-bloat WhatsApp &amp; Gmail active
+            </p>
           </div>
+          <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setActiveTab("inquiries")}
+              className={cn(
+                "h-8 text-xs px-3 gap-1.5 cursor-pointer rounded-lg font-medium",
+                activeTab === "inquiries" ? "bg-accent text-ink font-semibold" : "bg-surface hover:bg-surface-2"
+              )}
+            >
+              <Mail className="size-3.5" />
+              <span>Inquiries {openTicketsCount > 0 ? `(${openTicketsCount})` : ""}</span>
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setActiveTab("orders")}
+              className={cn(
+                "h-8 text-xs px-3 gap-1.5 cursor-pointer rounded-lg font-medium",
+                activeTab === "orders" ? "bg-accent text-ink font-semibold" : "bg-surface hover:bg-surface-2"
+              )}
+            >
+              <Package className="size-3.5" />
+              <span>Orders {pendingOrdersCount > 0 ? `(${pendingOrdersCount})` : ""}</span>
+            </Button>
+          </div>
+        </div>
         {activeTab === "orders" && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
@@ -436,7 +427,7 @@ function AdminPage() {
                     placeholder="Search by order #, name or email..."
                     value={orderSearchQuery}
                     onChange={(e) => setOrderSearchQuery(e.target.value)}
-                    className="w-full h-9 rounded-lg glass-ios-subtle pl-9 pr-4 text-xs sm:text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors text-fg"
+                    className="w-full h-9 rounded-lg border border-border bg-surface-2 pl-9 pr-4 text-xs sm:text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
                   />
                 </div>
                 <button
@@ -469,9 +460,9 @@ function AdminPage() {
               </div>
             </div>
 
-            <div className="overflow-x-auto rounded-2xl glass-ios-card shadow-xs">
+            <div className="overflow-x-auto rounded-xl border border-border bg-surface">
               <table className="w-full text-left text-sm">
-                <thead className="border-b border-white/10 bg-white/[0.03] text-muted text-xs">
+                <thead className="border-b border-border bg-surface-2 text-muted">
                   <tr>
                     <th className="p-4 font-medium">Order</th>
                     <th className="p-4 font-medium">Customer</th>
@@ -645,7 +636,6 @@ function AdminPage() {
           }}
         />
       )}
-      </div>
     </div>
   );
 }

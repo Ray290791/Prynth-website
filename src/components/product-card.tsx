@@ -65,7 +65,7 @@ export function ProductCard({ product }: { product: Product }) {
       <Link
         to="/shop/$slug"
         params={{ slug: product.slug }}
-        className="relative overflow-hidden rounded-2xl glass-ios-card shadow-xs transition-all duration-200 hover:border-accent/50"
+        className="relative overflow-hidden rounded-2xl bg-surface border border-border/70 shadow-xs transition-all duration-200 hover:border-accent/40"
       >
         <img
           src={product.image}
