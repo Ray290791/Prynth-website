@@ -56,6 +56,8 @@ export function NotificationsTab() {
     notifyOnInquiry: true,
   });
 
+  const [showEditFast2sms, setShowEditFast2sms] = useState(false);
+
   const [testResults, setTestResults] = useState<
     Array<{ channel: string; success: boolean; error?: string }> | null
   >(null);
@@ -305,22 +307,70 @@ export function NotificationsTab() {
 
                 {form.smsProvider === "fast2sms" ? (
                   <div className="space-y-3">
-                    <div>
-                      <Label htmlFor="fast2sms-key">Fast2SMS API Key</Label>
-                      <Input
-                        id="fast2sms-key"
-                        type="password"
-                        value={form.fast2smsApiKey || ""}
-                        onChange={(e) =>
-                          setForm({ ...form, fast2smsApiKey: e.target.value })
-                        }
-                        placeholder="Paste your Fast2SMS Authorization API Key"
-                        className="mt-1 font-mono text-xs max-w-md"
-                      />
-                      <p className="text-[11px] text-muted mt-1">
-                        Sends immediate Quick SMS directly to {form.phoneNumber || "+91 8369485272"}.
-                      </p>
-                    </div>
+                    {settings?.hasFast2smsApiKey && !showEditFast2sms ? (
+                      <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/10 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shrink-0">
+                            <ShieldCheck className="size-5" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-xs text-fg">API Key Secured &amp; Active</span>
+                              <Badge className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-[10px] px-1.5 py-0">
+                                Connected
+                              </Badge>
+                            </div>
+                            <p className="text-[11px] text-muted mt-0.5">
+                              Encrypted and stored in server database. Hidden from browser to prevent accidental edits or unauthorized access.
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowEditFast2sms(true)}
+                          className="text-xs h-8 px-3 shrink-0 self-start sm:self-auto cursor-pointer"
+                        >
+                          Change Key
+                        </Button>
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="flex items-center justify-between mb-1 max-w-md">
+                          <Label htmlFor="fast2sms-key">Fast2SMS Authorization API Key</Label>
+                          {settings?.hasFast2smsApiKey && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowEditFast2sms(false);
+                                setForm({ ...form, fast2smsApiKey: "" });
+                              }}
+                              className="text-[11px] text-muted hover:text-fg underline cursor-pointer"
+                            >
+                              Keep existing key
+                            </button>
+                          )}
+                        </div>
+                        <Input
+                          id="fast2sms-key"
+                          type="password"
+                          value={form.fast2smsApiKey || ""}
+                          onChange={(e) =>
+                            setForm({ ...form, fast2smsApiKey: e.target.value })
+                          }
+                          placeholder={
+                            settings?.hasFast2smsApiKey
+                              ? "Enter new key to replace existing"
+                              : "Paste your Fast2SMS Authorization API Key"
+                          }
+                          className="mt-1 font-mono text-xs max-w-md"
+                        />
+                        <p className="text-[11px] text-muted mt-1">
+                          Sends immediate Quick SMS directly to {form.phoneNumber || "+91 8369485272"}.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -372,7 +422,7 @@ export function NotificationsTab() {
                     Sample SMS Alert Preview:
                   </span>
                   <div className="p-2.5 rounded-lg bg-surface border border-border/40 font-mono text-[11px] text-fg leading-relaxed">
-                    🔔 PRYNTH: NEW CUSTOM 3D PRINT REQUEST #7<br />
+                    🔔 PRYNTH: NEW CUSTOM 3D PRINT REQUEST #1<br />
                     From: Aditya Maurya (+91 98...)<br />
                     Specs: Standard · PETG · 1 unit(s)<br />
                     View &amp; Quote: https://prynth.in/admin?tab=inquiries

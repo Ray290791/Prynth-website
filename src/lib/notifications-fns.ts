@@ -13,6 +13,7 @@ export interface NotificationSettingsData {
   whatsappEnabled: boolean;
   whatsappProvider: "callmebot" | "twilio";
   whatsappApiKey: string;
+  hasWhatsappApiKey?: boolean;
   telegramEnabled: boolean;
   telegramBotToken: string;
   telegramChatId: string;
@@ -21,7 +22,9 @@ export interface NotificationSettingsData {
   twilioSid: string;
   twilioToken: string;
   twilioFrom: string;
+  hasTwilioCredentials?: boolean;
   fast2smsApiKey: string;
+  hasFast2smsApiKey?: boolean;
   emailEnabled: boolean;
   adminEmail: string;
   notifyOnNewOrder: boolean;
@@ -32,6 +35,7 @@ export interface NotificationSettingsData {
 
 /**
  * Admin: Get active notification channels and credentials
+ * Raw secrets are redacted so they are never exposed in browser inspection
  */
 export const getAdminNotificationSettings = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
@@ -40,7 +44,16 @@ export const getAdminNotificationSettings = createServerFn({ method: "GET" })
     const admin = await verifyAdminRole(context.userId, sql);
     if (!admin) throw new Error("Unauthorized");
 
-    return await getNotificationConfig();
+    const cfg = await getNotificationConfig();
+    return {
+      ...cfg,
+      hasFast2smsApiKey: Boolean(cfg.fast2smsApiKey && cfg.fast2smsApiKey.trim().length > 0),
+      fast2smsApiKey: "", // Redact raw key so it is never exposed in client DOM or network responses
+      hasTwilioCredentials: Boolean(cfg.twilioToken && cfg.twilioToken.trim().length > 0),
+      twilioToken: "",
+      hasWhatsappApiKey: Boolean(cfg.whatsappApiKey && cfg.whatsappApiKey.trim().length > 0),
+      whatsappApiKey: "",
+    };
   });
 
 /**
@@ -58,16 +71,13 @@ export const updateAdminNotificationSettings = createServerFn({ method: "POST" }
       notify_phone_number: data.phoneNumber?.trim() || "",
       notify_whatsapp_enabled: String(Boolean(data.whatsappEnabled)),
       notify_whatsapp_provider: data.whatsappProvider || "callmebot",
-      notify_whatsapp_apikey: data.whatsappApiKey?.trim() || "",
       notify_telegram_enabled: String(Boolean(data.telegramEnabled)),
       notify_telegram_bot_token: data.telegramBotToken?.trim() || "",
       notify_telegram_chat_id: data.telegramChatId?.trim() || "",
       notify_sms_enabled: String(Boolean(data.smsEnabled)),
       notify_sms_provider: data.smsProvider || "fast2sms",
       notify_twilio_account_sid: data.twilioSid?.trim() || "",
-      notify_twilio_auth_token: data.twilioToken?.trim() || "",
       notify_twilio_from_phone: data.twilioFrom?.trim() || "PRYNTH",
-      notify_fast2sms_apikey: data.fast2smsApiKey?.trim() || "",
       notify_email_enabled: String(Boolean(data.emailEnabled)),
       notify_email: data.adminEmail?.trim() || "",
       notify_on_new_order: String(Boolean(data.notifyOnNewOrder)),
@@ -75,6 +85,17 @@ export const updateAdminNotificationSettings = createServerFn({ method: "POST" }
       notify_on_low_stock: String(Boolean(data.notifyOnLowStock)),
       notify_on_inquiry: String(Boolean(data.notifyOnInquiry)),
     };
+
+    // Only update sensitive keys if a new non-empty value was explicitly submitted
+    if (data.fast2smsApiKey && data.fast2smsApiKey.trim().length > 0) {
+      settingsMap.notify_fast2sms_apikey = data.fast2smsApiKey.trim();
+    }
+    if (data.twilioToken && data.twilioToken.trim().length > 0) {
+      settingsMap.notify_twilio_auth_token = data.twilioToken.trim();
+    }
+    if (data.whatsappApiKey && data.whatsappApiKey.trim().length > 0) {
+      settingsMap.notify_whatsapp_apikey = data.whatsappApiKey.trim();
+    }
 
     for (const [key, val] of Object.entries(settingsMap)) {
       await sql`
