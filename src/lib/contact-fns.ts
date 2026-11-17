@@ -254,6 +254,16 @@ export const deleteTicketAdmin = createServerFn({ method: "POST" })
       DELETE FROM tickets
       WHERE id = ${data.id}
     `;
+
+    // Keep the ID sequence aligned with remaining active tickets so numbers don't jump unnecessarily
+    try {
+      await sql`
+        SELECT setval('public.tickets_id_seq', COALESCE((SELECT MAX(id) FROM tickets), 0) + 1, false)
+      `;
+    } catch (seqErr) {
+      console.warn("Failed to reset tickets_id_seq after deletion:", seqErr);
+    }
+
     return { success: true };
   });
 
