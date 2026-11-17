@@ -61,11 +61,11 @@ export function ProductCard({ product }: { product: Product }) {
   }
 
   return (
-    <article className="group flex flex-col">
+    <article className="group flex flex-col hover-lift">
       <Link
         to="/shop/$slug"
         params={{ slug: product.slug }}
-        className="relative overflow-hidden rounded-2xl bg-surface shadow-[var(--shadow-border)] transition-[box-shadow,transform] duration-200 ease-out hover:shadow-[var(--shadow-border-hover)]"
+        className="relative overflow-hidden rounded-2xl bg-surface border border-border/70 shadow-xs transition-all duration-200 hover:border-accent/40"
       >
         <img
           src={product.image}
