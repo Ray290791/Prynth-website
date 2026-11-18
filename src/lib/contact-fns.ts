@@ -319,6 +319,7 @@ export const replyToTicketAdmin = createServerFn({ method: "POST" })
       quoteAmount?: number;
       turnaround?: string;
       markResolved?: boolean;
+      newStatus?: string;
     }) => data
   )
   .handler(async ({ data, context }) => {
@@ -346,10 +347,11 @@ export const replyToTicketAdmin = createServerFn({ method: "POST" })
       }
     );
 
-    if (data.markResolved !== false) {
+    const targetStatus = data.newStatus || (data.quoteAmount ? "quoted" : data.markResolved !== false ? "resolved" : undefined);
+    if (targetStatus) {
       await sql`
         UPDATE tickets
-        SET status = 'resolved'
+        SET status = ${targetStatus}
         WHERE id = ${data.id}
       `;
     }

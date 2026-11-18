@@ -14,7 +14,10 @@ export async function getSenderEmail(): Promise<string> {
   } catch {
     // If DB read fails, fall back to environment variable
   }
-  return process.env.RESEND_FROM_EMAIL?.trim() || "onboarding@resend.dev";
+  const envEmail =
+    (typeof process !== "undefined" ? process.env.RESEND_FROM_EMAIL : undefined)?.trim() ||
+    (globalThis as any).__env__?.RESEND_FROM_EMAIL?.trim();
+  return envEmail || "Prynth <orders@prynth.in>";
 }
 
 let cachedResendApiKey: string | null = null;

@@ -7,6 +7,7 @@ import {
   deleteTicketAdmin,
   type Ticket,
 } from "@/lib/contact-fns";
+import { ResendQuoteModal } from "@/components/admin/resend-quote-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -156,6 +157,9 @@ export function InquiriesTab() {
   // Phone number prompt for WhatsApp if missing
   const [phonePromptTicketId, setPhonePromptTicketId] = useState<number | null>(null);
   const [phoneDraft, setPhoneDraft] = useState("");
+
+  // Official Resend Quote Modal state
+  const [resendModalTicket, setResendModalTicket] = useState<Ticket | null>(null);
 
   const { data: tickets = [], isLoading, isFetching, refetch } = useQuery({
     queryKey: ["adminTickets"],
@@ -699,24 +703,27 @@ https://prynth.in | hello@prynth.in`;
                       <span>WhatsApp Chat</span>
                     </Button>
 
-                    {/* Send Quote / Reply (Opens Gmail directly) */}
+                    {/* Send via Resend (Primary Action: Official orders@prynth.in with luxury branded HTML template) */}
                     <Button
                       size="sm"
+                      onClick={() => setResendModalTicket(ticket)}
+                      className="h-8 text-xs px-3.5 gap-1.5 cursor-pointer shadow-xs bg-accent text-ink hover:opacity-90 font-semibold transition-all"
+                      title="Type your reply and send an official branded quote email from orders@prynth.in via Resend"
+                    >
+                      <Mail className="size-3.5" />
+                      <span>Send via Resend</span>
+                    </Button>
+
+                    {/* Direct Gmail Fallback */}
+                    <Button
+                      size="sm"
+                      variant="outline"
                       onClick={() => handleOpenGmail(ticket)}
-                      className="h-8 text-xs px-3 gap-1.5 cursor-pointer shadow-xs bg-accent text-ink hover:opacity-90 font-semibold"
+                      className="h-8 text-xs px-2.5 gap-1.5 cursor-pointer border-border/80 text-muted hover:text-fg hover:bg-surface-2 transition-all"
                       title="Opens Gmail compose in a new tab with customer email, subject, and quote template pre-filled"
                     >
-                      {isCustom ? (
-                        <>
-                          <ExternalLink className="size-3.5" />
-                          <span>Send Quote</span>
-                        </>
-                      ) : (
-                        <>
-                          <Send className="size-3.5" />
-                          <span>Reply</span>
-                        </>
-                      )}
+                      <ExternalLink className="size-3.5" />
+                      <span>Gmail</span>
                     </Button>
 
                     {/* Copy Template Button */}
@@ -979,6 +986,22 @@ https://prynth.in | hello@prynth.in`;
           </div>
         </div>
       )}
+
+      {/* Resend Official Quotation Email Modal */}
+      {resendModalTicket && (() => {
+        const { name, email, isCustom, payload } = parseTicketSender(resendModalTicket);
+        return (
+          <ResendQuoteModal
+            ticket={resendModalTicket}
+            isOpen={true}
+            onClose={() => setResendModalTicket(null)}
+            customerName={name}
+            customerEmail={email}
+            isCustomRequest={isCustom}
+            payload={payload}
+          />
+        );
+      })()}
     </div>
   );
 }
