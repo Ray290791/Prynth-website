@@ -107,7 +107,7 @@ export function PinConfirmModal({
             {digits.map((digit, idx) => (
               <input
                 key={idx}
-                ref={(el) => (inputRefs.current[idx] = el)}
+                ref={(el) => { inputRefs.current[idx] = el; }}
                 type="password"
                 inputMode="numeric"
                 maxLength={1}

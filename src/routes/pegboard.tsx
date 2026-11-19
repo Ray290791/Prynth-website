@@ -90,7 +90,7 @@ const ADDON_PACKS: AddonPack[] = [
 
 export function PegboardPage() {
   const { settings } = rootRoute.useLoaderData();
-  const isPegboardCheckoutEnabled = settings?.pegboard_checkout_enabled === "true";
+  const isPegboardCheckoutEnabled = settings?.pegboard_checkout_enabled !== "false";
   const addToCart = useCart((s) => s.add);
   const navigate = useNavigate();
 

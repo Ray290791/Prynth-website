@@ -64,7 +64,7 @@ function CustomPage() {
   }, [edit, cartItems]);
 
   const { settings } = rootRoute.useLoaderData();
-  const customOrdersEnabled = settings?.custom_orders_enabled === "true";
+  const customOrdersEnabled = settings?.custom_orders_enabled !== "false";
   const pricingConfig = useMemo(() => getPricingConfig(settings), [settings]);
 
   const { data: printers = [] } = useQuery({
@@ -147,52 +147,7 @@ function CustomPage() {
         </div>
       )}
 
-      {!customOrdersEnabled ? (
-        <div className="mt-8 space-y-8">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 opacity-85">
-            <div className="rounded-2xl p-5 text-left border border-border bg-surface shadow-xs">
-              <div className="flex items-center justify-between">
-                <p className="font-display text-lg font-semibold">Upload your model</p>
-                <span className="rounded-full bg-accent/15 px-2.5 py-0.5 text-[11px] font-semibold text-accent">Opening Soon</span>
-              </div>
-              <p className="mt-1 text-sm text-muted">
-                Direct STL, 3MF, and OBJ uploads with instant slicer volume estimation will open soon.
-              </p>
-            </div>
-            <div className="rounded-2xl p-5 text-left border border-border bg-surface shadow-xs">
-              <div className="flex items-center justify-between">
-                <p className="font-display text-lg font-semibold">Describe your idea</p>
-                <span className="rounded-full bg-accent/15 px-2.5 py-0.5 text-[11px] font-semibold text-accent">Opening Soon</span>
-              </div>
-              <p className="mt-1 text-sm text-muted">
-                Custom CAD modeling from rough sketches and dimensions will open in the next phase.
-              </p>
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-accent/25 bg-surface p-8 sm:p-10 shadow-xs max-w-2xl mx-auto space-y-4 text-center">
-            <div className="inline-flex size-12 items-center justify-center rounded-2xl bg-accent/10 text-accent mx-auto">
-              <Sliders className="size-6" />
-            </div>
-            <div>
-              <span className="rounded-full bg-accent/20 px-3 py-1 text-xs font-semibold text-accent">
-                Waitlist Active
-              </span>
-              <h2 className="mt-3 font-display text-2xl sm:text-3xl font-semibold text-fg tracking-tight">
-                Custom 3D Printing Opening Soon
-              </h2>
-              <p className="mt-2 text-sm text-muted max-w-lg mx-auto leading-relaxed">
-                We are currently focusing on ready-made catalog production batches. Join our waitlist below to be notified as soon as custom 3D printing and modeling inquiries reopen.
-              </p>
-            </div>
-            <div className="text-left pt-2">
-              <WaitlistForm interest="custom" />
-            </div>
-          </div>
-        </div>
-      ) : (
-        <>
-          <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <button
               type="button"
               onClick={() => switchTab("upload")}
@@ -244,8 +199,6 @@ function CustomPage() {
               />
             )}
           </div>
-        </>
-      )}
     </div>
   );
 }

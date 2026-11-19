@@ -111,7 +111,7 @@ function AdminPage() {
 
   const openTicketsCount = tickets?.filter((t: any) => t.status === "open").length || 0;
   const pendingOrdersCount = orders?.filter((o: any) => o.status === "pending" || o.status === "processing").length || 0;
-  const waitlistCount = waitlist?.length || 0;
+  const waitlistCount = (waitlist as any)?.entries?.length ?? (Array.isArray(waitlist) ? waitlist.length : 0);
 
   const greeting = (() => {
     const h = new Date().getHours();
@@ -120,7 +120,7 @@ function AdminPage() {
     return "Good evening";
   })();
 
-  const firstName = user?.name?.split(" ")[0] || "Ray";
+  const firstName = (user as any)?.name?.split(" ")[0] || "Ray";
   const todayFormatted = new Date().toLocaleDateString("en-IN", {
     weekday: "short",
     day: "numeric",

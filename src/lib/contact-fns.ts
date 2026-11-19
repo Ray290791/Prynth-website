@@ -103,11 +103,11 @@ export const submitCustomDesignRequest = createServerFn({ method: "POST" })
 
     const sql = await getSql();
 
-    // Gate C2: Check if custom orders are enabled
+    // Optional custom orders check
     const { fetchSiteSettings } = await import("./settings-fns");
     const settings = await fetchSiteSettings(sql);
-    if (settings.custom_orders_enabled !== "true") {
-      const err: any = new Error("Custom order inquiries are temporarily closed. Please join our waitlist.");
+    if (settings.custom_orders_enabled === "false") {
+      const err: any = new Error("Custom order inquiries are temporarily paused.");
       err.status = 403;
       throw err;
     }

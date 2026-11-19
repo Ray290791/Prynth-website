@@ -54,29 +54,14 @@ function CartPage() {
     queryFn: () => getCheckoutStatus(),
     staleTime: 30000,
   });
-  const isCheckoutOpen = checkoutStatus?.checkoutEnabled ?? false;
-  const sellableSlugs = checkoutStatus?.sellableProductSlugs ?? [];
+  const isCheckoutOpen = checkoutStatus?.checkoutEnabled ?? true;
   const items = useCart((s) => s.items);
   const setQty = useCart((s) => s.setQty);
   const remove = useCart((s) => s.remove);
 
-  const isItemWaitlistOnly = (item: (typeof items)[number]) => {
-    if (item.kind === "product" && item.productSlug) {
-      if (sellableSlugs.length > 0) {
-        return !sellableSlugs.includes(item.productSlug);
-      }
-      return false;
-    }
-    if (item.kind === "custom") {
-      const isLitho = item.name?.toLowerCase().includes("lithophane") || Boolean((item as any).custom?.isLithophane);
-      return isLitho ? !checkoutStatus?.lithophaneEnabled : !checkoutStatus?.customOrdersEnabled;
-    }
-    return false;
-  };
-
-  const waitlistItems = items.filter(isItemWaitlistOnly);
-  const hasWaitlistItems = waitlistItems.length > 0;
-  const allItemsWaitlist = items.length > 0 && waitlistItems.length === items.length;
+  const waitlistItems: typeof items = [];
+  const hasWaitlistItems = false;
+  const allItemsWaitlist = false;
   
   const isCodRestricted = hasNonCodItems(items);
 
@@ -195,12 +180,7 @@ function CartPage() {
                         </div>
                       </div>
                     )}
-                    {isItemWaitlistOnly(item) && (
-                      <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg border border-amber-500/25 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-500">
-                        <AlertCircle className="size-3.5 shrink-0" />
-                        <span>Waitlist only · Remove to checkout available items</span>
-                      </div>
-                    )}
+
                   </div>
                   <p className="shrink-0 font-medium tabular-nums">
                     {formatINR(item.unitPrice * item.qty)}

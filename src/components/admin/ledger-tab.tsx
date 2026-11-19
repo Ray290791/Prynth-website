@@ -179,10 +179,10 @@ export function LaunchLedgerTab() {
             <CheckCircle2 className="size-6 shrink-0 text-emerald-500" />
             <div>
               <h3 className="text-base font-bold">
-                Profit Target Reached ({formatINR(settledProfit)} of {formatINR(profitTarget)})!
+                Target Milestone Reached ({formatINR(settledProfit)} of {formatINR(profitTarget)})!
               </h3>
               <p className="text-xs sm:text-sm mt-0.5">
-                Target reached. Pause customer checkout, deliver pending orders, and proceed with LLP incorporation per the runbook.
+                Target reached. All systems operational and ready for scaling production batches.
               </p>
             </div>
           </div>
@@ -196,7 +196,7 @@ export function LaunchLedgerTab() {
             <span>📊</span> Launch Ledger &amp; Raw Profit Tracker
           </h2>
           <p className="text-muted mt-1 text-sm">
-            Tracking exact net margin toward the ₹{profitTarget.toLocaleString("en-IN")} LLP transition gate (D1).
+            Tracking exact net margin, unit costs, payment fees, and courier logistics.
           </p>
         </div>
         <button

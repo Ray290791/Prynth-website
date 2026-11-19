@@ -60,7 +60,7 @@ export type Product = {
 export const products: Product[] = [
   {
     slug: "modular-pegboard",
-    sellable: false,
+    sellable: true,
     name: "Modular Desk Pegboard System",
     price: 200,
     image: "/products/modular-pegboard.jpg",
@@ -88,7 +88,7 @@ export const products: Product[] = [
   },
   {
     slug: "wave-stand",
-    sellable: false,
+    sellable: true,
     name: "Wave Stand",
     price: 249,
     image: "/products/wave-stand.jpg",
@@ -161,7 +161,7 @@ export const products: Product[] = [
   },
   {
     slug: "pebble-hooks",
-    sellable: false,
+    sellable: true,
     name: "Pebble Hooks",
     price: 279,
     image: "/products/pebble-hooks.jpg",
@@ -197,7 +197,7 @@ export const products: Product[] = [
   },
   {
     slug: "headphone-rest",
-    sellable: false,
+    sellable: true,
     name: "Headphone Rest",
     price: 449,
     image: "/products/headphone-rest.jpg",
@@ -233,7 +233,7 @@ export const products: Product[] = [
   },
   {
     slug: "ripple-soap",
-    sellable: false,
+    sellable: true,
     name: "Ripple Soap Dish",
     price: 179,
     image: "/products/ripple-soap.jpg",

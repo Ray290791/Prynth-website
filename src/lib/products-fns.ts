@@ -129,7 +129,7 @@ function mapDbProduct(row: any): Product {
     sizes: typeof row.sizes === "string" ? JSON.parse(row.sizes) : row.sizes,
     gallery: typeof row.gallery === "string" ? JSON.parse(row.gallery) : (row.gallery || []),
     categories: typeof row.categories === "string" ? JSON.parse(row.categories) : (row.categories || []),
-    sellable: Boolean(row.sellable),
+    sellable: row.sellable === false ? false : true,
     unitCostInr: Number(row.unit_cost_inr) || 0,
     packagingCostInr: Number(row.packaging_cost_inr) || 0,
     materials: typeof row.materials === "string" ? JSON.parse(row.materials) : (row.materials || []),

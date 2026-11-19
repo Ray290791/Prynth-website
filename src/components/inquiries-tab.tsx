@@ -476,7 +476,7 @@ https://prynth.in | hello@prynth.in`;
             { id: "resolved", label: `Completed (${counts.resolved})`, icon: <span className="size-2 rounded-full bg-emerald-500" /> },
           ]}
           activeId={statusFilter}
-          onChange={(id) => setStatusFilter(id)}
+          onChange={(id) => setStatusFilter(id as any)}
           variant="pills"
           size="sm"
           className="max-w-full"

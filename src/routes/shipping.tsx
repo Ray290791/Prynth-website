@@ -41,13 +41,13 @@ export function ShippingPage() {
   const turnaroundMin = parseInt(settings.turnaround_min_days || "4", 10);
   const turnaroundMax = parseInt(settings.turnaround_max_days || "7", 10);
 
-  let allowedStates: string[] = ["Maharashtra"];
+  let allowedStates: string[] = ["All India"];
   try {
     if (settings.allowed_delivery_states) {
       allowedStates = JSON.parse(settings.allowed_delivery_states);
     }
   } catch {
-    allowedStates = ["Maharashtra"];
+    allowedStates = ["All India"];
   }
   const isAllIndia = allowedStates.some((s) => s.toLowerCase() === "all india");
   const deliveryScopeText = isAllIndia

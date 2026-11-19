@@ -154,7 +154,7 @@ export function OrderDetailsDialog({
     },
   });
 
-  // ── Interim Selling Phase: Production Logs (D2) ───────────────────────────
+  // ── Production Logs ────────────────────────────────────────────────────────
   const { data: productionLogs = [], refetch: refetchProdLogs } = useQuery({
     queryKey: ["orderProdLogs", order.id],
     queryFn: () => getOrderItemProductionLogsAdmin({ data: order.id }),
@@ -170,7 +170,7 @@ export function OrderDetailsDialog({
     onError: (err: any) => toast.error(err?.message || "Failed to save production log"),
   });
 
-  // ── Interim Selling Phase: Refunds & Notes Timeline (D3) ───────────────────
+  // ── Refunds & Notes Timeline ────────────────────────────────────────────────
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [refundAmount, setRefundAmount] = useState("");
   const [refundReason, setRefundReason] = useState("");
@@ -210,7 +210,7 @@ export function OrderDetailsDialog({
     onError: (err: any) => toast.error(err?.message || "Failed to add note"),
   });
 
-  // ── Interim Selling Phase: Settlement & Actual Courier (D1) ────────────────
+  // ── Settlement & Actual Courier ─────────────────────────────────────────────
   const [actualCourierCost, setActualCourierCost] = useState(
     order.courier_actual_cost != null ? String(order.courier_actual_cost) : (order.shipping ? String(order.shipping) : "0")
   );
@@ -1052,12 +1052,12 @@ export function OrderDetailsDialog({
             </div>
           </div>
 
-          {/* INTERIM PHASE D2: Machine-Time & Production Logs */}
+          {/* Machine-Time & Production Logs */}
           <div className="border border-border rounded-2xl overflow-hidden">
             <div className="flex items-center justify-between bg-surface-2/60 px-4 py-3">
               <div className="flex items-center gap-2">
                 <PrinterIcon className="size-4 text-accent" />
-                <span className="text-sm font-semibold text-fg">Machine-Time &amp; Production Logs (D2)</span>
+                <span className="text-sm font-semibold text-fg">Machine-Time &amp; Production Logs</span>
               </div>
               <span className="text-[11px] text-muted">Admin internal records</span>
             </div>
@@ -1171,12 +1171,12 @@ export function OrderDetailsDialog({
             </div>
           </div>
 
-          {/* INTERIM PHASE D3: Issue Handling, Refunds & Timeline Notes */}
+          {/* Issue Handling, Refunds & Timeline Notes */}
           <div className="border border-border rounded-2xl overflow-hidden">
             <div className="flex items-center justify-between bg-surface-2/60 px-4 py-3">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="size-4 text-accent" />
-                <span className="text-sm font-semibold text-fg">Issue Handling &amp; Refunds (D3)</span>
+                <span className="text-sm font-semibold text-fg">Issue Handling &amp; Refunds</span>
               </div>
               <div className="flex items-center gap-2">
                 {Number(order.refund_amount) > 0 && (
@@ -1264,12 +1264,12 @@ export function OrderDetailsDialog({
             </div>
           </div>
 
-          {/* INTERIM PHASE D1: Launch Ledger Settlement */}
+          {/* Launch Ledger Settlement */}
           <div className="border border-border rounded-2xl p-4 bg-surface-2/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-fg flex items-center gap-1.5">
-                  <CheckCircle2 className="size-4 text-accent" /> Launch Ledger Settlement Gate (D1)
+                  <CheckCircle2 className="size-4 text-accent" /> Launch Ledger Settlement
                 </span>
                 {order.settled ? (
                   <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[10px]">

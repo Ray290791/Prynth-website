@@ -325,37 +325,13 @@ export function SettingsTab() {
               </div>
             </div>
 
-            {checkoutAction === "open" && settings.is_live_key ? (
-              <div className="space-y-3 pt-2">
-                <div className="rounded-xl border border-danger/30 bg-danger/10 p-3 text-xs text-danger leading-relaxed">
-                  <p className="font-bold flex items-center gap-1.5">
-                    <AlertTriangle className="size-4 shrink-0" /> Live Gateway Gate Active
-                  </p>
-                  <p className="mt-1">
-                    Live Razorpay keys are detected. To prevent accidental launch before the CA call and written co-founder agreements are executed, please type <strong className="font-mono">OPEN CHECKOUT</strong> below to confirm.
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-muted mb-1">
-                    Type "OPEN CHECKOUT" to confirm:
-                  </label>
-                  <input
-                    type="text"
-                    value={confirmPhraseInput}
-                    onChange={(e) => setConfirmPhraseInput(e.target.value)}
-                    placeholder="OPEN CHECKOUT"
-                    className="w-full rounded-lg border border-border bg-surface-2 p-2.5 text-sm font-mono focus:border-accent focus:outline-none"
-                    autoFocus
-                  />
-                </div>
-              </div>
-            ) : checkoutAction === "open" ? (
+            {checkoutAction === "open" ? (
               <p className="text-xs text-muted leading-relaxed">
-                Customer checkout will be activated using Razorpay Test Mode. Customers can place test orders and join waitlists.
+                Customer checkout will be active and customers can place orders across all enabled products and custom services.
               </p>
             ) : (
               <p className="text-xs text-muted leading-relaxed">
-                Customer checkout will be immediately paused. The site will display waitlist forms on the cart and checkout pages. Any orders already placed remain valid and will be delivered.
+                Customer checkout will be paused. Any orders already placed remain valid and will be delivered.
               </p>
             )}
 
@@ -363,25 +339,23 @@ export function SettingsTab() {
               <button
                 type="button"
                 onClick={() => setCheckoutModalOpen(false)}
-                className="px-4 py-2 rounded-lg border border-border text-xs font-semibold hover:bg-surface-2 transition-colors"
+                className="px-4 py-2 rounded-lg border border-border text-xs font-semibold hover:bg-surface-2 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
-                disabled={checkoutAction === "open" && settings.is_live_key && confirmPhraseInput.trim() !== "OPEN CHECKOUT"}
                 onClick={() => {
                   const newStatus = checkoutAction === "open" ? "true" : "false";
                   updateMutation.mutate({
                     checkout_enabled: newStatus,
-                    confirm_phrase: confirmPhraseInput.trim(),
                   });
                   setCheckoutModalOpen(false);
                 }}
                 className={cn(
                   "px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer",
                   checkoutAction === "open"
-                    ? "bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    ? "bg-emerald-600 hover:bg-emerald-700 text-white"
                     : "bg-amber-600 hover:bg-amber-700 text-white"
                 )}
               >
@@ -1019,23 +993,23 @@ export function SettingsTab() {
           </div>
         </section>
 
-        {/* INTERIM SELLING PHASE CONTROLS & CAPS (NOV 2026) */}
+        {/* STORE OPERATIONS & FULFILLMENT CONTROLS */}
         <section className="space-y-6 rounded-2xl border border-accent/30 bg-surface-2/60 p-6 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-3">
             <div>
               <h3 className="text-lg font-semibold text-fg flex items-center gap-2">
-                <span>🛡️</span> Interim Selling Phase Controls &amp; Caps
+                <span>⚙️</span> Store Operations &amp; Fulfillment Controls
               </h3>
               <p className="text-xs text-muted mt-0.5">
-                Enforce safety limits for the interim unregistered phase: order velocity caps, profit target auto-pause, region restrictions, and service toggles.
+                Manage order velocity capacity, store targets, pan-India delivery scope, turnaround days, and service checkouts.
               </p>
             </div>
-            <span className="rounded-full bg-accent/10 border border-accent/20 px-3 py-1 text-xs font-semibold text-accent self-start sm:self-auto">
-              Pre-LLP Safety Active
+            <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 self-start sm:self-auto">
+              Store Active
             </span>
           </div>
 
-          {/* Caps & Auto-Pause Grid */}
+          {/* Caps & Target Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-medium mb-1">Max Orders per Day (Rolling 24h IST)</label>
@@ -1043,11 +1017,11 @@ export function SettingsTab() {
                 type="number"
                 min="1"
                 name="max_orders_per_day"
-                defaultValue={settings.max_orders_per_day || "3"}
+                defaultValue={settings.max_orders_per_day || "1000"}
                 required
                 className="w-full rounded border border-border bg-surface p-2 text-sm font-mono"
               />
-              <p className="text-[11px] text-muted mt-1">Stops incoming orders after cap until older orders roll off.</p>
+              <p className="text-[11px] text-muted mt-1">Daily order intake capacity benchmark.</p>
             </div>
 
             <div>
@@ -1056,25 +1030,25 @@ export function SettingsTab() {
                 type="number"
                 min="1"
                 name="max_orders_per_week"
-                defaultValue={settings.max_orders_per_week || "10"}
+                defaultValue={settings.max_orders_per_week || "5000"}
                 required
                 className="w-full rounded border border-border bg-surface p-2 text-sm font-mono"
               />
-              <p className="text-[11px] text-muted mt-1">Weekly volume safeguard aligned with lab print capacity.</p>
+              <p className="text-[11px] text-muted mt-1">Weekly volume safeguard aligned with print farm capacity.</p>
             </div>
 
             <div>
-              <label className="block text-xs font-medium mb-1">Profit Target Auto-Pause (₹ Raw Profit)</label>
+              <label className="block text-xs font-medium mb-1">Store Target Benchmark (₹ Raw Profit)</label>
               <input
                 type="number"
                 min="1000"
                 step="500"
                 name="profit_target_inr"
-                defaultValue={settings.profit_target_inr || "10000"}
+                defaultValue={settings.profit_target_inr || "10000000"}
                 required
                 className="w-full rounded border border-border bg-surface p-2 text-sm font-mono"
               />
-              <p className="text-[11px] text-muted mt-1">Auto-pauses checkout once reached to allow LLP registration.</p>
+              <p className="text-[11px] text-muted mt-1">Milestone indicator for studio scale &amp; expansion tracking.</p>
             </div>
           </div>
 
@@ -1084,11 +1058,11 @@ export function SettingsTab() {
               <label className="block text-xs font-medium mb-1">Allowed Delivery States (JSON or list)</label>
               <input
                 name="allowed_delivery_states"
-                defaultValue={settings.allowed_delivery_states || '["Maharashtra"]'}
+                defaultValue={settings.allowed_delivery_states || '["All India"]'}
                 required
                 className="w-full rounded border border-border bg-surface p-2 text-sm font-mono"
               />
-              <p className="text-[11px] text-muted mt-1">Enforced at checkout and pincode verification. Default: Maharashtra only.</p>
+              <p className="text-[11px] text-muted mt-1">Enforced at checkout. Default: ["All India"] (pan-India delivery).</p>
             </div>
 
             <div>
@@ -1118,7 +1092,7 @@ export function SettingsTab() {
             </div>
           </div>
 
-          {/* Made-to-Order Services & COD Toggles (C2 & C3) */}
+          {/* Made-to-Order Services & COD Toggles */}
           <div className="pt-4 border-t border-border space-y-3">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted">
               Service Gating &amp; Payment Options
@@ -1128,7 +1102,7 @@ export function SettingsTab() {
                 <input
                   type="checkbox"
                   name="custom_orders_enabled"
-                  defaultChecked={settings.custom_orders_enabled === "true"}
+                  defaultChecked={settings.custom_orders_enabled !== "false"}
                   className="size-4 rounded border-border accent-accent"
                 />
                 <div>
@@ -1141,7 +1115,7 @@ export function SettingsTab() {
                 <input
                   type="checkbox"
                   name="lithophane_enabled"
-                  defaultChecked={settings.lithophane_enabled === "true"}
+                  defaultChecked={settings.lithophane_enabled !== "false"}
                   className="size-4 rounded border-border accent-accent"
                 />
                 <div>
@@ -1154,7 +1128,7 @@ export function SettingsTab() {
                 <input
                   type="checkbox"
                   name="pegboard_checkout_enabled"
-                  defaultChecked={settings.pegboard_checkout_enabled === "true"}
+                  defaultChecked={settings.pegboard_checkout_enabled !== "false"}
                   className="size-4 rounded border-border accent-accent"
                 />
                 <div>
@@ -1167,12 +1141,12 @@ export function SettingsTab() {
                 <input
                   type="checkbox"
                   name="cod_enabled"
-                  defaultChecked={settings.cod_enabled === "true"}
+                  defaultChecked={settings.cod_enabled !== "false"}
                   className="size-4 rounded border-border accent-accent"
                 />
                 <div>
                   <span className="font-semibold block text-fg">Cash on Delivery (COD)</span>
-                  <span className="text-[11px] text-muted">Disabled for interim phase</span>
+                  <span className="text-[11px] text-muted">Allow cash payment at delivery</span>
                 </div>
               </label>
             </div>
@@ -1271,7 +1245,7 @@ export function SettingsTab() {
                 <input
                   name="seller_address"
                   defaultValue={settings.seller_address || ""}
-                  placeholder="Street / Office Address (optional during interim phase)"
+                  placeholder="Street / Office Address"
                   className="w-full rounded border border-border bg-surface p-2 text-sm"
                 />
               </div>

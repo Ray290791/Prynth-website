@@ -75,7 +75,7 @@ export function WaitlistForm({
         <div className="space-y-1.5">
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-accent/15 text-accent border border-accent/25">
             <Bell className="size-3" />
-            <span>INTERIM WAITLIST</span>
+            <span>VIP NOTIFICATION</span>
           </div>
           <h3 className="font-display text-xl sm:text-2xl font-bold tracking-tight text-fg">
             {title}

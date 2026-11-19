@@ -81,7 +81,7 @@ export function ProductsTable() {
             <th className="p-4 font-medium">Product</th>
             <th className="p-4 font-medium">Price</th>
             <th className="p-4 font-medium">Category</th>
-            <th className="p-4 font-medium text-center">Interim Gate</th>
+            <th className="p-4 font-medium text-center">Checkout Status</th>
             <th className="p-4 font-medium text-right">Unit / Pack Cost</th>
             <th className="p-4 font-medium text-right w-44 min-w-[150px]">Actions</th>
           </tr>
@@ -111,7 +111,7 @@ export function ProductsTable() {
                       ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20" 
                       : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/20"
                   )}
-                  title="Click to toggle sellable status for interim phase"
+                  title="Click to toggle customer checkout availability"
                 >
                   <span className={cn("size-1.5 rounded-full", p.sellable ? "bg-emerald-500" : "bg-amber-500")} />
                   {p.sellable ? "Sellable" : "Paused"}
@@ -559,7 +559,7 @@ function ProductModal({
               </div>
 
               <div className="col-span-2 rounded-xl border border-accent/20 bg-surface-2/40 p-4 space-y-3">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-accent">Interim Selling Phase &amp; Launch Ledger (D1)</h4>
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-accent">Production Economics &amp; Cost Ledger</h4>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-medium mb-1">Unit Material &amp; Print Cost (₹)</label>
@@ -587,10 +587,10 @@ function ProductModal({
                     type="checkbox" 
                     name="sellable" 
                     id="sellable" 
-                    defaultChecked={product?.sellable ?? false} 
+                    defaultChecked={product?.sellable ?? true} 
                     className="size-4 rounded border-border accent-accent" 
                   />
-                  <span className="text-xs font-semibold text-fg">Sellable in Interim Phase (Allow Customer Checkout)</span>
+                  <span className="text-xs font-semibold text-fg">Active for Customer Checkout</span>
                 </label>
               </div>
             </div>

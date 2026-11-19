@@ -64,10 +64,10 @@ function CheckoutPage() {
     queryFn: () => getCheckoutStatus(),
     staleTime: 30000,
   });
-  const isCheckoutOpen = checkoutStatus?.checkoutEnabled ?? false;
+  const isCheckoutOpen = checkoutStatus?.checkoutEnabled ?? true;
 
   const allowedStateList = useMemo(() => {
-    const states = checkoutStatus?.allowedStates || ["Maharashtra"];
+    const states = checkoutStatus?.allowedStates || ["All India"];
     if (states.some((s) => s.toLowerCase() === "all india")) {
       return INDIAN_STATES;
     }
@@ -521,41 +521,7 @@ function CheckoutPage() {
     );
   }
 
-  const sellableSlugs = checkoutStatus?.sellableProductSlugs ?? [];
-  const waitlistItems = items.filter((item) => {
-    if (item.kind === "product" && item.productSlug) {
-      if (sellableSlugs.length > 0) {
-        return !sellableSlugs.includes(item.productSlug);
-      }
-      return false;
-    }
-    if (item.kind === "custom") {
-      const isLitho = item.name?.toLowerCase().includes("lithophane") || Boolean((item as any).custom?.isLithophane);
-      return isLitho ? !checkoutStatus?.lithophaneEnabled : !checkoutStatus?.customOrdersEnabled;
-    }
-    return false;
-  });
 
-  if (waitlistItems.length > 0) {
-    return (
-      <div className="mx-auto max-w-xl px-4 py-20 text-center md:px-6">
-        <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500 mb-4">
-          <AlertCircle className="size-6" />
-        </div>
-        <h1 className="font-display text-2xl font-semibold tracking-tight">
-          Waitlist items in cart
-        </h1>
-        <p className="mt-3 text-sm text-muted leading-relaxed">
-          {waitlistItems.map((w) => w.name).join(", ")} {waitlistItems.length > 1 ? "are" : "is"} currently in batch preparation and available on waitlist only. Please return to your cart and remove {waitlistItems.length > 1 ? "them" : "it"} to complete checkout for ready-to-order pieces.
-        </p>
-        <div className="mt-6">
-          <Button asChild>
-            <Link to="/cart">Return to cart</Link>
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-16">

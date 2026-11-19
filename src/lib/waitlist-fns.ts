@@ -5,7 +5,7 @@ import { verifyAdminRole } from "./admin-fns";
 import { z } from "zod";
 
 /**
- * Waitlist server functions for interim selling phase (Item A5)
+ * Waitlist server functions (Item A5)
  * Captures email + interest with explicit unticked consent.
  */
 

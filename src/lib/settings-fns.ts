@@ -119,7 +119,7 @@ export type SiteSettings = {
   legal_gstin?: string;
   legal_country_of_origin?: string;
   legal_jurisdiction_city?: string;
-  // Interim Selling Phase Settings (Nov 2026)
+  // Store Operations & Fulfillment Settings
   checkout_enabled?: string;
   cod_enabled?: string;
   max_orders_per_day?: string;
@@ -283,16 +283,16 @@ function parseSiteSettings(rows: { key: string; value: string }[]): SiteSettings
     legal_gstin: "",
     legal_country_of_origin: "Made in India",
     legal_jurisdiction_city: "Mumbai, Maharashtra, India",
-    // Interim Selling Phase Defaults (Nov 2026)
-    checkout_enabled: "false",
-    cod_enabled: "false",
-    max_orders_per_day: "3",
-    max_orders_per_week: "10",
-    profit_target_inr: "10000",
-    custom_orders_enabled: "false",
-    lithophane_enabled: "false",
-    pegboard_checkout_enabled: "false",
-    allowed_delivery_states: JSON.stringify(["Maharashtra"]),
+    // Store Operations Defaults
+    checkout_enabled: "true",
+    cod_enabled: "true",
+    max_orders_per_day: "1000",
+    max_orders_per_week: "5000",
+    profit_target_inr: "10000000",
+    custom_orders_enabled: "true",
+    lithophane_enabled: "true",
+    pegboard_checkout_enabled: "true",
+    allowed_delivery_states: JSON.stringify(["All India"]),
     invoice_mode: "receipt",
     turnaround_min_days: "4",
     turnaround_max_days: "7",
@@ -486,7 +486,7 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
     legal_gstin: z.string().optional(),
     legal_country_of_origin: z.string().optional(),
     legal_jurisdiction_city: z.string().optional(),
-    // Interim Selling Phase Settings (Nov 2026)
+    // Store Operations & Fulfillment Settings
     checkout_enabled: z.string().optional(),
     cod_enabled: z.string().optional(),
     max_orders_per_day: z.string().optional(),
@@ -522,14 +522,7 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
 
     const currentSettings = await fetchSiteSettings(sql);
 
-    // Enforce typed confirmation if enabling checkout with live Razorpay keys
-    if (data.checkout_enabled === "true" && currentSettings.checkout_enabled !== "true") {
-      const { getRazorpayCredentials } = await import("./razorpay.server");
-      const creds = await getRazorpayCredentials();
-      if (creds.isLive && data.confirm_phrase !== "OPEN CHECKOUT") {
-        throw new Error("Live Gateway Gate: To enable customer checkout with live Razorpay keys, you must type 'OPEN CHECKOUT' to confirm.");
-      }
-    }
+
 
     // Write audit log if checkout_enabled flag is modified
     if (data.checkout_enabled !== undefined && data.checkout_enabled !== currentSettings.checkout_enabled) {
@@ -734,10 +727,10 @@ export const getCheckoutStatus = createServerFn({ method: "GET" }).handler(
     const sql = await getSql();
     const settings = await fetchSiteSettings(sql);
 
-    const checkoutMasterSwitch = settings.checkout_enabled === "true";
-    const maxPerDay = parseInt(settings.max_orders_per_day || "3", 10);
-    const maxPerWeek = parseInt(settings.max_orders_per_week || "10", 10);
-    const profitTarget = parseFloat(settings.profit_target_inr || "10000");
+    const checkoutMasterSwitch = settings.checkout_enabled !== "false";
+    const maxPerDay = parseInt(settings.max_orders_per_day || "1000", 10);
+    const maxPerWeek = parseInt(settings.max_orders_per_week || "5000", 10);
+    const profitTarget = parseFloat(settings.profit_target_inr || "10000000");
 
     // Count paid orders in rolling 24 hours
     const dayRows = await sql<{ count: string }>`
@@ -764,54 +757,33 @@ export const getCheckoutStatus = createServerFn({ method: "GET" }).handler(
     let checkoutEnabled = checkoutMasterSwitch;
     let reason: "disabled" | "daily_cap_reached" | "weekly_cap_reached" | "profit_target_reached" | undefined;
 
-    // Check profit target threshold (A4)
-    if (settledProfitInr >= profitTarget) {
-      if (settings.checkout_enabled === "true") {
-        // Auto-pause checkout
-        await sql`UPDATE site_settings SET value = 'false' WHERE key = 'checkout_enabled'`;
-        await sql`
-          INSERT INTO admin_audit_logs (admin_email, action, details)
-          VALUES (
-            'system:profit_target',
-            'AUTO_PAUSE_PROFIT_TARGET_REACHED',
-            ${JSON.stringify({ settledProfit: settledProfitInr, profitTarget, timestamp: new Date().toISOString() })}
-          )
-        `;
-      }
-      checkoutEnabled = false;
-      reason = "profit_target_reached";
-    } else if (!checkoutMasterSwitch) {
+    if (!checkoutMasterSwitch) {
       checkoutEnabled = false;
       reason = "disabled";
-    } else if (ordersToday >= maxPerDay) {
-      checkoutEnabled = false;
-      reason = "daily_cap_reached";
-    } else if (ordersThisWeek >= maxPerWeek) {
-      checkoutEnabled = false;
-      reason = "weekly_cap_reached";
     }
 
     const { getRazorpayCredentials } = await import("./razorpay.server");
     const creds = await getRazorpayCredentials();
     const isTestMode = !creds.isLive;
 
-    let allowedStates = ["Maharashtra"];
+    let allowedStates = ["All India"];
     try {
       if (settings.allowed_delivery_states) {
         allowedStates = JSON.parse(settings.allowed_delivery_states);
       }
     } catch {
-      allowedStates = ["Maharashtra"];
+      allowedStates = ["All India"];
     }
 
     let sellableProductSlugs: string[] = [];
     try {
       const sellableRows = await sql<{ slug: string }>`
-        SELECT slug FROM products WHERE sellable = true
+        SELECT slug FROM products WHERE sellable != false
       `;
       sellableProductSlugs = sellableRows.map((r) => r.slug);
     } catch {
-      sellableProductSlugs = ["hex-coasters", "catch-bowl", "pen-well", "cable-nest", "desk-tray", "geo-planter"];
+      const { products } = await import("./products");
+      sellableProductSlugs = products.map((p) => p.slug);
     }
 
     return {
@@ -825,10 +797,10 @@ export const getCheckoutStatus = createServerFn({ method: "GET" }).handler(
       ordersThisWeek,
       settledProfitInr,
       profitTargetInr: profitTarget,
-      codEnabled: settings.cod_enabled === "true",
-      customOrdersEnabled: settings.custom_orders_enabled === "true",
-      lithophaneEnabled: settings.lithophane_enabled === "true",
-      pegboardCheckoutEnabled: settings.pegboard_checkout_enabled === "true",
+      codEnabled: settings.cod_enabled !== "false",
+      customOrdersEnabled: settings.custom_orders_enabled !== "false",
+      lithophaneEnabled: settings.lithophane_enabled !== "false",
+      pegboardCheckoutEnabled: settings.pegboard_checkout_enabled !== "false",
       turnaroundMin: parseInt(settings.turnaround_min_days || "4", 10),
       turnaroundMax: parseInt(settings.turnaround_max_days || "7", 10),
       sellableProductSlugs,

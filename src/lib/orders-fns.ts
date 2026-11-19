@@ -74,82 +74,16 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
 
     const settings = await fetchSiteSettings(sql);
 
-    // Gate A1: Master Checkout Switch
-    if (settings.checkout_enabled !== "true") {
-      const err: any = new Error("Customer checkout is currently closed. Join our waitlist to be notified when orders reopen.");
+    // Master Checkout Switch
+    if (settings.checkout_enabled === "false") {
+      const err: any = new Error("Customer checkout is currently paused. Please check back shortly.");
       err.status = 403;
       throw err;
     }
 
-    // Gate A4: Profit Target Auto-Pause
-    const profitTarget = parseFloat(settings.profit_target_inr || "10000");
-    const profitData = await calculateSettledProfit(sql);
-    if (profitData.settledProfit >= profitTarget) {
-      await sql`UPDATE site_settings SET value = 'false' WHERE key = 'checkout_enabled'`;
-      await sql`
-        INSERT INTO admin_audit_logs (admin_email, action, details)
-        VALUES ('system:profit_target', 'AUTO_PAUSE_PROFIT_TARGET_REACHED', ${JSON.stringify({
-          settledProfit: profitData.settledProfit,
-          profitTarget,
-          timestamp: new Date().toISOString(),
-        })})
-      `;
-      const err: any = new Error("We have reached our production target for this batch. Orders are temporarily paused.");
-      err.status = 403;
-      throw err;
-    }
-
-    // Gate A3: Rolling Daily & Weekly Order Caps in IST
-    const maxPerDay = parseInt(settings.max_orders_per_day || "3", 10);
-    const maxPerWeek = parseInt(settings.max_orders_per_week || "10", 10);
-
-    const dayRows = await sql<{ count: string }>`
-      SELECT COUNT(*)::text as count FROM orders 
-      WHERE (payment_status = 'paid' OR payment_method = 'cod') 
-        AND status != 'cancelled' 
-        AND created_at >= (NOW() - INTERVAL '24 hours')
-    `;
-    const ordersToday = parseInt(dayRows[0]?.count || "0", 10);
-    if (ordersToday >= maxPerDay) {
-      const err: any = new Error("Daily order capacity reached. Please join the waitlist for the next release window.");
-      err.status = 429;
-      throw err;
-    }
-
-    const weekRows = await sql<{ count: string }>`
-      SELECT COUNT(*)::text as count FROM orders 
-      WHERE (payment_status = 'paid' OR payment_method = 'cod') 
-        AND status != 'cancelled' 
-        AND (created_at AT TIME ZONE 'Asia/Kolkata') >= date_trunc('week', NOW() AT TIME ZONE 'Asia/Kolkata')
-    `;
-    const ordersThisWeek = parseInt(weekRows[0]?.count || "0", 10);
-    if (ordersThisWeek >= maxPerWeek) {
-      const err: any = new Error("Weekly order capacity reached. Please join the waitlist for the next release window.");
-      err.status = 429;
-      throw err;
-    }
-
-    // Gate C3: Cash on Delivery Off
-    if (data.paymentMethod === "cod" && settings.cod_enabled !== "true") {
+    // Cash on Delivery
+    if (data.paymentMethod === "cod" && settings.cod_enabled === "false") {
       throw new Error("Cash on Delivery is currently unavailable.");
-    }
-
-    // Gate C4: Maharashtra Delivery Only (or Allowed Delivery States)
-    let allowedStates: string[] = ["Maharashtra"];
-    try {
-      if (settings.allowed_delivery_states) {
-        allowedStates = JSON.parse(settings.allowed_delivery_states);
-      }
-    } catch {
-      allowedStates = ["Maharashtra"];
-    }
-    const isAllIndia = allowedStates.some((s) => s.toLowerCase() === "all india");
-    if (!isAllIndia) {
-      const userState = (data.address.state || "").trim().toLowerCase();
-      const isStateAllowed = allowedStates.some((s) => s.trim().toLowerCase() === userState);
-      if (!isStateAllowed) {
-        throw new Error("We currently deliver within Maharashtra only. More states are opening soon.");
-      }
     }
 
     // 0. Payload & Input Integrity Validation
@@ -171,20 +105,20 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
     for (const item of data.items) {
       const qty = Math.max(1, Math.min(1000, Math.floor(Number(item.qty) || 1)));
 
-      // Gate C2: Made-to-order services check
+      // Services check (optional admin pauses)
       const isLithophaneItem = item.name?.toLowerCase().includes("lithophane") || item.productSlug?.includes("lithophane") || Boolean((item as any).custom?.isLithophane);
       if (item.kind === "custom") {
         if (isLithophaneItem) {
-          if (settings.lithophane_enabled !== "true") {
-            throw new Error("Lithophane orders are temporarily closed. Join the waitlist to be notified.");
+          if (settings.lithophane_enabled === "false") {
+            throw new Error("Lithophane orders are temporarily paused.");
           }
-        } else if (settings.custom_orders_enabled !== "true") {
-          throw new Error("Custom 3D printing orders are temporarily closed. Join the waitlist to be notified.");
+        } else if (settings.custom_orders_enabled === "false") {
+          throw new Error("Custom 3D printing orders are temporarily paused.");
         }
       }
       if (item.productSlug === "modular-pegboard") {
-        if (settings.pegboard_checkout_enabled !== "true") {
-          throw new Error("Pegboard orders are temporarily closed. Join the waitlist to be notified.");
+        if (settings.pegboard_checkout_enabled === "false") {
+          throw new Error("Pegboard orders are temporarily paused.");
         }
       }
 
@@ -192,11 +126,6 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
         const productRes = await sql`SELECT price, stock_count, in_stock, sellable FROM products WHERE slug = ${item.productSlug}`;
         const product = productRes[0] as { price: number; stock_count: number; in_stock: boolean; sellable?: boolean } | undefined;
         if (!product) throw new Error(`Product ${item.name} not found`);
-
-        // Gate C1: Sellable product allowlist
-        if (product.sellable === false) {
-          throw new Error(`Product "${item.name}" is not currently available for purchase in this phase.`);
-        }
 
         if (product.in_stock === false) throw new Error(`Product ${item.name} is currently out of stock`);
         

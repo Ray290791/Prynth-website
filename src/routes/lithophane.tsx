@@ -166,7 +166,7 @@ function LithophaneStudioPage() {
 
   // Dynamic pricing loaded from Admin Site Settings
   const { settings } = rootRoute.useLoaderData();
-  const isLithophaneEnabled = settings?.lithophane_enabled === "true";
+  const isLithophaneEnabled = settings?.lithophane_enabled !== "false";
 
   const priceMedium = Number(settings?.lithophane_price_medium || "399");
   const priceStandard = Number(settings?.lithophane_price_standard || "549");
