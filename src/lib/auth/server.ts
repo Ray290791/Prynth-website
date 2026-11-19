@@ -79,7 +79,11 @@ function initAuth() {
     database,
     trustedOrigins,
 
-    session: { cookieCache: { enabled: false, maxAge: 300 } },
+    session: {
+      expiresIn: 30 * 24 * 60 * 60, // 30-day persistent session
+      updateAge: 24 * 60 * 60, // Refresh sliding window daily
+      cookieCache: { enabled: false, maxAge: 300 },
+    },
 
     ...(emailAndPasswordEnabled ? { emailAndPassword: { enabled: true } } : {}),
 
@@ -92,11 +96,16 @@ function initAuth() {
 
     advanced: {
       useSecureCookies: isProd || isCloudflare,
+      crossSubDomainCookies: {
+        enabled: isProd || isCloudflare,
+        domain: ".prynth.in",
+      },
       defaultCookieAttributes: {
         secure: isProd || isCloudflare,
         httpOnly: true,
         sameSite: "lax",
         path: "/",
+        maxAge: 30 * 24 * 60 * 60,
       },
       cookies: {
         session_token: { name: SESSION_TOKEN_COOKIE },

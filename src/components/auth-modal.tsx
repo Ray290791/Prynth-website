@@ -43,6 +43,7 @@ export function AuthModal({
       const { error } = await authClient.signIn.email({
         email,
         password,
+        rememberMe: true,
       });
       if (error) {
         toast.error(error.message || "Invalid email or password");

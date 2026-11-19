@@ -6,7 +6,7 @@ import { getSiteSettings } from "@/lib/settings-fns";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatINR } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
-import { useCurrentUser } from "@/lib/auth/use-current-user";
+import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -32,7 +32,7 @@ export const Route = createFileRoute("/profile")({
 });
 
 function ProfilePage() {
-  const user = useCurrentUser();
+  const { user, isPending } = useCurrentUserState();
   const { isAdmin } = useIsAdmin();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState("");
@@ -94,7 +94,38 @@ function ProfilePage() {
     queryFn: () => getSiteSettings(),
   });
 
-  if (!user) return <div className="p-8 text-center">Please log in to view your profile.</div>;
+  if (isPending) {
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-24 text-center">
+        <div className="inline-flex size-10 animate-spin items-center justify-center rounded-full border-2 border-accent border-t-transparent" />
+        <p className="mt-4 text-sm text-muted font-medium">Loading your profile...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="mx-auto max-w-md px-4 py-24 text-center space-y-4">
+        <div className="inline-flex size-14 items-center justify-center rounded-2xl bg-surface-2 border border-border text-accent">
+          <Shield className="size-7" />
+        </div>
+        <h1 className="font-display text-2xl sm:text-3xl font-bold text-fg">
+          Sign In Required
+        </h1>
+        <p className="text-sm text-muted leading-relaxed">
+          Please sign in to view your orders, addresses, and account dashboard.
+        </p>
+        <div className="pt-2 flex justify-center">
+          <Link
+            to="/"
+            className="inline-flex h-11 items-center px-6 rounded-xl bg-accent text-ink font-semibold shadow-xs hover:brightness-110 transition-all text-sm"
+          >
+            Back to Home
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-16">

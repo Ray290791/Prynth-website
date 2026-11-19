@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { getWishlist, toggleWishlist } from "@/lib/ecommerce-fns";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatINR } from "@/lib/format";
-import { useCurrentUser } from "@/lib/auth/use-current-user";
+import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/wishlist")({
@@ -20,7 +20,7 @@ export const Route = createFileRoute("/wishlist")({
 });
 
 function WishlistPage() {
-  const user = useCurrentUser();
+  const { user, isPending } = useCurrentUserState();
   const queryClient = useQueryClient();
 
   const { data: wishlist, isLoading } = useQuery({
@@ -35,6 +35,15 @@ function WishlistPage() {
       queryClient.invalidateQueries({ queryKey: ["wishlist"] });
     },
   });
+
+  if (isPending) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-16 text-center">
+        <div className="inline-flex size-10 animate-spin items-center justify-center rounded-full border-2 border-accent border-t-transparent" />
+        <p className="mt-4 text-sm text-muted font-medium">Loading your wishlist...</p>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
