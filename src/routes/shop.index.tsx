@@ -46,10 +46,37 @@ function ShopPage() {
   const { settings } = rootRoute.useLoaderData();
   
   const categories = useMemo(() => {
-    const raw = (settings?.product_categories || "Desk, Home, Bath").split(",").map(s => s.trim());
-    const mapped = raw.map(c => ({ id: c.toLowerCase() as Category, label: c }));
+    const catMap = new Map<string, string>(); // lowercase -> display label
+
+    // 1. From settings
+    const raw = (settings?.product_categories || "Desk, Home, Bath")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    for (const c of raw) {
+      if (!catMap.has(c.toLowerCase())) {
+        catMap.set(c.toLowerCase(), c);
+      }
+    }
+
+    // 2. From loaded products (ensures newly created categories immediately appear in filters)
+    for (const p of products) {
+      const pCats = p.categories && p.categories.length > 0 ? p.categories : (p.category ? [p.category] : []);
+      for (const c of pCats) {
+        if (c?.trim() && !catMap.has(c.trim().toLowerCase())) {
+          const formatted = c
+            .trim()
+            .split(/\s+/)
+            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+            .join(" ");
+          catMap.set(c.trim().toLowerCase(), formatted);
+        }
+      }
+    }
+
+    const mapped = Array.from(catMap.entries()).map(([id, label]) => ({ id: id as Category, label }));
     return [{ id: "all" as const, label: "All products" }, ...mapped];
-  }, [settings]);
+  }, [settings, products]);
 
   const [category, setCategory] = useState<"all" | Category>("all");
   const [query, setQuery] = useState("");

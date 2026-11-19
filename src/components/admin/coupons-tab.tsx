@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { formatINR } from "@/lib/format";
 import { getCouponsAdmin, createCoupon, deleteCoupon } from "@/lib/ecommerce-fns";
 import { Plus, Trash2, X, Tag } from "lucide-react";
+import { ModalPortal } from "@/components/ui/modal-portal";
 
 export function CouponsTab() {
   const queryClient = useQueryClient();
@@ -111,8 +112,9 @@ function CouponModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-surface border border-border rounded-xl shadow-xl w-full max-w-md flex flex-col overflow-hidden">
+    <ModalPortal isOpen={isOpen}>
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+        <div className="bg-surface border border-border rounded-xl shadow-xl w-full max-w-md flex flex-col overflow-hidden">
         <div className="flex items-center justify-between border-b border-border p-6 bg-surface shrink-0">
           <h2 className="text-xl font-bold">Add Coupon</h2>
           <button onClick={onClose} className="rounded-full p-2 hover:bg-surface-2 transition-colors text-muted hover:text-ink">
@@ -156,6 +158,7 @@ function CouponModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }
 

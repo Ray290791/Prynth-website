@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { ModalPortal } from "@/components/ui/modal-portal";
 import { replyToTicketAdmin, type Ticket } from "@/lib/contact-fns";
 import { generateQuoteEmailFullHtml } from "@/lib/quote-email-formatter";
 
@@ -156,11 +157,12 @@ https://prynth.in | orders@prynth.in`;
   if (!isOpen) return null;
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="fixed inset-0 z-60 flex items-center justify-center bg-black/80 p-3 sm:p-6 backdrop-blur-md overflow-y-auto animate-in fade-in"
-    >
+    <ModalPortal isOpen={isOpen}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/85 p-3 sm:p-6 backdrop-blur-md overflow-y-auto animate-in fade-in"
+      >
       <div className="relative w-full max-w-3xl rounded-3xl border border-white/15 bg-surface shadow-2xl p-5 sm:p-7 space-y-5 text-fg my-auto max-h-[92vh] flex flex-col">
         {/* Header */}
         <div className="flex items-start justify-between border-b border-border/80 pb-4 shrink-0">
@@ -389,5 +391,6 @@ https://prynth.in | orders@prynth.in`;
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }

@@ -156,30 +156,87 @@ const SELECT_PRODUCTS_WITH_VARIANTS = `
   LEFT JOIN product_variants v ON p.slug = v.product_slug
 `;
 
-async function ensureCategoryExists(newCategories: string[], sql: any) {
-  if (!newCategories || newCategories.length === 0) return;
-  const rows = await sql<{ key: string; value: string }>`SELECT key, value FROM site_settings WHERE key = 'product_categories'`;
-  let currentStr = rows.length > 0 ? rows[0].value : "Desk, Home, Bath";
-  const existingCategories = currentStr.split(",").map((s: string) => s.trim().toLowerCase());
+export function formatCategoryName(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return "";
+  return trimmed
+    .split(/\s+/)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+export async function syncProductCategories(sql: any, additionalCategories: string[] = []): Promise<string> {
+  const settingsRows = await sql<{ key: string; value: string }>`
+    SELECT key, value FROM site_settings WHERE key = 'product_categories'
+  `;
+  const baseStr = settingsRows.length > 0 ? settingsRows[0].value : "Desk, Home, Bath";
   
-  let added = false;
-  for (const category of newCategories) {
-    if (!category) continue;
-    if (!existingCategories.includes(category.toLowerCase())) {
-      const formattedCategory = category.charAt(0).toUpperCase() + category.slice(1);
-      currentStr += `, ${formattedCategory}`;
-      existingCategories.push(category.toLowerCase());
-      added = true;
+  const categoryMap = new Map<string, string>(); // lowercase -> formatted label
+
+  // 1. Seed from current settings
+  baseStr
+    .split(",")
+    .map((s: string) => s.trim())
+    .filter(Boolean)
+    .forEach((cat: string) => {
+      const lower = cat.toLowerCase();
+      if (!categoryMap.has(lower)) {
+        categoryMap.set(lower, formatCategoryName(cat));
+      }
+    });
+
+  // 2. Scan all existing products in database for any assigned categories
+  try {
+    const productRows = await sql<{ category: string | null; categories: any }>`
+      SELECT category, categories FROM products
+    `;
+    for (const row of productRows) {
+      if (row.category?.trim()) {
+        const lower = row.category.trim().toLowerCase();
+        if (!categoryMap.has(lower)) {
+          categoryMap.set(lower, formatCategoryName(row.category));
+        }
+      }
+      if (Array.isArray(row.categories)) {
+        for (const c of row.categories) {
+          if (typeof c === "string" && c.trim()) {
+            const lower = c.trim().toLowerCase();
+            if (!categoryMap.has(lower)) {
+              categoryMap.set(lower, formatCategoryName(c));
+            }
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("[products-fns] Could not harvest categories from products table:", err);
+  }
+
+  // 3. Add any newly submitted categories
+  for (const c of additionalCategories) {
+    if (typeof c === "string" && c.trim()) {
+      const lower = c.trim().toLowerCase();
+      if (!categoryMap.has(lower)) {
+        categoryMap.set(lower, formatCategoryName(c));
+      }
     }
   }
 
-  if (added) {
-    if (rows.length > 0) {
-      await sql`UPDATE site_settings SET value = ${currentStr} WHERE key = 'product_categories'`;
-    } else {
-      await sql`INSERT INTO site_settings (key, value) VALUES ('product_categories', ${currentStr})`;
-    }
-  }
+  const updatedStr = Array.from(categoryMap.values()).join(", ");
+
+  // 4. Upsert into site_settings
+  await sql`
+    INSERT INTO site_settings (key, value)
+    VALUES ('product_categories', ${updatedStr})
+    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+  `;
+
+  return updatedStr;
+}
+
+async function ensureCategoryExists(newCategories: string[], sql: any) {
+  if (!newCategories || newCategories.length === 0) return;
+  await syncProductCategories(sql, newCategories);
 }
 
 export const getAllProductsAdmin = createServerFn({ method: "GET" })
@@ -192,6 +249,7 @@ export const getAllProductsAdmin = createServerFn({ method: "GET" })
     if (!admin) throw new Error("Unauthorized");
     
     await seedProductsIfEmpty();
+    await syncProductCategories(sql);
     const rows = await sql.query<any>(`${SELECT_PRODUCTS_WITH_VARIANTS} GROUP BY p.slug ORDER BY p.name ASC`);
     return rows.map(mapDbProduct);
   });

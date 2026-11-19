@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ModalPortal } from "@/components/ui/modal-portal";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
@@ -374,26 +375,28 @@ export function FilamentsTab() {
 
       {/* Delete Confirmation Dialog */}
       {deleteConfirmId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-2xl bg-surface p-6 shadow-2xl border border-border">
-            <h3 className="font-display text-lg font-bold text-fg">Delete Filament?</h3>
-            <p className="mt-2 text-sm text-muted">
-              Are you sure you want to remove this filament from your fleet? It will no longer be selectable on the custom order page.
-            </p>
-            <div className="mt-6 flex justify-end gap-3">
-              <Button variant="ghost" onClick={() => setDeleteConfirmId(null)}>
-                Cancel
-              </Button>
-              <Button
-                variant="danger"
-                onClick={() => deleteMutation.mutate({ data: { id: deleteConfirmId } })}
-                disabled={deleteMutation.isPending}
-              >
-                Delete
-              </Button>
+        <ModalPortal isOpen={!!deleteConfirmId}>
+          <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+            <div className="w-full max-w-sm rounded-2xl bg-surface p-6 shadow-2xl border border-border">
+              <h3 className="font-display text-lg font-bold text-fg">Delete Filament?</h3>
+              <p className="mt-2 text-sm text-muted">
+                Are you sure you want to remove this filament from your fleet? It will no longer be selectable on the custom order page.
+              </p>
+              <div className="mt-6 flex justify-end gap-3">
+                <Button variant="ghost" onClick={() => setDeleteConfirmId(null)}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="danger"
+                  onClick={() => deleteMutation.mutate({ data: { id: deleteConfirmId } })}
+                  disabled={deleteMutation.isPending}
+                >
+                  Delete
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
     </div>
   );
@@ -460,8 +463,9 @@ function FilamentModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 sm:p-6 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-150">
-      <div className="relative w-full max-w-lg max-h-[min(88vh,calc(100dvh-4rem))] flex flex-col rounded-2xl sm:rounded-3xl bg-surface shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 duration-200">
+    <ModalPortal isOpen={isOpen}>
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 p-4 sm:p-6 backdrop-blur-md overflow-y-auto animate-in fade-in duration-150">
+        <div className="relative w-full max-w-lg max-h-[min(88vh,calc(100dvh-4rem))] flex flex-col rounded-2xl sm:rounded-3xl bg-surface shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 duration-200">
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
           {/* Fixed Header */}
           <div className="shrink-0 flex items-start justify-between border-b border-border p-5 sm:p-6 bg-surface/90 backdrop-blur-xs">
@@ -621,5 +625,6 @@ function FilamentModal({
         </form>
       </div>
     </div>
+    </ModalPortal>
   );
 }

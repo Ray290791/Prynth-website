@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { X, ShieldAlert, Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ModalPortal } from "@/components/ui/modal-portal";
 
 export function PinConfirmModal({
   isOpen,
@@ -23,11 +24,8 @@ export function PinConfirmModal({
       inputRefs.current[0]?.focus();
     }, 100);
 
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     return () => {
       clearTimeout(timer);
-      document.body.style.overflow = prevOverflow;
     };
   }, [isOpen]);
 
@@ -78,9 +76,10 @@ export function PinConfirmModal({
   const isComplete = fullPin.length === 6;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 sm:p-6 backdrop-blur-md overflow-y-auto animate-in fade-in duration-150">
-      <div className="relative w-full max-w-sm rounded-2xl sm:rounded-3xl border border-border/80 bg-surface/95 backdrop-blur-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between border-b border-border/60 p-4 sm:p-5 bg-surface-2/30 shrink-0">
+    <ModalPortal isOpen={isOpen}>
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 p-4 sm:p-6 backdrop-blur-md overflow-y-auto animate-in fade-in duration-150">
+        <div className="relative w-full max-w-sm rounded-2xl sm:rounded-3xl border border-border/80 bg-surface/95 backdrop-blur-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="flex items-center justify-between border-b border-border/60 p-4 sm:p-5 bg-surface-2/30 shrink-0">
           <div className="flex items-center gap-2">
             <div className="size-8 rounded-lg bg-danger/10 text-danger flex items-center justify-center">
               <ShieldAlert className="size-4" />
@@ -164,6 +163,7 @@ export function PinConfirmModal({
         </div>
       </div>
     </div>
+  </ModalPortal>
   );
 }
 

@@ -5,6 +5,7 @@ import { formatINR } from "@/lib/format";
 import { getMaterialsAdmin, createMaterial, updateMaterial, deleteMaterial, type Material, type MaterialInput } from "@/lib/materials-fns";
 import { Plus, Edit2, Trash2, X, Layers, Eye, EyeOff } from "lucide-react";
 import { TagInput } from "@/components/admin/tag-input";
+import { ModalPortal } from "@/components/ui/modal-portal";
 
 export function MaterialsTab() {
   const queryClient = useQueryClient();
@@ -258,8 +259,9 @@ function MaterialModal({
   const COLOR_PRESETS = ["#00B8A9", "#3B82F6", "#F59E0B", "#EC4899", "#8B5CF6", "#10B981", "#EF4444", "#64748B"];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-surface/90 backdrop-blur-2xl border border-white/10 dark:border-white/5 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden my-auto animate-in zoom-in-95 duration-200">
+    <ModalPortal isOpen={true}>
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto">
+        <div className="bg-surface/90 backdrop-blur-2xl border border-white/10 dark:border-white/5 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden my-auto animate-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between border-b border-border/50 p-4 sm:p-5 bg-surface/50 shrink-0">
           <h2 className="text-lg font-bold text-fg">
             {material ? `Edit Material: ${material.name}` : "Add New Material"}
@@ -502,6 +504,7 @@ function MaterialModal({
         </form>
       </div>
     </div>
+    </ModalPortal>
   );
 }
 

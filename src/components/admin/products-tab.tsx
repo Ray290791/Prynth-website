@@ -5,10 +5,11 @@ import { formatINR } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Search, Plus, Edit2, Trash2, X, Eye, EyeOff, Package, Image as ImageIcon } from "lucide-react";
-import { getAllProductsAdmin, deleteProduct, updateProduct, createProduct, toggleProductSellableAdmin, updateProductCostAdmin } from "@/lib/products-fns";
+import { getAllProductsAdmin, deleteProduct, updateProduct, createProduct, toggleProductSellableAdmin, updateProductCostAdmin, formatCategoryName } from "@/lib/products-fns";
 import { getSiteSettings } from "@/lib/settings-fns";
 import type { Product, ProductImage } from "@/lib/products";
 import { TagInput } from "@/components/admin/tag-input";
+import { ModalPortal } from "@/components/ui/modal-portal";
 
 export function ProductsTable() {
   const queryClient = useQueryClient();
@@ -28,6 +29,7 @@ export function ProductsTable() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["adminProducts"] });
+      queryClient.invalidateQueries({ queryKey: ["siteSettings"] });
       queryClient.invalidateQueries({ queryKey: ["publicProducts"] });
       queryClient.invalidateQueries({ queryKey: ["featuredProducts"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
@@ -147,90 +149,30 @@ export function ProductsTable() {
 
       {/* Second Line of Verification: Admin PIN Product Deletion Modal */}
       {deletingProduct && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-in fade-in duration-150"
-          onClick={() => {
-            if (!deleteMutation.isPending) {
-              setDeletingProduct(null);
-              setDeletePin("");
-            }
-          }}
-        >
+        <ModalPortal isOpen={!!deletingProduct}>
           <div
-            className="relative w-full max-w-md rounded-2xl sm:rounded-3xl border border-danger/30 bg-surface p-6 shadow-2xl animate-in zoom-in-95 duration-200 cursor-default"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-150"
+            onClick={() => {
+              if (!deleteMutation.isPending) {
+                setDeletingProduct(null);
+                setDeletePin("");
+              }
+            }}
           >
-            <div className="flex items-start gap-3.5">
-              <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-danger/15 text-danger border border-danger/25">
-                <Trash2 className="size-5" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-fg">Delete Product</h3>
-                <p className="text-xs text-muted mt-1 leading-relaxed">
-                  Second line of verification required. Enter your 6-digit Admin PIN to permanently delete this item.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setDeletingProduct(null);
-                  setDeletePin("");
-                }}
-                disabled={deleteMutation.isPending}
-                className="text-muted hover:text-fg p-1 rounded-lg cursor-pointer"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
-
-            {/* Product Summary */}
-            <div className="my-4 p-3 rounded-xl bg-surface-2/60 border border-border flex items-center gap-3">
-              <img
-                src={deletingProduct.image}
-                alt={deletingProduct.name}
-                className="size-12 rounded-lg object-cover bg-surface shrink-0"
-              />
-              <div className="min-w-0 flex-1 text-xs">
-                <div className="font-semibold text-fg truncate">{deletingProduct.name}</div>
-                <div className="text-muted font-mono text-[11px] truncate">{deletingProduct.slug}</div>
-                <div className="text-accent font-medium mt-0.5">{formatINR(deletingProduct.price)}</div>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-600 dark:text-amber-400 mb-4 leading-relaxed">
-              <strong>Warning:</strong> This will permanently erase the product from all catalog listings, PostgreSQL database tables, customer wishlists, and reviews.
-            </div>
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (!deletePin || deletePin.length !== 6) {
-                  toast.error("Please enter your 6-digit Admin PIN");
-                  return;
-                }
-                deleteMutation.mutate({ slug: deletingProduct.slug, pin: deletePin });
-              }}
-              className="space-y-4"
+            <div
+              className="relative w-full max-w-md rounded-2xl sm:rounded-3xl border border-danger/30 bg-surface p-6 shadow-2xl animate-in zoom-in-95 duration-200 cursor-default"
+              onClick={(e) => e.stopPropagation()}
             >
-              <div>
-                <label className="block text-xs font-semibold text-fg mb-1.5">
-                  6-Digit Admin PIN
-                </label>
-                <input
-                  type="password"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  maxLength={6}
-                  value={deletePin}
-                  onChange={(e) => setDeletePin(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  placeholder="••••••"
-                  autoFocus
-                  required
-                  className="w-full text-center tracking-[0.5em] text-xl font-mono py-2.5 rounded-xl border border-border bg-surface-2 text-fg focus:border-danger focus:ring-1 focus:ring-danger outline-none transition-all"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2.5 pt-2">
+              <div className="flex items-start gap-3.5">
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-danger/15 text-danger border border-danger/25">
+                  <Trash2 className="size-5" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-fg">Delete Product</h3>
+                  <p className="text-xs text-muted mt-1 leading-relaxed">
+                    Second line of verification required. Enter your 6-digit Admin PIN to permanently delete this item.
+                  </p>
+                </div>
                 <button
                   type="button"
                   onClick={() => {
@@ -238,28 +180,91 @@ export function ProductsTable() {
                     setDeletePin("");
                   }}
                   disabled={deleteMutation.isPending}
-                  className="px-4 py-2 rounded-xl border border-border text-xs font-medium text-muted hover:text-fg hover:bg-surface-2 transition-colors cursor-pointer"
+                  className="text-muted hover:text-fg p-1 rounded-lg cursor-pointer"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={deletePin.length !== 6 || deleteMutation.isPending}
-                  className="px-4 py-2 rounded-xl bg-danger text-white text-xs font-semibold hover:bg-danger/90 disabled:opacity-50 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
-                >
-                  <Trash2 className="size-3.5" />
-                  <span>{deleteMutation.isPending ? "Verifying PIN & Deleting..." : "Permanently Delete"}</span>
+                  <X className="size-4" />
                 </button>
               </div>
-            </form>
+
+              {/* Product Summary */}
+              <div className="my-4 p-3 rounded-xl bg-surface-2/60 border border-border flex items-center gap-3">
+                <img
+                  src={deletingProduct.image}
+                  alt={deletingProduct.name}
+                  className="size-12 rounded-lg object-cover bg-surface shrink-0"
+                />
+                <div className="min-w-0 flex-1 text-xs">
+                  <div className="font-semibold text-fg truncate">{deletingProduct.name}</div>
+                  <div className="text-muted font-mono text-[11px] truncate">{deletingProduct.slug}</div>
+                  <div className="text-accent font-medium mt-0.5">{formatINR(deletingProduct.price)}</div>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-600 dark:text-amber-400 mb-4 leading-relaxed">
+                <strong>Warning:</strong> This will permanently erase the product from all catalog listings, PostgreSQL database tables, customer wishlists, and reviews.
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!deletePin || deletePin.length !== 6) {
+                    toast.error("Please enter your 6-digit Admin PIN");
+                    return;
+                  }
+                  deleteMutation.mutate({ slug: deletingProduct.slug, pin: deletePin });
+                }}
+                className="space-y-4"
+              >
+                <div>
+                  <label className="block text-xs font-semibold text-fg mb-1.5">
+                    6-Digit Admin PIN
+                  </label>
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={6}
+                    value={deletePin}
+                    onChange={(e) => setDeletePin(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    placeholder="••••••"
+                    autoFocus
+                    required
+                    className="w-full text-center tracking-[0.5em] text-xl font-mono py-2.5 rounded-xl border border-border bg-surface-2 text-fg focus:border-danger focus:ring-1 focus:ring-danger outline-none transition-all"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-2.5 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDeletingProduct(null);
+                      setDeletePin("");
+                    }}
+                    disabled={deleteMutation.isPending}
+                    className="px-4 py-2 rounded-xl border border-border text-xs font-medium text-muted hover:text-fg hover:bg-surface-2 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={deletePin.length !== 6 || deleteMutation.isPending}
+                    className="px-4 py-2 rounded-xl bg-danger text-white text-xs font-semibold hover:bg-danger/90 disabled:opacity-50 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <Trash2 className="size-3.5" />
+                    <span>{deleteMutation.isPending ? "Verifying PIN & Deleting..." : "Permanently Delete"}</span>
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
 
       <ProductModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         product={editingProduct}
+        allProducts={products || []}
       />
     </div>
   );
@@ -268,11 +273,13 @@ export function ProductsTable() {
 function ProductModal({
   product,
   isOpen,
-  onClose
+  onClose,
+  allProducts = [],
 }: {
-  product?: Product | null,
-  isOpen: boolean,
-  onClose: () => void
+  product?: Product | null;
+  isOpen: boolean;
+  onClose: () => void;
+  allProducts?: Product[];
 }) {
   const queryClient = useQueryClient();
   const [busy, setBusy] = useState(false);
@@ -287,9 +294,47 @@ function ProductModal({
     queryKey: ["siteSettings"],
     queryFn: () => getSiteSettings(),
   });
-  const categoriesList = settings?.product_categories
-    ? settings.product_categories.split(",").map((c: string) => c.trim())
-    : ["Desk", "Home", "Bath"];
+
+  // Dynamic category suggestions aggregated across site settings + all catalog products + current tags
+  const categoriesList = React.useMemo(() => {
+    const catMap = new Map<string, string>(); // lowercase -> display label
+
+    // 1. From settings
+    const fromSettings = (settings?.product_categories || "Desk, Home, Bath")
+      .split(",")
+      .map((c: string) => c.trim())
+      .filter(Boolean);
+    for (const c of fromSettings) {
+      if (!catMap.has(c.toLowerCase())) {
+        catMap.set(c.toLowerCase(), formatCategoryName(c));
+      }
+    }
+
+    // 2. From all products in catalog
+    if (Array.isArray(allProducts)) {
+      for (const p of allProducts) {
+        const pCats = Array.isArray(p.categories) && p.categories.length > 0
+          ? p.categories
+          : (p.category ? [p.category] : []);
+        for (const c of pCats) {
+          const trimmed = c?.trim();
+          if (trimmed && !catMap.has(trimmed.toLowerCase())) {
+            catMap.set(trimmed.toLowerCase(), formatCategoryName(trimmed));
+          }
+        }
+      }
+    }
+
+    // 3. From current product categories (so any newly added tag is immediately available)
+    for (const c of categories) {
+      const trimmed = c?.trim();
+      if (trimmed && !catMap.has(trimmed.toLowerCase())) {
+        catMap.set(trimmed.toLowerCase(), formatCategoryName(trimmed));
+      }
+    }
+
+    return Array.from(catMap.values()).sort((a, b) => a.localeCompare(b));
+  }, [settings?.product_categories, allProducts, categories]);
 
   // Reset states when product changes (e.g. opening different products)
   useEffect(() => {
@@ -311,6 +356,7 @@ function ProductModal({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["adminProducts"] });
+      queryClient.invalidateQueries({ queryKey: ["siteSettings"] });
       queryClient.invalidateQueries({ queryKey: ["publicProducts"] });
       queryClient.invalidateQueries({ queryKey: ["featuredProducts"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
@@ -321,26 +367,18 @@ function ProductModal({
     onSettled: () => setBusy(false)
   });
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prevOverflow;
-    };
-  }, [isOpen]);
-
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-150">
-      <div className="relative w-full max-w-2xl max-h-[min(88vh,calc(100dvh-4rem))] flex flex-col rounded-2xl sm:rounded-3xl border border-border bg-surface shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between border-b border-border/50 p-6 bg-transparent shrink-0">
-          <h2 className="text-xl font-bold">{product ? "Edit Product" : "Add Product"}</h2>
-          <button onClick={onClose} className="rounded-full p-2 hover:bg-surface-2 transition-colors text-muted hover:text-ink">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <ModalPortal isOpen={isOpen}>
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-150">
+        <div className="relative w-full max-w-2xl max-h-[min(88vh,calc(100dvh-4rem))] flex flex-col rounded-2xl sm:rounded-3xl border border-border bg-surface shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="flex items-center justify-between border-b border-border/50 p-6 bg-transparent shrink-0">
+            <h2 className="text-xl font-bold">{product ? "Edit Product" : "Add Product"}</h2>
+            <button onClick={onClose} className="rounded-full p-2 hover:bg-surface-2 transition-colors text-muted hover:text-ink cursor-pointer">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         <div className="p-6 overflow-y-auto">
           <form
             onSubmit={(e) => {
@@ -558,8 +596,8 @@ function ProductModal({
             </div>
 
             <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-border/50">
-              <button type="button" onClick={onClose} className="px-5 py-2.5 rounded-xl border border-border/50 bg-surface-2/30 hover:bg-surface-2/80 text-sm font-medium transition-colors">Cancel</button>
-              <button type="submit" disabled={busy} className="px-5 py-2.5 rounded-xl bg-accent text-ink hover:opacity-90 text-sm font-medium transition-opacity">
+              <button type="button" onClick={onClose} className="px-5 py-2.5 rounded-xl border border-border/50 bg-surface-2/30 hover:bg-surface-2/80 text-sm font-medium transition-colors cursor-pointer">Cancel</button>
+              <button type="submit" disabled={busy} className="px-5 py-2.5 rounded-xl bg-accent text-ink hover:opacity-90 text-sm font-medium transition-opacity cursor-pointer">
                 {busy ? "Saving..." : "Save Product"}
               </button>
             </div>
@@ -567,6 +605,7 @@ function ProductModal({
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }
 

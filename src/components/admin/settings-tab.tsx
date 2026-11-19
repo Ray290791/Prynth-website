@@ -9,6 +9,7 @@ import { getAdminSiteSettings, updateSiteSettings } from "@/lib/settings-fns";
 import { getAllProductsAdmin } from "@/lib/products-fns";
 import { triggerDatabaseMaintenance } from "@/lib/orders-fns";
 import { cn } from "@/lib/utils";
+import { ModalPortal } from "@/components/ui/modal-portal";
 import { Truck, Shield, AlertTriangle, CheckCircle2, Lock, Unlock, Power, Info, Sparkles } from "lucide-react";
 
 export function SettingsTab() {
@@ -300,8 +301,9 @@ export function SettingsTab() {
 
       {/* Confirmation Modal for Checkout Toggle */}
       {checkoutModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-150">
-          <div className="relative w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+        <ModalPortal isOpen={checkoutModalOpen}>
+          <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-150">
+            <div className="relative w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
             <div className="flex items-center gap-3">
               <div className={cn(
                 "p-2.5 rounded-xl",
@@ -386,6 +388,7 @@ export function SettingsTab() {
             </div>
           </div>
         </div>
+      </ModalPortal>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-12 max-w-3xl">
