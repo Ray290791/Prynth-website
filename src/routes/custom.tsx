@@ -197,7 +197,7 @@ function CustomPage() {
               type="button"
               onClick={() => switchTab("upload")}
               className={cn(
-                "rounded-2xl p-5 text-left shadow-[var(--shadow-border)] transition-shadow duration-150",
+                "rounded-2xl p-5 text-left shadow-[var(--shadow-border)] transition-all duration-200 tactile-btn cursor-pointer",
                 tab === "upload" ? "bg-accent-soft ring-2 ring-accent" : "bg-surface hover:shadow-[var(--shadow-border-hover)]",
               )}
             >
@@ -210,7 +210,7 @@ function CustomPage() {
               type="button"
               onClick={() => switchTab("idea")}
               className={cn(
-                "rounded-2xl p-5 text-left shadow-[var(--shadow-border)] transition-shadow duration-150",
+                "rounded-2xl p-5 text-left shadow-[var(--shadow-border)] transition-all duration-200 tactile-btn cursor-pointer",
                 tab === "idea" ? "bg-accent-soft ring-2 ring-accent" : "bg-surface hover:shadow-[var(--shadow-border-hover)]",
               )}
             >

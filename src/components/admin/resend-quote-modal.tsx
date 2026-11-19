@@ -163,7 +163,7 @@ https://prynth.in | orders@prynth.in`;
         aria-modal="true"
         className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/85 p-3 sm:p-6 backdrop-blur-md overflow-y-auto animate-in fade-in"
       >
-      <div className="relative w-full max-w-3xl rounded-3xl border border-white/15 bg-surface shadow-2xl p-5 sm:p-7 space-y-5 text-fg my-auto max-h-[92vh] flex flex-col">
+      <div className="relative w-full max-w-3xl rounded-3xl border border-glass-border-liquid bg-surface/95 backdrop-blur-2xl shadow-2xl p-5 sm:p-7 space-y-5 text-fg my-auto max-h-[92vh] flex flex-col">
         {/* Header */}
         <div className="flex items-start justify-between border-b border-border/80 pb-4 shrink-0">
           <div className="space-y-1">
@@ -185,7 +185,7 @@ https://prynth.in | orders@prynth.in`;
 
           <button
             onClick={onClose}
-            className="rounded-full p-1.5 text-muted hover:bg-surface-2 hover:text-fg transition-colors cursor-pointer"
+            className="rounded-full p-1.5 text-muted hover:bg-surface-2 hover:text-fg transition-colors cursor-pointer tactile-btn"
             aria-label="Close modal"
           >
             <X className="size-5" />
@@ -198,7 +198,7 @@ https://prynth.in | orders@prynth.in`;
             <button
               type="button"
               onClick={() => setActiveTab("compose")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all tactile-btn ${
                 activeTab === "compose"
                   ? "bg-accent text-ink shadow-xs"
                   : "text-muted hover:text-fg hover:bg-surface-2"
@@ -210,7 +210,7 @@ https://prynth.in | orders@prynth.in`;
             <button
               type="button"
               onClick={() => setActiveTab("preview")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all tactile-btn ${
                 activeTab === "preview"
                   ? "bg-accent text-ink shadow-xs"
                   : "text-muted hover:text-fg hover:bg-surface-2"
@@ -363,7 +363,7 @@ https://prynth.in | orders@prynth.in`;
               size="sm"
               onClick={onClose}
               disabled={sendMutation.isPending}
-              className="text-xs h-9 cursor-pointer"
+              className="text-xs h-9 cursor-pointer tactile-btn"
             >
               Cancel
             </Button>
@@ -373,7 +373,7 @@ https://prynth.in | orders@prynth.in`;
               size="sm"
               onClick={() => sendMutation.mutate()}
               disabled={sendMutation.isPending || !toEmail.trim() || !replyMessage.trim()}
-              className="h-9 text-xs px-4 gap-2 bg-accent text-ink font-semibold hover:opacity-90 cursor-pointer shadow-xs"
+              className="h-9 text-xs px-4 gap-2 bg-accent text-ink font-semibold hover:opacity-90 cursor-pointer shadow-xs tactile-btn"
             >
               {sendMutation.isPending ? (
                 <>

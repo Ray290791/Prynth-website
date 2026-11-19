@@ -153,7 +153,7 @@ function Home() {
           <div className="mx-auto max-w-6xl px-4 md:px-6">
             <Link
               to="/shop"
-              className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-surface/80 px-3.5 py-1 text-xs font-medium text-muted transition-colors hover:border-accent hover:text-fg shadow-2xs backdrop-blur-md"
+              className="inline-flex items-center gap-2 rounded-full border border-glass-border-liquid bg-surface/80 px-3.5 py-1 text-xs font-medium text-muted transition-all hover:border-accent hover:text-fg shadow-2xs backdrop-blur-md tactile-btn"
             >
               <Zap className="size-3 text-accent shrink-0" strokeWidth={2} />
               <span>{settings.promo_banner || `Free standard delivery across India on orders over ₹${settings.free_shipping_threshold || 399}`}</span>
@@ -165,12 +165,12 @@ function Home() {
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-8 md:grid-cols-12 md:px-6 md:py-14 lg:gap-14 lg:py-16">
           {/* Left: headline + concise value prop + clean CTAs */}
           <div className="relative z-10 md:col-span-6 lg:col-span-6 space-y-5">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface/70 border border-border/70 text-xs font-mono text-muted backdrop-blur-md">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-chip text-xs font-mono text-muted">
               <span className="size-2 rounded-full bg-accent animate-pulse" />
               <span>PRECISION 3D STUDIO · MUMBAI, INDIA</span>
             </div>
 
-            <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-fg leading-[1.08]">
+            <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-fg leading-[1.08] animate-in fade-in slide-in-from-bottom-2 duration-300">
               Precision 3D Fabrication.{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-900 via-zinc-800 to-[#007369] dark:from-white dark:via-zinc-200 dark:to-[#00b8a9] dark:drop-shadow-sm">
                 Built for Physical Reality.
@@ -189,15 +189,15 @@ function Home() {
                 "Bespoke CAD design, functional enclosures, and calibrated 3D printing. Engineered in Mumbai with 0.08mm micro-layer accuracy."}
             </p>
 
-            {/* Focused action buttons (Hick's Law: 1 Dominant Action + Clear Alternative) */}
+            {/* Focused action buttons with tactile physics */}
             <div className="flex flex-wrap items-center gap-3 pt-2">
-              <Button asChild size="lg" className="h-11 px-6 shadow-sm cursor-pointer bg-accent text-ink font-semibold hover:opacity-90">
+              <Button asChild size="lg" className="h-11 px-6 shadow-sm cursor-pointer bg-accent text-ink font-semibold hover:opacity-90 tactile-btn">
                 <Link to="/shop">
                   <span>Explore Catalog</span>
                   <ArrowRight className="size-4 ml-1.5" />
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="h-11 px-6 cursor-pointer border-border/80 hover:bg-surface-2 font-medium">
+              <Button asChild size="lg" variant="outline" className="h-11 px-6 cursor-pointer border-border/80 hover:bg-surface-2 font-medium tactile-btn">
                 <Link to="/custom">
                   <PenTool className="size-4 mr-1.5 text-accent" />
                   <span>Custom CAD / Printing</span>
@@ -231,7 +231,7 @@ function Home() {
                   to="/shop/$slug"
                   params={{ slug: p.slug }}
                   className={cn(
-                    "group relative overflow-hidden rounded-2xl border border-border/80 bg-surface/80 backdrop-blur-md transition-all duration-300 hover:border-accent/60 shadow-xs",
+                    "group relative overflow-hidden rounded-2xl border border-glass-border-liquid bg-surface/80 backdrop-blur-md transition-all duration-300 hover:border-accent/60 shadow-xs tactile-card",
                     i % 2 === 1 ? "sm:translate-y-4" : ""
                   )}
                 >
@@ -248,7 +248,7 @@ function Home() {
             </div>
 
             {/* Floating fleet badge */}
-            <div className="absolute -bottom-3 left-3 flex items-center gap-2 rounded-xl border border-border/80 bg-surface/90 px-3 py-1.5 shadow-md backdrop-blur-md">
+            <div className="absolute -bottom-3 left-3 flex items-center gap-2 rounded-xl liquid-glass-chip shadow-md">
               <span className="size-2 rounded-full bg-accent animate-pulse" />
               <span className="text-xs font-medium text-fg">Calibrated CoreXY</span>
             </div>

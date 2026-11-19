@@ -212,9 +212,9 @@ export function SiteHeader() {
   }, [open]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-glass-border bg-glass backdrop-blur-2xl backdrop-saturate-150 shadow-sm">
+    <header className="sticky top-0 z-40 border-b border-glass-border-liquid bg-glass/90 backdrop-blur-2xl backdrop-saturate-180 shadow-sm transition-colors duration-200">
       <div className="mx-auto flex h-14 sm:h-16 max-w-6xl items-center justify-between gap-2 sm:gap-4 px-4 sm:px-6 md:h-[4.25rem]">
-        <LogoLink className="shrink-0" />
+        <LogoLink className="shrink-0 tactile-btn" />
 
         <nav className="hidden items-center gap-1 md:flex" aria-label="Primary">
           {PRIMARY_NAV.map((item) => {
@@ -227,9 +227,9 @@ export function SiteHeader() {
                 key={item.to}
                 to={item.to}
                 className={cn(
-                  "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-150",
+                  "rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-150 tactile-btn",
                   active
-                    ? "text-fg font-semibold bg-surface-2/60"
+                    ? "text-fg font-semibold bg-surface-2/70 shadow-xs"
                     : "text-muted hover:bg-surface-2 hover:text-fg"
                 )}
               >
@@ -251,13 +251,13 @@ export function SiteHeader() {
           <Link
             to="/cart"
             aria-label={count ? `Cart, ${count} items` : "Cart"}
-            className="relative inline-flex size-9 sm:size-10 items-center justify-center rounded-xl text-fg transition-colors duration-150 hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 shrink-0"
+            className="relative inline-flex size-9 sm:size-10 items-center justify-center rounded-xl text-fg transition-colors duration-150 hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 shrink-0 tactile-btn"
           >
             <ShoppingBag className="size-4.5 sm:size-5" strokeWidth={1.75} aria-hidden="true" />
             <span className="sr-only">{count ? `Cart, ${count} items` : "Cart"}</span>
             {count > 0 ? (
               <span
-                className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 flex h-3.5 min-w-3.5 sm:h-4 sm:min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] sm:text-[10px] font-semibold text-ink tabular-nums"
+                className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 flex h-3.5 min-w-3.5 sm:h-4 sm:min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] sm:text-[10px] font-semibold text-ink tabular-nums animate-in zoom-in-75 duration-150"
                 aria-hidden="true"
               >
                 {count > 99 ? "99+" : count}

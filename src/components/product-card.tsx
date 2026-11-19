@@ -61,7 +61,7 @@ export function ProductCard({ product }: { product: Product }) {
   }
 
   return (
-    <article className="group flex flex-col hover-lift">
+    <article className="group flex flex-col tactile-card">
       <Link
         to="/shop/$slug"
         params={{ slug: product.slug }}
@@ -74,13 +74,13 @@ export function ProductCard({ product }: { product: Product }) {
           className="product-photo aspect-square w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]"
         />
         {product.badge ? (
-          <Badge className="absolute top-3 left-3 bg-glass text-fg backdrop-blur-2xl backdrop-saturate-150 border border-glass-border shadow-sm">
+          <span className="absolute top-3 left-3 liquid-glass-chip text-fg font-medium text-xs tracking-tight shadow-xs">
             {product.badge}
-          </Badge>
+          </span>
         ) : product.sellable === false ? (
-          <Badge className="absolute top-3 left-3 bg-surface/90 text-muted backdrop-blur-md border border-border shadow-2xs text-[11px]">
+          <span className="absolute top-3 left-3 liquid-glass-chip text-muted text-[11px] shadow-2xs">
             Waitlist
-          </Badge>
+          </span>
         ) : null}
       </Link>
       <div className="flex flex-1 flex-col gap-3 pt-4">
@@ -151,7 +151,7 @@ export function ProductCard({ product }: { product: Product }) {
           <Button
             variant="secondary"
             size="sm"
-            className="mt-auto w-full"
+            className="mt-auto w-full tactile-btn"
             onClick={addToCart}
           >
             <ShoppingBag className="size-4" strokeWidth={1.75} />

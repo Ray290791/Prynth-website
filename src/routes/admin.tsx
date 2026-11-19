@@ -48,6 +48,7 @@ import { TestimonialsTab } from "@/components/testimonials-tab";
 import { GalleryTab } from "@/components/gallery-tab";
 import { OrderDetailsDialog } from "@/components/order-details-dialog";
 import { PinConfirmModal } from "@/components/admin/pin-confirm-modal";
+import { LiquidGlass } from "@/components/ui/liquid-glass";
 import { ProductsTable } from "@/components/admin/products-tab";
 import { InventoryTable } from "@/components/admin/inventory-tab";
 import { SettingsTab } from "@/components/admin/settings-tab";
@@ -328,7 +329,7 @@ function AdminPage() {
                       key={item.id}
                       onClick={() => setActiveTab(item.id)}
                       className={cn(
-                        "flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium transition-all leading-none shrink-0 whitespace-nowrap cursor-pointer text-left w-full",
+                        "flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium transition-all leading-none shrink-0 whitespace-nowrap cursor-pointer text-left w-full tactile-btn",
                         isActive
                           ? "bg-accent text-ink font-semibold shadow-xs"
                           : "text-muted hover:bg-surface-2 hover:text-fg"
@@ -369,8 +370,8 @@ function AdminPage() {
 
       {/* Main Content */}
       <main className="flex-1 min-w-0">
-        {/* Executive Briefing Cockpit (Reel 2 & Reel 4) */}
-        <div className="mb-6 rounded-2xl border border-border/70 bg-surface/70 backdrop-blur-xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* Executive Briefing Cockpit (True Liquid Glass & Specular Rim) */}
+        <LiquidGlass className="mb-6 p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2.5 flex-wrap">
               <h2 className="text-lg sm:text-xl font-bold tracking-tight text-fg font-display">
@@ -391,7 +392,7 @@ function AdminPage() {
               variant="outline"
               onClick={() => setActiveTab("inquiries")}
               className={cn(
-                "h-8 text-xs px-3 gap-1.5 cursor-pointer rounded-lg font-medium",
+                "h-8 text-xs px-3 gap-1.5 cursor-pointer rounded-lg font-medium tactile-btn",
                 activeTab === "inquiries" ? "bg-accent text-ink font-semibold" : "bg-surface hover:bg-surface-2"
               )}
             >
@@ -403,7 +404,7 @@ function AdminPage() {
               variant="outline"
               onClick={() => setActiveTab("orders")}
               className={cn(
-                "h-8 text-xs px-3 gap-1.5 cursor-pointer rounded-lg font-medium",
+                "h-8 text-xs px-3 gap-1.5 cursor-pointer rounded-lg font-medium tactile-btn",
                 activeTab === "orders" ? "bg-accent text-ink font-semibold" : "bg-surface hover:bg-surface-2"
               )}
             >
@@ -411,7 +412,7 @@ function AdminPage() {
               <span>Orders {pendingOrdersCount > 0 ? `(${pendingOrdersCount})` : ""}</span>
             </Button>
           </div>
-        </div>
+        </LiquidGlass>
         {activeTab === "orders" && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">

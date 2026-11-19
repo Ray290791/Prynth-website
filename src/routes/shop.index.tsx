@@ -5,6 +5,7 @@ const rootRoute = getRouteApi("__root__");
 import { useMemo, useState } from "react";
 import { ProductCard } from "@/components/product-card";
 import { Input } from "@/components/ui/input";
+import { GlidingTabs } from "@/components/ui/gliding-tabs";
 import { type Category } from "@/lib/products";
 import { getProductsPublic } from "@/lib/products-fns";
 import { cn } from "@/lib/utils";
@@ -149,30 +150,19 @@ function ShopPage() {
       </div>
 
       <div className="mt-8 flex flex-col gap-3 md:flex-row md:items-center md:justify-between border-b border-border/60 pb-6">
-        <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Category">
-          {categories.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              role="tab"
-              aria-selected={category === c.id}
-              onClick={() => setCategory(c.id)}
-              className={cn(
-                "inline-flex h-9 items-center justify-center rounded-xl px-3.5 text-xs sm:text-sm font-medium transition-colors cursor-pointer",
-                category === c.id
-                  ? "bg-accent text-ink font-semibold shadow-xs"
-                  : "bg-surface-2/50 text-muted hover:bg-surface-2 hover:text-fg border border-border/60"
-              )}
-            >
-              {c.label}
-            </button>
-          ))}
-        </div>
+        <GlidingTabs
+          tabs={categories}
+          activeId={category}
+          onChange={(id) => setCategory(id as any)}
+          variant="pills"
+          size="md"
+          className="max-w-full"
+        />
         <div className="flex flex-col sm:flex-row gap-2 sm:items-center w-full md:w-auto">
           <select 
             value={sort} 
             onChange={(e) => setSort(e.target.value)}
-            className="h-9 w-full sm:w-auto rounded-xl border border-border bg-surface px-3 text-xs sm:text-sm text-fg shadow-2xs focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none cursor-pointer"
+            className="h-9 w-full sm:w-auto rounded-xl border border-border bg-surface px-3 text-xs sm:text-sm text-fg shadow-2xs focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none cursor-pointer tactile-btn"
             aria-label="Sort by"
           >
             <option value="featured">Featured</option>
@@ -185,7 +175,7 @@ function ShopPage() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search prints..."
             aria-label="Search prints"
-            className="w-full md:max-w-xs h-9 text-xs sm:text-sm rounded-xl"
+            className="w-full md:max-w-xs h-9 text-xs sm:text-sm rounded-xl tactile-input"
           />
         </div>
       </div>

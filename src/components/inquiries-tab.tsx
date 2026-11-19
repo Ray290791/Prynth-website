@@ -9,6 +9,7 @@ import {
 } from "@/lib/contact-fns";
 import { ResendQuoteModal } from "@/components/admin/resend-quote-modal";
 import { ModalPortal } from "@/components/ui/modal-portal";
+import { GlidingTabs } from "@/components/ui/gliding-tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -465,85 +466,21 @@ https://prynth.in | hello@prynth.in`;
       {/* Filter and Search Bar */}
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
         {/* Status Pipeline Tabs */}
-        <div className="flex items-center gap-1 p-1 bg-surface-2/60 rounded-xl border border-border/60 overflow-x-auto no-scrollbar max-w-full shrink-0">
-          <button
-            type="button"
-            onClick={() => setStatusFilter("all")}
-            className={cn(
-              "h-8 px-3 text-xs font-medium rounded-lg transition-colors cursor-pointer shrink-0 whitespace-nowrap",
-              statusFilter === "all"
-                ? "bg-surface text-fg shadow-xs border border-border/40 font-semibold"
-                : "text-muted hover:text-fg"
-            )}
-          >
-            All ({counts.total})
-          </button>
-          <button
-            type="button"
-            onClick={() => setStatusFilter("open")}
-            className={cn(
-              "h-8 px-3 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap",
-              statusFilter === "open"
-                ? "bg-surface text-fg shadow-xs border border-border/40 font-semibold"
-                : "text-muted hover:text-fg"
-            )}
-          >
-            <span className="size-2 rounded-full bg-amber-500" />
-            New ({counts.open})
-          </button>
-          <button
-            type="button"
-            onClick={() => setStatusFilter("discussion")}
-            className={cn(
-              "h-8 px-3 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap",
-              statusFilter === "discussion"
-                ? "bg-surface text-fg shadow-xs border border-border/40 font-semibold"
-                : "text-muted hover:text-fg"
-            )}
-          >
-            <span className="size-2 rounded-full bg-sky-500" />
-            In Discussion ({counts.discussion})
-          </button>
-          <button
-            type="button"
-            onClick={() => setStatusFilter("quoted")}
-            className={cn(
-              "h-8 px-3 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap",
-              statusFilter === "quoted"
-                ? "bg-surface text-fg shadow-xs border border-border/40 font-semibold"
-                : "text-muted hover:text-fg"
-            )}
-          >
-            <span className="size-2 rounded-full bg-purple-500" />
-            Quoted ({counts.quoted})
-          </button>
-          <button
-            type="button"
-            onClick={() => setStatusFilter("in_production")}
-            className={cn(
-              "h-8 px-3 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap",
-              statusFilter === "in_production"
-                ? "bg-surface text-fg shadow-xs border border-border/40 font-semibold"
-                : "text-muted hover:text-fg"
-            )}
-          >
-            <span className="size-2 rounded-full bg-cyan-500" />
-            In Production ({counts.in_production})
-          </button>
-          <button
-            type="button"
-            onClick={() => setStatusFilter("resolved")}
-            className={cn(
-              "h-8 px-3 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap",
-              statusFilter === "resolved"
-                ? "bg-surface text-fg shadow-xs border border-border/40 font-semibold"
-                : "text-muted hover:text-fg"
-            )}
-          >
-            <span className="size-2 rounded-full bg-emerald-500" />
-            Completed ({counts.resolved})
-          </button>
-        </div>
+        <GlidingTabs
+          tabs={[
+            { id: "all", label: `All (${counts.total})` },
+            { id: "open", label: `New (${counts.open})`, icon: <span className="size-2 rounded-full bg-amber-500" /> },
+            { id: "discussion", label: `In Discussion (${counts.discussion})`, icon: <span className="size-2 rounded-full bg-sky-500" /> },
+            { id: "quoted", label: `Quoted (${counts.quoted})`, icon: <span className="size-2 rounded-full bg-purple-500" /> },
+            { id: "in_production", label: `In Production (${counts.in_production})`, icon: <span className="size-2 rounded-full bg-cyan-500" /> },
+            { id: "resolved", label: `Completed (${counts.resolved})`, icon: <span className="size-2 rounded-full bg-emerald-500" /> },
+          ]}
+          activeId={statusFilter}
+          onChange={(id) => setStatusFilter(id)}
+          variant="pills"
+          size="sm"
+          className="max-w-full"
+        />
 
         {/* Search */}
         <div className="relative w-full lg:w-72 shrink-0">
@@ -552,7 +489,7 @@ https://prynth.in | hello@prynth.in`;
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name, email, keyword…"
-            className="pl-9 text-xs sm:text-sm h-8 bg-surface border-border/70"
+            className="pl-9 text-xs sm:text-sm h-8 bg-surface border-border/70 rounded-xl tactile-input"
           />
         </div>
       </div>
@@ -598,7 +535,7 @@ https://prynth.in | hello@prynth.in`;
               <div
                 key={ticket.id}
                 className={cn(
-                  "rounded-2xl border transition-all duration-200 overflow-hidden bg-surface shadow-xs",
+                  "rounded-2xl border transition-all duration-200 overflow-hidden bg-surface shadow-xs tactile-card",
                   ticket.status === "open"
                     ? "border-amber-500/30 hover:border-amber-500/50"
                     : ticket.status === "discussion"
@@ -697,7 +634,7 @@ https://prynth.in | hello@prynth.in`;
                       size="sm"
                       variant="outline"
                       onClick={() => handleOpenWhatsApp(ticket)}
-                      className="h-8 text-xs px-3 gap-1.5 cursor-pointer bg-emerald-600/10 hover:bg-emerald-600 text-emerald-700 dark:text-emerald-300 hover:text-white border-emerald-600/30 font-medium transition-all"
+                      className="h-8 text-xs px-3 gap-1.5 cursor-pointer bg-emerald-600/10 hover:bg-emerald-600 text-emerald-700 dark:text-emerald-300 hover:text-white border-emerald-600/30 font-medium transition-all tactile-btn"
                       title="Chat directly with customer on WhatsApp (Zero database storage)"
                     >
                       <MessageCircle className="size-3.5" />
@@ -708,7 +645,7 @@ https://prynth.in | hello@prynth.in`;
                     <Button
                       size="sm"
                       onClick={() => setResendModalTicket(ticket)}
-                      className="h-8 text-xs px-3.5 gap-1.5 cursor-pointer shadow-xs bg-accent text-ink hover:opacity-90 font-semibold transition-all"
+                      className="h-8 text-xs px-3.5 gap-1.5 cursor-pointer shadow-xs bg-accent text-ink hover:opacity-90 font-semibold transition-all tactile-btn"
                       title="Type your reply and send an official branded quote email from orders@prynth.in via Resend"
                     >
                       <Mail className="size-3.5" />
@@ -720,7 +657,7 @@ https://prynth.in | hello@prynth.in`;
                       size="sm"
                       variant="outline"
                       onClick={() => handleOpenGmail(ticket)}
-                      className="h-8 text-xs px-2.5 gap-1.5 cursor-pointer border-border/80 text-muted hover:text-fg hover:bg-surface-2 transition-all"
+                      className="h-8 text-xs px-2.5 gap-1.5 cursor-pointer border-border/80 text-muted hover:text-fg hover:bg-surface-2 transition-all tactile-btn"
                       title="Opens Gmail compose in a new tab with customer email, subject, and quote template pre-filled"
                     >
                       <ExternalLink className="size-3.5" />
@@ -732,7 +669,7 @@ https://prynth.in | hello@prynth.in`;
                       size="sm"
                       variant="outline"
                       onClick={() => handleCopyTemplate(ticket)}
-                      className="h-8 w-8 p-0 text-muted hover:text-fg cursor-pointer border border-border/60 hover:bg-surface-2 rounded-lg"
+                      className="h-8 w-8 p-0 text-muted hover:text-fg cursor-pointer border border-border/60 hover:bg-surface-2 rounded-lg tactile-btn"
                       title={copiedTicketId === ticket.id ? "Copied!" : "Copy quotation template to clipboard"}
                     >
                       {copiedTicketId === ticket.id ? (
