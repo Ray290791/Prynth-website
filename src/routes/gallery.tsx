@@ -17,6 +17,7 @@ import { getGalleryItems, type GalleryItem } from "@/lib/gallery-fns";
 import { TestimonialsSection } from "@/components/testimonials-carousel";
 import { WhatsAppInlineButton, buildWhatsAppUrl, getCleanWhatsAppNumber } from "@/components/whatsapp-support";
 import { getSiteSettings } from "@/lib/settings-fns";
+import { ModalPortal } from "@/components/ui/modal-portal";
 
 export const Route = createFileRoute("/gallery")({
   head: () => ({
@@ -240,46 +241,48 @@ function GalleryPage() {
 
       {/* LIGHTBOX MODAL */}
       {activeModalItem && activeModalItem.image_url && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          onClick={() => setActiveModalItem(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md animate-in fade-in duration-200"
-        >
+        <ModalPortal isOpen={Boolean(activeModalItem && activeModalItem.image_url)}>
           <div
-            onClick={(e) => e.stopPropagation()}
-            className="relative max-w-4xl max-h-[90vh] overflow-hidden rounded-3xl border border-white/20 bg-surface shadow-2xl flex flex-col"
+            role="dialog"
+            aria-modal="true"
+            onClick={() => setActiveModalItem(null)}
+            className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/85 p-4 backdrop-blur-md animate-in fade-in duration-200"
           >
-            <button
-              onClick={() => setActiveModalItem(null)}
-              className="absolute top-4 right-4 z-10 rounded-full bg-black/60 p-2 text-white hover:bg-black transition-colors"
-              aria-label="Close modal"
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="relative max-w-4xl max-h-[90vh] overflow-hidden rounded-3xl border border-white/20 bg-surface shadow-2xl flex flex-col"
             >
-              <X className="size-5" />
-            </button>
+              <button
+                onClick={() => setActiveModalItem(null)}
+                className="absolute top-4 right-4 z-10 rounded-full bg-black/60 p-2 text-white hover:bg-black transition-colors"
+                aria-label="Close modal"
+              >
+                <X className="size-5" />
+              </button>
 
-            <img
-              src={activeModalItem.image_url}
-              alt={activeModalItem.title}
-              className="max-h-[70vh] w-full object-contain bg-black/40"
-            />
+              <img
+                src={activeModalItem.image_url}
+                alt={activeModalItem.title}
+                className="max-h-[70vh] w-full object-contain bg-black/40"
+              />
 
-            <div className="p-5 sm:p-6 bg-surface">
-              <h3 className="font-display text-xl font-bold">{activeModalItem.title}</h3>
-              {activeModalItem.material && (
-                <p className="text-xs font-semibold text-accent mt-1 flex items-center gap-1">
-                  <Layers className="size-3.5" />
-                  <span>{activeModalItem.material}</span>
-                </p>
-              )}
-              {activeModalItem.caption && (
-                <p className="text-xs sm:text-sm text-muted mt-2 leading-relaxed">
-                  {activeModalItem.caption}
-                </p>
-              )}
+              <div className="p-5 sm:p-6 bg-surface">
+                <h3 className="font-display text-xl font-bold">{activeModalItem.title}</h3>
+                {activeModalItem.material && (
+                  <p className="text-xs font-semibold text-accent mt-1 flex items-center gap-1">
+                    <Layers className="size-3.5" />
+                    <span>{activeModalItem.material}</span>
+                  </p>
+                )}
+                {activeModalItem.caption && (
+                  <p className="text-xs sm:text-sm text-muted mt-2 leading-relaxed">
+                    {activeModalItem.caption}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
 
       {/* TESTIMONIALS SECTION AT BOTTOM */}

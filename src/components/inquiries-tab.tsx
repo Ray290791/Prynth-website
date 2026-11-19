@@ -8,6 +8,7 @@ import {
   type Ticket,
 } from "@/lib/contact-fns";
 import { ResendQuoteModal } from "@/components/admin/resend-quote-modal";
+import { ModalPortal } from "@/components/ui/modal-portal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -968,23 +969,25 @@ https://prynth.in | hello@prynth.in`;
 
       {/* Lightbox Photo Preview Modal */}
       {previewPhoto && (
-        <div
-          className="fixed inset-0 z-60 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md animate-in fade-in duration-200 cursor-pointer"
-          onClick={() => setPreviewPhoto(null)}
-        >
+        <ModalPortal isOpen={!!previewPhoto}>
           <div
-            className="relative max-h-[90vh] max-w-4xl overflow-hidden rounded-2xl bg-surface border border-border shadow-2xl cursor-default"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/85 p-4 backdrop-blur-md animate-in fade-in duration-200 cursor-pointer"
+            onClick={() => setPreviewPhoto(null)}
           >
-            <img src={previewPhoto} alt="Reference Preview" className="max-h-[80vh] w-auto object-contain" />
-            <div className="flex items-center justify-between p-3 border-t border-border bg-surface-2/60">
-              <span className="text-xs font-medium text-muted">Customer Reference Photo</span>
-              <Button size="sm" variant="outline" onClick={() => setPreviewPhoto(null)} className="text-xs h-8 cursor-pointer">
-                Close Preview
-              </Button>
+            <div
+              className="relative max-h-[90vh] max-w-4xl overflow-hidden rounded-2xl bg-surface border border-border shadow-2xl cursor-default"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img src={previewPhoto} alt="Reference Preview" className="max-h-[80vh] w-auto object-contain" />
+              <div className="flex items-center justify-between p-3 border-t border-border bg-surface-2/60">
+                <span className="text-xs font-medium text-muted">Customer Reference Photo</span>
+                <Button size="sm" variant="outline" onClick={() => setPreviewPhoto(null)} className="text-xs h-8 cursor-pointer">
+                  Close Preview
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
 
       {/* Resend Official Quotation Email Modal */}

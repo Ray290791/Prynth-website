@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FileText, Download, Printer, X, CheckCircle2, Building, ShieldCheck } from "lucide-react";
 import { formatINR } from "@/lib/format";
 import { Button } from "@/components/ui/button";
+import { ModalPortal } from "@/components/ui/modal-portal";
 
 export interface QuoteDetails {
   fileName?: string;
@@ -54,11 +55,12 @@ export function CommercialQuoteModal({
   const totalPrice = unitPrice * (quote.qty || 1);
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-6 backdrop-blur-md overflow-y-auto animate-in fade-in"
-    >
+    <ModalPortal isOpen={true}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 p-3 sm:p-6 backdrop-blur-md overflow-y-auto animate-in fade-in"
+      >
       <div className="relative w-full max-w-2xl rounded-3xl border border-white/20 bg-surface shadow-2xl p-6 sm:p-8 space-y-6 text-fg my-auto">
         {/* Header Actions */}
         <div className="flex items-center justify-between border-b border-border pb-4 print:hidden">
@@ -255,5 +257,6 @@ export function CommercialQuoteModal({
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }

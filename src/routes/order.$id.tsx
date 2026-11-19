@@ -16,6 +16,7 @@ import { createReview } from "@/lib/products-fns";
 import { useState } from "react";
 import { Star } from "lucide-react";
 import { toast } from "sonner";
+import { ModalPortal } from "@/components/ui/modal-portal";
 
 export const Route = createFileRoute("/order/$id")({
   head: ({ params }) => ({
@@ -364,40 +365,42 @@ function OrderPage() {
 
       {/* Review Dialog */}
       {reviewProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm print:hidden">
-          <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-xl relative">
-            <button 
-              onClick={() => setReviewProduct(null)}
-              className="absolute right-4 top-4 text-muted hover:text-foreground"
-            >
-              ✕
-            </button>
-            <h3 className="font-display text-xl font-semibold">Review {reviewProduct.name}</h3>
-            
-            <div className="mt-6 flex justify-center gap-2 text-brand">
-              {[1, 2, 3, 4, 5].map((s) => (
-                <button key={s} type="button" onClick={() => setRating(s)} className="hover:scale-110 transition-transform">
-                  <Star className="size-8" fill={s <= rating ? "currentColor" : "none"} strokeWidth={1.5} />
-                </button>
-              ))}
+        <ModalPortal isOpen={Boolean(reviewProduct)}>
+          <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 p-4 backdrop-blur-md print:hidden">
+            <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-xl relative">
+              <button 
+                onClick={() => setReviewProduct(null)}
+                className="absolute right-4 top-4 text-muted hover:text-foreground cursor-pointer"
+              >
+                ✕
+              </button>
+              <h3 className="font-display text-xl font-semibold">Review {reviewProduct.name}</h3>
+              
+              <div className="mt-6 flex justify-center gap-2 text-brand">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <button key={s} type="button" onClick={() => setRating(s)} className="hover:scale-110 transition-transform cursor-pointer">
+                    <Star className="size-8" fill={s <= rating ? "currentColor" : "none"} strokeWidth={1.5} />
+                  </button>
+                ))}
+              </div>
+
+              <textarea 
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="What did you think?"
+                className="mt-6 w-full rounded-lg border border-border bg-background p-3 text-sm placeholder:text-muted focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand min-h-[100px]"
+              />
+
+              <Button 
+                className="w-full mt-4 cursor-pointer" 
+                onClick={() => createReviewMutation.mutate({ data: { product_slug: reviewProduct.slug, rating, comment } })}
+                disabled={createReviewMutation.isPending}
+              >
+                {createReviewMutation.isPending ? "Submitting..." : "Submit Review"}
+              </Button>
             </div>
-
-            <textarea 
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              placeholder="What did you think?"
-              className="mt-6 w-full rounded-lg border border-border bg-background p-3 text-sm placeholder:text-muted focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand min-h-[100px]"
-            />
-
-            <Button 
-              className="w-full mt-4" 
-              onClick={() => createReviewMutation.mutate({ data: { product_slug: reviewProduct.slug, rating, comment } })}
-              disabled={createReviewMutation.isPending}
-            >
-              {createReviewMutation.isPending ? "Submitting..." : "Submit Review"}
-            </Button>
           </div>
-        </div>
+        </ModalPortal>
       )}
     </div>
   );

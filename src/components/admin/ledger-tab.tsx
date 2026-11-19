@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { ModalPortal } from "@/components/ui/modal-portal";
 import {
   getLaunchLedgerAdmin,
   toggleOrderSettledAdmin,
@@ -463,64 +464,66 @@ export function LaunchLedgerTab() {
 
       {/* Add Adjustment Modal */}
       {isAdjModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-150">
-          <div className="relative w-full max-w-sm rounded-2xl border border-border bg-surface p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
-            <h3 className="text-base font-bold text-fg">Record Reprint or Defect Adjustment</h3>
-            <p className="text-xs text-muted">
-              Deducts materials, replacement courier, or disposal costs directly from settled profit.
-            </p>
-            <div className="space-y-3">
-              <div>
-                <Label htmlFor="adj-reason" className="text-xs">Reason for Adjustment *</Label>
-                <Input
-                  id="adj-reason"
-                  value={adjReason}
-                  onChange={(e) => setAdjReason(e.target.value)}
-                  placeholder="e.g. Hex Coasters reprint - bed adhesion failure"
-                  className="h-9 text-xs mt-1"
-                />
+        <ModalPortal isOpen={isAdjModalOpen}>
+          <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-150">
+            <div className="relative w-full max-w-sm rounded-2xl border border-border bg-surface p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+              <h3 className="text-base font-bold text-fg">Record Reprint or Defect Adjustment</h3>
+              <p className="text-xs text-muted">
+                Deducts materials, replacement courier, or disposal costs directly from settled profit.
+              </p>
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="adj-reason" className="text-xs">Reason for Adjustment *</Label>
+                  <Input
+                    id="adj-reason"
+                    value={adjReason}
+                    onChange={(e) => setAdjReason(e.target.value)}
+                    placeholder="e.g. Hex Coasters reprint - bed adhesion failure"
+                    className="h-9 text-xs mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="adj-amount" className="text-xs">Amount to Deduct (₹) *</Label>
+                  <Input
+                    id="adj-amount"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={adjAmount}
+                    onChange={(e) => setAdjAmount(e.target.value)}
+                    placeholder="e.g. 150"
+                    className="h-9 text-xs mt-1 font-mono"
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="adj-amount" className="text-xs">Amount to Deduct (₹) *</Label>
-                <Input
-                  id="adj-amount"
-                  type="number"
-                  min="1"
-                  step="1"
-                  value={adjAmount}
-                  onChange={(e) => setAdjAmount(e.target.value)}
-                  placeholder="e.g. 150"
-                  className="h-9 text-xs mt-1 font-mono"
-                />
+              <div className="flex gap-2 justify-end pt-2 border-t border-border">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsAdjModalOpen(false)}
+                  className="text-xs"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    const amt = parseFloat(adjAmount);
+                    if (!adjReason.trim() || isNaN(amt) || amt <= 0) {
+                      toast.error("Please provide a valid reason and amount");
+                      return;
+                    }
+                    addAdjMutation.mutate({ reason: adjReason.trim(), amount_inr: amt });
+                  }}
+                  disabled={addAdjMutation.isPending || !adjReason.trim() || !adjAmount}
+                  className="text-xs bg-accent text-ink hover:opacity-90 font-semibold"
+                >
+                  {addAdjMutation.isPending ? "Saving..." : "Add to Ledger"}
+                </Button>
               </div>
-            </div>
-            <div className="flex gap-2 justify-end pt-2 border-t border-border">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsAdjModalOpen(false)}
-                className="text-xs"
-              >
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => {
-                  const amt = parseFloat(adjAmount);
-                  if (!adjReason.trim() || isNaN(amt) || amt <= 0) {
-                    toast.error("Please provide a valid reason and amount");
-                    return;
-                  }
-                  addAdjMutation.mutate({ reason: adjReason.trim(), amount_inr: amt });
-                }}
-                disabled={addAdjMutation.isPending || !adjReason.trim() || !adjAmount}
-                className="text-xs bg-accent text-ink hover:opacity-90 font-semibold"
-              >
-                {addAdjMutation.isPending ? "Saving..." : "Add to Ledger"}
-              </Button>
             </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
     </div>
   );
