@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { GlidingTabs } from "@/components/ui/gliding-tabs";
 import { type Category } from "@/lib/products";
 import { getProductsPublic } from "@/lib/products-fns";
-import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/shop/")({
   loader: async () => await getProductsPublic(),

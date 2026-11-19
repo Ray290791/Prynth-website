@@ -1,6 +1,6 @@
 import { createFileRoute, Link, getRouteApi } from "@tanstack/react-router";
 import { generateBreadcrumbJsonLd } from "@/lib/jsonld";
-import { Truck, Clock, ShieldCheck, Box, Zap, MapPin, ArrowRight } from "lucide-react";
+import { Truck, Clock, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatINR } from "@/lib/format";
 

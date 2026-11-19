@@ -8,7 +8,9 @@ import pg from "pg";
 
 try {
   dns.setServers(["8.8.8.8", "1.1.1.1"]);
-} catch {}
+} catch {
+  // Ignore DNS override errors on restricted environments
+}
 
 let databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl && existsSync(".env")) {

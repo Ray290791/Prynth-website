@@ -63,7 +63,9 @@ async function main() {
     if (ips && ips.length > 0) {
       host = ips[0];
     }
-  } catch {}
+  } catch {
+    // DNS resolution fallback: proceed with host name directly
+  }
 
   const pool = new pg.Pool({
     user: decodeURIComponent(urlObj.username),

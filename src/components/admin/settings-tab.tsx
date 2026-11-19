@@ -10,7 +10,7 @@ import { getAllProductsAdmin } from "@/lib/products-fns";
 import { triggerDatabaseMaintenance } from "@/lib/orders-fns";
 import { cn } from "@/lib/utils";
 import { ModalPortal } from "@/components/ui/modal-portal";
-import { Truck, Shield, AlertTriangle, CheckCircle2, Lock, Unlock, Power, Info, Sparkles } from "lucide-react";
+import { Truck, Shield, Lock, Unlock, Power, Info } from "lucide-react";
 
 export function SettingsTab() {
   const queryClient = useQueryClient();
@@ -49,7 +49,6 @@ export function SettingsTab() {
   const [isCleaning, setIsCleaning] = useState(false);
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
   const [checkoutAction, setCheckoutAction] = useState<"open" | "pause">("pause");
-  const [confirmPhraseInput, setConfirmPhraseInput] = useState("");
   const isCheckoutOpen = settings?.checkout_enabled === "true";
 
   useEffect(() => {
@@ -289,7 +288,6 @@ export function SettingsTab() {
                 type="button"
                 onClick={() => {
                   setCheckoutAction("open");
-                  setConfirmPhraseInput("");
                   setCheckoutModalOpen(true);
                 }}
                 className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs sm:text-sm transition-all shadow-sm cursor-pointer flex items-center gap-2"

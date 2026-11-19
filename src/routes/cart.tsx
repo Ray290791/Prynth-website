@@ -1,6 +1,6 @@
 import { createFileRoute, Link, getRouteApi } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ShoppingBag, Trash2, Sliders, AlertCircle } from "lucide-react";
+import { ShoppingBag, Trash2, Sliders } from "lucide-react";
 import { QuantityStepper } from "@/components/quantity-stepper";
 import { Button } from "@/components/ui/button";
 import { WaitlistForm } from "@/components/waitlist-form";
@@ -58,10 +58,6 @@ function CartPage() {
   const items = useCart((s) => s.items);
   const setQty = useCart((s) => s.setQty);
   const remove = useCart((s) => s.remove);
-
-  const waitlistItems: typeof items = [];
-  const hasWaitlistItems = false;
-  const allItemsWaitlist = false;
   
   const isCodRestricted = hasNonCodItems(items);
 
@@ -293,26 +289,6 @@ function CartPage() {
               </div>
               <WaitlistForm interest="launch" />
             </div>
-          ) : hasWaitlistItems ? (
-            <div className="space-y-3">
-              <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 space-y-2">
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-500">
-                  <AlertCircle className="size-4 shrink-0" />
-                  <span>Waitlist items in cart</span>
-                </div>
-                <p className="text-xs text-muted leading-relaxed">
-                  {waitlistItems.map((w) => w.name).join(", ")} {waitlistItems.length > 1 ? "are" : "is"} currently in batch preparation and available on waitlist only.
-                </p>
-                <p className="text-xs text-muted">
-                  Please remove {waitlistItems.length > 1 ? "these items" : "this item"} to proceed with checkout for your ready-to-order pieces.
-                </p>
-              </div>
-              {allItemsWaitlist && (
-                <div className="rounded-2xl border border-border bg-surface-2/40 p-4">
-                  <WaitlistForm interest="launch" placeholder="Enter your email to get notified..." />
-                </div>
-              )}
-            </div>
           ) : (
             <Button asChild size="lg" className="w-full cursor-pointer shadow-xs">
               <Link to="/checkout">Proceed to Checkout</Link>
@@ -332,7 +308,7 @@ function CartPage() {
             <p className="text-[11px] text-muted uppercase font-medium tracking-wider">Est. Total</p>
             <p className="text-base font-semibold tabular-nums text-fg">{formatINR(discountedSubtotal + ship)}</p>
           </div>
-          {isCheckoutOpen && !hasWaitlistItems ? (
+          {isCheckoutOpen ? (
             <Button asChild size="md" className="shadow-xs cursor-pointer">
               <Link to="/checkout">Checkout ({items.reduce((s, i) => s + i.qty, 0)})</Link>
             </Button>
@@ -345,7 +321,7 @@ function CartPage() {
                 window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
               }}
             >
-              {hasWaitlistItems ? "View Waitlist Alert" : "Join Waitlist"}
+              Join Waitlist
             </Button>
           )}
         </div>

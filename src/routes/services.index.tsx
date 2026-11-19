@@ -1,19 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { generateBreadcrumbJsonLd } from "@/lib/jsonld";
 import {
-  DraftingCompass,
-  Cpu,
-  Wrench,
-  Zap,
-  Layers,
   ArrowRight,
-  ShieldCheck,
   CheckCircle2,
-  Clock,
   Sparkles,
-  Printer,
-  FileCheck,
-  Package,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatINR } from "@/lib/format";

@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate, getRouteApi } from "@tanstack/react-router";
 import { useState, useEffect, useMemo, type ChangeEvent } from "react";
 import { toast } from "sonner";
-import { ShoppingBag, AlertCircle } from "lucide-react";
+import { ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -134,7 +134,7 @@ function CheckoutPage() {
       options.push({ id: "upi", label: "UPI / QR Code" });
     }
     return options.length > 0 ? options : [{ id: "online" as const, label: "Online" }];
-  }, [settings?.payment_online_enabled, settings?.payment_cod_enabled, settings?.payment_upi_enabled, isCodRestricted]);
+  }, [settings?.payment_online_enabled, settings?.payment_cod_enabled, settings?.payment_upi_enabled, checkoutStatus?.codEnabled, isCodRestricted]);
 
   useEffect(() => {
     if (availablePaymentOptions.length > 0 && !availablePaymentOptions.some((o: { id: Pay; label: string }) => o.id === pay)) {

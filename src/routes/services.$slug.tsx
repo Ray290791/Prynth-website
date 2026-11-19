@@ -1,21 +1,16 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { generateBreadcrumbJsonLd } from "@/lib/jsonld";
 import { useState, useRef } from "react";
 import {
   ArrowRight,
-  CheckCircle2,
   Clock,
   Sparkles,
   ShieldCheck,
   Send,
-  Upload,
   Camera,
   X,
   FileCheck,
-  HelpCircle,
   ChevronDown,
-  Layers,
-  ArrowLeft,
   Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -35,7 +30,6 @@ import { getServiceIcon } from "@/components/services-dropdown";
 import { submitCustomDesignRequest } from "@/lib/contact-fns";
 import { useCurrentUser } from "@/lib/auth/use-current-user";
 import { compressImageDataUrl } from "@/lib/image-utils";
-import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/services/$slug")({
   loader: async ({ params }) => {
@@ -68,7 +62,6 @@ function ServiceDetailPage() {
   const { service, allServices } = Route.useLoaderData();
   const user = useCurrentUser();
   const formRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
 
   const serviceJsonLd = {
     "@context": "https://schema.org",

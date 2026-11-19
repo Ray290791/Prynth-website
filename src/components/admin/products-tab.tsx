@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useId } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { formatINR } from "@/lib/format";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Search, Plus, Edit2, Trash2, X, Eye, EyeOff, Package, Image as ImageIcon } from "lucide-react";
-import { getAllProductsAdmin, deleteProduct, updateProduct, createProduct, toggleProductSellableAdmin, updateProductCostAdmin, formatCategoryName } from "@/lib/products-fns";
+import { Trash2, X, Image as ImageIcon } from "lucide-react";
+import { getAllProductsAdmin, deleteProduct, updateProduct, createProduct, toggleProductSellableAdmin, formatCategoryName } from "@/lib/products-fns";
 import { getSiteSettings } from "@/lib/settings-fns";
 import type { Product, ProductImage } from "@/lib/products";
 import { TagInput } from "@/components/admin/tag-input";

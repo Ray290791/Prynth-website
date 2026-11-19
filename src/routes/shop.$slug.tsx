@@ -128,11 +128,12 @@ function ProductPage() {
   
   const [activeImage, setActiveImage] = useState(displayImages[0]);
 
+  const firstDisplayImage = displayImages[0];
   useEffect(() => {
-    if (displayImages[0]) {
-      setActiveImage(displayImages[0]);
+    if (firstDisplayImage) {
+      setActiveImage(firstDisplayImage);
     }
-  }, [color, size, material, displayImages[0]]);
+  }, [color, size, material, firstDisplayImage]);
 
   const trackViewMutation = useMutation({
     mutationFn: trackProductView,
@@ -164,6 +165,7 @@ function ProductPage() {
         trackViewMutation.mutate({ data: product.slug });
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product?.slug, user?.id]);
 
   if (!product) {

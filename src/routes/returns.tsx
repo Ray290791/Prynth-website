@@ -1,6 +1,6 @@
 import { createFileRoute, Link, getRouteApi } from "@tanstack/react-router";
 import { generateBreadcrumbJsonLd } from "@/lib/jsonld";
-import { RotateCcw, ShieldCheck, CheckCircle2, AlertCircle, ArrowRight, HelpCircle, Layers } from "lucide-react";
+import { ShieldCheck, CheckCircle2, AlertCircle, ArrowRight, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const rootRoute = getRouteApi("__root__");

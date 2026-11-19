@@ -39,7 +39,9 @@ export async function getResend(): Promise<Resend | null> {
         key = rows[0].value.trim();
         cachedResendApiKey = key;
       }
-    } catch {}
+    } catch (err) {
+      console.warn("Could not query resend_api_key from site_settings:", err);
+    }
   }
 
   if (!key) return null;

@@ -68,12 +68,12 @@ export function formatReplyTextToHtml(rawText: string): string {
     }
 
     // 3. List / Key-Value block (lines starting with bullets, dashes, or numbered lists)
-    const hasListItems = lines.some((l) => /^([•\-\*]|\d+\.)\s+/.test(l));
+    const hasListItems = lines.some((l) => /^([•\-*]|\d+\.)\s+/.test(l));
     if (hasListItems) {
       let listItemsHtml = "";
       for (const line of lines) {
-        if (/^([•\-\*]|\d+\.)\s+/.test(line)) {
-          const itemContent = line.replace(/^([•\-\*]|\d+\.)\s+/, "");
+        if (/^([•\-*]|\d+\.)\s+/.test(line)) {
+          const itemContent = line.replace(/^([•\-*]|\d+\.)\s+/, "");
           // Check for Key: Value pattern
           const kvMatch = itemContent.match(/^([^:]+):\s*(.*)$/);
           let formattedItem: string;
@@ -125,7 +125,6 @@ export function formatReplyTextToHtml(rawText: string): string {
  * Generates the full HTML email document ready for Resend or in-modal preview
  */
 export function generateQuoteEmailFullHtml(params: QuoteEmailTemplateParams): string {
-  const safeName = escapeHtml(params.customerName);
   const formattedBody = formatReplyTextToHtml(params.replyMessage);
   const brandEmail = params.brandEmail || "hello@prynth.in";
   const brandWebsite = params.brandWebsite || "https://prynth.in";

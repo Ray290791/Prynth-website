@@ -1,31 +1,18 @@
 import { describe, it, expect } from "vitest";
 import { products } from "../src/lib/products";
 
-describe("Interim Selling Phase Safety & Gates (A1, C1, C2, C3, C4)", () => {
-  const allowedInterimSlugs = new Set([
-    "hex-coasters",
-    "catch-bowl",
-    "pen-well",
-    "cable-nest",
-    "desk-tray",
-    "geo-planter",
-  ]);
-
-  it("C1: Enforces sellable catalog allowlist: only approved items are marked sellable", () => {
+describe("Store Operations & Checkout Readiness", () => {
+  it("C1: Catalog availability: all ready-made products are marked sellable", () => {
     for (const product of products) {
-      if (allowedInterimSlugs.has(product.slug)) {
-        expect(product.sellable).toBe(true);
-      } else {
-        expect(product.sellable).toBe(false);
-      }
+      expect(product.sellable).toBe(true);
     }
   });
 
-  it("C1: Disables weight-bearing products during interim phase", () => {
-    const weightBearingSlugs = ["modular-pegboard", "pebble-hooks", "headphone-rest"];
-    for (const slug of weightBearingSlugs) {
+  it("C1: Modular pegboard and desk items are fully open for purchase", () => {
+    const coreSlugs = ["modular-pegboard", "pebble-hooks", "headphone-rest", "wave-stand", "ripple-soap"];
+    for (const slug of coreSlugs) {
       const p = products.find((prod) => prod.slug === slug);
-      expect(p?.sellable).toBe(false);
+      expect(p?.sellable).toBe(true);
     }
   });
 

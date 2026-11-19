@@ -466,7 +466,9 @@ export const deleteProduct = createServerFn({ method: "POST" })
           await sql`UPDATE site_settings SET value = ${JSON.stringify(slots)} WHERE key = 'hero_featured_slots'`;
         }
       }
-    } catch {}
+    } catch (slotErr) {
+      console.warn("Pruning hero featured slot on product delete skipped:", slotErr);
+    }
 
     // Audit log deletion permanently
     try {
@@ -478,7 +480,9 @@ export const deleteProduct = createServerFn({ method: "POST" })
           ${JSON.stringify({ slug: data.slug, timestamp: new Date().toISOString() })}
         )
       `;
-    } catch {}
+    } catch (auditErr) {
+      console.warn("Product deletion audit logging skipped:", auditErr);
+    }
 
     return { success: true };
   });

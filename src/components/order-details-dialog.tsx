@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { formatINR, formatDate } from "@/lib/format";
+import { formatINR } from "@/lib/format";
 import { productColor } from "@/lib/products";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,25 +24,17 @@ import {
   Copy,
   Check,
   Package,
-  Layers,
-  Sparkles,
   Printer as PrinterIcon,
   X,
   FileCode,
   Truck,
   User,
-  CreditCard,
   MapPin,
-  Clock,
   Box,
-  RefreshCcw,
-  AlertTriangle,
   ShieldCheck,
   CheckCircle2,
   History,
   RotateCcw,
-  Wrench,
-  MessageSquare,
 } from "lucide-react";
 import type { CartItem } from "@/lib/cart-store";
 import type { Address } from "@/lib/orders-store";

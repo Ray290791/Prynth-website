@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { generateBreadcrumbJsonLd } from "@/lib/jsonld";
 import { useQuery } from "@tanstack/react-query";
-import { getMaterials, type Material } from "@/lib/materials-fns";
+import { getMaterials } from "@/lib/materials-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Thermometer, ShieldCheck, Zap, Layers, CheckCircle2, AlertTriangle, ArrowRight, Sun, Droplets, Flame, Cpu } from "lucide-react";

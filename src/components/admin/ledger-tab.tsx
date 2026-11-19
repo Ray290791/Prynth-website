@@ -16,18 +16,10 @@ import {
 } from "@/lib/orders-fns";
 import { getSiteSettings } from "@/lib/settings-fns";
 import {
-  TrendingUp,
-  AlertCircle,
   CheckCircle2,
   Plus,
   Trash2,
   Download,
-  DollarSign,
-  Scale,
-  Package,
-  Truck,
-  CreditCard,
-  Sparkles,
 } from "lucide-react";
 
 export function LaunchLedgerTab() {
@@ -36,8 +28,6 @@ export function LaunchLedgerTab() {
   const [isAdjModalOpen, setIsAdjModalOpen] = useState(false);
   const [adjReason, setAdjReason] = useState("");
   const [adjAmount, setAdjAmount] = useState("");
-  const [editingCourierOrderId, setEditingCourierOrderId] = useState<number | null>(null);
-  const [courierCostInput, setCourierCostInput] = useState("");
 
   const { data: ledger, isLoading, error } = useQuery({
     queryKey: ["launchLedgerAdmin"],
@@ -61,7 +51,6 @@ export function LaunchLedgerTab() {
       queryClient.invalidateQueries({ queryKey: ["launchLedgerAdmin"] });
       queryClient.invalidateQueries({ queryKey: ["adminOrders"] });
       toast.success("Order settlement status updated!");
-      setEditingCourierOrderId(null);
     },
     onError: (err: any) => {
       toast.error(err?.message || "Failed to update settlement status");

@@ -11,7 +11,6 @@ import { Sliders, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UploadForm } from "@/components/custom/upload-form";
 import { IdeaForm } from "@/components/custom/idea-form";
-import { WaitlistForm } from "@/components/waitlist-form";
 
 const rootRoute = getRouteApi("__root__");
 
@@ -64,7 +63,6 @@ function CustomPage() {
   }, [edit, cartItems]);
 
   const { settings } = rootRoute.useLoaderData();
-  const customOrdersEnabled = settings?.custom_orders_enabled !== "false";
   const pricingConfig = useMemo(() => getPricingConfig(settings), [settings]);
 
   const { data: printers = [] } = useQuery({
