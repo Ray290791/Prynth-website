@@ -11,6 +11,11 @@ import {
   Plus,
   Trash2,
   Star,
+  Image as ImageIcon,
+  Upload,
+  RotateCcw,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -39,6 +44,8 @@ export function PegboardSettings({ settings, onQuickSave, isSaving }: PegboardSe
       settings.pegboard_hero_subtitle ||
       "Precision 3D printed modular wall and desk organization. Engineered for creators, tech setups, and intentional workspaces.",
     pegboard_badge: settings.pegboard_badge || "Signature Star Product",
+    pegboard_image: settings.pegboard_image || "/products/modular-pegboard.jpg",
+    pegboard_show_image: settings.pegboard_show_image !== "false",
     pegboard_addon_tech_price: settings.pegboard_addon_tech_price || "299",
     pegboard_addon_desk_price: settings.pegboard_addon_desk_price || "249",
     pegboard_addon_botanical_price: settings.pegboard_addon_botanical_price || "279",
@@ -167,6 +174,8 @@ export function PegboardSettings({ settings, onQuickSave, isSaving }: PegboardSe
 
     const payload: Record<string, string> = {
       ...formData,
+      pegboard_image: formData.pegboard_image,
+      pegboard_show_image: formData.pegboard_show_image ? "true" : "false",
       pegboard_size_presets: serializedPresets,
       pegboard_price_compact: String(compactPreset?.price ?? (presets[0]?.price || 200)),
       pegboard_price_studio: String(studioPreset?.price ?? (presets[1]?.price || 999)),
@@ -182,6 +191,8 @@ export function PegboardSettings({ settings, onQuickSave, isSaving }: PegboardSe
   return (
     <section className="space-y-6 rounded-2xl border border-white/20 dark:border-white/10 bg-surface/50 backdrop-blur-2xl backdrop-saturate-150 p-6 shadow-xl shadow-black/5">
       {/* Hidden inputs for form submit in global settings tab */}
+      <input type="hidden" name="pegboard_image" value={formData.pegboard_image} />
+      <input type="hidden" name="pegboard_show_image" value={formData.pegboard_show_image ? "true" : "false"} />
       <input type="hidden" name="pegboard_size_presets" value={JSON.stringify(presets)} />
       <input
         type="hidden"
@@ -285,6 +296,178 @@ export function PegboardSettings({ settings, onQuickSave, isSaving }: PegboardSe
             onChange={(e) => handleChange("pegboard_hero_subtitle", e.target.value)}
             className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm focus:border-accent focus:outline-none"
           />
+        </div>
+      </div>
+
+      {/* Homepage Spotlight Pegboard Image */}
+      <div className="rounded-2xl border border-border/80 bg-surface/60 p-4 sm:p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/50 pb-3">
+          <div>
+            <h4 className="text-sm font-semibold flex items-center gap-2 text-fg">
+              <ImageIcon className="size-4 text-accent" />
+              <span>Homepage Spotlight Image</span>
+            </h4>
+            <p className="text-xs text-muted mt-0.5">
+              Change the image displayed in the Star Product spotlight on the homepage, or turn it off completely.
+            </p>
+          </div>
+
+          <label className="inline-flex items-center gap-2.5 cursor-pointer select-none">
+            <span className="text-xs font-medium text-fg">Show image on homepage</span>
+            <input
+              type="checkbox"
+              checked={formData.pegboard_show_image}
+              onChange={(e) => setFormData((prev) => ({ ...prev, pegboard_show_image: e.target.checked }))}
+              className="sr-only peer"
+            />
+            <div className="relative w-11 h-6 bg-surface-2 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
+          </label>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
+          {/* Image Preview Box */}
+          <div className="md:col-span-4 lg:col-span-3">
+            <div
+              className={cn(
+                "relative aspect-4/3 rounded-xl overflow-hidden border border-border/80 bg-surface-2 flex items-center justify-center group shadow-xs",
+                !formData.pegboard_show_image && "opacity-50 grayscale"
+              )}
+            >
+              {formData.pegboard_image ? (
+                <img
+                  src={formData.pegboard_image}
+                  alt="Pegboard preview"
+                  className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = "none";
+                  }}
+                />
+              ) : (
+                <div className="text-center p-4">
+                  <ImageIcon className="size-8 text-muted mx-auto mb-1 opacity-50" />
+                  <span className="text-[11px] text-muted">No image selected</span>
+                </div>
+              )}
+
+              {!formData.pegboard_show_image && (
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center p-2 text-center">
+                  <EyeOff className="size-5 text-white/80 mb-1" />
+                  <span className="text-xs font-semibold text-white">Hidden from Homepage</span>
+                  <span className="text-[10px] text-white/70">Text card expands to full width</span>
+                </div>
+              )}
+            </div>
+            <div className="mt-1.5 flex items-center justify-between text-[11px] text-muted">
+              <span>Aspect ratio: 4:3</span>
+              {formData.pegboard_show_image ? (
+                <span className="text-accent flex items-center gap-1 font-medium">
+                  <Eye className="size-3" /> Visible
+                </span>
+              ) : (
+                <span className="text-muted flex items-center gap-1">
+                  <EyeOff className="size-3" /> Hidden
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Controls: Upload & Direct URL */}
+          <div className="md:col-span-8 lg:col-span-9 space-y-3.5">
+            <div>
+              <label className="block text-xs font-medium text-muted mb-1.5">
+                Upload New Image from Computer
+              </label>
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-border bg-surface-2 hover:bg-surface-2/80 hover:border-accent/50 text-xs font-medium text-fg cursor-pointer transition-colors shadow-xs">
+                  <Upload className="size-3.5 text-accent" />
+                  <span>Choose Image File (JPG, PNG, WEBP)</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        if (file.size > 4 * 1024 * 1024) {
+                          toast.error("Image file is too large (>4MB). Please select a compressed file or enter a URL.");
+                          return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          const result = ev.target?.result as string;
+                          if (result) {
+                            setFormData((prev) => ({
+                              ...prev,
+                              pegboard_image: result,
+                              pegboard_show_image: true,
+                            }));
+                            toast.success("Image loaded! Click 'Save Pegboard Settings' to apply.");
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                </label>
+
+                {formData.pegboard_image !== "/products/modular-pegboard.jpg" && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        pegboard_image: "/products/modular-pegboard.jpg",
+                        pegboard_show_image: true,
+                      }));
+                      toast.info("Reset to default product image.");
+                    }}
+                    className="h-9 gap-1.5 text-xs cursor-pointer border-border/80 text-muted hover:text-fg"
+                  >
+                    <RotateCcw className="size-3.5" />
+                    <span>Reset to Default</span>
+                  </Button>
+                )}
+
+                {formData.pegboard_image && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        pegboard_image: "",
+                        pegboard_show_image: false,
+                      }));
+                      toast.info("Image removed and hidden from homepage spotlight.");
+                    }}
+                    className="h-9 gap-1.5 text-xs cursor-pointer text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                  >
+                    <Trash2 className="size-3.5" />
+                    <span>Remove Image</span>
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-muted mb-1">
+                Or Paste Image Path / Direct URL
+              </label>
+              <input
+                type="text"
+                value={formData.pegboard_image}
+                onChange={(e) => setFormData((prev) => ({ ...prev, pegboard_image: e.target.value }))}
+                placeholder="e.g. /products/modular-pegboard.jpg or https://..."
+                className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs font-mono text-fg focus:border-accent focus:outline-none"
+              />
+              <p className="text-[11px] text-muted mt-1">
+                You can specify any path inside your <code className="text-accent font-mono text-[10px]">public/</code> directory or an external CDN URL.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 

@@ -86,6 +86,8 @@ export type SiteSettings = {
   pegboard_hero_title?: string;
   pegboard_hero_subtitle?: string;
   pegboard_badge?: string;
+  pegboard_image?: string;
+  pegboard_show_image?: string;
   pegboard_price_compact?: string;
   pegboard_price_studio?: string;
   pegboard_price_executive?: string;
@@ -212,6 +214,8 @@ function parseSiteSettings(rows: { key: string; value: string }[]): SiteSettings
     pegboard_hero_title: "The Modular Pegboard System",
     pegboard_hero_subtitle: "Precision 3D printed modular wall and desk organization. Engineered for creators, tech setups, and intentional workspaces.",
     pegboard_badge: "Signature Star Product",
+    pegboard_image: "/products/modular-pegboard.jpg",
+    pegboard_show_image: "true",
     pegboard_price_compact: "200",
     pegboard_price_studio: "999",
     pegboard_price_executive: "1499",
@@ -450,6 +454,8 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
     pegboard_hero_title: z.string().optional(),
     pegboard_hero_subtitle: z.string().optional(),
     pegboard_badge: z.string().optional(),
+    pegboard_image: z.string().optional(),
+    pegboard_show_image: z.string().optional(),
     pegboard_price_compact: z.string().optional(),
     pegboard_price_studio: z.string().optional(),
     pegboard_price_executive: z.string().optional(),

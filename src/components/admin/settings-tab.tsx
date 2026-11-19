@@ -175,6 +175,8 @@ export function SettingsTab() {
       pegboard_hero_title: ((fd.get("pegboard_hero_title") as string) || settings?.pegboard_hero_title || "").trim(),
       pegboard_hero_subtitle: ((fd.get("pegboard_hero_subtitle") as string) || settings?.pegboard_hero_subtitle || "").trim(),
       pegboard_badge: ((fd.get("pegboard_badge") as string) || settings?.pegboard_badge || "").trim(),
+      pegboard_image: (fd.has("pegboard_image") ? (fd.get("pegboard_image") as string) : (settings?.pegboard_image || "/products/modular-pegboard.jpg")).trim(),
+      pegboard_show_image: fd.has("pegboard_show_image") ? ((fd.get("pegboard_show_image") as string) === "false" || fd.get("pegboard_show_image") === "off" ? "false" : "true") : (settings?.pegboard_show_image ?? "true"),
       pegboard_size_presets: ((fd.get("pegboard_size_presets") as string) || settings?.pegboard_size_presets || "").trim(),
       pegboard_price_compact: ((fd.get("pegboard_price_compact") as string) || settings?.pegboard_price_compact || "200").trim(),
       pegboard_price_studio: ((fd.get("pegboard_price_studio") as string) || settings?.pegboard_price_studio || "999").trim(),

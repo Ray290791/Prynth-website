@@ -302,53 +302,64 @@ function Home() {
       {/* ── Star Product Spotlight: Modular Pegboards ──────── */}
       <section className="relative z-10 mx-auto max-w-6xl px-4 md:px-6">
         <div className="relative overflow-hidden rounded-3xl border border-border/80 bg-surface/70 p-6 sm:p-10 lg:p-12 shadow-sm backdrop-blur-md hover:border-accent/40 transition-colors">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            <div className="lg:col-span-7 space-y-4">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-accent/15 text-accent border border-accent/20">
-                <Sparkles className="size-3.5" />
-                <span>{settings.pegboard_badge || "Signature Star Product"}</span>
-              </div>
-              <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-fg">
-                {settings.pegboard_hero_title || "The Modular Pegboard System"}
-              </h2>
-              <p className="text-sm sm:text-base text-muted max-w-xl leading-relaxed font-jakarta">
-                {settings.pegboard_hero_subtitle ||
-                  "Precision 3D printed modular wall and desk organization. Engineered for creators, tech setups, and intentional workspaces."}
-              </p>
-              <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
-                <span className="font-medium px-2.5 py-1 rounded-lg bg-surface-2 border border-border text-fg">
-                  Interlocking Grid
-                </span>
-                <span className="font-medium px-2.5 py-1 rounded-lg bg-surface-2 border border-border text-fg">
-                  Removable Wall Adhesive
-                </span>
-                <span className="font-medium px-2.5 py-1 rounded-lg bg-surface-2 border border-border text-fg">
-                  Tool-Free Snap Accessories
-                </span>
-              </div>
-              <div className="pt-2 flex flex-wrap items-center gap-4">
-                <Button asChild className="h-11 px-6 bg-accent text-ink font-semibold hover:opacity-90 shadow-sm cursor-pointer">
-                  <Link to="/pegboard">
-                    <span>Configure Setup</span>
-                    <ArrowRight className="size-4 ml-1.5" />
-                  </Link>
-                </Button>
-                <span className="text-xs text-muted">
-                  Tiles from <strong className="text-fg font-semibold">₹{settings.pegboard_price_compact || 200}</strong> · Complete starter kit ₹699
-                </span>
-              </div>
-            </div>
+          {(() => {
+            const showPegboardImage =
+              settings.pegboard_show_image !== "false" &&
+              Boolean(settings.pegboard_image ?? "/products/modular-pegboard.jpg");
+            const pegboardImgSrc = settings.pegboard_image || "/products/modular-pegboard.jpg";
 
-            <div className="lg:col-span-5">
-              <Link to="/pegboard" className="block relative aspect-4/3 rounded-2xl overflow-hidden border border-border group cursor-pointer shadow-xs">
-                <img
-                  src="/products/modular-pegboard.jpg"
-                  alt="Modular Pegboard System"
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-              </Link>
-            </div>
-          </div>
+            return (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                <div className={`${showPegboardImage ? "lg:col-span-7" : "lg:col-span-12 max-w-2xl"} space-y-4`}>
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-accent/15 text-accent border border-accent/20">
+                    <Sparkles className="size-3.5" />
+                    <span>{settings.pegboard_badge || "Signature Star Product"}</span>
+                  </div>
+                  <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-fg">
+                    {settings.pegboard_hero_title || "The Modular Pegboard System"}
+                  </h2>
+                  <p className="text-sm sm:text-base text-muted max-w-xl leading-relaxed font-jakarta">
+                    {settings.pegboard_hero_subtitle ||
+                      "Precision 3D printed modular wall and desk organization. Engineered for creators, tech setups, and intentional workspaces."}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+                    <span className="font-medium px-2.5 py-1 rounded-lg bg-surface-2 border border-border text-fg">
+                      Interlocking Grid
+                    </span>
+                    <span className="font-medium px-2.5 py-1 rounded-lg bg-surface-2 border border-border text-fg">
+                      Removable Wall Adhesive
+                    </span>
+                    <span className="font-medium px-2.5 py-1 rounded-lg bg-surface-2 border border-border text-fg">
+                      Tool-Free Snap Accessories
+                    </span>
+                  </div>
+                  <div className="pt-2 flex flex-wrap items-center gap-4">
+                    <Button asChild className="h-11 px-6 bg-accent text-ink font-semibold hover:opacity-90 shadow-sm cursor-pointer">
+                      <Link to="/pegboard">
+                        <span>Configure Setup</span>
+                        <ArrowRight className="size-4 ml-1.5" />
+                      </Link>
+                    </Button>
+                    <span className="text-xs text-muted">
+                      Tiles from <strong className="text-fg font-semibold">₹{settings.pegboard_price_compact || 200}</strong> · Complete starter kit ₹699
+                    </span>
+                  </div>
+                </div>
+
+                {showPegboardImage && (
+                  <div className="lg:col-span-5">
+                    <Link to="/pegboard" className="block relative aspect-4/3 rounded-2xl overflow-hidden border border-border group cursor-pointer shadow-xs">
+                      <img
+                        src={pegboardImgSrc}
+                        alt={settings.pegboard_hero_title || "Modular Pegboard System"}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    </Link>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </section>
 
