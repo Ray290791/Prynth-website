@@ -106,7 +106,7 @@ export function GlidingTabs({
                 className={cn(
                   "ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold tabular-nums transition-colors",
                   isActive
-                    ? "bg-accent text-white"
+                    ? "bg-accent text-ink"
                     : "bg-surface-2 text-muted"
                 )}
               >

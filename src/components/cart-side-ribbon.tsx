@@ -151,7 +151,7 @@ export function CartSideRibbon() {
         ref={panelRef}
         className={cn(
           "pointer-events-auto fixed right-0 top-20 bottom-6 z-40 flex flex-col",
-          "w-80 2xl:w-92 rounded-l-3xl border-l border-y border-white/20 dark:border-white/10",
+          "w-80 2xl:w-92 rounded-l-3xl border-l border-y border-border dark:border-white/10",
           "bg-surface/95 dark:bg-surface-2/95 backdrop-blur-2xl shadow-2xl shadow-black/40",
           "transition-all duration-300 ease-out overflow-hidden",
           isOpen ? "translate-x-0 opacity-100" : "translate-x-full opacity-0 pointer-events-none"

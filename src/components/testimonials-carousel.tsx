@@ -57,7 +57,7 @@ export function TestimonialsSection({
           {testimonials.map((item) => (
             <div
               key={item.id}
-              className="group rounded-3xl border border-white/20 dark:border-white/10 bg-surface/60 backdrop-blur-xl p-6 shadow-xl shadow-black/5 flex flex-col justify-between transition-all hover:scale-[1.01] hover:border-accent/40"
+              className="group rounded-3xl border border-border dark:border-white/10 bg-surface/60 backdrop-blur-xl p-6 shadow-xl shadow-black/5 flex flex-col justify-between transition-all hover:scale-[1.01] hover:border-accent/40"
             >
               <div>
                 {/* 5 Stars */}

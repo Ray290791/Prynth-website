@@ -61,7 +61,7 @@ export function CommercialQuoteModal({
         aria-modal="true"
         className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 p-3 sm:p-6 backdrop-blur-md overflow-y-auto animate-in fade-in"
       >
-      <div className="relative w-full max-w-2xl rounded-3xl border border-white/20 bg-surface shadow-2xl p-6 sm:p-8 space-y-6 text-fg my-auto">
+      <div className="relative w-full max-w-2xl rounded-3xl border border-border dark:border-white/20 bg-surface shadow-2xl p-6 sm:p-8 space-y-6 text-fg my-auto">
         {/* Header Actions */}
         <div className="flex items-center justify-between border-b border-border pb-4 print:hidden">
           <div className="flex items-center gap-2">

@@ -278,7 +278,7 @@ function ServicesIndexPage() {
 
       {/* ── Bottom CTA ─────────────────────────────────────── */}
       <section className="mx-auto max-w-4xl px-4 pt-16 md:px-6 text-center">
-        <div className="rounded-3xl border border-white/20 dark:border-white/10 bg-surface/60 backdrop-blur-2xl p-8 sm:p-12 shadow-xl">
+        <div className="rounded-3xl border border-border dark:border-white/10 bg-surface/60 backdrop-blur-2xl p-8 sm:p-12 shadow-xl">
           <h2 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-fg">
             Ready to bring your physical idea to life?
           </h2>

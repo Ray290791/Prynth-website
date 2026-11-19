@@ -189,7 +189,7 @@ export function PegboardSettings({ settings, onQuickSave, isSaving }: PegboardSe
   };
 
   return (
-    <section className="space-y-6 rounded-2xl border border-white/20 dark:border-white/10 bg-surface/50 backdrop-blur-2xl backdrop-saturate-150 p-6 shadow-xl shadow-black/5">
+    <section className="space-y-6 rounded-2xl border border-border dark:border-white/10 bg-surface/50 backdrop-blur-2xl backdrop-saturate-150 p-6 shadow-xl shadow-black/5">
       {/* Hidden inputs for form submit in global settings tab */}
       <input type="hidden" name="pegboard_image" value={formData.pegboard_image} />
       <input type="hidden" name="pegboard_show_image" value={formData.pegboard_show_image ? "true" : "false"} />

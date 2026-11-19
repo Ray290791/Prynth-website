@@ -100,7 +100,7 @@ export default function MaterialsPage() {
           <p className="text-sm text-muted">Currently active materials on our production print farm.</p>
         </div>
 
-        <div className="flex items-center gap-1.5 p-1 rounded-2xl border border-white/20 dark:border-white/10 bg-surface/30 backdrop-blur-xl shadow-sm overflow-x-auto max-w-full">
+        <div className="flex items-center gap-1.5 p-1 rounded-2xl border border-border dark:border-white/10 bg-surface/30 backdrop-blur-xl shadow-sm overflow-x-auto max-w-full">
           <button
             type="button"
             onClick={() => setActiveTab("all")}
@@ -299,7 +299,7 @@ export default function MaterialsPage() {
                         {mat.ideal_for.map((sc, idx) => (
                           <span
                             key={idx}
-                            className="inline-flex items-center rounded-lg border border-white/10 bg-surface-2/40 px-2.5 py-1 text-[11px] text-fg font-medium"
+                            className="inline-flex items-center rounded-lg border border-border dark:border-white/10 bg-surface-2/40 px-2.5 py-1 text-[11px] text-fg font-medium"
                           >
                             {sc}
                           </span>

@@ -140,7 +140,7 @@ function GalleryPage() {
               return (
                 <article
                   key={item.id}
-                  className="group rounded-3xl border border-white/20 dark:border-white/10 bg-surface/60 backdrop-blur-xl overflow-hidden shadow-xl shadow-black/5 flex flex-col justify-between transition-all hover:scale-[1.01] hover:border-accent/40"
+                  className="group rounded-3xl border border-border dark:border-white/10 bg-surface/60 backdrop-blur-xl overflow-hidden shadow-xl shadow-black/5 flex flex-col justify-between transition-all hover:scale-[1.01] hover:border-accent/40"
                 >
                   <div>
                     {/* Media Container: Real Photo or Blank Placeholder */}
@@ -250,7 +250,7 @@ function GalleryPage() {
           >
             <div
               onClick={(e) => e.stopPropagation()}
-              className="relative max-w-4xl max-h-[90vh] overflow-hidden rounded-3xl border border-white/20 bg-surface shadow-2xl flex flex-col"
+              className="relative max-w-4xl max-h-[90vh] overflow-hidden rounded-3xl border border-border dark:border-white/20 bg-surface shadow-2xl flex flex-col"
             >
               <button
                 onClick={() => setActiveModalItem(null)}
@@ -289,7 +289,7 @@ function GalleryPage() {
       <TestimonialsSection />
 
       {/* STUDIO BANNER CTA */}
-      <section className="rounded-3xl border border-white/20 dark:border-white/10 bg-gradient-to-br from-surface via-surface-2 to-surface p-8 sm:p-12 text-center space-y-4">
+      <section className="rounded-3xl border border-border dark:border-white/10 bg-gradient-to-br from-surface via-surface-2 to-surface p-8 sm:p-12 text-center space-y-4">
         <span className="text-xs font-bold text-accent tracking-wider uppercase">
           Custom 3D Printing Studio
         </span>

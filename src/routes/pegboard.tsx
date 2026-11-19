@@ -350,7 +350,7 @@ export function PegboardPage() {
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
         {/* LEFT: INTERACTIVE PRODUCT GALLERY */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="relative aspect-4/3 overflow-hidden rounded-2xl md:rounded-3xl border border-white/20 dark:border-white/10 bg-surface/50 backdrop-blur-2xl shadow-2xl shadow-black/10 group">
+          <div className="relative aspect-4/3 overflow-hidden rounded-2xl md:rounded-3xl border border-border dark:border-white/10 bg-surface/50 backdrop-blur-2xl shadow-2xl shadow-black/10 group">
             <img
               src={images[activeImageIdx]?.url || "/products/modular-pegboard.jpg"}
               alt="Modular Pegboard System by Prynth!"
@@ -499,7 +499,7 @@ export function PegboardPage() {
                     c.bgClass,
                     selectedColorId === c.id
                       ? "border-accent ring-2 ring-accent/40 scale-110 shadow-md"
-                      : "border-white/30 hover:scale-105"
+                      : "border-border/60 hover:border-accent hover:scale-105"
                   )}
                   title={c.name}
                   aria-label={c.name}
@@ -678,7 +678,7 @@ export function PegboardPage() {
       </section>
 
       {/* ARCHITECTURAL CRAFT STORY */}
-      <section className="rounded-3xl border border-white/20 dark:border-white/10 bg-surface/40 backdrop-blur-2xl p-6 sm:p-10 md:p-14 space-y-8">
+      <section className="rounded-3xl border border-border dark:border-white/10 bg-surface/40 backdrop-blur-2xl p-6 sm:p-10 md:p-14 space-y-8">
         <div className="max-w-2xl space-y-3">
           <span className="text-xs font-semibold text-accent tracking-wider uppercase">
             Design Philosophy
@@ -870,7 +870,7 @@ export function PegboardPage() {
       </section>
 
       {/* BOTTOM FLOATING BAR FOR FAST PURCHASE */}
-      <div className="sticky bottom-4 z-30 mx-auto max-w-2xl rounded-2xl border border-white/20 dark:border-white/10 bg-surface/85 backdrop-blur-2xl p-3 sm:p-4 shadow-2xl shadow-black/20 flex items-center justify-between gap-3">
+      <div className="sticky bottom-4 z-30 mx-auto max-w-2xl rounded-2xl border border-border dark:border-white/10 bg-surface/85 backdrop-blur-2xl p-3 sm:p-4 shadow-2xl shadow-black/20 flex items-center justify-between gap-3">
         <div className="min-w-0">
           <span className="text-xs font-bold text-fg block truncate">
             {currentSize.name} · {currentColor.name}

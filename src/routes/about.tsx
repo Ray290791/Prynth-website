@@ -101,7 +101,7 @@ export function AboutPage() {
 
         {/* Aside Photo Grid */}
         <aside className="md:col-span-5 relative">
-          <div className="grid grid-cols-2 gap-3.5 rounded-3xl border border-white/20 dark:border-white/10 bg-surface/40 p-3.5 backdrop-blur-xl shadow-xl shadow-black/5">
+          <div className="grid grid-cols-2 gap-3.5 rounded-3xl border border-border dark:border-white/10 bg-surface/40 p-3.5 backdrop-blur-xl shadow-xl shadow-black/5">
             {products.slice(0, 4).map((p, idx) => (
               <div
                 key={p.slug}

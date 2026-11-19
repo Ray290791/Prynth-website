@@ -243,7 +243,7 @@ export function FilamentsTab() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <div
-                        className="size-8 rounded-full border-2 border-white/20 shadow-inner flex-shrink-0"
+                        className="size-8 rounded-full border-2 border-border/80 dark:border-white/20 shadow-inner flex-shrink-0"
                         style={{ backgroundColor: f.color_hex }}
                       />
                       <div>
