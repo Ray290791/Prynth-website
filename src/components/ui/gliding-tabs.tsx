@@ -61,7 +61,7 @@ export function GlidingTabs({
       ref={containerRef}
       className={cn(
         "relative flex items-center p-1 rounded-xl sm:rounded-2xl border select-none overflow-x-auto no-scrollbar",
-        variant === "glass" && "border-glass-border-liquid bg-surface/60 backdrop-blur-md shadow-inner",
+        variant === "glass" && "border-glass-border bg-surface/60 backdrop-blur-md shadow-inner",
         variant === "pills" && "border-border/60 bg-surface-2/40",
         variant === "subtle" && "border-transparent bg-transparent",
         className

@@ -212,7 +212,7 @@ export function SiteHeader() {
   }, [open]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-glass-border-liquid bg-glass/90 backdrop-blur-2xl backdrop-saturate-180 shadow-sm transition-colors duration-200">
+    <header className="sticky top-0 z-40 border-b border-glass-border bg-glass backdrop-blur-2xl backdrop-saturate-150 shadow-xs transition-colors duration-200">
       <div className="mx-auto flex h-14 sm:h-16 max-w-6xl items-center justify-between gap-2 sm:gap-4 px-4 sm:px-6 md:h-[4.25rem]">
         <LogoLink className="shrink-0 tactile-btn" />
 

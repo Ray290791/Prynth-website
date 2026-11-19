@@ -23,6 +23,7 @@
   --color-danger: var(--danger);
   --color-glass: var(--glass-bg);
   --color-glass-border: var(--glass-border);
+  --color-glass-border-liquid: var(--glass-border-liquid);
 
   --radius-xs: 4px;
   --radius-sm: 8px;

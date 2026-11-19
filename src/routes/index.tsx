@@ -153,7 +153,7 @@ function Home() {
           <div className="mx-auto max-w-6xl px-4 md:px-6">
             <Link
               to="/shop"
-              className="inline-flex items-center gap-2 rounded-full border border-glass-border-liquid bg-surface/80 px-3.5 py-1 text-xs font-medium text-muted transition-all hover:border-accent hover:text-fg shadow-2xs backdrop-blur-md tactile-btn"
+              className="inline-flex items-center gap-2 rounded-full border border-glass-border bg-surface/80 px-3.5 py-1 text-xs font-medium text-muted transition-all hover:border-accent hover:text-fg shadow-2xs backdrop-blur-md tactile-btn"
             >
               <Zap className="size-3 text-accent shrink-0" strokeWidth={2} />
               <span>{settings.promo_banner || `Free standard delivery across India on orders over ₹${settings.free_shipping_threshold || 399}`}</span>
@@ -231,7 +231,7 @@ function Home() {
                   to="/shop/$slug"
                   params={{ slug: p.slug }}
                   className={cn(
-                    "group relative overflow-hidden rounded-2xl border border-glass-border-liquid bg-surface/80 backdrop-blur-md transition-all duration-300 hover:border-accent/60 shadow-xs tactile-card",
+                    "group relative overflow-hidden rounded-2xl border border-glass-border bg-surface/80 backdrop-blur-md transition-all duration-300 hover:border-accent/60 shadow-xs tactile-card",
                     i % 2 === 1 ? "sm:translate-y-4" : ""
                   )}
                 >

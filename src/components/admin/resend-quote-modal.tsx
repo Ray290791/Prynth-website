@@ -163,7 +163,7 @@ https://prynth.in | orders@prynth.in`;
         aria-modal="true"
         className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/85 p-3 sm:p-6 backdrop-blur-md overflow-y-auto animate-in fade-in"
       >
-      <div className="relative w-full max-w-3xl rounded-3xl border border-glass-border-liquid bg-surface/95 backdrop-blur-2xl shadow-2xl p-5 sm:p-7 space-y-5 text-fg my-auto max-h-[92vh] flex flex-col">
+      <div className="relative w-full max-w-3xl rounded-3xl border border-glass-border bg-surface/95 backdrop-blur-2xl shadow-2xl p-5 sm:p-7 space-y-5 text-fg my-auto max-h-[92vh] flex flex-col">
         {/* Header */}
         <div className="flex items-start justify-between border-b border-border/80 pb-4 shrink-0">
           <div className="space-y-1">
