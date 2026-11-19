@@ -547,6 +547,7 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
       `;
     }
 
+    const entriesToSave: [string, string][] = [];
     for (const [key, value] of Object.entries(data)) {
       if (key === "confirm_phrase") continue;
       if (value !== undefined) {
@@ -557,13 +558,23 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
             continue;
           }
         }
-
-        await sql`
-          INSERT INTO site_settings (key, value)
-          VALUES (${key}, ${value})
-          ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
-        `;
+        entriesToSave.push([key, String(value)]);
       }
+    }
+
+    if (entriesToSave.length > 0) {
+      // Single batched query instead of 60 individual subrequests.
+      // Prevents Cloudflare Workers "Too many subrequests by single Worker invocation" error.
+      const placeholders = entriesToSave
+        .map((_, i) => `($${i * 2 + 1}, $${i * 2 + 2})`)
+        .join(", ");
+      const params = entriesToSave.flatMap(([k, v]) => [k, v]);
+      await sql.query(
+        `INSERT INTO site_settings (key, value)
+         VALUES ${placeholders}
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+        params
+      );
     }
 
     return { success: true };

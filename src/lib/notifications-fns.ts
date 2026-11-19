@@ -97,12 +97,16 @@ export const updateAdminNotificationSettings = createServerFn({ method: "POST" }
       settingsMap.notify_whatsapp_apikey = data.whatsappApiKey.trim();
     }
 
-    for (const [key, val] of Object.entries(settingsMap)) {
-      await sql`
-        INSERT INTO site_settings (key, value)
-        VALUES (${key}, ${val})
-        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
-      `;
+    const entries = Object.entries(settingsMap).map(([k, v]) => [k, String(v)]);
+    if (entries.length > 0) {
+      const placeholders = entries.map((_, i) => `($${i * 2 + 1}, $${i * 2 + 2})`).join(", ");
+      const params = entries.flatMap(([k, v]) => [k, v]);
+      await sql.query(
+        `INSERT INTO site_settings (key, value)
+         VALUES ${placeholders}
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+        params
+      );
     }
 
     return { success: true };
