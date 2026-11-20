@@ -33,6 +33,12 @@ import { cn } from "@/lib/utils";
 
 const MODEL_PRESETS = [
   {
+    name: "Bambu Lab H2D",
+    volume: "350 × 320 × 325 mm",
+    nozzle: "0.4 mm Hardened Steel (Dual Nozzle)",
+    description: "Large-format dual-nozzle industrial CoreXY with 350°C high-temp printing and multi-material support.",
+  },
+  {
     name: "Bambu Lab X1-Carbon",
     volume: "256 × 256 × 256 mm",
     nozzle: "0.4 mm Hardened Steel",

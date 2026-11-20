@@ -22,6 +22,17 @@ export interface Printer {
 
 export const DEFAULT_PRINTERS: Printer[] = [
   {
+    id: "h2d-01",
+    name: "Bambu Lab H2D",
+    model: "Bambu Lab H2D",
+    status: "available",
+    build_volume: "350 × 320 × 325 mm",
+    nozzle_size: "0.4 mm Hardened Steel (Dual Nozzle)",
+    description: "Large-format dual-nozzle industrial CoreXY with 350°C high-temp printing and multi-material support.",
+    order_index: 1,
+    is_active: true,
+  },
+  {
     id: "p1s-01",
     name: "Bambu Lab P1S #1",
     model: "Bambu Lab P1S",
