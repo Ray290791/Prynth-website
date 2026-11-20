@@ -2,7 +2,7 @@ import { createFileRoute, Link, getRouteApi } from "@tanstack/react-router";
 import { generateBreadcrumbJsonLd } from "@/lib/jsonld";
 import { useQuery } from "@tanstack/react-query";
 import { getFaqs, type Faq } from "@/lib/faq-fns";
-import { Search, ChevronDown, MessageSquare, ArrowRight } from "lucide-react";
+import { HelpCircle, Search, ChevronDown, MessageSquare, ArrowRight } from "lucide-react";
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -163,9 +163,8 @@ export function FaqPage() {
                     {faq.question}
                   </span>
                   <div
-                    className={`size-7 rounded-lg flex items-center justify-center bg-surface-2 text-muted shrink-0 transition-transform duration-200 ${
-                      isOpen ? "rotate-180 text-accent" : ""
-                    }`}
+                    className={`size-7 rounded-lg flex items-center justify-center bg-surface-2 text-muted shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180 text-accent" : ""
+                      }`}
                   >
                     <ChevronDown className="size-4" aria-hidden="true" />
                   </div>

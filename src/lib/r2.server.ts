@@ -105,3 +105,21 @@ export async function deleteModelFromR2(key: string): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Batch deletes multiple custom 3D model objects from Cloudflare R2 in a single subrequest.
+ */
+export async function deleteModelsFromR2(keys: string[]): Promise<boolean> {
+  const bucket = getR2Bucket();
+  if (!bucket || keys.length === 0) {
+    return false;
+  }
+
+  try {
+    await bucket.delete(keys);
+    return true;
+  } catch (err) {
+    console.warn(`[R2] Failed to batch delete ${keys.length} objects:`, err);
+    return false;
+  }
+}

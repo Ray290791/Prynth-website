@@ -47,9 +47,6 @@ export function SettingsTab() {
 
   const [maintenanceStatus, setMaintenanceStatus] = useState<string | null>(null);
   const [isCleaning, setIsCleaning] = useState(false);
-  const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
-  const [checkoutAction, setCheckoutAction] = useState<"open" | "pause">("pause");
-  const isCheckoutOpen = settings?.checkout_enabled === "true";
 
   useEffect(() => {
     if (settings?.hero_featured_slots) {
@@ -191,15 +188,12 @@ export function SettingsTab() {
       payment_upi_id: ((fd.get("payment_upi_id") as string) || "").trim(),
       resend_from_email: ((fd.get("resend_from_email") as string) || "").trim(),
       razorpay_key_id: ((fd.get("razorpay_key_id") as string) || "").trim(),
-      // Interim Selling Phase Controls
+      // Operations & Delivery Settings
       cod_enabled: fd.get("cod_enabled") === "on" ? "true" : "false",
-      max_orders_per_day: ((fd.get("max_orders_per_day") as string) || settings?.max_orders_per_day || "3").trim(),
-      max_orders_per_week: ((fd.get("max_orders_per_week") as string) || settings?.max_orders_per_week || "10").trim(),
-      profit_target_inr: ((fd.get("profit_target_inr") as string) || settings?.profit_target_inr || "10000").trim(),
-      custom_orders_enabled: fd.get("custom_orders_enabled") === "on" ? "true" : "false",
-      lithophane_enabled: fd.get("lithophane_enabled") === "on" ? "true" : "false",
-      pegboard_checkout_enabled: fd.get("pegboard_checkout_enabled") === "on" ? "true" : "false",
-      allowed_delivery_states: ((fd.get("allowed_delivery_states") as string) || settings?.allowed_delivery_states || '["Maharashtra"]').trim(),
+      max_orders_per_day: ((fd.get("max_orders_per_day") as string) || settings?.max_orders_per_day || "1000").trim(),
+      max_orders_per_week: ((fd.get("max_orders_per_week") as string) || settings?.max_orders_per_week || "5000").trim(),
+      profit_target_inr: ((fd.get("profit_target_inr") as string) || settings?.profit_target_inr || "10000000").trim(),
+      allowed_delivery_states: ((fd.get("allowed_delivery_states") as string) || settings?.allowed_delivery_states || '["All India"]').trim(),
       invoice_mode: ((fd.get("invoice_mode") as string) || settings?.invoice_mode || "receipt").trim(),
       turnaround_min_days: ((fd.get("turnaround_min_days") as string) || settings?.turnaround_min_days || "4").trim(),
       turnaround_max_days: ((fd.get("turnaround_max_days") as string) || settings?.turnaround_max_days || "7").trim(),
@@ -226,144 +220,6 @@ export function SettingsTab() {
         <h2 className="text-2xl font-semibold">Site Settings</h2>
         <p className="text-muted mt-1 text-sm">Update the global content across your site.</p>
       </div>
-
-      {/* MASTER CHECKOUT GATEWAY SWITCH (A1 & A2) */}
-      <div className={cn(
-        "rounded-2xl border p-6 transition-all shadow-md",
-        isCheckoutOpen 
-          ? "border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-950/20" 
-          : "border-amber-500/30 bg-amber-500/5 dark:bg-amber-950/20"
-      )}>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <span className={cn(
-                "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase border",
-                isCheckoutOpen 
-                  ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30" 
-                  : "bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30"
-              )}>
-                <Power className="size-3.5" />
-                {isCheckoutOpen ? "Checkout Open (Accepting Orders)" : "Checkout Closed (Waitlist Active)"}
-              </span>
-
-              {settings.razorpay_mode === "live" ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">
-                  <Shield className="size-3" /> Live Gateway Keys
-                </span>
-              ) : settings.razorpay_mode === "test" ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                  <Info className="size-3" /> Test / Sandbox Gateway Keys
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-500/10 text-gray-500 border border-gray-500/20">
-                  Gateway Unconfigured
-                </span>
-              )}
-            </div>
-            <h3 className="text-xl font-bold text-fg">
-              {isCheckoutOpen ? "Customer Storefront is Live" : "Customer Storefront is Protected by The Gate"}
-            </h3>
-            <p className="text-xs sm:text-sm text-muted max-w-2xl leading-relaxed">
-              {isCheckoutOpen 
-                ? "Customers can place orders on sellable catalog products within Maharashtra. Order caps and profit targets are monitored automatically."
-                : "Checkout is completely paused. Customers visiting the shop, cart, or checkout see demand-capture waitlist forms. All server order creation endpoints reject requests."}
-            </p>
-          </div>
-
-          <div className="shrink-0 flex items-center gap-2">
-            {isCheckoutOpen ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setCheckoutAction("pause");
-                  setCheckoutModalOpen(true);
-                }}
-                className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs sm:text-sm transition-all shadow-sm cursor-pointer flex items-center gap-2"
-              >
-                <Lock className="size-4" /> Pause Checkout
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  setCheckoutAction("open");
-                  setCheckoutModalOpen(true);
-                }}
-                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs sm:text-sm transition-all shadow-sm cursor-pointer flex items-center gap-2"
-              >
-                <Unlock className="size-4" /> Open Customer Checkout
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Confirmation Modal for Checkout Toggle */}
-      {checkoutModalOpen && (
-        <ModalPortal isOpen={checkoutModalOpen}>
-          <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-150">
-            <div className="relative w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
-            <div className="flex items-center gap-3">
-              <div className={cn(
-                "p-2.5 rounded-xl",
-                checkoutAction === "open" ? "bg-emerald-500/10 text-emerald-500" : "bg-amber-500/10 text-amber-500"
-              )}>
-                {checkoutAction === "open" ? <Unlock className="size-6" /> : <Lock className="size-6" />}
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-fg">
-                  {checkoutAction === "open" 
-                    ? (settings.is_live_key ? "Live Gateway: Open Checkout" : "Open Checkout in Test Mode")
-                    : "Pause Customer Checkout"}
-                </h3>
-                <p className="text-xs text-muted">
-                  {checkoutAction === "open" ? "Enable public purchasing" : "Halt incoming orders immediately"}
-                </p>
-              </div>
-            </div>
-
-            {checkoutAction === "open" ? (
-              <p className="text-xs text-muted leading-relaxed">
-                Customer checkout will be active and customers can place orders across all enabled products and custom services.
-              </p>
-            ) : (
-              <p className="text-xs text-muted leading-relaxed">
-                Customer checkout will be paused. Any orders already placed remain valid and will be delivered.
-              </p>
-            )}
-
-            <div className="flex gap-2 justify-end pt-3 border-t border-border">
-              <button
-                type="button"
-                onClick={() => setCheckoutModalOpen(false)}
-                className="px-4 py-2 rounded-lg border border-border text-xs font-semibold hover:bg-surface-2 transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  const newStatus = checkoutAction === "open" ? "true" : "false";
-                  updateMutation.mutate({
-                    checkout_enabled: newStatus,
-                  });
-                  setCheckoutModalOpen(false);
-                }}
-                className={cn(
-                  "px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer",
-                  checkoutAction === "open"
-                    ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                    : "bg-amber-600 hover:bg-amber-700 text-white"
-                )}
-              >
-                {checkoutAction === "open" ? "Confirm & Open Checkout" : "Confirm & Pause Checkout"}
-              </button>
-            </div>
-          </div>
-        </div>
-      </ModalPortal>
-      )}
 
       <form onSubmit={handleSubmit} className="space-y-12 max-w-3xl">
         {/* HOMEPAGE SECTION */}
@@ -1090,51 +946,12 @@ export function SettingsTab() {
             </div>
           </div>
 
-          {/* Made-to-Order Services & COD Toggles */}
+          {/* Payment Options (COD Toggle) */}
           <div className="pt-4 border-t border-border space-y-3">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted">
-              Service Gating &amp; Payment Options
+              Payment Options
             </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-              <label className="flex items-center gap-2 p-3 rounded-xl border border-border bg-surface cursor-pointer hover:bg-surface-2 transition-colors">
-                <input
-                  type="checkbox"
-                  name="custom_orders_enabled"
-                  defaultChecked={settings.custom_orders_enabled !== "false"}
-                  className="size-4 rounded border-border accent-accent"
-                />
-                <div>
-                  <span className="font-semibold block text-fg">Custom CAD Orders</span>
-                  <span className="text-[11px] text-muted">File upload &amp; quoting</span>
-                </div>
-              </label>
-
-              <label className="flex items-center gap-2 p-3 rounded-xl border border-border bg-surface cursor-pointer hover:bg-surface-2 transition-colors">
-                <input
-                  type="checkbox"
-                  name="lithophane_enabled"
-                  defaultChecked={settings.lithophane_enabled !== "false"}
-                  className="size-4 rounded border-border accent-accent"
-                />
-                <div>
-                  <span className="font-semibold block text-fg">Lithophane Studio</span>
-                  <span className="text-[11px] text-muted">Photo uploads &amp; boxes</span>
-                </div>
-              </label>
-
-              <label className="flex items-center gap-2 p-3 rounded-xl border border-border bg-surface cursor-pointer hover:bg-surface-2 transition-colors">
-                <input
-                  type="checkbox"
-                  name="pegboard_checkout_enabled"
-                  defaultChecked={settings.pegboard_checkout_enabled !== "false"}
-                  className="size-4 rounded border-border accent-accent"
-                />
-                <div>
-                  <span className="font-semibold block text-fg">Pegboard Checkout</span>
-                  <span className="text-[11px] text-muted">Configurator ordering</span>
-                </div>
-              </label>
-
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
               <label className="flex items-center gap-2 p-3 rounded-xl border border-border bg-surface cursor-pointer hover:bg-surface-2 transition-colors">
                 <input
                   type="checkbox"

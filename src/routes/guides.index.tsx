@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { GUIDES } from "@/lib/guides-data";
 import { generateBreadcrumbJsonLd } from "@/lib/jsonld";
-import { ArrowRight, Clock, Calendar, CheckCircle2, Layers } from "lucide-react";
+import { BookOpen, ArrowRight, Clock, Calendar, CheckCircle2, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/guides/")({

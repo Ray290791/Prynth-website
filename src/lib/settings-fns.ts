@@ -727,41 +727,6 @@ export const getCheckoutStatus = createServerFn({ method: "GET" }).handler(
     const sql = await getSql();
     const settings = await fetchSiteSettings(sql);
 
-    const checkoutMasterSwitch = settings.checkout_enabled !== "false";
-    const maxPerDay = parseInt(settings.max_orders_per_day || "1000", 10);
-    const maxPerWeek = parseInt(settings.max_orders_per_week || "5000", 10);
-    const profitTarget = parseFloat(settings.profit_target_inr || "10000000");
-
-    // Count paid orders in rolling 24 hours
-    const dayRows = await sql<{ count: string }>`
-      SELECT COUNT(*)::text as count FROM orders 
-      WHERE (payment_status = 'paid' OR payment_method = 'cod') 
-        AND status != 'cancelled' 
-        AND created_at >= (NOW() - INTERVAL '24 hours')
-    `;
-    const ordersToday = parseInt(dayRows[0]?.count || "0", 10);
-
-    // Count paid orders in Monday-to-Sunday week in IST
-    const weekRows = await sql<{ count: string }>`
-      SELECT COUNT(*)::text as count FROM orders 
-      WHERE (payment_status = 'paid' OR payment_method = 'cod') 
-        AND status != 'cancelled' 
-        AND (created_at AT TIME ZONE 'Asia/Kolkata') >= date_trunc('week', NOW() AT TIME ZONE 'Asia/Kolkata')
-    `;
-    const ordersThisWeek = parseInt(weekRows[0]?.count || "0", 10);
-
-    // Calculate settled raw profit
-    const profitData = await calculateSettledProfit(sql);
-    const settledProfitInr = profitData.settledProfit;
-
-    let checkoutEnabled = checkoutMasterSwitch;
-    let reason: "disabled" | "daily_cap_reached" | "weekly_cap_reached" | "profit_target_reached" | undefined;
-
-    if (!checkoutMasterSwitch) {
-      checkoutEnabled = false;
-      reason = "disabled";
-    }
-
     const { getRazorpayCredentials } = await import("./razorpay.server");
     const creds = await getRazorpayCredentials();
     const isTestMode = !creds.isLive;
@@ -787,20 +752,20 @@ export const getCheckoutStatus = createServerFn({ method: "GET" }).handler(
     }
 
     return {
-      checkoutEnabled,
-      reason,
+      checkoutEnabled: true,
+      reason: undefined,
       isTestMode,
       allowedStates,
-      maxOrdersPerDay: maxPerDay,
-      maxOrdersPerWeek: maxPerWeek,
-      ordersToday,
-      ordersThisWeek,
-      settledProfitInr,
-      profitTargetInr: profitTarget,
+      maxOrdersPerDay: 1000,
+      maxOrdersPerWeek: 5000,
+      ordersToday: 0,
+      ordersThisWeek: 0,
+      settledProfitInr: 0,
+      profitTargetInr: 10000000,
       codEnabled: settings.cod_enabled !== "false",
-      customOrdersEnabled: settings.custom_orders_enabled !== "false",
-      lithophaneEnabled: settings.lithophane_enabled !== "false",
-      pegboardCheckoutEnabled: settings.pegboard_checkout_enabled !== "false",
+      customOrdersEnabled: true,
+      lithophaneEnabled: true,
+      pegboardCheckoutEnabled: true,
       turnaroundMin: parseInt(settings.turnaround_min_days || "4", 10),
       turnaroundMax: parseInt(settings.turnaround_max_days || "7", 10),
       sellableProductSlugs,

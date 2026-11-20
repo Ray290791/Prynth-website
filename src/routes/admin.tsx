@@ -60,9 +60,7 @@ import { FaqsTab } from "@/components/admin/faqs-tab";
 import { UsersTab } from "@/components/admin/users-tab";
 import { MaterialsTab } from "@/components/admin/materials-tab";
 import { LaunchLedgerTab } from "@/components/admin/ledger-tab";
-import { WaitlistTab } from "@/components/admin/waitlist-tab";
 import { getTicketsAdmin } from "@/lib/contact-fns";
-import { getWaitlistAdmin } from "@/lib/waitlist-fns";
 
 export const Route = createFileRoute("/admin")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -102,16 +100,8 @@ function AdminPage() {
     staleTime: 30_000,
   });
 
-  const { data: waitlist } = useQuery({
-    queryKey: ["waitlistAdmin"],
-    queryFn: () => getWaitlistAdmin(),
-    enabled: Boolean(user) && isAdmin,
-    staleTime: 60_000,
-  });
-
   const openTicketsCount = tickets?.filter((t: any) => t.status === "open").length || 0;
   const pendingOrdersCount = orders?.filter((o: any) => o.status === "pending" || o.status === "processing").length || 0;
-  const waitlistCount = (waitlist as any)?.entries?.length ?? (Array.isArray(waitlist) ? waitlist.length : 0);
 
   const greeting = (() => {
     const h = new Date().getHours();
@@ -139,13 +129,6 @@ function AdminPage() {
       return (
         <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30">
           {pendingOrdersCount}
-        </span>
-      );
-    }
-    if (itemId === "waitlist" && waitlistCount > 0) {
-      return (
-        <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted/20 text-muted border border-border/50">
-          {waitlistCount}
         </span>
       );
     }
@@ -261,7 +244,6 @@ function AdminPage() {
       items: [
         { id: "orders", label: "Orders", icon: Package },
         { id: "inquiries", label: "Inquiries & Quotes", icon: Mail },
-        { id: "waitlist", label: "Waitlist", icon: Clock },
         { id: "ledger", label: "Launch Ledger", icon: TrendingUp },
         { id: "analytics", label: "Analytics", icon: BarChart3 },
       ],
@@ -620,10 +602,6 @@ function AdminPage() {
 
         {activeTab === "ledger" && (
           <LaunchLedgerTab />
-        )}
-
-        {activeTab === "waitlist" && (
-          <WaitlistTab />
         )}
       </main>
 

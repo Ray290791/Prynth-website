@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { WaitlistForm } from "@/components/waitlist-form";
 import { getCheckoutStatus } from "@/lib/settings-fns";
 import {
   cartSubtotal,
@@ -492,36 +491,6 @@ function CheckoutPage() {
       </div>
     );
   }
-
-  if (!isCheckoutOpen) {
-    return (
-      <div className="mx-auto max-w-xl px-4 py-20 text-center md:px-6">
-        <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-accent/10 text-accent mb-4">
-          <ShoppingBag className="size-6" />
-        </div>
-        <h1 className="font-display text-3xl font-semibold tracking-tight">
-          {checkoutStatus?.reason === "daily_cap_reached" || checkoutStatus?.reason === "weekly_cap_reached"
-            ? "Fully booked for now"
-            : "Orders open soon"}
-        </h1>
-        <p className="mt-3 text-sm text-muted leading-relaxed">
-          {checkoutStatus?.reason === "daily_cap_reached" || checkoutStatus?.reason === "weekly_cap_reached"
-            ? "We have reached our studio printing capacity for this production window. Enter your email below to receive an alert when the next order slots open."
-            : "We are currently running test batches before opening public checkout. Join our waitlist to be notified first."}
-        </p>
-        <div className="mt-8 rounded-2xl border border-border bg-surface p-6 text-left shadow-xs">
-          <WaitlistForm interest="launch" />
-        </div>
-        <div className="mt-6">
-          <Button asChild variant="ghost" size="sm">
-            <Link to="/cart">Return to cart</Link>
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-16">

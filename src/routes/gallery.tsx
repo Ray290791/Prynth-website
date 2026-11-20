@@ -3,6 +3,7 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Image as ImageIcon,
+  Sparkles,
   Layers,
   ArrowRight,
   Filter,
@@ -95,11 +96,10 @@ function GalleryPage() {
             <button
               key={tag}
               onClick={() => setSelectedTag(tag)}
-              className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-                selectedTag === tag
-                  ? "bg-accent text-ink shadow-xs"
-                  : "bg-surface border border-border text-muted hover:border-fg/30 hover:text-fg"
-              }`}
+              className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer ${selectedTag === tag
+                ? "bg-accent text-ink shadow-xs"
+                : "bg-surface border border-border text-muted hover:border-fg/30 hover:text-fg"
+                }`}
             >
               {tag}
             </button>
@@ -140,9 +140,8 @@ function GalleryPage() {
                     {/* Media Container: Real Photo or Blank Placeholder */}
                     <div
                       onClick={() => hasPhoto && setActiveModalItem(item)}
-                      className={`relative aspect-4/3 w-full overflow-hidden bg-surface-2 border-b border-border ${
-                        hasPhoto ? "cursor-zoom-in" : ""
-                      }`}
+                      className={`relative aspect-4/3 w-full overflow-hidden bg-surface-2 border-b border-border ${hasPhoto ? "cursor-zoom-in" : ""
+                        }`}
                     >
                       {hasPhoto ? (
                         <img

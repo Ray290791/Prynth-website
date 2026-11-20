@@ -117,18 +117,21 @@ export async function cleanupUnattachedCustomFiles(
           FROM tickets
           WHERE description LIKE '%file-%'
         )
-      LIMIT 100
+      LIMIT 40
     `;
 
     if (!candidates || candidates.length === 0) {
       return 0;
     }
 
-    // Delete corresponding objects from Cloudflare R2
-    for (const file of candidates) {
-      if (file.r2_key) {
-        await deleteModelFromR2(file.r2_key).catch(() => {});
-      }
+    // Delete corresponding objects from Cloudflare R2 in a single batched call
+    const r2Keys = candidates
+      .map((c) => c.r2_key)
+      .filter((k): k is string => Boolean(k && k.trim()));
+
+    if (r2Keys.length > 0) {
+      const { deleteModelsFromR2 } = await import("./r2.server");
+      await deleteModelsFromR2(r2Keys).catch(() => {});
     }
 
     // Delete records from Postgres

@@ -1,6 +1,7 @@
 import { createFileRoute, getRouteApi, Link } from "@tanstack/react-router";
 import { generateBreadcrumbJsonLd } from "@/lib/jsonld";
 import {
+  Scale,
   ShieldCheck,
   Clock,
   Mail,

@@ -23,10 +23,6 @@ export function ProductCard({ product }: { product: Product }) {
   function addToCart(e: MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    if (product.sellable === false) {
-      toast.error(`"${product.name}" is waitlist-only right now.`);
-      return;
-    }
     add({
       kind: "product",
       productSlug: product.slug,
@@ -76,10 +72,6 @@ export function ProductCard({ product }: { product: Product }) {
         {product.badge ? (
           <span className="absolute top-3 left-3 liquid-glass-chip text-fg font-medium text-xs tracking-tight shadow-xs">
             {product.badge}
-          </span>
-        ) : product.sellable === false ? (
-          <span className="absolute top-3 left-3 liquid-glass-chip text-muted text-[11px] shadow-2xs">
-            Waitlist
           </span>
         ) : null}
       </Link>
@@ -136,17 +128,6 @@ export function ProductCard({ product }: { product: Product }) {
               <Trash2 className="size-4" strokeWidth={2} />
             </button>
           </div>
-        ) : product.sellable === false ? (
-          <Button
-            variant="secondary"
-            size="sm"
-            className="mt-auto w-full opacity-85 hover:opacity-100"
-            asChild
-          >
-            <Link to="/shop/$slug" params={{ slug: product.slug }}>
-              Waitlist · View
-            </Link>
-          </Button>
         ) : (
           <Button
             variant="secondary"

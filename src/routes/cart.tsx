@@ -3,8 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { ShoppingBag, Trash2, Sliders } from "lucide-react";
 import { QuantityStepper } from "@/components/quantity-stepper";
 import { Button } from "@/components/ui/button";
-import { WaitlistForm } from "@/components/waitlist-form";
-import { getCheckoutStatus } from "@/lib/settings-fns";
 import {
   cartSubtotal,
   getBulkDiscount,
@@ -49,12 +47,6 @@ function CartPage() {
   const codFee = Number(settings?.cod_fee) || COD_FEE;
 
   const hydrated = useHydrated();
-  const { data: checkoutStatus } = useQuery({
-    queryKey: ["checkout-status"],
-    queryFn: () => getCheckoutStatus(),
-    staleTime: 30000,
-  });
-  const isCheckoutOpen = checkoutStatus?.checkoutEnabled ?? true;
   const items = useCart((s) => s.items);
   const setQty = useCart((s) => s.setQty);
   const remove = useCart((s) => s.remove);
@@ -273,27 +265,9 @@ function CartPage() {
             <span className="tabular-nums">{formatINR(discountedSubtotal + ship)}</span>
           </div>
 
-          {!isCheckoutOpen ? (
-            <div className="rounded-2xl border border-accent/25 bg-accent/5 p-4 space-y-3">
-              <div>
-                <h3 className="font-display text-base font-semibold text-fg">
-                  {checkoutStatus?.reason === "daily_cap_reached" || checkoutStatus?.reason === "weekly_cap_reached"
-                    ? "Fully booked for now"
-                    : "Orders open soon"}
-                </h3>
-                <p className="mt-1 text-xs text-muted leading-relaxed">
-                  {checkoutStatus?.reason === "daily_cap_reached" || checkoutStatus?.reason === "weekly_cap_reached"
-                    ? "We have reached our studio printing capacity for this window. Join the list to grab a slot in the next batch."
-                    : "We are currently running test batches before opening public checkout. Join our waitlist to be notified first."}
-                </p>
-              </div>
-              <WaitlistForm interest="launch" />
-            </div>
-          ) : (
-            <Button asChild size="lg" className="w-full cursor-pointer shadow-xs">
-              <Link to="/checkout">Proceed to Checkout</Link>
-            </Button>
-          )}
+          <Button asChild size="lg" className="w-full cursor-pointer shadow-xs">
+            <Link to="/checkout">Proceed to Checkout</Link>
+          </Button>
 
           <Button asChild variant="ghost" className="w-full cursor-pointer text-xs">
             <Link to="/shop">Continue shopping</Link>
@@ -308,22 +282,9 @@ function CartPage() {
             <p className="text-[11px] text-muted uppercase font-medium tracking-wider">Est. Total</p>
             <p className="text-base font-semibold tabular-nums text-fg">{formatINR(discountedSubtotal + ship)}</p>
           </div>
-          {isCheckoutOpen ? (
-            <Button asChild size="md" className="shadow-xs cursor-pointer">
-              <Link to="/checkout">Checkout ({items.reduce((s, i) => s + i.qty, 0)})</Link>
-            </Button>
-          ) : (
-            <Button
-              size="md"
-              variant="secondary"
-              className="shadow-xs cursor-pointer"
-              onClick={() => {
-                window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
-              }}
-            >
-              Join Waitlist
-            </Button>
-          )}
+          <Button asChild size="md" className="shadow-xs cursor-pointer">
+            <Link to="/checkout">Checkout ({items.reduce((s, i) => s + i.qty, 0)})</Link>
+          </Button>
         </div>
       )}
     </div>

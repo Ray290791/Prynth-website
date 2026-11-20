@@ -74,13 +74,6 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
 
     const settings = await fetchSiteSettings(sql);
 
-    // Master Checkout Switch
-    if (settings.checkout_enabled === "false") {
-      const err: any = new Error("Customer checkout is currently paused. Please check back shortly.");
-      err.status = 403;
-      throw err;
-    }
-
     // Cash on Delivery
     if (data.paymentMethod === "cod" && settings.cod_enabled === "false") {
       throw new Error("Cash on Delivery is currently unavailable.");
@@ -104,23 +97,6 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
     let serverSubtotal = 0;
     for (const item of data.items) {
       const qty = Math.max(1, Math.min(1000, Math.floor(Number(item.qty) || 1)));
-
-      // Services check (optional admin pauses)
-      const isLithophaneItem = item.name?.toLowerCase().includes("lithophane") || item.productSlug?.includes("lithophane") || Boolean((item as any).custom?.isLithophane);
-      if (item.kind === "custom") {
-        if (isLithophaneItem) {
-          if (settings.lithophane_enabled === "false") {
-            throw new Error("Lithophane orders are temporarily paused.");
-          }
-        } else if (settings.custom_orders_enabled === "false") {
-          throw new Error("Custom 3D printing orders are temporarily paused.");
-        }
-      }
-      if (item.productSlug === "modular-pegboard") {
-        if (settings.pegboard_checkout_enabled === "false") {
-          throw new Error("Pegboard orders are temporarily paused.");
-        }
-      }
 
       if (item.kind === "product" && item.productSlug) {
         const productRes = await sql`SELECT price, stock_count, in_stock, sellable FROM products WHERE slug = ${item.productSlug}`;

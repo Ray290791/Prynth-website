@@ -8,6 +8,7 @@ import {
   Tag,
   HeartHandshake,
   Layers,
+  Users,
   Cpu,
   MapPin,
 } from "lucide-react";

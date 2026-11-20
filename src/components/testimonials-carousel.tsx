@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Star, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Star, CheckCircle2, ChevronLeft, ChevronRight, MessageSquareQuote } from "lucide-react";
 import { getTestimonials, type Testimonial } from "@/lib/testimonials-fns";
 
 export function TestimonialsSection({
