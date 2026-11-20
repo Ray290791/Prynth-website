@@ -35,7 +35,7 @@ import {
   type PrintabilityReport,
   type BedFaceOption,
 } from "@/lib/mesh-analysis";
-import { parseModelFile } from "@/lib/model-parser";
+import { parseModelFile, mergeBufferGeometries } from "@/lib/model-parser";
 
 export interface ModelViewerProps {
   file: File;
@@ -665,6 +665,7 @@ export function ModelViewer({
     setStats(null);
     setCadPreview(null);
     setRotation([0, 0, 0]);
+    onRotationChange?.([0, 0, 0]);
 
     function handleLoadedGeometry(
       geo: THREE.BufferGeometry,
@@ -742,13 +743,17 @@ export function ModelViewer({
             (group) => {
               if (!active) return;
               const geoms: THREE.BufferGeometry[] = [];
+              group.updateMatrixWorld(true);
               group.traverse((child) => {
                 if ((child as THREE.Mesh).isMesh && (child as THREE.Mesh).geometry) {
-                  geoms.push((child as THREE.Mesh).geometry.clone());
+                  const cloned = (child as THREE.Mesh).geometry.clone();
+                  cloned.applyMatrix4((child as THREE.Mesh).matrixWorld);
+                  geoms.push(cloned);
                 }
               });
               if (geoms.length > 0) {
-                handleLoadedGeometry(geoms[0]);
+                const merged = mergeBufferGeometries(geoms);
+                handleLoadedGeometry(merged);
               } else {
                 setError(true);
                 setLoading(false);
@@ -768,14 +773,18 @@ export function ModelViewer({
             fallbackUrl,
             (group) => {
               if (!active) return;
-              let foundGeom: THREE.BufferGeometry | null = null;
+              const geoms: THREE.BufferGeometry[] = [];
+              group.updateMatrixWorld(true);
               group.traverse((child) => {
-                if (!foundGeom && (child as THREE.Mesh).isMesh && (child as THREE.Mesh).geometry) {
-                  foundGeom = (child as THREE.Mesh).geometry.clone();
+                if ((child as THREE.Mesh).isMesh && (child as THREE.Mesh).geometry) {
+                  const cloned = (child as THREE.Mesh).geometry.clone();
+                  cloned.applyMatrix4((child as THREE.Mesh).matrixWorld);
+                  geoms.push(cloned);
                 }
               });
-              if (foundGeom) {
-                handleLoadedGeometry(foundGeom);
+              if (geoms.length > 0) {
+                const merged = mergeBufferGeometries(geoms);
+                handleLoadedGeometry(merged);
               } else {
                 setError(true);
                 setLoading(false);

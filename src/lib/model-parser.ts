@@ -213,112 +213,193 @@ export function mergeBufferGeometries(geometries: THREE.BufferGeometry[]): THREE
 
 /**
  * Parses a 3MF transform string (12 affine numbers) into a Three.js Matrix4.
+ *
+ * 3MF Specification (ISO/IEC 5143 section 4.1):
+ * Matrix is space-delimited 12 numbers: m00 m01 m02 m10 m11 m12 m20 m21 m22 m30 m31 m32
+ * representing the affine transformation:
+ * [ m00  m01  m02  0 ]
+ * [ m10  m11  m12  0 ]
+ * [ m20  m21  m22  0 ]
+ * [ m30  m31  m32  1 ]  (in column-vector notation [x y z 1] * M)
+ *
+ * In Three.js standard row-major Matrix4.set(n11, n12, n13, n14, n21, ...):
+ * row 1: m00 (n[0]), m10 (n[3]), m20 (n[6]), m30 (n[9])
+ * row 2: m01 (n[1]), m11 (n[4]), m21 (n[7]), m31 (n[10])
+ * row 3: m02 (n[2]), m12 (n[5]), m22 (n[8]), m32 (n[11])
+ * row 4: 0,          0,          0,          1
  */
-function parse3MFTransform(transformStr: string): THREE.Matrix4 {
+export function parse3MFTransform(transformStr: string): THREE.Matrix4 {
   const m = new THREE.Matrix4();
   const n = transformStr.trim().split(/\s+/).map(Number);
   if (n.length === 12 && n.every((v) => !isNaN(v))) {
-    // 3MF affine matrix layout:
-    // [n[0]  n[1]  n[2]  n[9]]
-    // [n[3]  n[4]  n[5]  n[10]]
-    // [n[6]  n[7]  n[8]  n[11]]
-    // [0     0     0     1   ]
     m.set(
-      n[0], n[1], n[2], n[9],
-      n[3], n[4], n[5], n[10],
-      n[6], n[7], n[8], n[11],
-      0, 0, 0, 1
+      n[0], n[3], n[6], n[9],
+      n[1], n[4], n[7], n[10],
+      n[2], n[5], n[8], n[11],
+      0,    0,    0,    1
     );
   }
   return m;
 }
 
 /**
- * Helper to find elements by localName regardless of XML namespace prefixes (e.g. <m:mesh> or <mesh>).
+ * Normalizes internal zip entry paths (handles Windows backslashes and ensures leading slash).
  */
-function getElementsByLocalName(parent: Document | Element, localName: string): Element[] {
-  if ("getElementsByTagNameNS" in parent) {
-    try {
-      const list = parent.getElementsByTagNameNS("*", localName);
-      if (list && list.length > 0) return Array.from(list);
-    } catch {
-      // fallback
-    }
-  }
-  const direct = parent.getElementsByTagName(localName);
-  if (direct && direct.length > 0) return Array.from(direct);
+function normalize3MFPath(p: string): string {
+  const cleaned = p.replace(/\\/g, "/").trim();
+  return cleaned.startsWith("/") ? cleaned.toLowerCase() : "/" + cleaned.toLowerCase();
+}
 
-  const all = parent.getElementsByTagName("*");
-  const result: Element[] = [];
-  const target = localName.toLowerCase();
-  for (let i = 0; i < all.length; i++) {
-    const el = all[i];
-    const elLocal = el.localName?.toLowerCase();
-    const tag = el.tagName.toLowerCase();
-    if (elLocal === target || tag === target || tag.endsWith(":" + target)) {
-      result.push(el);
-    }
-  }
-  return result;
+interface Parsed3MFComponent {
+  objectId: string;
+  path: string;
+  transform: string;
+}
+
+interface Parsed3MFObject {
+  id: string;
+  components: Parsed3MFComponent[];
+  geom: THREE.BufferGeometry | null;
+}
+
+interface Parsed3MFBuildItem {
+  objectId: string;
+  transform: string;
+}
+
+interface Parsed3MFModelDoc {
+  unit: string;
+  objects: Parsed3MFObject[];
+  buildItems: Parsed3MFBuildItem[];
 }
 
 /**
- * Parses vertices and triangles from a `<mesh>` DOM node.
+ * Robust XML parser for 3MF model files:
+ * Handles arbitrary XML namespaces (e.g. <m:mesh>, <p:components>, <BambuStudio:object>),
+ * works reliably in both browser client and Node/worker environments with zero external DOM dependencies.
  */
-function parseMeshNode(meshNode: Element): THREE.BufferGeometry | null {
-  const vNodes = getElementsByLocalName(meshNode, "vertex");
-  const tNodes = getElementsByLocalName(meshNode, "triangle");
+function parse3MFModelXml(xmlText: string): Parsed3MFModelDoc {
+  const unitMatch = xmlText.match(/<[a-zA-Z0-9_:]*model\b[^>]*\bunit=["']([^"']+)["']/i);
+  const unit = unitMatch ? unitMatch[1].toLowerCase() : "millimeter";
 
-  if (vNodes.length === 0 || tNodes.length === 0) return null;
+  const objects: Parsed3MFObject[] = [];
+  const objRegex = /<([a-zA-Z0-9_:]*object)\b([^>]*)>([\s\S]*?)<\/\1>/gi;
+  let match: RegExpExecArray | null;
 
-  const positions = new Float32Array(vNodes.length * 3);
-  for (let i = 0; i < vNodes.length; i++) {
-    const v = vNodes[i];
-    positions[i * 3] = parseFloat(v.getAttribute("x") || "0");
-    positions[i * 3 + 1] = parseFloat(v.getAttribute("y") || "0");
-    positions[i * 3 + 2] = parseFloat(v.getAttribute("z") || "0");
+  while ((match = objRegex.exec(xmlText)) !== null) {
+    const attrsStr = match[2];
+    const inner = match[3];
+    const idMatch = attrsStr.match(/\bid=["']([^"']+)["']/i);
+    const id = idMatch ? idMatch[1] : "";
+
+    const components: Parsed3MFComponent[] = [];
+    const compRegex = /<[a-zA-Z0-9_:]*component\b([^>]*)\/?>/gi;
+    let compM: RegExpExecArray | null;
+    while ((compM = compRegex.exec(inner)) !== null) {
+      const cAttrs = compM[1];
+      const objIdM = cAttrs.match(/\bobjectid=["']([^"']+)["']/i);
+      const pathM = cAttrs.match(/\b(?:[a-zA-Z0-9_]+:)?path=["']([^"']+)["']/i);
+      const transM = cAttrs.match(/\btransform=["']([^"']+)["']/i);
+      components.push({
+        objectId: objIdM ? objIdM[1] : "",
+        path: pathM ? pathM[1] : "",
+        transform: transM ? transM[1] : "",
+      });
+    }
+
+    let geom: THREE.BufferGeometry | null = null;
+    if (/<[a-zA-Z0-9_:]*mesh\b/i.test(inner)) {
+      const vCoords: number[] = [];
+      const vRegex = /<[a-zA-Z0-9_:]*vertex\b([^>]*)\/?>/gi;
+      let vM: RegExpExecArray | null;
+      while ((vM = vRegex.exec(inner)) !== null) {
+        const vAttrs = vM[1];
+        const x = parseFloat((vAttrs.match(/\bx=["']([^"']+)["']/i) || [])[1] || "0");
+        const y = parseFloat((vAttrs.match(/\by=["']([^"']+)["']/i) || [])[1] || "0");
+        const z = parseFloat((vAttrs.match(/\bz=["']([^"']+)["']/i) || [])[1] || "0");
+        vCoords.push(x, y, z);
+      }
+
+      const indices: number[] = [];
+      const tRegex = /<[a-zA-Z0-9_:]*triangle\b([^>]*)\/?>/gi;
+      let tM: RegExpExecArray | null;
+      while ((tM = tRegex.exec(inner)) !== null) {
+        const tAttrs = tM[1];
+        const v1 = parseInt((tAttrs.match(/\bv1=["']([^"']+)["']/i) || [])[1] || "0", 10);
+        const v2 = parseInt((tAttrs.match(/\bv2=["']([^"']+)["']/i) || [])[1] || "0", 10);
+        const v3 = parseInt((tAttrs.match(/\bv3=["']([^"']+)["']/i) || [])[1] || "0", 10);
+        indices.push(v1, v2, v3);
+      }
+
+      if (vCoords.length > 0 && indices.length > 0) {
+        geom = new THREE.BufferGeometry();
+        geom.setAttribute("position", new THREE.BufferAttribute(new Float32Array(vCoords), 3));
+        geom.setIndex(new THREE.BufferAttribute(new Uint32Array(indices), 1));
+        geom.computeVertexNormals();
+      }
+    }
+
+    objects.push({ id, components, geom });
   }
 
-  const indices = new Uint32Array(tNodes.length * 3);
-  for (let i = 0; i < tNodes.length; i++) {
-    const t = tNodes[i];
-    indices[i * 3] = parseInt(t.getAttribute("v1") || "0", 10);
-    indices[i * 3 + 1] = parseInt(t.getAttribute("v2") || "0", 10);
-    indices[i * 3 + 2] = parseInt(t.getAttribute("v3") || "0", 10);
+  // Extract build items
+  const buildItems: Parsed3MFBuildItem[] = [];
+  const itemRegex = /<[a-zA-Z0-9_:]*item\b([^>]*)\/?>/gi;
+  let itM: RegExpExecArray | null;
+  while ((itM = itemRegex.exec(xmlText)) !== null) {
+    const itAttrs = itM[1];
+    const objIdM = itAttrs.match(/\bobjectid=["']([^"']+)["']/i);
+    const transM = itAttrs.match(/\btransform=["']([^"']+)["']/i);
+    buildItems.push({
+      objectId: objIdM ? objIdM[1] : "",
+      transform: transM ? transM[1] : "",
+    });
   }
 
-  const geom = new THREE.BufferGeometry();
-  geom.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-  geom.setIndex(new THREE.BufferAttribute(indices, 1));
-  geom.computeVertexNormals();
-  return geom;
+  return { unit, objects, buildItems };
 }
 
 /**
- * Robust 3MF Parser:
- * Supports standard 3MF, Bambu Studio / OrcaSlicer project 3MFs, Fusion 360 3MFs,
- * component assemblies, and Windows zip archives with backslash path separators.
+ * Universal 3MF Parser:
+ * Full support for 3MF Core Specification and 3MF Production Extension (multi-part assemblies,
+ * cross-file components, external object models, affine transform matrices, build placements,
+ * unit scaling, and proper Z-up to Three.js Y-up conversion).
  */
 export async function parse3MF(arrayBuffer: ArrayBuffer): Promise<ModelParseResult | null> {
   try {
     const unzipped = unzipSync(new Uint8Array(arrayBuffer));
-    const modelFiles: { path: string; text: string }[] = [];
+    const modelFiles = new Map<string, string>();
+    let rootModel = "/3d/3dmodel.model";
 
-    // Find all .model XML files inside zip
+    // Detect root model path from _rels/.rels if present
     for (const [rawKey, data] of Object.entries(unzipped)) {
-      const normalized = rawKey.replace(/\\/g, "/").toLowerCase();
-      if (normalized.endsWith(".model") || (normalized.includes("3d/") && normalized.endsWith(".xml"))) {
-        modelFiles.push({ path: rawKey, text: strFromU8(data) });
+      const norm = normalize3MFPath(rawKey);
+      if (norm === "/_rels/.rels") {
+        try {
+          const relsText = strFromU8(data);
+          const relM =
+            relsText.match(/<Relationship\b[^>]*\bTarget=["']([^"']+)["'][^>]*\bType=["'][^"']*3dmodel["']/i) ||
+            relsText.match(/<Relationship\b[^>]*\bType=["'][^"']*3dmodel["'][^>]*\bTarget=["']([^"']+)["']/i);
+          if (relM) {
+            rootModel = normalize3MFPath(relM[1]);
+          }
+        } catch {
+          // ignore rels parse error
+        }
+      }
+
+      if (norm.endsWith(".model") || (norm.includes("/3d/") && norm.endsWith(".xml"))) {
+        modelFiles.set(norm, strFromU8(data));
       }
     }
 
-    // Fallback: look for any xml file containing <model and <mesh
-    if (modelFiles.length === 0) {
+    // Fallback: search for any XML with <model
+    if (modelFiles.size === 0) {
       for (const [rawKey, data] of Object.entries(unzipped)) {
         try {
           const text = strFromU8(data);
           if (text.includes("<model") && (text.includes("<mesh") || text.includes("<object"))) {
-            modelFiles.push({ path: rawKey, text });
+            modelFiles.set(normalize3MFPath(rawKey), text);
           }
         } catch {
           // ignore binary files
@@ -326,90 +407,127 @@ export async function parse3MF(arrayBuffer: ArrayBuffer): Promise<ModelParseResu
       }
     }
 
-    if (modelFiles.length === 0) {
+    if (modelFiles.size === 0) {
       console.warn("No .model XML files found in 3MF archive.");
       return null;
     }
 
-    const parser = new DOMParser();
+    const parsedDocs = new Map<string, Parsed3MFModelDoc>();
+    const objectNodesByFullKey = new Map<string, { fileNorm: string; id: string; obj: Parsed3MFObject }>();
+    const objectNodesById = new Map<string, Array<{ fileNorm: string; id: string; obj: Parsed3MFObject }>>();
+    let unitScale = 1.0;
+
+    for (const [fileNorm, xmlText] of modelFiles.entries()) {
+      const parsed = parse3MFModelXml(xmlText);
+      parsedDocs.set(fileNorm, parsed);
+
+      if (fileNorm === rootModel || parsedDocs.size === 1) {
+        if (parsed.unit === "inch") unitScale = 25.4;
+        else if (parsed.unit === "centimeter") unitScale = 10;
+        else if (parsed.unit === "meter") unitScale = 1000;
+        else if (parsed.unit === "micron") unitScale = 0.001;
+      }
+
+      for (const obj of parsed.objects) {
+        const entry = { fileNorm, id: obj.id, obj };
+        objectNodesByFullKey.set(`${fileNorm}#${obj.id}`, entry);
+        const existing = objectNodesById.get(obj.id) || [];
+        existing.push(entry);
+        objectNodesById.set(obj.id, existing);
+      }
+    }
+
+    const resolvedGeomCache = new Map<string, THREE.BufferGeometry>();
+
+    function resolveObjectGeometry(
+      fileNorm: string,
+      id: string,
+      visited = new Set<string>()
+    ): THREE.BufferGeometry | null {
+      const key = `${fileNorm}#${id}`;
+      if (visited.has(key)) return null;
+      if (resolvedGeomCache.has(key)) return resolvedGeomCache.get(key)!;
+      visited.add(key);
+
+      let entry = objectNodesByFullKey.get(key);
+      if (!entry) {
+        const list = objectNodesById.get(id);
+        if (list && list.length > 0) entry = list[0];
+      }
+      if (!entry) return null;
+
+      // 1. Direct mesh geometry
+      if (entry.obj.geom) {
+        resolvedGeomCache.set(key, entry.obj.geom);
+        return entry.obj.geom;
+      }
+
+      // 2. Component references (including Production Extension cross-file references)
+      if (entry.obj.components.length > 0) {
+        const subGeoms: THREE.BufferGeometry[] = [];
+        for (const comp of entry.obj.components) {
+          const targetNorm = comp.path ? normalize3MFPath(comp.path) : entry.fileNorm;
+          const childGeom = resolveObjectGeometry(targetNorm, comp.objectId, new Set(visited));
+          if (childGeom) {
+            const cloned = childGeom.clone();
+            if (comp.transform) {
+              cloned.applyMatrix4(parse3MFTransform(comp.transform));
+            }
+            subGeoms.push(cloned);
+          }
+        }
+        if (subGeoms.length > 0) {
+          const merged = mergeBufferGeometries(subGeoms);
+          resolvedGeomCache.set(key, merged);
+          return merged;
+        }
+      }
+
+      return null;
+    }
+
     const extractedGeometries: THREE.BufferGeometry[] = [];
+    const candidateFiles: string[] = [];
+    if (parsedDocs.has(rootModel)) candidateFiles.push(rootModel);
+    for (const f of parsedDocs.keys()) {
+      if (f !== rootModel) candidateFiles.push(f);
+    }
 
-    for (const { text } of modelFiles) {
-      const doc = parser.parseFromString(text, "application/xml");
-      if (doc.querySelector("parsererror")) {
-        console.warn("DOMParser syntax error in 3MF model XML");
-        continue;
-      }
-
-      // Map object id to base geometry
-      const objectMap = new Map<string, THREE.BufferGeometry>();
-      const objects = getElementsByLocalName(doc, "object");
-
-      // Pass 1: Parse direct mesh objects
-      for (let i = 0; i < objects.length; i++) {
-        const obj = objects[i];
-        const id = obj.getAttribute("id") || String(i);
-        const meshes = getElementsByLocalName(obj, "mesh");
-        if (meshes.length > 0) {
-          const geom = parseMeshNode(meshes[0]);
+    // Pass 1: Resolve all items placed on the build plate via <build><item>
+    for (const f of candidateFiles) {
+      const parsed = parsedDocs.get(f)!;
+      if (parsed.buildItems.length > 0) {
+        for (const item of parsed.buildItems) {
+          const geom = resolveObjectGeometry(f, item.objectId);
           if (geom) {
-            objectMap.set(id, geom);
-          }
-        }
-      }
-
-      // Pass 2: Parse assembly objects that contain <component> references
-      for (let i = 0; i < objects.length; i++) {
-        const obj = objects[i];
-        const id = obj.getAttribute("id") || String(i);
-        if (objectMap.has(id)) continue;
-
-        const components = getElementsByLocalName(obj, "component");
-        if (components.length > 0) {
-          const subGeoms: THREE.BufferGeometry[] = [];
-          for (const comp of components) {
-            const compId = comp.getAttribute("objectid") || "";
-            const refGeom = objectMap.get(compId);
-            if (refGeom) {
-              const cloned = refGeom.clone();
-              const transformAttr = comp.getAttribute("transform");
-              if (transformAttr) {
-                cloned.applyMatrix4(parse3MFTransform(transformAttr));
-              }
-              subGeoms.push(cloned);
+            const cloned = geom.clone();
+            if (item.transform) {
+              cloned.applyMatrix4(parse3MFTransform(item.transform));
             }
-          }
-          if (subGeoms.length > 0) {
-            objectMap.set(id, mergeBufferGeometries(subGeoms));
+            extractedGeometries.push(cloned);
           }
         }
       }
+    }
 
-      // Check for <build> items with placements
-      const buildItems = getElementsByLocalName(doc, "item");
-      let buildPlaced = false;
-
-      if (buildItems.length > 0) {
-        for (let i = 0; i < buildItems.length; i++) {
-          const item = buildItems[i];
-          const objId = item.getAttribute("objectid") || "";
-          const baseGeom = objectMap.get(objId);
-          if (baseGeom) {
-            const geom = baseGeom.clone();
-            const transformAttr = item.getAttribute("transform");
-            if (transformAttr) {
-              const matrix = parse3MFTransform(transformAttr);
-              geom.applyMatrix4(matrix);
-            }
-            extractedGeometries.push(geom);
-            buildPlaced = true;
-          }
+    // Pass 2 Fallback: If no build items defined anywhere, collect all top-level root objects
+    if (extractedGeometries.length === 0) {
+      const referencedComps = new Set<string>();
+      for (const entry of objectNodesByFullKey.values()) {
+        for (const comp of entry.obj.components) {
+          const targetNorm = comp.path ? normalize3MFPath(comp.path) : entry.fileNorm;
+          referencedComps.add(`${targetNorm}#${comp.objectId}`);
+          referencedComps.add(comp.objectId);
         }
       }
 
-      // If build items were not present or matched, use all mesh objects directly
-      if (!buildPlaced && objectMap.size > 0) {
-        objectMap.forEach((geom) => extractedGeometries.push(geom.clone()));
+      for (const [key, entry] of objectNodesByFullKey.entries()) {
+        if (!referencedComps.has(key) && !referencedComps.has(entry.id)) {
+          const geom = resolveObjectGeometry(entry.fileNorm, entry.id);
+          if (geom) {
+            extractedGeometries.push(geom.clone());
+          }
+        }
       }
     }
 
@@ -419,12 +537,17 @@ export async function parse3MF(arrayBuffer: ArrayBuffer): Promise<ModelParseResu
 
     const merged = mergeBufferGeometries(extractedGeometries);
 
+    // Apply unit scaling if file units were inches, meters, etc.
+    if (unitScale !== 1.0) {
+      merged.scale(unitScale, unitScale, unitScale);
+    }
+
     // 3MF specification (ISO/IEC 5143) dictates that positive Z is the upward vertical axis.
     // Convert 3MF coordinate system (Z-up) to Three.js coordinate system (Y-up):
     merged.rotateX(-Math.PI / 2);
 
     // Convert to non-indexed BufferGeometry so flat faces get accurate geometric plane normals
-    // and avoid normal-smoothing leakage across 90-degree hole/crease edges (which caused the false "grid" pattern).
+    // and avoid normal-smoothing leakage across 90-degree hole/crease edges.
     const cleanGeom = merged.toNonIndexed();
     cleanGeom.computeVertexNormals();
     cleanGeom.computeBoundingBox();
@@ -604,17 +727,15 @@ export async function parseF3D(arrayBuffer: ArrayBuffer, fileName: string): Prom
       } else if (lower.endsWith(".model")) {
         // Embedded 3MF model chunk
         const xmlText = strFromU8(data);
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(xmlText, "application/xml");
-        const meshes = getElementsByLocalName(doc, "mesh");
-        if (meshes.length > 0) {
-          const geom = parseMeshNode(meshes[0]);
-          if (geom) {
-            extractedGeometry = geom;
+        const parsed = parse3MFModelXml(xmlText);
+        for (const obj of parsed.objects) {
+          if (obj.geom) {
+            extractedGeometry = obj.geom;
             hasMesh = true;
             break;
           }
         }
+        if (hasMesh) break;
       }
     }
   } catch (err) {
