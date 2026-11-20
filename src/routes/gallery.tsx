@@ -246,11 +246,11 @@ function GalleryPage() {
             role="dialog"
             aria-modal="true"
             onClick={() => setActiveModalItem(null)}
-            className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/85 p-4 backdrop-blur-md animate-in fade-in duration-200"
+            className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/85 p-4 pt-16 sm:pt-20 md:pt-[5.25rem] backdrop-blur-md animate-in fade-in duration-200"
           >
             <div
               onClick={(e) => e.stopPropagation()}
-              className="relative max-w-4xl max-h-[90vh] overflow-hidden rounded-3xl border border-border dark:border-white/20 bg-surface shadow-2xl flex flex-col"
+              className="relative max-w-4xl max-h-[calc(100dvh-6rem)] overflow-hidden rounded-3xl border border-border dark:border-white/20 bg-surface shadow-2xl flex flex-col"
             >
               <button
                 onClick={() => setActiveModalItem(null)}
@@ -263,7 +263,7 @@ function GalleryPage() {
               <img
                 src={activeModalItem.image_url}
                 alt={activeModalItem.title}
-                className="max-h-[70vh] w-full object-contain bg-black/40"
+                className="max-h-[calc(100dvh-14rem)] w-full object-contain bg-black/40"
               />
 
               <div className="p-5 sm:p-6 bg-surface">

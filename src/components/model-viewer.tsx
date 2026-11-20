@@ -501,6 +501,21 @@ export function ModelViewer({
   const [autoRotate, setAutoRotate] = useState(false);
   const [activeColor, setActiveColor] = useState(colorHex);
   const [expanded, setExpanded] = useState(false);
+
+  // Lock body scroll and handle Escape key when expanded/fullscreen
+  useEffect(() => {
+    if (!expanded) return;
+    const origOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setExpanded(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = origOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [expanded]);
   const [stats, setStats] = useState<{
     sizeMm: { x: number; y: number; z: number };
     triangles: number;
@@ -886,15 +901,23 @@ export function ModelViewer({
 
   if (cadPreview && !geometry) {
     return (
-      <div
-        className={cn(
-          "relative rounded-2xl border border-border/80 bg-[#14161a] overflow-hidden transition-all shadow-inner p-5 flex flex-col justify-between",
-          expanded
-            ? "fixed inset-3 sm:inset-8 z-50 flex flex-col rounded-3xl shadow-2xl border-accent/40 ring-1 ring-accent/30"
-            : "h-80 sm:h-96 w-full",
-          className
+      <>
+        {expanded && (
+          <div
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+            onClick={() => setExpanded(false)}
+            aria-hidden="true"
+          />
         )}
-      >
+        <div
+          className={cn(
+            "relative rounded-2xl border border-border/80 bg-[#14161a] overflow-hidden transition-all shadow-inner p-5 flex flex-col justify-between",
+            expanded
+              ? "fixed top-16 sm:top-20 md:top-[5rem] bottom-3 sm:bottom-6 left-3 sm:left-6 right-3 sm:right-6 z-50 flex flex-col rounded-3xl shadow-2xl border-accent/40 ring-1 ring-accent/30"
+              : "h-80 sm:h-96 w-full",
+            className
+          )}
+        >
         {/* Top Floating Badge Bar */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -960,10 +983,11 @@ export function ModelViewer({
           </div>
         </div>
       </div>
-    );
-  }
+    </>
+  );
+}
 
-  if (error) {
+if (error) {
     return (
       <div className="flex h-80 w-full flex-col items-center justify-center rounded-2xl border border-dashed border-border/80 bg-surface-2/60 p-6 text-center text-sm text-muted">
         <AlertTriangle className="mb-2 size-8 text-amber-500" />
@@ -976,18 +1000,26 @@ export function ModelViewer({
   }
 
   return (
-    <div
-      className={cn(
-        "relative rounded-2xl border overflow-hidden transition-all shadow-inner",
-        isLight
-          ? "bg-[#f8fafc] border-border text-slate-900 shadow-slate-200/50"
-          : "bg-[#14161a] border-border/80 text-white",
-        expanded
-          ? "fixed inset-3 sm:inset-8 z-50 flex flex-col rounded-3xl shadow-2xl border-accent/40 ring-1 ring-accent/30"
-          : "h-80 sm:h-96 w-full",
-        className
+    <>
+      {expanded && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+          onClick={() => setExpanded(false)}
+          aria-hidden="true"
+        />
       )}
-    >
+      <div
+        className={cn(
+          "relative rounded-2xl border overflow-hidden transition-all shadow-inner",
+          isLight
+            ? "bg-[#f8fafc] border-border text-slate-900 shadow-slate-200/50"
+            : "bg-[#14161a] border-border/80 text-white",
+          expanded
+            ? "fixed top-16 sm:top-20 md:top-[5rem] bottom-3 sm:bottom-6 left-3 sm:left-6 right-3 sm:right-6 z-50 flex flex-col rounded-3xl shadow-2xl border-accent/40 ring-1 ring-accent/30"
+            : "h-80 sm:h-96 w-full",
+          className
+        )}
+      >
       {/* Top Floating Slicer HUD / Controls Bar */}
       <div className="absolute top-3 inset-x-3 z-10 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
         {/* Left: Printer & Fit Status Badge */}
@@ -1555,5 +1587,6 @@ export function ModelViewer({
         </div>
       </div>
     </div>
+  </>
   );
 }

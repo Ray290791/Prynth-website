@@ -908,14 +908,14 @@ https://prynth.in | hello@prynth.in`;
       {previewPhoto && (
         <ModalPortal isOpen={!!previewPhoto}>
           <div
-            className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/85 p-4 backdrop-blur-md animate-in fade-in duration-200 cursor-pointer"
+            className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/85 p-4 pt-16 sm:pt-20 md:pt-[5.25rem] backdrop-blur-md animate-in fade-in duration-200 cursor-pointer"
             onClick={() => setPreviewPhoto(null)}
           >
             <div
-              className="relative max-h-[90vh] max-w-4xl overflow-hidden rounded-2xl bg-surface border border-border shadow-2xl cursor-default"
+              className="relative max-h-[calc(100dvh-6rem)] max-w-4xl overflow-hidden rounded-2xl bg-surface border border-border shadow-2xl cursor-default"
               onClick={(e) => e.stopPropagation()}
             >
-              <img src={previewPhoto} alt="Reference Preview" className="max-h-[80vh] w-auto object-contain" />
+              <img src={previewPhoto} alt="Reference Preview" className="max-h-[calc(100dvh-10rem)] w-auto object-contain" />
               <div className="flex items-center justify-between p-3 border-t border-border bg-surface-2/60">
                 <span className="text-xs font-medium text-muted">Customer Reference Photo</span>
                 <Button size="sm" variant="outline" onClick={() => setPreviewPhoto(null)} className="text-xs h-8 cursor-pointer">

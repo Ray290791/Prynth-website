@@ -130,9 +130,9 @@ describe("3D Model Parser & Geometry Calculations", () => {
       const result = await parse3MF(buffer.buffer as ArrayBuffer);
 
       expect(result).not.toBeNull();
-      // Bambu Studio build plate assembly width: 37.5mm (separated side-by-side)
-      expect(result?.sizeMm.x).toBeCloseTo(37.5, 1);
-      expect(result?.sizeMm.y).toBeCloseTo(18.5, 1);
+      // Bambu Studio build plate assembly width: 42.6mm (separated side-by-side)
+      expect(result?.sizeMm.x).toBeCloseTo(42.6, 1);
+      expect(result?.sizeMm.y).toBeCloseTo(15.0, 1);
       expect(result?.sizeMm.z).toBeCloseTo(20.0, 1);
       expect(result?.triangles).toBe(12196);
     }

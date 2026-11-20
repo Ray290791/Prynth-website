@@ -77,8 +77,8 @@ export function PinConfirmModal({
 
   return (
     <ModalPortal isOpen={isOpen}>
-      <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 p-4 sm:p-6 backdrop-blur-md overflow-y-auto animate-in fade-in duration-150">
-        <div className="relative w-full max-w-sm rounded-2xl sm:rounded-3xl border border-glass-border bg-surface/95 backdrop-blur-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 p-4 sm:p-6 pt-16 sm:pt-20 md:pt-[5.25rem] backdrop-blur-md overflow-y-auto animate-in fade-in duration-150">
+        <div className="relative w-full max-w-sm max-h-[calc(100dvh-6rem)] overflow-y-auto rounded-2xl sm:rounded-3xl border border-glass-border bg-surface/95 backdrop-blur-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
           <div className="flex items-center justify-between border-b border-border/60 p-4 sm:p-5 bg-surface-2/30 shrink-0">
             <div className="flex items-center gap-2">
               <div className="size-8 rounded-lg bg-danger/10 text-danger flex items-center justify-center">

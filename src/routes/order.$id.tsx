@@ -366,8 +366,8 @@ function OrderPage() {
       {/* Review Dialog */}
       {reviewProduct && (
         <ModalPortal isOpen={Boolean(reviewProduct)}>
-          <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 p-4 backdrop-blur-md print:hidden">
-            <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-xl relative">
+          <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 p-4 pt-16 sm:pt-20 md:pt-[5.25rem] backdrop-blur-md print:hidden">
+            <div className="w-full max-w-md max-h-[calc(100dvh-6rem)] overflow-y-auto rounded-2xl bg-surface p-6 shadow-xl relative">
               <button 
                 onClick={() => setReviewProduct(null)}
                 className="absolute right-4 top-4 text-muted hover:text-foreground cursor-pointer"

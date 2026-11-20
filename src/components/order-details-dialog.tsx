@@ -448,8 +448,8 @@ export function OrderDetailsDialog({
 
   return (
     <ModalPortal isOpen={true}>
-      <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-150">
-        <div className="relative w-full max-w-3xl max-h-[min(88vh,calc(100dvh-4rem))] flex flex-col rounded-2xl sm:rounded-3xl border border-border bg-surface shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 sm:p-6 pt-16 sm:pt-20 md:pt-[5.25rem] overflow-y-auto animate-in fade-in duration-150">
+        <div className="relative w-full max-w-3xl max-h-[calc(100dvh-6rem)] flex flex-col rounded-2xl sm:rounded-3xl border border-border bg-surface shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Fixed Header */}
         <div className="shrink-0 flex items-start justify-between border-b border-border p-5 sm:p-6 bg-surface/90 backdrop-blur-xs z-10">
           <div>
@@ -1313,7 +1313,7 @@ export function OrderDetailsDialog({
 
           {/* Refund Modal */}
           {showRefundModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-150">
+            <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 pt-16 sm:pt-20 md:pt-[5.25rem] animate-in fade-in duration-150">
               <div className="relative w-full max-w-sm rounded-2xl border border-border bg-surface p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
                 <div className="flex items-center gap-2.5">
                   <RotateCcw className="size-5 text-danger" />

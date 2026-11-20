@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { LithophaneShape } from "@/components/lithophane-viewer";
 import { isInsideHeart } from "@/lib/lithophane-export";
+import { ModalPortal } from "@/components/ui/modal-portal";
 
 export interface CropConfig {
   scale: number;
@@ -297,8 +298,9 @@ export function LithophaneFramingModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl flex flex-col max-h-[92vh]">
+    <ModalPortal isOpen={isOpen}>
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 pt-16 sm:pt-20 md:pt-[5.25rem] animate-in fade-in duration-200">
+        <div className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl flex flex-col max-h-[calc(100dvh-6rem)]">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border/80 px-5 py-4">
           <div className="flex items-center gap-2.5">
@@ -569,5 +571,6 @@ export function LithophaneFramingModal({
         </div>
       </div>
     </div>
+  </ModalPortal>
   );
 }
