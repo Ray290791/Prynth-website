@@ -1,7 +1,6 @@
 import { createFileRoute, getRouteApi, Link } from "@tanstack/react-router";
 import { generateBreadcrumbJsonLd } from "@/lib/jsonld";
 import {
-  Scale,
   ShieldCheck,
   Clock,
   Mail,
@@ -144,10 +143,6 @@ function LegalPage() {
 
       {/* Header */}
       <div className="space-y-3">
-        <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent-soft px-3 py-1 text-xs font-semibold text-accent">
-          <Scale className="size-3.5" />
-          Statutory Compliance &amp; Consumer Protection
-        </div>
         <h1 className="font-display text-4xl font-semibold tracking-tight text-fg md:text-5xl">
           Legal Disclosures &amp; Grievance Redressal
         </h1>

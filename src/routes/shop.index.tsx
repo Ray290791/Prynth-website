@@ -137,10 +137,7 @@ function ShopPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <div className="max-w-2xl">
-        <p className="text-[11px] font-semibold tracking-[0.2em] text-accent uppercase">
-          Shop Collection
-        </p>
-        <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight md:text-5xl text-fg">
+        <h1 className="font-display text-3xl font-semibold tracking-tight md:text-5xl text-fg">
           Ready-Made 3D Prints
         </h1>
         <p className="mt-2 text-sm sm:text-base text-muted">

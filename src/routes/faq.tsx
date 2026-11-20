@@ -2,7 +2,7 @@ import { createFileRoute, Link, getRouteApi } from "@tanstack/react-router";
 import { generateBreadcrumbJsonLd } from "@/lib/jsonld";
 import { useQuery } from "@tanstack/react-query";
 import { getFaqs, type Faq } from "@/lib/faq-fns";
-import { HelpCircle, Search, ChevronDown, MessageSquare, ArrowRight } from "lucide-react";
+import { Search, ChevronDown, MessageSquare, ArrowRight } from "lucide-react";
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -96,11 +96,7 @@ export function FaqPage() {
       />
       {/* Header */}
       <div>
-        <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3.5 py-1 text-xs font-semibold text-accent">
-          <HelpCircle className="size-3.5" />
-          <span>Knowledge &amp; Support</span>
-        </div>
-        <h1 className="mt-4 font-display text-4xl sm:text-5xl font-semibold tracking-tight text-fg">
+        <h1 className="font-display text-4xl sm:text-5xl font-semibold tracking-tight text-fg">
           Frequently Asked Questions
         </h1>
         <p className="mt-3 text-base sm:text-lg text-muted max-w-2xl leading-relaxed">

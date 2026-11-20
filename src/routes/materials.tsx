@@ -64,11 +64,6 @@ export default function MaterialsPage() {
       {/* Hero Section */}
       <div className="relative rounded-2xl border border-border bg-surface p-8 md:p-12 shadow-xs">
         <div className="relative z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-2 px-3.5 py-1 text-xs font-semibold text-fg mb-4">
-            <Layers className="size-3.5 text-accent" />
-            <span>The Prynth! Filament Field Guide</span>
-          </div>
-
           <h1 className="font-display text-4xl sm:text-5xl font-bold tracking-tight text-fg">
             Engineered for durability, tuned for aesthetics.
           </h1>

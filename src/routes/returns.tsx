@@ -64,11 +64,7 @@ export function ReturnsPage() {
       />
       {/* Header */}
       <div>
-        <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3.5 py-1 text-xs font-semibold text-emerald-400">
-          <ShieldCheck className="size-3.5" />
-          <span>7-Day Quality Promise</span>
-        </div>
-        <h1 className="mt-4 font-display text-4xl sm:text-5xl font-semibold tracking-tight text-fg">
+        <h1 className="font-display text-4xl sm:text-5xl font-semibold tracking-tight text-fg">
           Returns &amp; Refunds
         </h1>
         <p className="mt-3 text-base sm:text-lg text-muted max-w-2xl leading-relaxed">

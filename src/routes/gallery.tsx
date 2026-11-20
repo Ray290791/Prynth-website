@@ -3,7 +3,6 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Image as ImageIcon,
-  Sparkles,
   Layers,
   ArrowRight,
   Filter,
@@ -82,11 +81,6 @@ function GalleryPage() {
     <div className="mx-auto max-w-7xl px-4 py-10 md:px-6 md:py-16 space-y-16 sm:space-y-24">
       {/* HERO SECTION */}
       <section className="text-center max-w-3xl mx-auto space-y-4">
-        <div className="inline-flex items-center gap-2 rounded-full bg-accent/10 border border-accent/20 px-3.5 py-1 text-xs font-semibold text-accent">
-          <Sparkles className="size-3.5" />
-          <span>Real Studio Production Gallery</span>
-        </div>
-
         <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight">
           Obsessive Precision in Every Layer
         </h1>

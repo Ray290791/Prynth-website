@@ -125,11 +125,7 @@ export function ContactPage() {
       />
       {/* Title */}
       <div className="max-w-2xl">
-        <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3.5 py-1 text-xs font-semibold text-accent">
-          <MessageSquare className="size-3.5" />
-          <span>Support &amp; Studio Inquiries</span>
-        </div>
-        <h1 className="mt-4 font-display text-4xl sm:text-5xl font-semibold tracking-tight text-fg">
+        <h1 className="font-display text-4xl sm:text-5xl font-semibold tracking-tight text-fg">
           Say Hello
         </h1>
         <p className="mt-3 text-base sm:text-lg text-muted leading-relaxed">

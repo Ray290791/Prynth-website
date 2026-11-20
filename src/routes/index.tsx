@@ -7,8 +7,6 @@ import {
   Truck,
   Upload,
   Zap,
-  Layers,
-  Sparkles,
   PenTool,
   CheckCircle2,
 } from "lucide-react";
@@ -165,11 +163,6 @@ function Home() {
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-8 md:grid-cols-12 md:px-6 md:py-14 lg:gap-14 lg:py-16">
           {/* Left: headline + concise value prop + clean CTAs */}
           <div className="relative z-10 md:col-span-6 lg:col-span-6 space-y-5">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-chip text-xs font-mono text-muted">
-              <span className="size-2 rounded-full bg-accent animate-pulse" />
-              <span>PRECISION 3D STUDIO · MUMBAI, INDIA</span>
-            </div>
-
             <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-fg leading-[1.08] animate-in fade-in slide-in-from-bottom-2 duration-300">
               Precision 3D Fabrication.{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-900 via-zinc-800 to-[#007369] dark:from-white dark:via-zinc-200 dark:to-[#00b8a9] dark:drop-shadow-sm">
@@ -177,11 +170,8 @@ function Home() {
               </span>
             </h1>
 
-            <div className="flex items-center gap-3 pt-0.5">
+            <div className="pt-0.5">
               <Wordmark className="text-xl sm:text-2xl tracking-tight opacity-95" />
-              <span className="text-xs font-mono text-muted uppercase tracking-widest border-l border-border/60 pl-3">
-                Calibrated CoreXY Fleet
-              </span>
             </div>
 
             <p className="text-base sm:text-lg text-muted font-jakarta leading-relaxed max-w-lg font-normal">
@@ -277,8 +267,7 @@ function Home() {
       <section className="relative z-10 mx-auto max-w-6xl px-4 md:px-6">
         <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end mb-8">
           <div>
-            <p className="text-[11px] font-mono tracking-[0.2em] text-accent uppercase">Shop Collection</p>
-            <h2 className="mt-1 font-display text-3xl sm:text-4xl font-bold tracking-tight text-fg">
+            <h2 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-fg">
               Desk &amp; Everyday Favourites
             </h2>
             <p className="mt-2 text-xs sm:text-sm text-muted font-jakarta max-w-2xl leading-relaxed">
@@ -311,10 +300,6 @@ function Home() {
             return (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
                 <div className={`${showPegboardImage ? "lg:col-span-7" : "lg:col-span-12 max-w-2xl"} space-y-4`}>
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-accent/15 text-accent border border-accent/20">
-                    <Sparkles className="size-3.5" />
-                    <span>{settings.pegboard_badge || "Signature Star Product"}</span>
-                  </div>
                   <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-fg">
                     {settings.pegboard_hero_title || "The Modular Pegboard System"}
                   </h2>
@@ -322,17 +307,6 @@ function Home() {
                     {settings.pegboard_hero_subtitle ||
                       "Precision 3D printed modular wall and desk organization. Engineered for creators, tech setups, and intentional workspaces."}
                   </p>
-                  <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
-                    <span className="font-medium px-2.5 py-1 rounded-lg bg-surface-2 border border-border text-fg">
-                      Interlocking Grid
-                    </span>
-                    <span className="font-medium px-2.5 py-1 rounded-lg bg-surface-2 border border-border text-fg">
-                      Removable Wall Adhesive
-                    </span>
-                    <span className="font-medium px-2.5 py-1 rounded-lg bg-surface-2 border border-border text-fg">
-                      Tool-Free Snap Accessories
-                    </span>
-                  </div>
                   <div className="pt-2 flex flex-wrap items-center gap-4">
                     <Button asChild className="h-11 px-6 bg-accent text-ink font-semibold hover:opacity-90 shadow-sm cursor-pointer">
                       <Link to="/pegboard">
@@ -367,11 +341,7 @@ function Home() {
       <section className="relative z-10 mx-auto max-w-6xl px-4 md:px-6">
         <div className="rounded-3xl border border-border/80 bg-surface/70 p-6 sm:p-10 shadow-sm backdrop-blur-md">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-2 px-3 py-1 text-xs font-semibold text-accent">
-              <Layers className="size-3.5" />
-              <span>On-Demand Custom Fabrication</span>
-            </div>
-            <h2 className="mt-3 font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-fg">
+            <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-fg">
               Got a 3D model, sketch, or broken part?
             </h2>
             <p className="mt-2 text-sm sm:text-base text-muted leading-relaxed font-jakarta">
@@ -432,8 +402,7 @@ function Home() {
         <div className="rounded-3xl border border-border/80 bg-surface/70 p-6 sm:p-8 shadow-sm backdrop-blur-md">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
             <div>
-              <p className="text-[11px] font-mono tracking-[0.2em] text-accent uppercase">Filament Guide</p>
-              <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-fg mt-1">
+              <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-fg">
                 Choose the right polymer for your application
               </h2>
             </div>

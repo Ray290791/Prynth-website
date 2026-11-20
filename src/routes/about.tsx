@@ -8,7 +8,6 @@ import {
   Tag,
   HeartHandshake,
   Layers,
-  Users,
   Cpu,
   MapPin,
 } from "lucide-react";
@@ -79,11 +78,7 @@ export function AboutPage() {
     <div className="mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-20 animate-in fade-in duration-300">
       {/* Header Badge & Title */}
       <div className="max-w-3xl">
-        <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3.5 py-1 text-xs font-semibold text-accent">
-          <Sparkles className="size-3.5" />
-          <span>Our Story &amp; Philosophy</span>
-        </div>
-        <h1 className="mt-4 font-display text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-fg leading-[1.12]">
+        <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-fg leading-[1.12]">
           {headline}
         </h1>
       </div>
@@ -140,10 +135,6 @@ export function AboutPage() {
       <div className="mt-16 rounded-3xl border border-border bg-surface/50 p-8 sm:p-10 backdrop-blur-sm">
         <div className="flex flex-col md:flex-row gap-8 items-start justify-between">
           <div className="max-w-xl space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3 py-0.5 text-xs font-semibold text-accent">
-              <Users className="size-3.5" />
-              <span>Studio Leadership</span>
-            </div>
             <h2 className="font-display text-2xl sm:text-3xl font-semibold text-fg tracking-tight">
               Crafted by Makers, Guided by Engineering
             </h2>

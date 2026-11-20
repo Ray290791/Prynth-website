@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Star, CheckCircle2, ChevronLeft, ChevronRight, MessageSquareQuote } from "lucide-react";
+import { Star, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
 import { getTestimonials, type Testimonial } from "@/lib/testimonials-fns";
 
 export function TestimonialsSection({
@@ -40,10 +40,6 @@ export function TestimonialsSection({
   return (
     <section className={`space-y-10 ${className}`}>
       <div className="text-center max-w-2xl mx-auto px-4">
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 border border-accent/20 px-3 py-1 text-xs font-semibold text-accent mb-3">
-          <MessageSquareQuote className="size-3.5" />
-          <span>Client Reviews & Feedback</span>
-        </div>
         <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
           {title}
         </h2>

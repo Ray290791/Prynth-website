@@ -385,13 +385,6 @@ function LithophaneStudioPage() {
         />
         {/* Editorial Hero Header */}
         <div className="max-w-3xl space-y-4">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-surface/80 px-3.5 py-1 text-xs font-medium text-fg shadow-xs backdrop-blur-md">
-            <span className="flex size-2 rounded-full bg-accent animate-pulse" />
-            <span className="font-semibold text-accent">Sunlit &amp; Light Box Studio</span>
-            <span className="text-muted/60">·</span>
-            <span className="text-muted">Sculpted 3D Keepsakes</span>
-          </div>
-
           <h1 className="font-display text-3xl font-semibold tracking-tight text-fg sm:text-4xl lg:text-5xl leading-[1.12]">
             Transform Your Favorite Photo into a{" "}
             <span className="bg-gradient-to-r from-accent via-teal-400 to-amber-400 bg-clip-text text-transparent">

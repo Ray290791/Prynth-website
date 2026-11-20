@@ -339,11 +339,7 @@ export function PrivacyPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <div>
-        <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3.5 py-1 text-xs font-semibold text-accent">
-          <Shield className="size-3.5" />
-          <span>Statutory Privacy &amp; Data Governance</span>
-        </div>
-        <h1 className="mt-4 font-display text-4xl sm:text-5xl font-semibold tracking-tight text-fg">
+        <h1 className="font-display text-4xl sm:text-5xl font-semibold tracking-tight text-fg">
           Privacy Policy
         </h1>
         <p className="mt-2 text-sm text-muted">

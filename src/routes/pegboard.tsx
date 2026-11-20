@@ -356,12 +356,6 @@ export function PegboardPage() {
               alt="Modular Pegboard System by Prynth!"
               className="w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.02]"
             />
-
-            {/* Star badge */}
-            <div className="absolute top-4 left-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-accent text-ink shadow-md shadow-accent/20">
-              <Sparkles className="size-3.5" />
-              <span>{settings.pegboard_badge || "Signature Star Product"}</span>
-            </div>
           </div>
 
           {/* Thumbnail Selector */}
@@ -406,9 +400,6 @@ export function PegboardPage() {
         {/* RIGHT: INTERACTIVE CONFIGURATOR */}
         <div className="lg:col-span-5 space-y-6">
           <div className="space-y-2">
-            <span className="text-xs font-semibold tracking-wider text-accent uppercase block">
-              Flagship Studio Hardware
-            </span>
             <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-fg">
               {settings.pegboard_hero_title || "The Modular Pegboard System"}
             </h1>

@@ -358,10 +358,7 @@ function ServiceDetailPage() {
         <section className="border-y border-border/60 bg-surface/30 py-16 md:py-20">
           <div className="mx-auto max-w-6xl px-4 md:px-6">
             <div className="text-center max-w-xl mx-auto mb-12">
-              <p className="text-[11px] font-medium tracking-[0.18em] text-accent uppercase">
-                Step-by-Step
-              </p>
-              <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight text-fg">
+              <h2 className="font-display text-3xl font-semibold tracking-tight text-fg">
                 The Engineering Workflow
               </h2>
             </div>
@@ -388,10 +385,7 @@ function ServiceDetailPage() {
         <section className="mx-auto max-w-6xl px-4 py-16 md:px-6">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
             <div>
-              <p className="text-[11px] font-medium tracking-[0.18em] text-accent uppercase">
-                Case Studies
-              </p>
-              <h2 className="mt-1 font-display text-2xl sm:text-3xl font-semibold tracking-tight text-fg">
+              <h2 className="font-display text-2xl sm:text-3xl font-semibold tracking-tight text-fg">
                 Real-World Applications
               </h2>
             </div>
@@ -430,11 +424,7 @@ function ServiceDetailPage() {
       <section ref={formRef} className="mx-auto max-w-4xl px-4 py-12 md:px-6">
         <div className="rounded-3xl border border-border bg-surface p-6 sm:p-10 shadow-lg">
           <div className="max-w-2xl">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-3 py-1 text-xs font-semibold text-accent">
-              <Sparkles className="size-3.5" />
-              <span>Direct Engineering Assessment</span>
-            </span>
-            <h2 className="mt-3 font-display text-2xl sm:text-3xl font-bold tracking-tight text-fg">
+            <h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-fg">
               Obtain This Service: {service.title}
             </h2>
             <p className="mt-2 text-sm text-muted leading-relaxed">

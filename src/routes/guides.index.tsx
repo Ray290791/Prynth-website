@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { GUIDES } from "@/lib/guides-data";
 import { generateBreadcrumbJsonLd } from "@/lib/jsonld";
-import { BookOpen, ArrowRight, Clock, Calendar, CheckCircle2, Layers } from "lucide-react";
+import { ArrowRight, Clock, Calendar, CheckCircle2, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/guides/")({
@@ -48,10 +48,6 @@ export default function GuidesIndexPage() {
 
       {/* Header Banner */}
       <div className="space-y-4">
-        <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs font-mono text-muted">
-          <BookOpen className="size-3.5 text-accent" />
-          <span>PRYNTH ENGINEERING FIELD GUIDES</span>
-        </div>
         <h1 className="font-display text-4xl sm:text-5xl font-bold tracking-tight text-fg leading-tight">
           Clear, practical answers for{" "}
           <span className="italic text-accent">precision 3D printing.</span>

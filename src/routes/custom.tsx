@@ -94,10 +94,7 @@ function CustomPage() {
       />
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-[11px] font-medium tracking-[0.18em] text-subtle uppercase">
-            Custom Studio
-          </p>
-          <h1 className="mt-2 font-display text-4xl font-semibold tracking-tight md:text-5xl">
+          <h1 className="font-display text-4xl font-semibold tracking-tight md:text-5xl">
             {editItem ? "Edit custom order" : "Print it your way"}
           </h1>
           <p className="mt-3 max-w-2xl text-muted">
